@@ -171,11 +171,11 @@ jobs:
         run: |
           find *dsc  -exec sed -i "s+__VERSION__+$(cat VERSION)+g" {} +
           for f in *diff.gz; do
-            cp "$f" "$f~" &&   
+            cp "$f" "$f~" &&
             gzip -cd "$f~" | sed "s+__VERSION__+$(cat VERSION)+g" | gzip > "$f"
           done
           wget https://github.com/snoozeweb/snooze/releases/download/v$(cat VERSION)/snooze-web-$(cat VERSION).tar.gz -O snooze-server_$(cat VERSION).tar.gz
-          mv snooze-server.diff.gz snooze-server_$(cat VERSION).diff.gz 
+          mv snooze-server.diff.gz snooze-server_$(cat VERSION).diff.gz
       - name: Extract
         id: extract
         run: dpkg-source -x --no-check snooze-server.dsc
@@ -232,14 +232,14 @@ jobs:
             -t $REPOSITORY_URL/$IMAGE_NAME:$(cat VERSION)
             -t $REPOSITORY_URL/$IMAGE_NAME:${{ steps.vars.outputs.SHORT_COMMIT_ID }}
             -t $REPOSITORY_URL/$IMAGE_NAME:latest .
-      - name: Docker Login
-        env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        run: echo "$DOCKER_PASSWORD" | docker login $REPOSITORY_URL --username "$DOCKER_USERNAME" --password-stdin
-      - name: Publish Image
-        id: docker-push
-        run: |
-          docker push $REPOSITORY_URL/$IMAGE_NAME:$(cat VERSION)
-          docker push $REPOSITORY_URL/$IMAGE_NAME:${{ steps.vars.outputs.SHORT_COMMIT_ID }}
-          docker push $REPOSITORY_URL/$IMAGE_NAME:latest
+      #- name: Docker Login
+      #  env:
+      #    DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      #    DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      #  run: echo "$DOCKER_PASSWORD" | docker login $REPOSITORY_URL --username "$DOCKER_USERNAME" --password-stdin
+      #- name: Publish Image
+      #  id: docker-push
+      #  run: |
+      #    docker push $REPOSITORY_URL/$IMAGE_NAME:$(cat VERSION)
+      #    docker push $REPOSITORY_URL/$IMAGE_NAME:${{ steps.vars.outputs.SHORT_COMMIT_ID }}
+      #    docker push $REPOSITORY_URL/$IMAGE_NAME:latest

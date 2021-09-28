@@ -4,7 +4,7 @@ name: Snooze-server testing
 
 on:
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 
 jobs:
 
@@ -25,8 +25,8 @@ jobs:
       - name: Cache Poetry
         uses: actions/cache@v1
         with:
-          path: ~/.local/share/virtualenvs
-          key: "{{ runner.os }}-poetry-dev-{{ hashFIles('**/poetry.lock') }}"
+          path: ~/.cache/pypoetry/virtualenvs
+          key: "{{ runner.os }}-poetry-dev-{{ hashFiles('**/poetry.lock') }}"
 
       - name: Install dependencies
         if: steps.cache-poetry.outputs.cache-hit != 'true'
@@ -52,8 +52,8 @@ jobs:
       - name: Cache Poetry
         uses: actions/cache@v1
         with:
-          path: ~/.local/share/virtualenvs
-          key: "{{ runner.os }}-poetry-test-{{ hashFIles('**/poetry.lock') }}"
+          path: ~/.cache/pypoetry/virtualenvs
+          key: "{{ runner.os }}-poetry-test-{{ hashFiles('**/poetry.lock') }}"
 
       - name: Install dependencies
         if: steps.cache-poetry.outputs.cache-hit != 'true'
