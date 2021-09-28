@@ -20,8 +20,8 @@ jobs:
       - name: Cache Poetry
         uses: actions/cache@v1
         with:
-          path: ~/.local/share/virtualenvs
-          key: "{{ runner.os }}-poetry-test-{{ hashFIles('**/poetry.lock') }}"
+          path: ~/.cache/pypoetry/virtualenvs
+          key: "{{ runner.os }}-poetry-test-{{ hashFiles('**/poetry.lock') }}"
       - name: Install dependencies
         if: steps.cache-poetry.outputs.cache-hit != 'true'
         run: poetry install --only default --only test
@@ -62,7 +62,7 @@ jobs:
       - name: Install Poetry
         run: python -m pip install 'poetry>=1.2.0a2'
       - name: Build
-        run: poetry build .
+        run: poetry build
       - name: Upload package to pypi
         id: upload
         env:
@@ -80,7 +80,13 @@ jobs:
         with:
           node-version: 10.x
           registry-url: 'https://registry.npmjs.org'
+      - name: Cache NPM
+        uses: actions/cache@v1
+        with:
+          path: node_modules
+          key: "{{ runner.os }}-node_module-{{ hashFiles('**web/package-lock.json') }}"
       - name: install deps
+        if: steps.cache-npm.outputs.cache-hit != 'true'
         run: npm install
         working-directory: ./web
       - name: build
