@@ -6,38 +6,27 @@ on:
       - v*
 
 jobs:
-  python_tests:
+  pytest:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Install packages
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential \
-            python3-dev
-      - name: Set up Python 3.8
+      - name: Set up Python 3.x
         uses: actions/setup-python@v2
         with:
-          python-version: '3.8'
+          python-version: '3.6'
           architecture: 'x64'
+      - name: Install Poetry
+        run: python -m pip install 'poetry>=1.2.0a2'
+      - name: Cache Poetry
+        uses: actions/cache@v1
+        with:
+          path: ~/.local/share/virtualenvs
+          key: "{{ runner.os }}-poetry-test-{{ hashFIles('**/poetry.lock') }}"
       - name: Install dependencies
-        id: install-deps
-        run: |
-          python -m pip install --upgrade pip
-          pip install \
-            pytest \
-            pytest-data \
-            pytest-mongodb \
-            pytest-spec \
-            pytest-timeout \
-            freezegun
-          pip install -r requirements.txt
-          pip install .
-      - name: Running Pytest
-        id: pytest
-        run: |
-          pytest
+        if: steps.cache-poetry.outputs.cache-hit != 'true'
+        run: poetry install --only default --only test
+      - name: Running Pylint
+        run: poetry run pytest
 
   release:
     runs-on: ubuntu-latest
@@ -62,32 +51,24 @@ jobs:
 
   pypi:
     runs-on: ubuntu-latest
-    needs: python_tests
+    needs: pytest
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python 3.x
+      - name: 'Set up Python 3.6'
         uses: actions/setup-python@v2
         with:
-          python-version: '3.x'
+          python-version: '3.6'
           architecture: 'x64'
-      - name: Install dependencies
-        id: install-deps
-        run: |
-          python -m pip install --upgrade pip
-          pip install \
-            twine \
-            wheel
-      - name: Package application
-        id: package
-        run: |
-          python setup.py bdist_wheel
+      - name: Install Poetry
+        run: python -m pip install 'poetry>=1.2.0a2'
+      - name: Build
+        run: poetry build .
       - name: Upload package to pypi
         id: upload
         env:
-          TWINE_USERNAME: ${{ secrets.TWINE_USERNAME }}
-          TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
-        run: |
-          twine upload dist/*
+          POETRY_HTTP_BASIC_PYPI_USERNAME: ${{ secrets.TWINE_USERNAME }}
+          POETRY_HTTP_BASIC_PYPI_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
+        run: poetry publish
 
   web:
     runs-on: ubuntu-latest

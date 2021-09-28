@@ -19,21 +19,21 @@ jobs:
           python-version: '3.6'
           architecture: 'x64'
 
-      - name: Install Pipenv
-        run: python -m pip install pipenv wheel
+      - name: Install Poetry
+        run: python -m pip install 'poetry>=1.2.0a2'
 
-      - name: Cache Pipenv
+      - name: Cache Poetry
         uses: actions/cache@v1
         with:
           path: ~/.local/share/virtualenvs
-          key: "{{ runner.os }}-pipenv-{{ hashFIles('**/Pipfile.lock') }}"
+          key: "{{ runner.os }}-poetry-dev-{{ hashFIles('**/poetry.lock') }}"
 
       - name: Install dependencies
-        if: steps.cache-pipenv.outputs.cache-hit != 'true'
+        if: steps.cache-poetry.outputs.cache-hit != 'true'
+        run: poetry install --only lint
 
-        run: pipenv install --deploy --dev
       - name: Running Pylint
-        run: pipenv run pylint snooze/
+        run: poetry run pylint snooze/
 
   tests:
     # needs: lint
@@ -46,19 +46,19 @@ jobs:
           python-version: '3.6'
           architecture: 'x64'
 
-      - name: Install Pipenv
-        run: python -m pip install pipenv wheel
+      - name: Install Poetry
+        run: python -m pip install 'poetry>=1.2.0a2'
 
-      - name: Cache Pipenv
+      - name: Cache Poetry
         uses: actions/cache@v1
         with:
           path: ~/.local/share/virtualenvs
-          key: "{{ runner.os }}-pipenv-{{ hashFIles('**/Pipfile.lock') }}"
+          key: "{{ runner.os }}-poetry-test-{{ hashFIles('**/poetry.lock') }}"
 
       - name: Install dependencies
-        if: steps.cache-pipenv.outputs.cache-hit != 'true'
-        run: pipenv install --deploy --dev
+        if: steps.cache-poetry.outputs.cache-hit != 'true'
+        run: poetry install --only default --only test
 
       - name: Running Pytest
-        run: pipenv run pytest
+        run: poetry run pytest
 
