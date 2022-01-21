@@ -85,7 +85,7 @@ class RegexParse(Modification):
             key, regex = resolve(record, self.args)
             results = re.search(regex, record[key])
             if results:
-                for name, value in results.groupdict({}).items():
+                for name, value in results.groupdict().items():
                     record[name] = value
                 return True
             return False

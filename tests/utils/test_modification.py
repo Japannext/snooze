@@ -54,6 +54,16 @@ def test_modification_regex_parse():
     assert return_code
     assert record == {'message': 'Error during cronjob', 'appname': 'CRON', 'pid': '12345'}
 
+def test_modification_regex_parse_conditional():
+    record = {'hostname': 'myenv-myrole01'}
+    modification = get_modification('REGEX_PARSE', 'hostname', '((?P<company>[a-z]+)-)?(?P<environment>[a-z]+)-(?P<role>[a-z]+)(?P<nodenumber>\d+)')
+    return_code = modification.modify(record)
+    assert return_code
+    assert record['environment'] == 'myenv'
+    assert record['role'] == 'myrole'
+    assert record['nodenumber'] == '01'
+    assert record['company'] == None
+
 def test_modification_regex_parse_broken_regex():
     record = {'message': 'CRON[12345]: Error during cronjob'}
     modification = get_modification('REGEX_PARSE', 'message', '(?P<appname.*?)\[(?P<pid>\d+)\]: (?P<message>.*)')
