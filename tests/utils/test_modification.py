@@ -5,12 +5,20 @@
 # SPDX-License-Identifier: AFL-3.0
 #
 
-#!/usr/bin/python3.6
-
 from snooze.utils.modification import *
 
 from logging import getLogger
 log = getLogger('snooze.tests.modification')
+
+def test_modification_validate():
+    rule = {
+        'name': 'My rule 1',
+        'condition': [],
+        'modifications': [
+            ['SET', 'a', '1'],
+        ],
+    }
+    validate_modification(rule)
 
 def test_modification_set():
     record = {'a': 1, 'b': 2}
