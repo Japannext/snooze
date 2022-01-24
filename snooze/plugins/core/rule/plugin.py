@@ -29,7 +29,7 @@ class Rule(Plugin):
     def validate(self, obj):
         '''Validate a rule object'''
         validate_condition(obj)
-        validate_modification(obj)
+        validate_modification(obj, self.db)
 
     def process_rules(self, record, rules):
         LOG.debug("Processing record {} against rules: {}".format(str(record), str(rules)))

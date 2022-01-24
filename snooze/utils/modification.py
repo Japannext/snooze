@@ -137,11 +137,11 @@ OPERATIONS = {
     'KV_SET': KvSet,
 }
 
-def validate_modification(obj):
+def validate_modification(obj, db=None):
     '''Raise an exception if the object contains an invalid modification'''
     modifications = obj.get('modifications', [])
     for modification in modifications:
-        get_modification(*obj)
+        get_modification(modification, db=db)
 
 def get_modification(args, db=None):
     '''Return the modification class to run'''

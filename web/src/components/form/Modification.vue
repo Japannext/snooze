@@ -80,6 +80,7 @@ export default {
         'ARRAY_DELETE': "Delete an element from an array by value",
         'REGEX_PARSE': "Given a regex with named capture groups, the value of the capture groups will be merged to the record by name",
         'REGEX_SUB': "Search the elements matching a regex, and replace them with a substitute",
+        'KV_SET': "Map a field to a value in a key-value dictionary",
       },
       operations: [
         {value: 'SET', text: 'Set'},
@@ -88,6 +89,7 @@ export default {
         {value: 'ARRAY_DELETE', text: 'Delete (from array)'},
         {value: 'REGEX_PARSE', text: 'Regex parse (capture)'},
         {value: 'REGEX_SUB', text: 'Regex sub'},
+        {value: 'KV_SET', text: 'Key-value mapping'},
       ],
     }
   },
