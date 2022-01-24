@@ -18,6 +18,11 @@
               <CFormInput id="field" v-model="val[1]" placeholder="Field to parse" />
               <CFormInput id="out_field" v-model="val[2]" placeholder="Output field" />
             </template>
+            <template v-else-if="val[0] == 'KV_SET'">
+              <CFormInput id="dict" v-model="val[1]" placeholder="Dictionary"/>
+              <CFormInput id="field" v-model="val[2]" placeholder="Field"/>
+              <CFormInput id="out_field" v-model="val[3]" placeholder="Output field"/>
+            </template>
             <template v-else>
               <CFormInput id="field" v-model="val[1]" placeholder="Field"/>
               <CFormInput id="value" v-model="val[2]" placeholder="Value"/>
