@@ -58,7 +58,7 @@ class RuleObject():
         self.modifications = []
         for modification in (rule.get('modifications') or []):
             LOG.debug("-> modification: {}".format(str(modification)))
-            self.modifications.append(get_modification(*modification))
+            self.modifications.append(get_modification(modification, db=db))
         LOG.debug("Searching children of rule {}".format(str(self.name)))
         self.children = []
         if db:
