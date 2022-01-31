@@ -62,12 +62,9 @@ class CommentRoute(Route):
                         modification_raw = req_media.get('modifications', [])
                         if media_type in ['esc', 'open']:
                             try:
-                                modified = False
                                 for modification in modification_raw:
-                                    mod_obj = get_modification(modification, self.core)
-                                    if mod_obj.modify(records['data'][0]):
-                                        modified = True
-                                if modified and self.notification_plugin:
+                                    get_modification(modification, self.core).modify(records['data'][0])
+                                if self.notification_plugin:
                                     records['data'][0]['notification_from'] = notification_from
                                     self.notification_plugin.process(records['data'][0])
                             except Exception as e:
