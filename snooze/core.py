@@ -7,6 +7,8 @@
 
 '''Module for managing the snooze server core'''
 
+import traceback
+import sys
 from random import random
 from datetime import datetime
 from time import sleep
@@ -132,11 +134,13 @@ class Core:
                 except Abort_and_update as e:
                     data = self.db.write('record', e.record or record, update_time=False, duplicate_policy='replace')
                     break
-                except Exception as e:
-                    log.exception(e)
+                except Exception as err:
+                    log.exception(err)
                     record['exception'] = {
                         'core_plugin': plugin.name,
-                        'message': str(e)
+                        'error_class': err.__class__.__name__,
+                        'message': str(err),
+                        'traceback': traceback.format_exception(*sys.exc_info()),
                     }
                     data = self.db.write('record', record, duplicate_policy='replace')
                     break
