@@ -28,6 +28,7 @@
         <Mail :smtp="row.item.smtp" v-if="!!row.item.smtp" class="pb-2"/>
         <Grafana :data="row.item" v-if="!!row.item.image_url" class="pb-2"/>
         <Prometheus :data="row.item.prometheus" v-if="!!row.item.prometheus" class="pb-2"/>
+        <Error :data="row.item.exception" v-if="!!row.item.exception" class="pb-2"/>
       </template>
       <template #details_side="row">
         <Timeline :record="row.item" ref="timeline" v-if="row.item['comment_count']" />
@@ -98,12 +99,14 @@ import { add_items, update_items } from '@/utils/api'
 import Timeline from '@/components/Timeline.vue'
 import Modification from '@/components/form/Modification.vue'
 
+import Error from '@/components/info/Error.vue'
 import Mail from '@/components/info/Mail.vue'
 import Grafana from '@/components/info/Grafana.vue'
 import Prometheus from '@/components/info/Prometheus.vue'
 
 export default {
   components: {
+    Error,
     List,
     Timeline,
     Modification,
