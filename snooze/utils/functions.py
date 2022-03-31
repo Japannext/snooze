@@ -5,7 +5,8 @@
 # SPDX-License-Identifier: AFL-3.0
 #
 
-#!/usr/bin/python3.6
+'''A module with some utils functions'''
+
 import os
 import hashlib
 from pathlib import Path
@@ -23,7 +24,7 @@ def dig(dic, *lst):
                 return dig(dic[int(lst[0])], *lst[1:])
             else:
                 return dig(dic[lst[0]], *lst[1:])
-        except:
+        except Exception:
             return None
     else:
         return dic
@@ -48,23 +49,28 @@ def ensure_kv(dic, value, *lst):
                 else:
                     element[key] = {}
             element = element[key]
-        except:
+        except Exception:
             return dic
     return dic
 
-def sanitize(d, str_from = '.', str_to = '_'):
-    new_d = {}
-    if isinstance(d, dict):
-        for k, v in d.items():
-            new_d[k.replace(str_from, str_to)] = sanitize(v)
-        return new_d
+def sanitize(dic, str_from='.', str_to='_'):
+    '''Sanitize a dict object keys to avoid issues with MongoDB
+    (since MongoDB interpret dots)'''
+    new_dic = {}
+    if isinstance(dic, dict):
+        for key, value in dic.items():
+            new_dic[key.replace(str_from, str_to)] = sanitize(value)
+        return new_dic
     else:
-        return d
+        return dic
 
-flatten = lambda x: [z for y in x for z in (flatten(y) if hasattr(y, '__iter__') and not isinstance(y, str) else (y,))]
+def flatten(lst):
+    '''Flatten a nested list'''
+    return [z for y in lst for z in (flatten(y) if hasattr(y, '__iter__') and not isinstance(y, str) else (y,))]
 
-def to_tuple(l):
-    return tuple(to_tuple(x) for x in l) if type(l) is list else l
+def to_tuple(lst):
+    '''Transform a nested list into a nested tuple'''
+    return tuple(to_tuple(x) for x in lst) if isinstance(lst, list) else lst
 
 CA_BUNDLE_PATHS = [
     '/etc/ssl/certs/ca-certificates.crt', # Debian / Ubuntu / Gentoo
@@ -87,6 +93,8 @@ def ca_bundle():
                 return ca_path
 
 def ensure_hash(record):
+    '''Given a record with a 'raw' key, compute the hash of the
+    record if not present, and append it to the record'''
     if not 'hash' in record:
         if 'raw' in record:
             record['hash'] = hashlib.md5(record['raw']).hexdigest()

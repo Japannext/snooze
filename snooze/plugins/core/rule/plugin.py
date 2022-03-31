@@ -5,17 +5,19 @@
 # SPDX-License-Identifier: AFL-3.0
 #
 
-#!/usr/bin/python3.6
+'''A plugin for defining rules to apply modifications on records matching the
+rule's condition'''
+
+from logging import getLogger
 
 from snooze.plugins.core import Plugin
 from snooze.utils.condition import get_condition, validate_condition
 from snooze.utils.modification import get_modification, validate_modification
 
-import logging
-from logging import getLogger
 LOG = getLogger('snooze.process')
 
 class Rule(Plugin):
+    '''The rule plugin main class'''
     def process(self, record):
         """
         Process the record against a list of rules
@@ -32,15 +34,16 @@ class Rule(Plugin):
         validate_modification(obj, self.core)
 
     def process_rules(self, record, rules):
-        LOG.debug("Processing record {} against rules".format(str(record.get('hash', ''))))
+        '''Process a list of rules'''
+        LOG.debug("Processing record %s against rules", record.get('hash', ''))
         for rule in rules:
             if rule.enabled and rule.match(record):
-                LOG.debug("Rule {} matched record: {}".format(str(rule.name), str(record.get('hash', ''))))
+                LOG.debug("Rule %s matched record: %s", rule.name, record.get('hash', ''))
                 rule.modify(record)
                 self.process_rules(record, rule.children)
 
     def reload_data(self, sync = False):
-        LOG.debug("Reloading data for plugin {}".format(self.name))
+        LOG.debug("Reloading data for plugin %s", self.name)
         self.data = self.db.search('rule', ['NOT', ['EXISTS', 'parent']], orderby='name')['data']
         rules = []
         for rule in (self.data or []):
@@ -49,29 +52,29 @@ class Rule(Plugin):
         if sync and self.core.cluster:
             self.core.cluster.reload_plugin(self.name)
 
-class RuleObject():
+class RuleObject:
+    '''An object representing the rule object in the database'''
     def __init__(self, rule, core = None):
         self.enabled = rule.get('enabled', True)
         self.name = rule['name']
-        LOG.debug("Creating rule: {}".format(str(self.name)))
+        LOG.debug("Creating rule: %s", self.name)
         self.condition = get_condition(rule.get('condition'))
-        LOG.debug("-> condition: {}".format(str(self.condition)))
+        LOG.debug("-> condition: %s", self.condition)
         self.modifications = []
         for modification in (rule.get('modifications') or []):
-            LOG.debug("-> modification: {}".format(str(modification)))
+            LOG.debug("-> modification: %s", modification)
             self.modifications.append(get_modification(modification, core=core))
-        LOG.debug("Searching children of rule {}".format(str(self.name)))
+        LOG.debug("Searching children of rule %s", self.name)
         self.children = []
         if core and core.db:
             db = core.db
             children = db.search('rule', ['=', 'parent', rule['uid']], orderby='name')['data']
             for child_rule in children:
-                LOG.debug("Found child {} of rule {}".format(child_rule['name'], str(self.name)))
+                LOG.debug("Found child %s of rule %s", child_rule['name'], self.name)
                 self.children.append(RuleObject(child_rule, core))
 
     def match(self, record):
-        """
-        Check if a record matched this rule's condition
+        """Check if a record matched this rule's condition
 
         Args:
             record (dict)
@@ -88,8 +91,7 @@ class RuleObject():
         return match
 
     def modify(self, record):
-        """
-        Modify the record based of this rule's modifications
+        """Modify the record based of this rule's modifications
 
         Args:
             record (dict)
@@ -104,9 +106,9 @@ class RuleObject():
                 modified = True
                 modifs.append(modification)
         if modified:
-            LOG.debug("Record {} has been modified: {}".format(str(record.get('hash', '')), str([m.pprint() for m in modifs])))
+            LOG.debug("Record %s has been modified: %s", record.get('hash', ''), [m.pprint() for m in modifs])
         else:
-            LOG.debug("Record {} has not been modified".format(str(record.get('hash', ''))))
+            LOG.debug("Record %s has not been modified", record.get('hash', ''))
         return modified
 
     def __repr__(self):
