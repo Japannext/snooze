@@ -148,7 +148,7 @@ class Core:
         source = record.get('source', 'unknown')
         environment = record.get('environment', 'unknown')
         severity = record.get('severity', 'unknown')
-        record['ttl'] = self.threads['housekeeper'].conf.get('record_ttl', 86400)
+        record['ttl'] = self.threads['housekeeper'].config.get('record_ttl', 86400)
         if severity.casefold() in self.ok_severities:
             record['state'] = 'close'
         else:

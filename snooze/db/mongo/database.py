@@ -59,6 +59,7 @@ class BackendDB(Database):
         self.search_fields[collection] = fields
 
     def cleanup_timeout(self, collection: str) -> int:
+        log.debug("Running cleanup_timeout on collection %s", collection)
         now = datetime.datetime.now().timestamp()
         pipeline = [
             #{"$project":{ 'date_epoch':1, 'ttl':{ "$ifNull": ["$ttl", 0] }}},
@@ -114,6 +115,7 @@ class BackendDB(Database):
             log.debug('Removed %d documents in %s', deleted_results.deleted_count, collection)
             return deleted_results.deleted_count
         else:
+            log.debug('No document to delete found')
             return 0
 
     def write(self, collection:str, obj:Union[List[dict], dict], primary:Optional[str]=None, duplicate_policy:str='update', update_time:bool=True, constant:Optional[str]=None) -> dict:
