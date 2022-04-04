@@ -109,7 +109,7 @@ class TestApi4:
         result = client.simulate_get('/api/record/[]/0/1/a/true').json
         assert result and result['data'][0].items() >= {'a': '0', 'b': '3'}.items()
     def test_search_record_sort_2(self, client):
-        result = client.simulate_get('/api/record', query_string='orderby=b&asc=false').json
+        result = client.simulate_get('/api/record', query_string='order_by=b&asc=false').json
         assert result and result['data'][0].items() >= {'a': '0', 'b': '3'}.items()
 
 class TestApiAlert:
