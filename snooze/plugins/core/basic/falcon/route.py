@@ -35,10 +35,13 @@ class Route(FalconRoute):
             s = req.params.get('s') or search
         else:
             s = search
-        perpage = req.params.get('perpage', nb_per_page)
-        pagenb = req.params.get('pagenb', page_number)
-        orderby = req.params.get('orderby', order_by)
-        ascending = req.params.get('asc', asc)
+        asc_str = req.params.get('asc') or asc
+        pagination = {
+            'nb_per_page': int(req.params.get('perpage') or nb_per_page),
+            'page_number': int(req.params.get('pagenb') or page_number),
+            'orderby': req.params.get('order_by') or order_by,
+            'asc': asc_str.lower() == 'true',
+        }
         try:
             cond_or_uid = bson.json_util.loads(unquote(s))
         except Exception:
@@ -51,9 +54,7 @@ class Route(FalconRoute):
             else:
                 cond_or_uid = ql
         log.debug("Trying search %s", cond_or_uid)
-        asc = (ascending.lower() == 'true')
-        result_dict = self.search(self.plugin.name, cond_or_uid,
-            int(perpage), int(pagenb), orderby, asc)
+        result_dict = self.search(self.plugin.name, cond_or_uid, **pagination)
         resp.content_type = falcon.MEDIA_JSON
         if result_dict:
             resp.media = result_dict
