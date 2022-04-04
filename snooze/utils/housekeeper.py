@@ -16,7 +16,7 @@ from snooze.utils import config
 
 log = getLogger('snooze.housekeeping')
 
-class Housekeeper():
+class Housekeeper:
     '''Main class starting the housekeeping thread in the background'''
     def __init__(self, core: 'Core'):
         log.debug('Init Housekeeper')

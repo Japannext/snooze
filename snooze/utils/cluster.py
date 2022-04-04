@@ -5,8 +5,6 @@
 # SPDX-License-Identifier: AFL-3.0
 #
 
-#!/usr/bin/python3.6
-
 '''A module for managing the snooze cluster, which is used for sharing configuration
 file updates accross the cluster.'''
 

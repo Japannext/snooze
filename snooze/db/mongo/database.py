@@ -10,13 +10,13 @@
 import datetime
 import os
 import re
+import uuid
 from copy import deepcopy
 from pathlib import Path
 from logging import getLogger
 from typing import List, Optional, Union
 
 import pymongo
-import uuid
 from bson.code import Code
 from bson.json_util import dumps
 
@@ -102,8 +102,10 @@ class BackendDB(Database):
             self.db['audit'].delete_many({'object_id': {'$in': ids}})
 
     def run_pipeline(self, collection: str, pipeline: List[dict]) -> int:
+        '''Execute a filter pipeline on a collection, and delete the resulting objects.
+        Return the number of deleted objects'''
         aggregate_results = self.db[collection].aggregate(pipeline)
-        ids = list(map(lambda doc: doc['_id'], aggregate_results))
+        ids = [doc['_id'] for doc in aggregate_results]
         if ids:
             deleted_results = self.db[collection].delete_many({'_id': {"$in": ids}})
             log.debug('Removed %d documents in %s', deleted_results.deleted_count, collection)
@@ -300,29 +302,30 @@ class BackendDB(Database):
             else:
                 results = self.db[collection].delete_many(mongo_search)
                 results_count = results.deleted_count
-                log.debug("Found %d item(s) to delete in collection %s for search %s", results_count, collection, mongo_search)
+                log.debug("Found %d item(s) to delete in collection %s for search %s",
+                    results_count, collection, mongo_search)
             return {'data': [], 'count': results_count}
         else:
             log.error("Cannot find collection %s", collection)
             return {'data': 0}
 
-    def compute_stats(self, collection, date_from, date_until, groupby='hour'):
-        log.debug("Compute metrics on `%s` from %s until %s grouped by %s", collection, date_from, date_until, groupby)
+    def compute_stats(self, collection: str, date_from: datetime, date_until: datetime, group_by:str='hour'):
+        log.debug("Compute metrics on `%s` from %s until %s grouped by %s", collection, date_from, date_until, group_by)
         date_from = date_from.replace(minute=0, second=0, microsecond=0)
         if collection not in self.db.collection_names():
             log.debug("Compute stats: collection %s does not exist", collection)
             return {'data': [], 'count': 0}
-        if groupby == 'hour':
+        if group_by == 'hour':
             date_format = '%Y-%m-%dT%H:00%z'
-        elif groupby == 'day':
+        elif group_by == 'day':
             date_format = '%Y-%m-%dT00:00%z'
-        elif groupby == 'month':
+        elif group_by == 'month':
             date_format = '%Y-%m-01T00:00%z'
-        elif groupby == 'year':
+        elif group_by == 'year':
             date_format = '%Y-01-01T00:00%z'
-        elif groupby == 'week':
+        elif group_by == 'week':
             date_format = '%Y-%VT00:00%z'
-        elif groupby == 'weekday':
+        elif group_by == 'weekday':
             date_format = '%u'
         else:
             date_format = '%Y-%m-%dT%H:00%z'

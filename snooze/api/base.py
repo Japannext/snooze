@@ -58,9 +58,9 @@ class BasicRoute:
         '''Wrapping the delete of an object by condition or uid'''
         if cond_or_uid is None:
             cond_or_uid = []
-        if type(cond_or_uid) is list:
+        if isinstance(cond_or_uid, list):
             return self.core.db.delete(collection, cond_or_uid)
-        elif type(cond_or_uid) is str:
+        elif isinstance(cond_or_uid, str):
             return self.core.db.delete(collection, ['=', 'uid', cond_or_uid])
         else:
             return None
@@ -73,10 +73,11 @@ class BasicRoute:
         '''Wrapping the update of an existing object'''
         return self.core.db.write(collection, record, self.primary, constant = self.check_constant)
 
-        if name and method:
-            log.debug("Getting roles for user %s (%s)", name, method)
-            user_search = self.core.db.search('user', ['AND', ['=', 'name', name], ['=', 'method', method]])
     def get_roles(self, username: str, method: str) -> List[str]:
+        '''Get the authorization roles for a user/auth method pair'''
+        if username and method:
+            log.debug("Getting roles for user %s (%s)", username, method)
+            user_search = self.core.db.search('user', ['AND', ['=', 'name', username], ['=', 'method', method]])
             if user_search['count'] > 0:
                 user = user_search['data'][0]
                 log.debug("User found in database: %s", user)
@@ -89,6 +90,7 @@ class BasicRoute:
             return []
 
     def get_permissions(self, roles: List[str]) -> List[str]:
+        '''Return the permissions for a given list of roles'''
         if isinstance(roles, list) and len(roles) > 0:
             log.debug("Getting permissions for roles %s", roles)
             query = ['=', 'name', roles[0]]

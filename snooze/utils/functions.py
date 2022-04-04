@@ -79,14 +79,16 @@ CA_BUNDLE_PATHS = [
 
 def ca_bundle() -> Optional[str]:
     '''Returns Linux CA bundle path'''
-    if os.environ.get('SSL_CERT_FILE'):
-        return os.environ.get('SSL_CERT_FILE')
-    elif os.environ.get('REQUESTS_CA_BUNDLE'):
-        return os.environ.get('REQUESTS_CA_BUNDLE')
-    else:
-        for ca_path in CA_BUNDLE_PATHS:
-            if Path(ca_path).exists():
-                return ca_path
+    ssl_cert_file = os.environ.get('SSL_CERT_FILE')
+    requests_ca_bundle = os.environ.get('REQUESTS_CA_BUNDLE')
+    if ssl_cert_file is not None:
+        return ssl_cert_file
+    if requests_ca_bundle is not None:
+        return requests_ca_bundle
+    for ca_path in CA_BUNDLE_PATHS:
+        if Path(ca_path).exists():
+            return ca_path
+    return None
 
 def ensure_hash(record: Record):
     '''Given a record with a 'raw' key, compute the hash of the

@@ -18,42 +18,6 @@ from snooze.utils.typing import Record, Rule as RuleType
 
 LOG = getLogger('snooze.process')
 
-class Rule(Plugin):
-    '''The rule plugin main class'''
-    def process(self, record):
-        """
-        Process the record against a list of rules
-
-        Args:
-            record (dict)
-        """
-        self.process_rules(record, self.rules)
-        return record
-
-    def validate(self, obj):
-        '''Validate a rule object'''
-        validate_condition(obj)
-        validate_modification(obj, self.core)
-
-    def process_rules(self, record, rules):
-        '''Process a list of rules'''
-        LOG.debug("Processing record %s against rules", record.get('hash', ''))
-        for rule in rules:
-            if rule.enabled and rule.match(record):
-                LOG.debug("Rule %s matched record: %s", rule.name, record.get('hash', ''))
-                rule.modify(record)
-                self.process_rules(record, rule.children)
-
-    def reload_data(self, sync = False):
-        LOG.debug("Reloading data for plugin %s", self.name)
-        self.data = self.db.search('rule', ['NOT', ['EXISTS', 'parent']], orderby='name')['data']
-        rules = []
-        for rule in (self.data or []):
-            rules.append(RuleObject(rule, self.core))
-        self.rules = rules
-        if sync and self.core.cluster:
-            self.core.cluster.reload_plugin(self.name)
-
 class RuleObject:
     '''An object representing the rule object in the database'''
     def __init__(self, rule: RuleType, core: 'Core' = None):
@@ -101,3 +65,34 @@ class RuleObject:
 
     def __repr__(self):
         return self.name
+
+class Rule(Plugin):
+    '''The rule plugin main class'''
+    def process(self, record: Record) -> Record:
+        '''Process the record against a list of rules'''
+        self.process_rules(record, self.rules)
+        return record
+
+    def validate(self, obj: dict):
+        '''Validate a rule object'''
+        validate_condition(obj)
+        validate_modification(obj, self.core)
+
+    def process_rules(self, record: Record, rules: List[RuleObject]):
+        '''Process a list of rules'''
+        LOG.debug("Processing record %s against rules", record.get('hash', ''))
+        for rule in rules:
+            if rule.enabled and rule.match(record):
+                LOG.debug("Rule %s matched record: %s", rule.name, record.get('hash', ''))
+                rule.modify(record)
+                self.process_rules(record, rule.children)
+
+    def reload_data(self, sync: bool = False):
+        LOG.debug("Reloading data for plugin %s", self.name)
+        self.data = self.db.search('rule', ['NOT', ['EXISTS', 'parent']], orderby='name')['data']
+        rules = []
+        for rule in (self.data or []):
+            rules.append(RuleObject(rule, self.core))
+        self.rules = rules
+        if sync and self.core.cluster:
+            self.core.cluster.reload_plugin(self.name)

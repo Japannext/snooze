@@ -33,6 +33,14 @@ def get_record_date(record: Record) -> datetime:
         record_date = datetime.now().astimezone()
     return record_date
 
+class Constraint(ABC):
+    '''A base class for time constraints'''
+    @abstractmethod
+    def match(self, _record_date: datetime) -> bool:
+        '''Method to fill when inheriting this class'''
+    def __str__(self):
+        return "AbstractTimeConstraint"
+
 def init_time_constraints(time_constraints) -> Constraint:
     '''Return a time constraint object from a list of time constraints'''
     constraints = []
@@ -56,14 +64,6 @@ def init_time_constraints(time_constraints) -> Constraint:
         except Exception as err:
             log.exception(err)
     return MultiConstraint(*constraints)
-
-class Constraint(ABC):
-    '''A base class for time constraints'''
-    @abstractmethod
-    def match(self, _record_date):
-        '''Method to fill when inheriting this class'''
-    def __str__(self):
-        return "AbstractTimeConstraint"
 
 class MultiConstraint(Constraint):
     '''An object representing the union of several time constraints'''

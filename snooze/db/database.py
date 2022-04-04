@@ -30,7 +30,7 @@ class Database:
         config = conf.copy()
         db_type = config.pop('type', 'file')
         if 'DATABASE_URL' in os.environ:
-            scheme = urlparse(os.environ.get('DATABASE_URL')).scheme
+            scheme = str(urlparse(os.environ.get('DATABASE_URL')).scheme)
             if scheme.startswith('mongodb'):
                 db_type = 'mongo'
         cls = import_module(f"snooze.db.{db_type}.database")

@@ -9,6 +9,7 @@ import sys
 import os
 from logging import getLogger
 from os.path import dirname, join as joindir
+from abc import abstractmethod
 
 import yaml
 
@@ -31,9 +32,9 @@ class Plugin:
         self.metadata_file = {}
         try:
             log.debug("Attempting to read metadata at %s for %s module", metadata_path, self.name)
-            with open(metadata_path, 'r') as metadata_file:
-                self.metadata_file = yaml.load(metadata_file.read())
-        except Exception as err:
+            with open(metadata_path, 'r', encoding='utf-8') as metadata_file:
+                self.metadata_file = yaml.safe_load(metadata_file.read())
+        except (OSError, yaml.YAMLError) as err:
             log.debug("Skipping. Cannot read metadata.yaml due to: %s", err)
         self.permissions = self.metadata_file.get('provides', [])
         default_routeclass = self.metadata_file.get('class', 'Route')
@@ -123,15 +124,18 @@ class Plugin:
             self.data = self.db.search(self.name, **pagination)['data']
 
     def process(self, record: Record) -> Record:
+        '''Process a record if it's a process plugin'''
         return record
 
     def get_metadata(self) -> dict:
+        '''Returned the metadata of the plugin (from the parsed yaml file)'''
         return self.metadata
 
     def pprint(self, options: dict = {}) -> str:
         return self.name
 
     def get_icon(self) -> str:
+        '''Return the icon of the plugin, for web interface usage'''
         return self.metadata_file.get('icon', 'question-circle')
 
     def get_options(self, key: str = '') -> dict:
@@ -140,8 +144,9 @@ class Plugin:
             options = options.get(key, {})
         return options
 
-    def send(self, record, content):
-        pass
+    @abstractmethod
+    def send(self, record: Record, content):
+        '''Method called for action plugin'''
 
 class Abort(Exception):
     '''Abort the processing for a record'''
