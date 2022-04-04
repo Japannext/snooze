@@ -298,9 +298,9 @@ class ClusterRoute(BasicRoute):
     def on_get(self, req, resp):
         log.debug("Listing cluster members")
         if req.params.get('self', False):
-            members = self.api.core.cluster.get_self()
+            members = [self.api.core.cluster.status()]
         else:
-            members = self.api.core.cluster.get_members()
+            members = self.api.core.cluster.members_status()
         resp.content_type = falcon.MEDIA_JSON
         resp.status = falcon.HTTP_200
         resp.media = {
