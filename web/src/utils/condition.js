@@ -29,15 +29,22 @@ export const OPERATION_SYMBOL = {
   'NOT': '!',
 }
 
+// Class representing a condition
 export class ConditionObject {
+  /** Create a condition
+   * @param {string} op The condition operator
+   * @param {string[]} args The arguments passed to the condition operator
+  **/
   constructor(op, args) {
-    //console.log(`ConditionObject(${op}, ${args})`)
     this.id = uuid.v4()
     this.args = args
     this.operation = op
   }
+  /** Create a condition from a nested array
+   * @param array A nested array representing a condition
+   * @returns {ConditionObject}
+  **/
   static fromArray(array) {
-    //console.log(`ConditionObject.fromArray(${array})`)
     if (array === undefined) {
       return new ConditionObject('', [])
     }
@@ -47,10 +54,7 @@ export class ConditionObject {
     } else {
       var args =  array.slice(1)
     }
-    //console.log(`Operation: ${operation}`)
-    //console.log(`Args: ${args}`)
     var c = new ConditionObject(operation, args)
-    //console.log(`ConditionObject.fromArray: ${c}`)
     return c
   }
   get type() {
@@ -68,6 +72,9 @@ export class ConditionObject {
     }
     return json
   }
+  /** An array representation of the condition
+   * @returns
+  **/
   toArray() {
     if (this.type == 'logic' || this.type == 'not') {
       return [this.operation].concat(this.args.map(arg => arg.toArray()))
@@ -75,6 +82,9 @@ export class ConditionObject {
       return [this.operation].concat(this.args)
     }
   }
+  /** Return a query language representation of the condition.
+   * @returns {string} A query language representation of the condition
+  **/
   toSearch() {
     switch(this.type) {
       case 'logic':
@@ -91,6 +101,9 @@ export class ConditionObject {
         return `Invalid condition`
     }
   }
+  /** Returns an HTML representation of the condition.
+   * @returns {string}
+  **/
   toHTML() {
     switch(this.type) {
       case 'logic':
@@ -107,10 +120,17 @@ export class ConditionObject {
         return `<b>Invalid Condition</b>`
     }
   }
+  /** Combine two valid condition with an operation (AND, OR)
+   * @param {(AND|OR)} operator The logic operator to use to combine
+   * @param {ConditionObject} other The other condition to combine with
+   * @returns {ConditionObject} The result of the combination
+  **/
   combine(operator, other) {
-    //console.log(`ConditionObject.combine(${operator}, ${other})`)
     return new ConditionObject(operator, [this, other])
   }
+  /** A string representation of the condition (a JSON stringify view). Used for debug logs.
+   * @returns {string}
+  **/
   toString() {
     return JSON.stringify(this.toJSON())
   }
