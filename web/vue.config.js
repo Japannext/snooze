@@ -1,8 +1,4 @@
-module.exports = {
-  lintOnSave: false,
-  runtimeCompiler: true,
-  publicPath: '/web',
-  devServer: {
-    port: 8082
-  }
-}
+const { defineConfig } = require('@vue/cli-service')
+module.exports = defineConfig({
+  transpileDependencies: true,
+})
