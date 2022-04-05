@@ -134,15 +134,16 @@ class FalconRoute(BasicRoute):
 
 def merge_batch_results(rec_list):
     '''Merge the results (added/rejected/...) in the case of a batch'''
-    return {'data': functools.reduce(lambda a, b: {k: a.get('data', {}).get(k, []) + b.get('data', {}).get(k, []) for k in list(dict.fromkeys(list(a.get('data', {}).keys()) + list(b.get('data', {})      .keys())))}, rec_list)}
+    return {'data': functools.reduce(lambda a, b: {k: a.get('data', {}).get(k, []) + b.get('data', {}).get(k, []) for k in list(dict.fromkeys(list(a.get('data', {}).keys()) + list(b.get('data', {}).keys())))}, rec_list)}
 
 class WebhookRoute(FalconRoute):
     auth = {
         'auth_disabled': True
     }
 
+    @abstractmethod
     def parse_webhook(self, req, media):
-        return req_media
+        pass
 
     def on_post(self, req, resp):
         log.debug("Received webhook log %s", req.media)
