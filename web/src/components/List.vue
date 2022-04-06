@@ -316,6 +316,7 @@
 <script>
 import dig from 'object-dig'
 import moment from 'moment'
+import yaml from 'js-yaml'
 import { API } from '@/api'
 import { get_data, pp_countdown, countdown, preprocess_data, delete_items, truncate_message, to_clipboard, capitalizeFirstLetter } from '@/utils/api'
 import { join_queries } from '@/utils/query'
@@ -330,7 +331,6 @@ import Info from '@/components/Info.vue'
 import ColorBadge from '@/components/ColorBadge.vue'
 import SDataTable from '@/components/SDataTable.vue'
 import SPagination from '@/components/SPagination.vue'
-const yaml = require('js-yaml')
 
 // Create a table representing an API endpoint.
 export default {
