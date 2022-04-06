@@ -1,7 +1,7 @@
 import { default as axios, AxiosInstance, AxiosRequestConfig } from 'axios'
 import { ConditionObject } from '@/utils/condition'
 
-import {DatabaseItem} from '@/utils/types'
+import { DatabaseItem, ChangeResult, Result, Query, RejectedItem, PaginationOptions } from '@/utils/types'
 
 function tokenInterceptor(config: AxiosRequestConfig) {
   const token = localStorage.getItem('snooze-token')
@@ -32,7 +32,7 @@ class Endpoint {
     this.url = `/${collection}`
   }
 
-  insert_one(item: object): Promise<databaseItem> {
+  insert_one(item: object): Promise<DatabaseItem> {
     return this.insert_many([item])
     .then(changeResult => {
       if (changeResult.added && changeResult.added.length > 0) {
@@ -56,7 +56,7 @@ class Endpoint {
     .catch(errorHandler)
   }
 
-  find(query: Query, options: PaginationOptions): Promise<databaseItem[]> {
+  find(query: Query, options: PaginationOptions = {}): Promise<DatabaseItem[]> {
     const params = {
       s: query,
       ...options,
@@ -64,7 +64,7 @@ class Endpoint {
     //log.info(`GET ${this.url}`, params)
     return this.axios.get(this.url, {params: params})
     .then(response => {
-      const result: Result<databaseItem[]> = response.data
+      const result: Result<DatabaseItem[]> = response.data
       const data = result.data
       //log.info('results', data)
       return data
@@ -72,7 +72,7 @@ class Endpoint {
     .catch(errorHandler)
   }
 
-  update_one(item: databaseItem): Promise<databaseItem> {
+  update_one(item: DatabaseItem): Promise<DatabaseItem> {
     return this.update_many([item])
     .then(changeResult => {
       if (changeResult.updated && changeResult.updated.length > 0) {
@@ -87,7 +87,7 @@ class Endpoint {
     .catch(errorHandler)
   }
 
-  update_many(items: databaseItem[]): Promise<ChangeResult> {
+  update_many(items: DatabaseItem[]): Promise<ChangeResult> {
     const itemsToUpdate = items.map(item => filterObject(item))
     return this.axios.put(this.url, itemsToUpdate)
     .then(response => {
@@ -105,7 +105,7 @@ class Endpoint {
     }
     this.axios.delete(this.url, {params: params})
     .then(response => {
-      const result: Result<databaseItem[]> = response.data
+      const result: Result<DatabaseItem[]> = response.data
       if (result.count != uids.length) {
         throw `Deleted an unexpected number of items: ${result.count} instead of ${uids.length}`
       }

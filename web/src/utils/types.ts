@@ -1,6 +1,6 @@
 
-type QueryElement = string | Query[]
-type Query = Array<QueryElement>
+export type QueryElement = string | Query[]
+export type Query = Array<QueryElement>
 
 export interface PaginationOptions {
   perpage?: number

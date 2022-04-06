@@ -33,7 +33,7 @@ export const OPERATION_SYMBOL = {
 export class ConditionObject {
   /** Create a condition
    * @param {string} op The condition operator
-   * @param {string[]} args The arguments passed to the condition operator
+   * @param {string[]|ConditionObject[]} args The arguments passed to the condition operator
   **/
   constructor(op, args) {
     this.id = uuid.v4()
@@ -125,8 +125,8 @@ export class ConditionObject {
    * @param {ConditionObject} other The other condition to combine with
    * @returns {ConditionObject} The result of the combination
   **/
-  combine(operator, other) {
-    return new ConditionObject(operator, [this, other])
+  combine(operator, others) {
+    return new ConditionObject(operator, [this].concat(others))
   }
   /** A string representation of the condition (a JSON stringify view). Used for debug logs.
    * @returns {string}
@@ -134,4 +134,5 @@ export class ConditionObject {
   toString() {
     return JSON.stringify(this.toJSON())
   }
+
 }
