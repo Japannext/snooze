@@ -191,40 +191,6 @@ export function countdown(secs) {
   }
 }
 
-export function trimDate(date, show_secs) {
-  if (!date) {
-    return 'Empty'
-  }
-  var mDate = moment(date)
-  var newDate = ''
-  var now = moment()
-  var hours_only = false
-  if (!mDate.isValid()) {
-    mDate = moment(date, ['HH:mm'])
-    hours_only = true
-  }
-  if (mDate.year() == now.year()) {
-    if (mDate.format('MM-DD') == now.format('MM-DD')) {
-      if (hours_only) {
-        newDate = mDate.format('HH:mm')
-      } else if (show_secs) {
-        newDate = 'Today' + ' ' + mDate.format('HH:mm:ss')
-      } else {
-        newDate = 'Today' + ' ' + mDate.format('HH:mm')
-      }
-    } else {
-      if (show_secs) {
-        newDate = mDate.format('MMM Do HH:mm:ss')
-      } else {
-        newDate = mDate.format('MMM Do HH:mm')
-      }
-    }
-  } else {
-    newDate = mDate.format('MMM Do YYYY')
-  }
-  return newDate
-}
-
 export function get_weekday(nb) {
   switch(nb) {
     case 0:
