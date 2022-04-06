@@ -1,4 +1,4 @@
-const deepmerge = require('deepmerge')
+const merge = require('deepmerge')
 const defaultPreset = require('@vue/cli-plugin-unit-jest/presets/typescript-and-babel/jest-preset')
 
 const yamlPreset = {
@@ -6,20 +6,12 @@ const yamlPreset = {
   moduleFileExtensions: ["yaml"],
 }
 
-const config = {
-  //transformIgnorePatterns: [
-  //],
-  global: {
-    config: {
-      compilerOptions: {
-        isCustomElement: tag => tag.startsWith('c'),
-      }
-    }
-  }
+const customConfig = {
 }
 
-module.exports = deepmerge(
-  defaultPreset,
-  yamlPreset,
-  config,
-)
+let config = merge.all([defaultPreset, yamlPreset, customConfig])
+config.transformIgnorePatterns = [
+  '/node_modules/(?!v-code-diff).+\\.js$',
+]
+
+module.exports = config

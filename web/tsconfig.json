@@ -24,6 +24,18 @@
         "src/*"
       ]
     },
+    "plugins": [
+      {
+        "transform": "typescript-is/lib/transform-inline/transformer",
+        "shortCircuit": true,
+        "ignoreClasses": true,
+        "ignoreMethods": true,
+        "functionBehavior": "ignore",
+        "disallowSuperfluousObjectProperties": true,
+        "transformNonNullExpressions": true,
+        "emitDetailedErrors": "auto"
+      }
+    ],
     "lib": [
       "esnext",
       "dom",
