@@ -1,23 +1,20 @@
 <template>
-  <span
-    style="white-space:pre"
-  >{{ trimDate(date, show_secs) }}</span>
+  <span style="white-space:pre">
+    {{ prettyDate(date, showSeconds) }}
+  </span>
 </template>
 
-<script>
-import { trimDate } from '@/utils/api'
+<script lang="ts">
+import { defineComponent } from 'vue'
+import { prettyDate } from '@/utils/functions'
 
-export default {
+export default defineComponent({
   props: {
-    date: {type: String},
-    show_secs: {type: Boolean, default: () => false},
-  },
-  data () {
-    return {
-      trimDate: trimDate,
-    }
+    date: {type: String, required: true},
+    showSeconds: {type: Boolean, default: false},
   },
   methods: {
+    prettyDate,
   },
-}
+})
 </script>

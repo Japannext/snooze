@@ -25,7 +25,7 @@
         <CRow class="text-center">
           <CCol class="mb-sm-2 mb-0" v-for="(source, key) in datasource" :key="source.label">
             <div><CBadge class="pointer" color="secondary" :style="source.hidden ? '' : gen_color(source.color)" @click="toggle(key)">{{ source.label }}</CBadge></div>
-            <strong>{{ pp_number(data[key]) }} ({{ Math.round(100*(data[key] || 0)/(data[data_ref] || 1)) }}%)</strong>
+            <strong>{{ prettyNumber(data[key]) }} ({{ Math.round(100*(data[key] || 0)/(data[data_ref] || 1)) }}%)</strong>
             <div class="progress-xs mt-2 progress">
               <div class="progress-bar progress-bar-striped progress-bar-animated"
                 role="progressbar" aria-valuemin="0" aria-valuemax="100"
@@ -171,7 +171,7 @@ import ChartBar from '@/components/ChartBar.vue'
 import SDataTable from '@/components/SDataTable.vue'
 import DateTime from '@/components/form/DateTime.vue'
 import moment from 'moment'
-import { get_data, pp_number, trimDate, get_alert_icon, get_alert_color, get_alert_tooltip, truncate_message } from '@/utils/api'
+import { get_data, prettyNumber, prettyDate, get_alert_icon, get_alert_color, get_alert_tooltip, truncate_message } from '@/utils/api'
 import { hexToRgba, theme_colors, gen_color } from '@/utils/colors'
 import { API } from '@/api'
 
@@ -209,7 +209,7 @@ export default {
       get_alert_tooltip: get_alert_tooltip,
       hexToRgba: hexToRgba,
       theme_colors: theme_colors,
-      pp_number: pp_number,
+      prettyNumber: pp_number,
       data_ref: 'alert_hit__source',
       split_data: ['alert_hit__source__', 'alert_hit__environment__', 'notification_sent__name__', 'action_success__name__', 'action_error__name__', 'alert_throttled__name__', 'alert_snoozed__name__'],
       datasource: {
@@ -414,7 +414,7 @@ export default {
             type: comment.type,
             user: { name: comment.name, method: comment.method, last_login: 'Unknown' },
             message: comment.message,
-            date: trimDate(comment.date),
+            date: prettyDate(comment.date),
             record_uid: comment.record_uid,
             host: '',
             alert: '',
@@ -441,7 +441,7 @@ export default {
           response.data.data.forEach(u => {
             if (row.user.name == u.name && row.user.method == u.method) {
               if (u.last_login) {
-                row.user.last_login = trimDate(u.last_login)
+                row.user.last_login = prettyDate(u.last_login)
               }
               if (u.display_name) {
                 row.user.name =  u.display_name

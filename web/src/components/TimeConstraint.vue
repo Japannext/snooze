@@ -11,12 +11,12 @@
         :key="ctype+'_'+index"
       >
         <div v-if="ctype == 'datetime'" class="d-flex align-items-center mb-1">
-          <CBadge style="font-size: 0.875rem;" color="info">{{ trimDate(date_obj.from, false) }}</CBadge>
-          <i class="la la-arrow-right la-lg"></i><CBadge style="font-size: 0.875rem;" color="primary">{{ trimDate(date_obj.until, false) }}</CBadge>
+          <CBadge style="font-size: 0.875rem;" color="info">{{ prettyDate(date_obj.from, false) }}</CBadge>
+          <i class="la la-arrow-right la-lg"></i><CBadge style="font-size: 0.875rem;" color="primary">{{ prettyDate(date_obj.until, false) }}</CBadge>
         </div>
         <div v-else-if="ctype == 'time'" class="d-flex align-items-center mb-1">
-          <CBadge style="font-size: 0.875rem;" color="quaternary">{{ trimDate(date_obj.from, false) }}</CBadge>
-          <i class="la la-arrow-right la-lg"></i><CBadge style="font-size: 0.875rem;" color="danger">{{ trimDate(date_obj.until, false) }}</CBadge>
+          <CBadge style="font-size: 0.875rem;" color="quaternary">{{ prettyDate(date_obj.from, false) }}</CBadge>
+          <i class="la la-arrow-right la-lg"></i><CBadge style="font-size: 0.875rem;" color="danger">{{ prettyDate(date_obj.until, false) }}</CBadge>
         </div>
         <div v-else-if="ctype == 'weekdays'" class="d-flex align-items-center flex-wrap">
           <CBadge style="font-size: 0.875rem;" color="warning" v-for="(weekday, ind) in date_obj.weekdays.sort()" :key="ind" :class="ind != date_obj.weekdays.length - 1 ? 'me-1 mb-1' : 'mb-1'">{{ get_weekday(weekday) }}</CBadge>
@@ -27,7 +27,7 @@
 </template>
 
 <script>
-import { trimDate, get_weekday } from '@/utils/api'
+import { prettyDate, get_weekday } from '@/utils/api'
 
 export default {
   props: {
@@ -40,7 +40,7 @@ export default {
   },
   data () {
     return {
-      trimDate: trimDate,
+      prettyDate: trimDate,
       get_weekday: get_weekday,
     }
   },

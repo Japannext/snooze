@@ -119,7 +119,7 @@ import { defineComponent, PropType } from 'vue'
 
 import { colors } from '@/objects/Field.yaml'
 
-import { api2 } from '@/api'
+import { api2 } from '@/api2'
 
 import AuditModal from '@/components/AuditModal.vue'
 import DateTime from '@/components/DateTime.vue'
@@ -166,8 +166,8 @@ export default defineComponent({
     this.authorized = this.isAuthorized()
   },
   mounted () {
-    this.refresh()
     this.audits = api2.endpoint('audit')
+    this.refresh()
     //this.auto_interval = setInterval(this.refresh, 2000);
   },
   beforeUnmount () {

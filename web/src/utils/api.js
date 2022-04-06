@@ -143,54 +143,6 @@ export function delete_items(endpoint, items, callback = null, callback_argument
     })
 }
 
-export function pp_countdown(secs) {
-  var sec_num = parseInt(secs, 10)
-  var days    = Math.floor(sec_num / (3600*24))
-  var hours   = Math.floor(sec_num / 3600) % 24
-  var minutes = Math.floor(sec_num / 60) % 60
-  var seconds = sec_num % 60
-
-  var output = ''
-  if (secs < 0) {
-    output = '0s'
-  } else {
-    if (days > 0) {
-      output += days + 'd '
-    }
-    if (hours > 0) {
-      output += hours + 'h '
-    }
-    if (minutes > 0) {
-      output += minutes + 'm '
-    }
-    if (seconds > 0) {
-      output += seconds + 's'
-    }
-  }
-  return output
-}
-
-export function countdown(secs) {
-  var sec_num = parseInt(secs, 10)
-  var hours   = Math.floor(sec_num / 3600)
-  var minutes = Math.floor(sec_num / 60) % 60
-  var seconds = sec_num % 60
-  if (secs < 0) {
-    return '00:00:00'
-  } else {
-    if (hours < 10) {
-      hours = "0" + hours;
-    }
-    if (minutes < 10) {
-      minutes = "0" + minutes;
-    }
-    if (seconds < 10) {
-      seconds = "0" + seconds;
-    }
-    return hours + ':' + minutes + ':' + seconds
-  }
-}
-
 export function get_weekday(nb) {
   switch(nb) {
     case 0:
@@ -209,24 +161,6 @@ export function get_weekday(nb) {
       return 'Saturday'
     default:
       return 'Invalid weekday ' + nb
-  }
-}
-
-export function truncate_message(message, size=280) {
-  if (message == null || message.length <= size) {
-    return message
-  }
-  return message.slice(0, size) + '...'
-}
-
-export function more(data, limit=5) {
-  var lines = data.split(/\r?\n/)
-  if (lines.length > limit) {
-    var start = lines.slice(0, limit).join('\n')
-    var end = lines.slice(limit+1, -1).join('\n')
-    return [start, end]
-  } else {
-    return [data, '']
   }
 }
 
@@ -254,13 +188,6 @@ export function to_clipboard(txt) {
     console.log('Unable to copy');
   }
   document.body.removeChild(textArea);
-}
-
-export function pp_number(x) {
-  if (isNaN(x)) {
-    return '0'
-  }
-  return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
 export function get_alert_color(type) {
@@ -321,10 +248,6 @@ export const stopEvent = (
   if (immediatePropagation) {
     event.stopImmediatePropagation()
   }
-}
-
-export function capitalizeFirstLetter(string) {
-  return string.charAt(0).toUpperCase() + string.slice(1)
 }
 
 export function safe_jwt_decode(token, redirect = true) {

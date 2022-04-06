@@ -90,7 +90,7 @@ import yaml from 'js-yaml'
 import { CodeDiff } from 'v-code-diff'
 
 import DateTime from '@/components/DateTime.vue'
-import { api2 } from '@/api'
+import { api2 } from '@/api2'
 import { AuditItem } from '@/utils/types'
 
 export default defineComponent({

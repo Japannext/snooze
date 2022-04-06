@@ -114,10 +114,10 @@
           <Field :data="[dig(row.item, 'method')]" colorize/>
         </template>
         <template v-slot:throttle="row">
-          {{ pp_countdown(dig(row.item, 'throttle')) }}
+          {{ prettyDuration(dig(row.item, 'throttle')) }}
         </template>
         <template v-slot:delay="row">
-          {{ pp_countdown(dig(row.item, 'delay')) }}
+          {{ prettyDuration(dig(row.item, 'delay')) }}
         </template>
         <template v-slot:roles="row">
           <Field :data="(dig(row.item, 'roles') || []).concat(dig(row.item, 'static_roles') || [])" colorize/>
@@ -318,7 +318,7 @@ import dig from 'object-dig'
 import moment from 'moment'
 import yaml from 'js-yaml'
 import { API } from '@/api'
-import { get_data, pp_countdown, countdown, preprocess_data, delete_items, truncate_message, to_clipboard, capitalizeFirstLetter } from '@/utils/api'
+import { get_data, prettyDuration, countdown, preprocess_data, delete_items, truncate_message, to_clipboard, capitalizeFirstLetter } from '@/utils/api'
 import { join_queries } from '@/utils/query'
 import Form from '@/components/Form.vue'
 import Search from '@/components/Search.vue'
@@ -406,7 +406,6 @@ export default {
       is_busy: false,
       to_clipboard:to_clipboard,
       dig: dig,
-      pp_countdown: pp_countdown,
       countdown: countdown,
       preprocess_data: preprocess_data,
       join_queries: join_queries,

@@ -10,7 +10,7 @@ if ('VUE_APP_API' in process.env) {
   var axios_config = {baseURL: process.env.VUE_APP_API}
   url = process.env.VUE_APP_API
 } else {
-  var axios_config = {baseURL: '/api/'}
+ var axios_config = {baseURL: '/api/'}
   url = '/api/'
 }
 

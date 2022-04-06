@@ -25,7 +25,7 @@
 // @group Forms
 // Class for inputing a duration
 import Base from './Base.vue'
-import { pp_countdown } from '@/utils/api'
+import { prettyDuration } from '@/utils/api'
 
 export default {
   extends: Base,
@@ -40,7 +40,7 @@ export default {
   data() {
     return {
       datavalue: ([undefined, '', [], {}].includes(this.modelValue) ? (this.default_value == undefined ? 86400 : this.default_value) : this.modelValue).toString(),
-      pp_countdown: pp_countdown,
+      prettyDuration: pp_countdown,
       opts: this.options || {},
     }
   },
@@ -70,7 +70,7 @@ export default {
       } else if (this.opts.custom_label != undefined) {
         return (this.opts.custom_label_prefix || '') + datavalue + (this.opts.custom_label || '')
       } else {
-        return (this.opts.custom_label_prefix || '') + this.pp_countdown(datavalue)
+        return (this.opts.custom_label_prefix || '') + this.prettyDuration(datavalue)
       }
     }
   },
