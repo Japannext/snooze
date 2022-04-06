@@ -2,10 +2,10 @@
   <CModal
     ref="diff"
     :visible="visible"
-    @close="clear"
     alignment="center"
     backdrop="static"
     size="xl"
+    @close="clear"
   >
     <CModalHeader :class="`bg-${auditLog.color}`">
       <CModalTitle class="text-white">
@@ -24,8 +24,8 @@
       </CRow>
       <CRow>
         <code-diff
-          class="mt-2"
           v-if="diffComputed"
+          class="mt-2"
           :old-string="stringBefore"
           :new-string="stringAfter"
           file-name="diff"
@@ -33,18 +33,20 @@
           :context="diffConfig.context"
         />
       </CRow>
-      <CCard no-body v-if="auditLog.error || auditLog.traceback">
+      <CCard v-if="auditLog.error || auditLog.traceback" no-body>
         <CCardBody>
-        <template v-if="auditLog.error">
-          <h3>Error message</h3>
-          <p>{{ auditLog.error }}</p>
-        </template>
-        <template v-if="auditLog.traceback">
-          <h3>Traceback</h3>
-          <p>
-            <template v-for="line in auditLog.traceback">{{ line }}</template>
-          </p>
-        </template>
+          <template v-if="auditLog.error">
+            <h3>Error message</h3>
+            <p>{{ auditLog.error }}</p>
+          </template>
+          <template v-if="auditLog.traceback">
+            <h3>Traceback</h3>
+            <p>
+              <template v-for="line in auditLog.traceback">
+                {{ line }}
+              </template>
+            </p>
+          </template>
         </CCardBody>
       </CCard>
     </CModalBody>
@@ -54,7 +56,7 @@
           <CInputGroup>
             <CInputGroupText>Format</CInputGroupText>
             <CFormSelect id="diffFormat" v-model="diffConfig.format" :value="diffConfig.format" size="sm">
-              <option v-for="opt in FORMAT_OPTIONS" :value="opt">{{ opt }}</option>
+              <option v-for="opt in FORMAT_OPTIONS" :key="opt" :value="opt">{{ opt }}</option>
             </CFormSelect>
           </CInputGroup>
         </CCol>
@@ -62,58 +64,49 @@
           <CInputGroup>
             <CInputGroupText>Style</CInputGroupText>
             <CFormSelect id="diffStyle" v-model="diffConfig.style" :value="diffConfig.style" size="sm">
-              <option v-for="opt in STYLE_OPTIONS" :value="opt">{{ opt }}</option>
+              <option v-for="opt in STYLE_OPTIONS" :key="opt" :value="opt">{{ opt }}</option>
             </CFormSelect>
           </CInputGroup>
         </CCol>
         <CCol xs="auto">
           <CInputGroup>
             <CInputGroupText>Context lines</CInputGroupText>
-            <CFormInput type="number" v-model="diffConfig.context" />
+            <CFormInput v-model="diffConfig.context" type="number" />
           </CInputGroup>
         </CCol>
       </CRow>
-      <CButton @click="clear" color="secondary">Close</CButton>
+      <CButton color="secondary" @click="clear">Close</CButton>
     </CModalFooter>
   </CModal>
 </template>
 
-<script>
+<script lang="ts">
 
 const FORMAT_OPTIONS = ['yaml', 'json']
 const STYLE_OPTIONS = ['side-by-side', 'line-by-line']
 
-const yaml = require('js-yaml')
+import { defineComponent, PropType } from 'vue'
+import yaml from 'js-yaml'
 import { CodeDiff } from 'v-code-diff'
 
 import DateTime from '@/components/DateTime.vue'
-import { get_data } from '@/utils/api'
+import { api2 } from '@/api'
+import { AuditItem } from '@/utils/types'
 
-export default {
+export default defineComponent({
   name: 'AuditModal',
   components: {
     DateTime,
     CodeDiff,
   },
   props: {
-    collection: {type: String},
-    objectId: {type: String},
-    auditLogs: {type: Array},
-  },
-  created () {
-    this.FORMAT_OPTIONS = FORMAT_OPTIONS
-    this.STYLE_OPTIONS = STYLE_OPTIONS
-  },
-  mounted () {
-    var config = localStorage.getItem('diffConfig')
-    if (config) {
-      console.log('Custom diffConfig found in localStorage')
-      this.diffConfig = JSON.parse(config)
-    }
+    collection: {type: String, required: true},
+    objectId: {type: String, required: true},
+    auditLogs: {type: Array as PropType<Array<AuditItem>>, required: true},
   },
   data () {
     return {
-      index: null,
+      index: null, // type: number | null
       visible: false,
       diffComputed: false,
       modalBefore: {},
@@ -127,9 +120,42 @@ export default {
       },
     }
   },
+  computed: {
+    // Used to show the current audit log in the modal
+    auditLog(): AuditItem {
+      if (this.index !== null) {
+        return this.auditLogs[this.index]
+      } else {
+        return {}
+      }
+    },
+  },
+  watch: {
+    // Save the configuration to localStorage when modified
+    diffConfig: {
+      handler: function() {
+        console.log('Updated diffConfig in localStorage')
+        localStorage.setItem('diffConfig', JSON.stringify(this.diffConfig))
+        this.serializeBeforeAfter()
+      },
+      deep: true,
+    },
+  },
+  created () {
+    this.FORMAT_OPTIONS = FORMAT_OPTIONS
+    this.STYLE_OPTIONS = STYLE_OPTIONS
+    this.audits = api2.endpoint('audit')
+  },
+  mounted () {
+    var config = localStorage.getItem('diffConfig')
+    if (config) {
+      console.log('Custom diffConfig found in localStorage')
+      this.diffConfig = JSON.parse(config)
+    }
+  },
   methods: {
     // Serialize an object to the configured diff format
-    serialize(obj) {
+    serialize(obj: object): string {
       if (this.diffConfig.format == 'yaml') {
         return yaml.dump(obj)
       } else if (this.diffConfig.format == 'json') {
@@ -152,7 +178,7 @@ export default {
       this.diffComputed = true
     },
     // Query the most recent audit log which timestamp is strictly lower than `from`
-    queryAudit(from) {
+    fetchLastAudit(from: string): Promise<AuditItem> {
       var query = ['AND',
         ['=', 'object_id', this.objectId],
         ['<', 'timestamp', from],
@@ -162,18 +188,19 @@ export default {
         asc: false,
         orderby: 'timestamp',
       }
-      return get_data('audit', query, options, (response) => {
-        if (response.data && response.data.data && response.data.data[0]) {
-          var auditLog = response.data.data[0]
-          console.log(`[QUERY] Found previous audit log: ${auditLog.uid}`)
-          return auditLog
-        } else {
-          throw `Could not find audit log for ${query}`
-        }
-      })
+      return this.audits.find(query, options)
+        .then(results => {
+          if (results.length > 0) {
+            const lastAuditLog: AuditItem = results[0]
+            console.log(`[QUERY] Found previous audit log: ${lastAuditLog.uid}`)
+            return lastAuditLog
+          } else {
+            throw `Could not find audit log for ${query}`
+          }
+        })
     },
     // Compute the diff for an object at a given index
-    setBeforeAfter(index) {
+    setBeforeAfter(index: number) {
       console.log(`index=${index}, auditLogs.length=${this.auditLogs.length}`)
 
       this.index = index
@@ -189,21 +216,21 @@ export default {
         this.modalAfter = auditLog
         this.serializeBeforeAfter()
       } else {
-        this.queryAudit(auditLog.timestamp)
+        this.fetchLastAudit(auditLog.timestamp)
         .then(data => {
-          console.log('queryAudit.data', data)
+          console.log('fetchLastAudit.data', data)
           this.modalBefore = data
           this.modalAfter = auditLog
           this.serializeBeforeAfter()
         })
-        .catch(error => {
+        .catch(() => {
           this.modalBefore = {}
           this.modalAfter = auditLog
           this.serializeBeforeAfter()
         })
       }
     },
-    show(index) {
+    show(index: number) {
       console.log(`AuditModal.show(${index})`)
       this.setBeforeAfter(index)
       this.visible = true
@@ -220,27 +247,6 @@ export default {
       Array.from(document.getElementsByClassName('modal-backdrop')).forEach(el => el.style.display = "none")
     },
   },
-  computed: {
-    // Used to show the current audit log in the modal
-    auditLog() {
-      if (this.index !== null) {
-        return this.auditLogs[this.index]
-      } else {
-        return {}
-      }
-    },
-  },
-  watch: {
-    // Save the configuration to localStorage when modified
-    diffConfig: {
-      handler: function() {
-        console.log('Updated diffConfig in localStorage')
-        localStorage.setItem('diffConfig', JSON.stringify(this.diffConfig))
-        this.serializeBeforeAfter()
-      },
-      deep: true,
-    },
-  },
-}
+})
 
 </script>
