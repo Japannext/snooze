@@ -1,7 +1,7 @@
 <template>
   <div>
     <CCard>
-      <CCardHeader class='text-center' style='font-weight:bold'>
+      <CCardHeader class="text-center" style="font-weight:bold">
         Mail
       </CCardHeader>
       <CCardBody class="p-0">
@@ -19,7 +19,7 @@
             {{ body_plain_data[0] }}
             <span v-if="more">{{ body_plain_data[1] }}</span>
             <br />
-            <CLink v-if="body_plain_data[1] != ''" @click="more = !more" class="pointer">
+            <CLink v-if="body_plain_data[1] != ''" class="pointer" @click="more = !more">
               <span v-if="more">less</span>
               <span v-else>more</span>
             </CLink>
@@ -27,30 +27,41 @@
         </div>
         <div v-if="body_html">
           <h5 class="ps-2 pt-1">HTML body</h5>
-          <div v-safe-html="body_html" class="p-2"/>
+          <div v-safe-html="body_html" class="p-2" />
         </div>
       </CCardBody>
     </CCard>
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent, PropType } from 'vue'
+import { more } from '@/utils/functions'
 
-import { more } from '@/utils/api'
 import SDataTable from '@/components/SDataTable.vue'
 
-export default {
+interface Body {
+  html?: string
+  plain?: string
+}
+
+interface MailData {
+  header: string
+  relays: string[]
+  body: Body
+}
+
+export default defineComponent({
   name: 'Mail',
   components: {
     SDataTable,
   },
   props: {
-    smtp: {type: Object},
+    smtp: {type: Object as PropType<MailData>, required: true},
   },
   data () {
     return {
       header: this.smtp.header,
-      relays: this.smtp.relays,
       body_plain: this.smtp.body.plain,
       body_html: this.smtp.body.html,
       more: false,
@@ -68,7 +79,7 @@ export default {
         return false
       }
     },
-    infos () {
+    infos() {
       return Object.keys(this.header)
         .reduce((obj, key) => {
           obj.push({name: key, value: this.header[key]})
@@ -76,5 +87,5 @@ export default {
         }, [])
     }
   },
-}
+})
 </script>

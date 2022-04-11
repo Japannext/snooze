@@ -1,26 +1,44 @@
 <template>
   <CInputGroup>
-    <CFormInput placeholder="Search" type="search" v-model="datavalue" class="border-bottom-0" style="border-bottom-left-radius: 0"/>
+    <CFormInput
+      v-model="datavalue"
+      placeholder="Search"
+      type="search"
+      class="border-bottom-0"
+      style="border-bottom-left-radius: 0"
+    />
     <CButton block color="primary" type="submit" @click="search">
-        <i class="la la-search la-lg"></i>
+      <i class="la la-search la-lg"></i>
     </CButton>
-    <CButton block color="secondary" type="reset" @click="clear" style="border-bottom-right-radius: 0">
-        Clear
+    <CButton
+      block
+      color="secondary"
+      type="reset"
+      style="border-bottom-right-radius: 0"
+      @click="clear"
+    >
+      Clear
     </CButton>
     <slot name="search_buttons"></slot>
   </CInputGroup>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue'
 
-export default {
+export default defineComponent({
   props: {
-    modelValue: {type: String, default: () => ''},
+    modelValue: {type: String, default: ""},
   },
   emits: ['update:modelValue', 'clear', 'search'],
   data () {
     return {
       datavalue: this.modelValue,
+    }
+  },
+  watch: {
+    datavalue () {
+      this.$emit('update:modelValue', this.datavalue)
     }
   },
   methods: {
@@ -33,10 +51,5 @@ export default {
       this.$emit('clear')
     },
   },
-  watch: {
-    datavalue () {
-      this.$emit('update:modelValue', this.datavalue)
-    }
-  },
-}
+})
 </script>

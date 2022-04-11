@@ -1,7 +1,7 @@
 <template>
   <div>
-    <CCard header="Prometheus" header-class='text-center font-weight-bold'>
-      <CCardHeader class='text-center' style='font-weight:bold'>
+    <CCard header="Prometheus" header-class="text-center font-weight-bold">
+      <CCardHeader class="text-center" style="font-weight:bold">
         Prometheus
       </CCardHeader>
       <CCardBody class="p-2">
@@ -16,11 +16,15 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue'
 
-import { more } from '@/utils/api'
+interface PrometheusData {
+  generatorURL: string
+  externalURL: string
+}
 
-export default {
+export default defineComponent({
   name: 'Prometheus',
   props: {
     data: {type: Object},
@@ -29,5 +33,5 @@ export default {
     return {
     }
   },
-}
+})
 </script>

@@ -1,101 +1,96 @@
 <template>
   <div>
-    <h5 v-if="Object.keys(datavalue).length === 0 && datavalue.constructor === Object"><CBadge color="primary">Forever</CBadge></h5>
-    <CForm class="m-0" @submit.prevent>
-      <template v-for="(constraint, ctype) in datavalue">
-        <CRow v-for="(val, k) in constraint" :key="ctype+'_'+k" class="mb-2 g-0">
-          <CCol xs="1">
-            <CButton color="danger" size="lg" v-on:click="remove_component(ctype, k)" @click.stop.prevent>X</CButton>
-          </CCol>
-          <CCol xs="11" class="m-auto">
-            <component
-              :is="detect_constraint(ctype)"
-              :id="'component_'+ctype+'_'+k"
-              v-model="constraint[k]"
-            />
-          </CCol>
-        </CRow>
-      </template>
-    </CForm>
-    <CForm inline>
-      <CRow class="g-0">
-        <CCol xs="auto">
-          <CInputGroup>
-            <CFormSelect v-model="selected" class="col-form-label">
-              <option v-for="opts in components" :value="opts.value">{{ opts.text }}</option>
-            </CFormSelect>
-            <CButton color="secondary" v-on:click="add_component(selected)" @click.stop.prevent>
-              <i class="la la-plus la-lg"></i>
-            </CButton>
-          </CInputGroup>
-        </CCol>
-      </CRow>
-    </CForm>
+    <VueDatePicker
+      v-model="dataValue"
+      time-picker
+      placeholder="Select time"
+      :close-on-auto-apply="false"
+      text-input
+      auto-apply
+      range
+    />
   </div>
 </template>
 
-<script>
-import Base from './Base'
+<script lang="ts">
+import { defineComponent, PropType } from 'vue'
+import moment from 'moment'
+import { TimeConstraint } from '@/utils/types'
 
-import DateTime from '@/components/form/DateTime'
-import Time from '@/components/form/Time'
-import Weekdays from '@/components/form/Weekdays'
+import VueDatePicker from '@vuepic/vue-datepicker';
+import Base from './Base.vue'
 
-export default {
-  extends: Base,
+const TIME_FORMAT = "HH:mm:ssZ"
+
+function defaultTimeConstraint(): TimeConstraint {
+  const now = moment()
+  const oneHourLater = now.clone().add(1, 'hours')
+  return {
+    from: now.format(TIME_FORMAT),
+    until: oneHourLater.format(TIME_FORMAT),
+  }
+}
+
+interface PickerTime {
+  hours: number
+  minutes: number
+}
+
+function pickerToConstraint(data: [PickerTime|null, PickerTime|null]): TimeConstraint {
+  const [from, until] = data
+  let constraint: TimeConstraint = {}
+  if (from !== null) {
+    const fromText = `${from.hours}:${from.minutes}`
+    constraint.from = moment(fromText, 'HH:mm').format(TIME_FORMAT)
+  }
+  if (until !== null) {
+    const untilText = `${until.hours}:${until.minutes}`
+    constraint.until = moment(untilText, 'HH:mm').format(TIME_FORMAT)
+  }
+  return constraint
+}
+
+function constraintToPicker(data: TimeConstraint): [PickerTime|null, PickerTime|null] {
+  const from = data.from
+  const until = data.until
+  let fromPicker = null
+  let untilPicker = null
+  if (from !== undefined) {
+    const fromDate = moment(from)
+    fromPicker = {hours: fromDate.hours(), minutes: fromDate.minutes()}
+  }
+  if (until !== undefined) {
+    const untilDate = moment(until)
+    untilPicker = {hours: untilDate.hours(), minutes: untilDate.minutes()}
+  }
+  return [fromPicker, untilPicker]
+}
+
+export default defineComponent({
   name: 'TimeConstraint',
-  components: {
-    DateTime,
-    Time,
-    Weekdays,
+  components: { VueDatePicker },
+  extends: Base,
+  props: {
+    modelValue: {type: Object as PropType<TimeConstraint>, default: defaultTimeConstraint},
   },
   emits: ['update:modelValue'],
-  props: {
-    modelValue: {type: Object, default: () => {}},
-  },
   data() {
     return {
-      date_toggle: false,
-      selected: 'datetime',
-      components: [
-        {value: 'datetime', text: 'DateTime'},
-        {value: 'time', text: 'Time'},
-        {value: 'weekdays', text: 'Weekdays'},
-      ],
-      datavalue: this.modelValue || {},
+      dataValue: constraintToPicker(this.modelValue),
     }
   },
-  methods: {
-    add_component(component_type) {
-      if (!(component_type in this.datavalue)) {
-        this.datavalue[component_type] = []
-      }
-      this.datavalue[component_type].splice(this.datavalue[component_type].length, 1, {})
-    },
-    remove_component(component_type, component_index) {
-      this.datavalue[component_type].splice(component_index, 1)
-      if (this.datavalue[component_type].length == 0) {
-        delete this.datavalue[component_type]
-      }
-    },
-    detect_constraint(constraint_name) {
-      switch (constraint_name) {
-        case 'datetime':
-          return 'DateTime'
-        case 'time':
-          return 'Time'
-        case 'weekdays':
-        default:
-          return 'Weekdays'
-      }
-    },
-  },
   watch: {
-    datavalue: {
-      handler(v) { this.$emit('update:modelValue', this.datavalue) },
+    dataValue: {
+      handler() {
+        this.$emit('update:modelValue', pickerToConstraint(this.dataValue))
+      },
+      immediate: true,
       deep: true,
-      immediate: true
     },
   },
-}
+})
 </script>
+
+<style lang="scss">
+@import '@vuepic/vue-datepicker/src/VueDatePicker/style/main.scss'
+</style>

@@ -1,9 +1,8 @@
 <template>
   <div>
     <SFormTags
-      v-model="dataval"
-      :tagsOptions="items"
-      :lockedTags="data[this.import_keys[0]]"
+      v-model="dataValue"
+      :tags-options="items"
       :primary="primary"
       size="lg"
       :colorize="colorize"
@@ -14,81 +13,55 @@
   </div>
 </template>
 
-<script>
-import { API } from '@/api'
-import Base from './Base.vue'
-import SFormTags from '@/components/SFormTags.vue'
+<script lang="ts">
+import { defineComponent, PropType } from 'vue'
+
+import { api2 } from '@/api2'
 import { get_color } from '@/utils/colors'
 
-export default {
-  extends: Base,
+import Base from './Base.vue'
+import SFormTags from '@/components/SFormTags.vue'
+
+export default defineComponent({
   components: {
     SFormTags,
   },
-  emits: ['update:modelValue'],
+  extends: Base,
   props: {
-    modelValue: {},
-    // Endpoint of the API to query and
-    // fetch the objects
-    endpoint: {
-      type: String,
-      required: true,
-    },
-    primary: {
-      type: String,
-    },
-    data: {
-      type: Object,
-    },
-    import_keys: {
-      type: Array,
-      default: () => [],
-    },
-    colorize: {
-      type: Boolean,
-    },
-    required: {
-      type: Boolean,
-      default: () => false
-    },
+    modelValue: {type: Array as PropType<string[]>, default: () => []},
+    metadata: {type: Object, default: () => new Object()}
   },
+  emits: ['update:modelValue'],
   data() {
     return {
-      get_color: get_color,
-      datavalue: this.modelValue || [],
-      items: [],
+      apiEndpoint: api2.endpoint(this.metadata.endpoint),
+      primary: this.metadata.primary,
+      colorize: this.metadata.colorize,
+      required: this.metadata.required,
+      dataValue: this.modelValue,
+      importKeysData: this.importKeys,
+      items: [] as object[],
     }
   },
   watch: {
-    datavalue: {
-      handler: function () {
-        this.$emit('update:modelValue', this.datavalue)
+    dataValue: {
+      handler() {
+        this.$emit('update:modelValue', this.dataValue)
       },
       immediate: true
     },
   },
   mounted () {
-    this.reload_items()
-  },
-  computed: {
-    dataval: {
-      get: function () {
-        return this.datavalue.concat(this.data[this.import_keys[0]] || [])
-      },
-      set: function(newvalue) {
-        this.datavalue = newvalue.filter((el) => !(this.data[this.import_keys[0]] || []).includes(el));
-      }
-    },
+    this.reload()
   },
   methods: {
-    reload_items () {
-      console.log(`GET /${this.endpoint}`)
-      API
-        .get(`/${this.endpoint}`)
-        .then(response => {
-          this.items = response.data.data
+    get_color,
+    reload() {
+      this.apiEndpoint.find()
+        .then((results: object[]) => {
+          this.items = results
         })
     },
   },
-}
+})
 </script>

@@ -25,15 +25,10 @@
       ]
     },
     "plugins": [
+      {"name": "ts-vue-plugin"},
       {
         "transform": "typescript-is/lib/transform-inline/transformer",
-        "shortCircuit": true,
-        "ignoreClasses": true,
-        "ignoreMethods": true,
-        "functionBehavior": "ignore",
-        "disallowSuperfluousObjectProperties": true,
-        "transformNonNullExpressions": true,
-        "emitDetailedErrors": "auto"
+        "emitDetailedErrors": true
       }
     ],
     "lib": [

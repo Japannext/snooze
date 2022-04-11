@@ -49,7 +49,11 @@ export function hexToRgba(color, opacity = 100) {
   return `rgba(${r}, ${g}, ${b}, ${opacity / 100})`
 }
 
-export function gen_color(hexcolor) {
+/** Generate the CSS style definition for a given color in hexadecimal code.
+ * @param {string} hexcolor
+ & @returns {string} The style to apply to HTML component (works with CBadge).
+**/
+export function genColor(hexcolor) {
   if (hexcolor) {
     var color = hexToRgba(hexcolor)
     var fontcolor = (color.r*0.299 + color.g*0.587 + color.b*0.114) > 186 ? '#4f5d73' : '#ffffff'

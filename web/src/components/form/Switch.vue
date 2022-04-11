@@ -2,54 +2,44 @@
   <div>
     <CForm class="m-0">
       <CFormSwitch
+        v-model="dataValue"
         class="pointer"
-        @click="datavalue = !datavalue"
-        :checked="datavalue"
-        :size="options.size != undefined ? options.size : 'xl'"
-        :label="options.text != undefined ? options.text : ''"
+        :size="size"
+        :label="label"
       />
     </CForm>
   </div>
 </template>
 
-<script>
-
+<script lang="ts">
+import { defineComponent } from 'vue'
 import Base from './Base.vue'
 
-// Create a selector form
-export default {
+export default defineComponent({
+  name: 'Switch',
   extends: Base,
-  emits: ['update:modelValue'],
   props: {
-    id: {
-      type: String,
-    },
     modelValue: {
-      type: [Object, String, Number, Boolean],
+      type: Boolean,
+      default(props: {defaultValue: boolean}) { props.defaultValue },
     },
-    // Object containing the `{value: display_name}` of the
-    // options of the selector
-    options: {
-      type: Object,
-      default: () => Object.assign({}, {size: 'xl', text: ''}),
-    },
-    default_value: {
-      type: [Object, String, Number, Boolean],
-    },
+    defaultValue: {type: Boolean, default: false},
+    size: {type: String, default: 'xl'},
+    label: {type: String, required: true},
   },
+  emits: ['update:modelValue'],
   data() {
     return {
-      datavalue: Boolean([undefined, '', [], {}].includes(this.modelValue) ? (this.default_value == undefined ? false : this.default_value) : this.modelValue)
+      dataValue: this.modelValue,
     }
   },
   watch: {
-    datavalue: {
-      handler: function () {
-        this.$emit('update:modelValue', this.datavalue)
+    dataValue: {
+      handler() {
+        this.$emit('update:modelValue', this.dataValue)
       },
       immediate: true
     },
   },
-}
-
+})
 </script>

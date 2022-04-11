@@ -1,24 +1,22 @@
 <template>
-  <CBadge :style="gen_color(data)">{{ data }}</CBadge>
+  <CBadge :style="genColor(data)">
+    {{ data }}
+  </CBadge>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue'
+import { genColor } from '@/utils/colors'
 
-import { gen_color } from '@/utils/colors'
-
-export default {
+export default defineComponent({
   name: 'ColorBadge',
   props: {
-    // Array representing the condition
-    data: {
-      // Array (it accepts String for recursion, but is not meant to be used like this)
-      type: String,
-    },
+    data: {type: String, required: true},
   },
   data() {
     return {
-      gen_color: gen_color,
+      genColor: genColor,
     }
   },
-}
+})
 </script>

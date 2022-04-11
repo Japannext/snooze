@@ -1,7 +1,7 @@
 <template>
   <div>
     <CCard>
-      <CCardHeader class='text-center' style='font-weight:bold'>
+      <CCardHeader class="text-center" style="font-weight:bold">
         Infos
       </CCardHeader>
       <CCardBody class="p-0">
@@ -10,14 +10,20 @@
             :items="infos"
             :fields="fields"
             thead-class="d-none"
-            class='m-0'
+            class="m-0"
             borderless
             small
             striped
           >
             <CTableBody>
               <CTableRow v-for="(item, i) in infos" :key="i">
-                <CTableDataCell scope="row" v-for="(field, k) in fields" :key="`${field.key}_${k}`">{{ item[field.key] || '' }}</CTableDataCell>
+                <CTableDataCell
+                  v-for="(field, k) in fields"
+                  :key="`${field.key}_${k}`"
+                  scope="row"
+                >
+                  {{ item[field.key] || '' }}
+                </CTableDataCell>
               </CTableRow>
             </CTableBody>
           </CTable>
@@ -27,8 +33,10 @@
   </div>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import { defineComponent, PropType } from 'vue'
+
+export default defineComponent({
   name: 'Info',
   components: {
   },
@@ -36,7 +44,7 @@ export default {
     // Object being represented
     myobject: {type: Object},
     // List of object property to exclude from the view
-    excluded_fields: {type: Array, default: () => []},
+    excludedFields: {type: Array as PropType<string[]>, default: () => []},
   },
   data () {
     return {
@@ -56,5 +64,5 @@ export default {
         }, [])
     }
   },
-}
+})
 </script>

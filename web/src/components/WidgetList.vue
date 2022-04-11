@@ -1,56 +1,57 @@
 <template>
-  <div v-for="widget in widgets" v-bind:key="widget.name" class="d-inline-flex m-auto pe-2">
+  <div v-for="widget in widgets" :key="widget.name" class="d-inline-flex m-auto pe-2">
     <component
+      :is="widget.vue_component"
       v-if="widget.vue_component"
-      v-bind:is="widget.vue_component"
-      :id="'component_'+widget.vue_component"
+      :id="`component_${widget.vue_component}`"
       :options="widget"
       class="pb-1 m-auto"
     />
   </div>
 </template>
 
-<script>
-import { API } from '@/api'
+<script lang="ts">
+import { defineComponent } from 'vue'
+import { api2 } from '@/api2'
+import { DatabaseItem } from '@/utils/types'
 
-import PatliteWidget from '@/components/PatliteWidget'
+import PatliteWidget from '@/components/PatliteWidget.vue'
+
+interface Widget extends DatabaseItem {
+  enabled?: boolean
+  vue_component?: string
+}
 
 // Create a card fed by an API endpoint.
-export default {
+export default defineComponent({
   name: 'WidgetList',
-  props: {
-  },
   components: {
     PatliteWidget,
+  },
+  props: {
+  },
+  data() {
+    return {
+      widgetEndpoint: api2.endpoint('widget'),
+      widgets: [] as Widget[],
+    }
   },
   mounted () {
     this.listWidgets()
   },
-  data () {
-    return {
-      widgets: [],
-    }
-  },
-  computed: {
-  },
   methods: {
-    /**
-     * Get the list of widgets from the API.
+    /** Get the list of widgets from the API.
      * Update the `widgets` variable if the API return a result.
-     */
+    **/
     listWidgets() {
-      API
-        .get('/widget')
-        .then(response => {
-          if (response.data !== undefined && response.data.data !== undefined) {
-            var widgets = response.data.data
-            this.widgets = widgets.filter(widget => (widget.enabled || widget.enabled == undefined) && widget.vue_component !== undefined)
-          }
+      this.widgetEndpoint.find()
+      .then(results => {
+        const widgetResults: Widget[] = results
+        this.widgets = widgetResults.filter((widget: Widget) => {
+          widget.enabled === undefined || widget.enabled || widget.vue_component !== undefined
         })
-        .catch(error => console.log(error))
+      })
     },
   },
-  watch: {
-  },
-}
+})
 </script>

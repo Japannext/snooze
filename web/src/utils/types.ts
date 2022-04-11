@@ -1,3 +1,7 @@
+/**
+ * A collection of typescript custom types representing the data
+ * used by snooze-web.
+**/
 
 export type QueryElement = string | Query[]
 export type Query = Array<QueryElement>
@@ -67,3 +71,35 @@ export interface AuditItem extends DatabaseItem {
   summary?: AuditSummary,
 }
 
+export type SelectorValue = string | number | boolean
+
+export type SelectorOption = {
+  text: string
+  value: SelectorValue
+}
+
+export type SelectorOptions = Array<SelectorOption>
+
+export interface DatetimeConstraint {
+  from?: string
+  until?: string
+}
+
+export interface TimeConstraint {
+  from?: string
+  until?: string
+}
+
+export type WeekdayNumber = 0|1|2|3|4|5|6
+export type Weekday = 'monday'|'tuesday'|'wednesday'|'thursday'|'friday'|'saturday'|'sunday'
+export type Week = Map<Weekday, boolean>
+
+export interface WeekdayConstraint {
+  weekdays: Array<WeekdayNumber>
+}
+
+export interface TimeConstraints {
+  weekdays?: Array<WeekdayConstraint>
+  time?: Array<TimeConstraint>
+  datetime?: Array<DatetimeConstraint>
+}

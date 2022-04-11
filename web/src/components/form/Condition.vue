@@ -4,23 +4,28 @@
     <ConditionChild
       v-model="dataValue"
       :root="true"
-    ></ConditionChild>
+    />
   </div>
 </template>
 
-<script>
-import { ConditionObject, OPERATION_TYPE } from '@/utils/condition'
+<script lang="ts">
+import { defineComponent } from 'vue'
+
+import { ConditionObject } from '@/utils/condition2'
+
 import ConditionChild from '@/components/form/ConditionChild.vue'
 import Base from './Base.vue'
 
-export default {
-  extends: Base,
+// Convert the array input input a ConditionObject type to
+// pass to the ConditionChild component
+export default defineComponent({
   name: 'Condition',
-  emits: ['update:modelValue'],
   components: { ConditionChild },
+  extends: Base,
   props: {
     modelValue: {type: Array, default: () => [""]},
   },
+  emits: ['update:modelValue'],
   data () {
     return {
       dataValue: ConditionObject.fromArray(this.modelValue),
@@ -28,13 +33,11 @@ export default {
   },
   watch: {
     dataValue: {
-      handler: function () {
-        var arrayCondition = this.dataValue.toArray()
-        //console.log(`Condition.modelValue update to: ${arrayCondition}`)
-        this.$emit('update:modelValue', arrayCondition)
+      handler() {
+        this.$emit('update:modelValue', this.dataValue.toArray())
       },
       deep: true,
     }
   },
-}
+})
 </script>

@@ -1,12 +1,27 @@
 <template>
   <div>
-    <CForm @submit.prevent class="row g-0">
+    <CForm class="row g-0" @submit.prevent>
       <CCol xs="auto">
         <CInputGroup>
-          <CFormInput v-model="datavalue" :disabled="disabled" aria-describedby="feedback" :required="required" :invalid="required && !checkField" :valid="required && checkField" type="number" min="-1"/>
+          <CFormInput
+            v-model="dataValue"
+            :disabled="disabled"
+            aria-describedby="feedback"
+            :required="required"
+            :invalid="required && !checkField"
+            :valid="required && checkField"
+            type="number"
+            min="-1"
+          />
           <CTooltip content="Reset">
             <template #toggler="{ on }">
-              <CButton v-on:click="reset" :disabled="disabled" color="info" @click.stop.prevent v-on="on">
+              <CButton
+                :disabled="disabled"
+                color="info"
+                v-on="on"
+                @click="reset"
+                @click.stop.prevent
+              >
                 <i class="la la-redo-alt la-lg"></i>
               </CButton>
             </template>
@@ -15,65 +30,71 @@
         </CInputGroup>
       </CCol>
     </CForm>
-    <CFormFeedback invalid>
-      Field is required
-    </CFormFeedback>
+    <CFormFeedback invalid>Field is required</CFormFeedback>
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue'
+import { prettyDuration } from '@/utils/functions'
+
+import Base from './Base.vue'
+
+const EMPTY_VALUES = [undefined, null, '', [], {}]
+
 // @group Forms
 // Class for inputing a duration
-import Base from './Base.vue'
-import { prettyDuration } from '@/utils/api'
-
-export default {
+export default defineComponent({
+  name: 'Duration',
   extends: Base,
   props: {
-    'modelValue': {type: [String, Number]},
-    'options': {type: Object, default: () => {}},
-    'disabled': {type: Boolean, default: () => false},
-    'required': {type: Boolean, default: () => false},
-    'default_value': {type: Number},
+    modelValue: {type: [String, Number], required: true},
+    options: {type: Object, default: () => new Object()},
+    disabled: {type: Boolean, default: false},
+    required: {type: Boolean, default: false},
+    defaultValue: {type: Number, default: 86400},
   },
   emits: ['update:modelValue'],
   data() {
+    let value = this.modelValue
+    if (EMPTY_VALUES.includes(this.modelValue)) {
+      value = this.defaultValue
+    }
     return {
-      datavalue: ([undefined, '', [], {}].includes(this.modelValue) ? (this.default_value == undefined ? 86400 : this.default_value) : this.modelValue).toString(),
-      prettyDuration: pp_countdown,
+      dataValue: value.toString(),
       opts: this.options || {},
     }
   },
-  methods: {
-    reset() {
-      this.datavalue = (this.default_value == undefined ? 86400 : this.default_value).toString()
+  computed: {
+    checkField() {
+      return this.dataValue != ''
     },
+    converted() {
+      var dataValue = parseInt(this.dataValue) || 0
+      if (dataValue < 0) {
+        return this.opts.negative_label || ''
+      } else if (dataValue == 0) {
+        return this.opts.zero_label || this.opts.negative_label || ''
+      } else if (this.opts.custom_label != undefined) {
+        return (this.opts.custom_label_prefix || '') + dataValue + (this.opts.custom_label || '')
+      } else {
+        return (this.opts.custom_label_prefix || '') + this.prettyDuration(dataValue)
+      }
+    }
   },
   watch: {
-    datavalue: {
-      handler: function () {
-        this.$emit('update:modelValue', parseInt(this.datavalue) || 0)
+    dataValue: {
+      handler() {
+        this.$emit('update:modelValue', parseInt(this.dataValue) || 0)
       },
       immediate: true
     },
   },
-  computed: {
-    checkField () {
-      return this.datavalue != ''
+  methods: {
+    prettyDuration,
+    reset() {
+      this.dataValue = this.defaultValue.toString()
     },
-    converted () {
-      var datavalue = parseInt(this.datavalue) || 0
-      if (datavalue < 0) {
-        return this.opts.negative_label || ''
-      } else if (datavalue == 0) {
-        return this.opts.zero_label || this.opts.negative_label || ''
-      } else if (this.opts.custom_label != undefined) {
-        return (this.opts.custom_label_prefix || '') + datavalue + (this.opts.custom_label || '')
-      } else {
-        return (this.opts.custom_label_prefix || '') + this.prettyDuration(datavalue)
-      }
-    }
   },
-}
-
+})
 </script>

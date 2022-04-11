@@ -2,22 +2,20 @@
   <span v-safe-html="htmlValue" />
 </template>
 
-<script>
-import { ConditionObject } from '@/utils/condition'
+<script lang="ts">
+import { defineComponent } from 'vue'
+import { ConditionObject } from '@/utils/condition2'
 
-export default {
+export default defineComponent({
   name: 'Condition',
   props: {
     // Array representing the condition
-    data: {
-      // Array (it accepts String for recursion, but is not meant to be used like this)
-      type: Array,
-    },
+    data: {type: Array, required: true},
   },
   computed: {
     htmlValue () {
       return ConditionObject.fromArray(this.data).toHTML()
     },
   },
-}
+})
 </script>

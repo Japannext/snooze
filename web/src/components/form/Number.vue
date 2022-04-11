@@ -1,46 +1,57 @@
 <template>
   <div>
-    <CFormInput type="number" v-model="datavalue" :disabled="disabled" aria-describedby="feedback" :required="required" :invalid="required && !checkField" :valid="required && checkField" :min="opts.min" :max="opts.max"/>
+    <CFormInput
+      v-model="dataValue"
+      type="number"
+      :disabled="disabled"
+      aria-describedby="feedback"
+      :required="required"
+      :invalid="required && !checkField"
+      :valid="required && checkField"
+      :min="opts.min"
+      :max="opts.max"
+    />
     <CFormFeedback invalid>
       Field is required
     </CFormFeedback>
   </div>
 </template>
 
-<script>
-// @group Forms
-// Class for inputing a number
+<script lang="ts">
+import { defineComponent } from 'vue'
+
 import Base from './Base.vue'
 
-export default {
+// @group Forms
+// Class for inputing a number
+export default defineComponent({
   extends: Base,
   props: {
-    'modelValue': {type: [String, Number], default: () => 0},
-    'options': {type: Array, default: () => []},
-    'disabled': {type: Boolean, default: () => false},
-    'required': {type: Boolean, default: () => false},
-    'default_value': {type: Number, default: () => 0},
+    modelValue: {type: [String, Number], default: () => 0},
+    options: {type: Array, default: () => []},
+    disabled: {type: Boolean, default: () => false},
+    required: {type: Boolean, default: () => false},
+    defaultValue: {type: Number, default: () => 0},
   },
   emits: ['update:modelValue'],
   data() {
     return {
-      datavalue: ([undefined, 0, [], {}].includes(this.modelValue) ? (this.default_value == undefined ? 0 : this.default_value) : this.modelValue).toString(),
+      dataValue: ([undefined, 0, [], {}].includes(this.modelValue) ? (this.default_value == undefined ? 0 : this.default_value) : this.modelValue).toString(),
       opts: this.options || {},
     }
   },
+  computed: {
+    checkField () {
+      return this.dataValue != ''
+    },
+  },
   watch: {
-    datavalue: {
+    dataValue: {
       handler: function () {
-        this.$emit('update:modelValue', parseInt(this.datavalue) || 0)
+        this.$emit('update:modelValue', parseInt(this.dataValue) || 0)
       },
       immediate: true
     },
   },
-  computed: {
-    checkField () {
-      return this.datavalue != ''
-    },
-  },
-}
-
+})
 </script>

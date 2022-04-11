@@ -49,10 +49,11 @@ export class ConditionObject {
       return new ConditionObject('', [])
     }
     var operation = array[0]
+    let args
     if (OPERATION_TYPE[operation] == 'logic' || operation == 'NOT') {
-      var args = array.slice(1).map(arg => ConditionObject.fromArray(arg))
+      args = array.slice(1).map(arg => ConditionObject.fromArray(arg))
     } else {
-      var args =  array.slice(1)
+      args =  array.slice(1)
     }
     var c = new ConditionObject(operation, args)
     return c
@@ -61,7 +62,7 @@ export class ConditionObject {
     return OPERATION_TYPE[this.operation]
   }
   get operationSymbol() {
-    return OPERATION_SYMBOL.hasOwnProperty(this.operation) ? OPERATION_SYMBOL[this.operation] : this.operation
+    return this.operation in OPERATION_SYMBOL ? OPERATION_SYMBOL[this.operation] : this.operation
   }
   toJSON() {
     var json = {operation: this.operation, id: this.id}

@@ -1,26 +1,26 @@
 <template>
   <div>
-  <CForm @submit.prevent="checkForm" novalidate>
-    <CCard v-if="current_tab" no-body ref="main">
-      <CCardHeader header-tag="nav" class="p-2">
-        <CNav variant="pills" role="tablist" card v-model="tab_index" class='m-0'>
-          <CNavItem
-            v-for="tab in tabs"
-            v-bind:key="tab.key"
-            v-on:click="changeTab(tab)"
-          >
-            <CNavLink href="javascript:void(0);" :active="tab.key == current_tab.key">{{ tab.name }}</CNavLink>
-          </CNavItem>
-        </CNav>
-      </CCardHeader>
-      <CCardBody class="p-2">
-        <Form v-model="form_data" :metadata="form[current_tab.key]" :key="form_key" ref='form'/>
-      </CCardBody>
-      <CCardFooter class="p-2">
-        <CButton type="submit" :color="save_variant" :disabled="save_disabled">Save {{ current_tab.name }}</CButton>
-      </CCardFooter>
-    </CCard>
-  </CForm>
+    <CForm @submit.prevent="checkForm" novalidate>
+      <CCard v-if="current_tab" no-body ref="main">
+        <CCardHeader header-tag="nav" class="p-2">
+          <CNav variant="pills" role="tablist" card v-model="tab_index" class='m-0'>
+            <CNavItem
+              v-for="tab in tabs"
+              v-bind:key="tab.key"
+              v-on:click="changeTab(tab)"
+            >
+              <CNavLink href="javascript:void(0);" :active="tab.key == current_tab.key">{{ tab.name }}</CNavLink>
+            </CNavItem>
+          </CNav>
+        </CCardHeader>
+        <CCardBody class="p-2">
+          <Form v-model="form_data" :metadata="form[current_tab.key]" :key="form_key" ref='form'/>
+        </CCardBody>
+        <CCardFooter class="p-2">
+          <CButton type="submit" :color="save_variant" :disabled="save_disabled">Save {{ current_tab.name }}</CButton>
+        </CCardFooter>
+      </CCard>
+    </CForm>
   </div>
 </template>
 
@@ -38,25 +38,12 @@ export default {
   },
   props: {
     // The tabs name and their associated search
-    tabs_prop: {
-      type: Array,
-      default: () => { return [] },
-    },
+    tabs_prop: {type: Array, default: () => []},
     // The API path to query
-    endpoint_prop: {
-      type: String,
-      required: true,
-    },
-    form_prop: {
-      type: Object,
-      default: () => { return {} },
-    },
-    loaded_callback: {
-      type: Function,
-    },
-    onSubmit: {
-      type: Function,
-    }
+    endpoint_prop: {type: String, required: true},
+    form_prop: {type: Object, default: () => new Object()},
+    loaded_callback: {type: Function},
+    onSubmit: {type: Function},
   },
   mounted () {
     this.save_enable()

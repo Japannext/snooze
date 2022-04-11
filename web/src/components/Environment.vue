@@ -1,10 +1,10 @@
 <template>
   <CButtonGroup role="group" class="pb-1 m-auto">
     <CButton
-        v-for="(tab, index) in tabs"
-        v-bind:key="tab.title"
-        :style="(index == tab_index) ? gen_color(tab.color) : gen_color_outline(tab.color, 2)"
-        v-on:click="change_tab(tab)"
+      v-for="(tab, index) in tabs"
+      :key="tab.title"
+      :style="(index == tab_index) ? gen_color(tab.color) : gen_color_outline(tab.color, 2)"
+      @click="change_tab(tab)"
     >
       {{ tab.name }}
     </CButton>
@@ -21,14 +21,10 @@ import { getStyle } from '@coreui/utils/src'
 export default {
   name: 'Environment',
   props: {
-    data: {
-      // Array (it accepts String for recursion, but is not meant to be used like this)
-      type: Array,
-    },
-    colorize: {
-      // Assign random colors
-      type: Boolean,
-    },
+    // Array (it accepts String for recursion, but is not meant to be used like this)
+    data: {type: Array},
+    // Assign random colors
+    colorize: {type: Boolean},
   },
   data() {
     return {

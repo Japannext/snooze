@@ -106,13 +106,16 @@ export default defineComponent({
   },
   data () {
     return {
-      index: null, // type: number | null
+      FORMAT_OPTIONS: FORMAT_OPTIONS,
+      STYLE_OPTIONS: STYLE_OPTIONS,
+      auditEndpoint: api2.endpoint('audit'),
+      index: null as number|null,
       visible: false,
       diffComputed: false,
-      modalBefore: {},
-      modalAfter: {},
-      stringBefore: null,
-      stringAfter: null,
+      modalBefore: new Object() as object|null,
+      modalAfter: new Object() as object|null,
+      stringBefore: null as string|null,
+      stringAfter: null as string|null,
       diffConfig: {
         format: 'yaml',
         context: 10,
@@ -141,11 +144,6 @@ export default defineComponent({
       deep: true,
     },
   },
-  created () {
-    this.FORMAT_OPTIONS = FORMAT_OPTIONS
-    this.STYLE_OPTIONS = STYLE_OPTIONS
-    this.audits = api2.endpoint('audit')
-  },
   mounted () {
     var config = localStorage.getItem('diffConfig')
     if (config) {
@@ -168,8 +166,8 @@ export default defineComponent({
     // Serialize the before and after object, effectively computing the diff
     serializeBeforeAfter() {
       try {
-        this.stringBefore = this.serialize(this.modalBefore.snapshot)
-        this.stringAfter = this.serialize(this.modalAfter.snapshot)
+        this.stringBefore = this.serialize(this.modalBefore.snapshot || new Object())
+        this.stringAfter = this.serialize(this.modalAfter.snapshot || new Object())
       } catch(error) {
         console.error(error)
         console.log('modalBefore', this.modalBefore)
@@ -184,12 +182,8 @@ export default defineComponent({
         ['<', 'timestamp', from],
         ['!=', 'action', 'rejected'],
       ]
-      var options = {
-        asc: false,
-        orderby: 'timestamp',
-      }
-      return this.audits.find(query, options)
-        .then(results => {
+      return this.auditEndpoint.find(query, {asc: false, orderby: 'timestamp'})
+        .then((results: AuditItem[]) => {
           if (results.length > 0) {
             const lastAuditLog: AuditItem = results[0]
             console.log(`[QUERY] Found previous audit log: ${lastAuditLog.uid}`)
@@ -243,10 +237,13 @@ export default defineComponent({
       this.modalAfter = null
       this.index = null
       this.diffComputed = false
-      Array.from(document.getElementsByClassName('modal')).forEach(el => el.style.display = "none")
-      Array.from(document.getElementsByClassName('modal-backdrop')).forEach(el => el.style.display = "none")
+      const classes = ['modal', 'modal-backdrop'].reduce((classes: Element[], cls: string) => {
+        return classes.concat(Array.from(document.getElementsByClassName(cls)))
+      }, [] as Element[])
+      for (const element of classes) {
+        (element as HTMLElement).style.setProperty('display', 'none')
+      }
     },
   },
 })
-
 </script>

@@ -4,11 +4,25 @@
       <p class="text-muted">Sign In to your account</p>
       <CInputGroup class="mb-3">
         <CInputGroupText><i class="la la-user la-lg"></i></CInputGroupText>
-        <CFormInput type="text" v-model="username" placeholder="Username" autocomplete="username email" @input="reset_validation" required/>
+        <CFormInput
+          v-model="username"
+          type="text"
+          placeholder="Username"
+          autocomplete="username email"
+          required
+          @input="reset_validation"
+        />
       </CInputGroup>
       <CInputGroup class="mb-4">
         <CInputGroupText><i class="la la-lock la-lg"></i></CInputGroupText>
-        <CFormInput type="password" v-model="password" placeholder="Password" autocomplete="current-password" @input="reset_validation" required/>
+        <CFormInput
+          v-model="password"
+          type="password"
+          placeholder="Password"
+          autocomplete="current-password"
+          required
+          @input="reset_validation"
+        />
         <div v-if="!validate" class="w-100 text-danger mt-1" style="font-size: 0.875rem;">
           Error: {{ error_message }}
         </div>
@@ -21,10 +35,12 @@
     </CRow>
   </CForm>
 </template>
-<script>
+
+<script lang="ts">
+import { defineComponent } from 'vue'
 import { API } from '@/api'
 
-export default {
+export default defineComponent({
   name: 'BasicAuth',
   props: {
     // The API path to query
@@ -78,5 +94,5 @@ export default {
       this.error_message = ''
     }
   },
-}
+})
 </script>

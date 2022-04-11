@@ -1,9 +1,25 @@
 <template>
   <div>
-    <CFormInput v-model="datavalue" :disabled="disabled" type="password" :invalid="checkFieldInvalid" :valid="checkFieldValid" ref="pwd"/>
-    <div class="pt-1"><CFormInput v-model="datavalue_repeat" :disabled="disabled" type="password" :invalid="checkFieldInvalid" :valid="checkFieldValid" ref="pwd_confirm"/></div>
+    <CFormInput
+      ref="pwd"
+      v-model="dataValue"
+      :disabled="disabled"
+      type="password"
+      :invalid="checkFieldInvalid"
+      :valid="checkFieldValid"
+    />
+    <div class="pt-1">
+      <CFormInput
+        ref="pwd_confirm"
+        v-model="dataValue_repeat"
+        :disabled="disabled"
+        type="password"
+        :invalid="checkFieldInvalid"
+        :valid="checkFieldValid"
+      />
+    </div>
     <CFormFeedback invalid>
-      <label v-if="datavalue.length == 0 && datavalue_repeat.length == 0">Fields are required</label>
+      <label v-if="dataValue.length == 0 && datavalue_repeat.length == 0">Fields are required</label>
       <label v-else>Passwords are not identical</label>
     </CFormFeedback>
   </div>
@@ -25,25 +41,8 @@ export default {
   emits: ['update:modelValue'],
   data() {
     return {
-      datavalue: this.modelValue || '',
-      datavalue_repeat: '',
-    }
-  },
-  watch: {
-    datavalue: {
-      handler: function () {
-        this.$emit('update:modelValue', this.datavalue)
-      },
-      immediate: true
-    },
-  },
-  methods: {
-    checkField(is_valid) {
-      if (this.datavalue.length == 0 && this.datavalue_repeat.length == 0) {
-        return !is_valid && !this.required
-      } else {
-        return this.datavalue == this.datavalue_repeat
-      }
+      dataValue: this.modelValue || '',
+      dataValue_repeat: '',
     }
   },
   computed: {
@@ -53,6 +52,23 @@ export default {
     checkFieldInvalid() {
       return !this.checkField(false)
     },
+  },
+  watch: {
+    dataValue: {
+      handler: function () {
+        this.$emit('update:modelValue', this.dataValue)
+      },
+      immediate: true
+    },
+  },
+  methods: {
+    checkField(is_valid) {
+      if (this.dataValue.length == 0 && this.datavalue_repeat.length == 0) {
+        return !is_valid && !this.required
+      } else {
+        return this.dataValue == this.datavalue_repeat
+      }
+    }
   },
 }
 

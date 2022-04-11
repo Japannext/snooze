@@ -7,6 +7,11 @@ const yamlPreset = {
 }
 
 const customConfig = {
+  globals: {
+    "ts-jest": {
+      compiler: "ttypescript",
+    },
+  },
 }
 
 let config = merge.all([defaultPreset, yamlPreset, customConfig])

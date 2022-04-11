@@ -1,5 +1,5 @@
 import { default as axios, AxiosInstance, AxiosRequestConfig } from 'axios'
-import { ConditionObject } from '@/utils/condition'
+import { ConditionObject } from '@/utils/condition2'
 
 import { DatabaseItem, ChangeResult, Result, Query, RejectedItem, PaginationOptions } from '@/utils/types'
 
@@ -56,7 +56,7 @@ class Endpoint {
     .catch(errorHandler)
   }
 
-  find(query: Query, options: PaginationOptions = {}): Promise<DatabaseItem[]> {
+  find(query: Query = [], options: PaginationOptions = {}): Promise<DatabaseItem[]> {
     const params = {
       s: query,
       ...options,

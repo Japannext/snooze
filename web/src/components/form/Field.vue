@@ -1,51 +1,41 @@
 <template>
-<div>
-  <SFormTags
-    v-model="datavalue"
-    placeholder="Enter fields separated by space"
-    trim
-  ></SFormTags>
-</div>
+  <div>
+    <SFormTags
+      v-model="dataValue"
+      placeholder="Enter fields separated by space"
+      trim
+    ></SFormTags>
+  </div>
 </template>
 
-<script>
-
-import Base from './Base.vue'
+<script lang="ts">
+import { defineComponent, PropType } from 'vue'
+import Base from '@/components/form/Base.vue'
 import SFormTags from '@/components/SFormTags.vue'
 
-export default {
-  extends: Base,
+export default defineComponent({
   name: 'Condition',
   components: {
     SFormTags,
   },
-  emits: ['update:modelValue'],
+  extends: Base,
   props: {
-    modelValue: {
-      type: Array,
-    },
-    options: {
-      type: Array,
-    },
-    default_value: {
-      type: Array,
-    },
+    modelValue: {type: Array as PropType<string[]>, default: () => [] as string[]},
+    metadata: {type: Object, default: new Object()},
   },
+  emits: ['update:modelValue'],
   data () {
     return {
-      datavalue: [undefined, '', [], {}].includes(this.modelValue) ? (this.default_value == undefined ? [] : this.default_value) : this.modelValue,
-      validTags: [],
-      invalidTags: [],
-      duplicateTags: [],
+      dataValue: this.modelValue,
     }
   },
   watch: {
-    datavalue: {
-      handler: function () {
-        this.$emit('update:modelValue', this.datavalue)
+    dataValue: {
+      handler() {
+        this.$emit('update:modelValue', this.dataValue)
       },
       immediate: true
     },
   },
-}
+})
 </script>

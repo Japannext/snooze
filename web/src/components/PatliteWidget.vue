@@ -3,12 +3,18 @@
     <CButtonGroup role="group">
       <CTooltip :content="timestamp" placement="bottom" trigger="hover">
         <template #toggler="{ on }">
-          <div class='btn btn-outline-dark' style="cursor: auto; --cui-btn-hover-bg: inherit; --cui-btn-hover-color: inherit" v-on="on">{{ options.name }}</div>
+          <div
+            class="btn btn-outline-dark"
+            style="cursor: auto; --cui-btn-hover-bg: inherit; --cui-btn-hover-color: inherit"
+            v-on="on"
+          >
+            {{ options.name }}
+          </div>
         </template>
       </CTooltip>
       <div
         v-for="(status, color) in patlite_data"
-        v-bind:key="color"
+        :key="color"
         style="cursor: auto; pointer-events: none"
         :class="['btn', getStatusVariant(color, status)].join(' ')"
       >
@@ -16,23 +22,30 @@
         <span v-else-if="status == 'off'">X</span>
         <span v-else>?</span>
       </div>
-      <CTooltip :content="patlite_status && patlite_status.message" placement="bottom" trigger="hover" v-if="patlite_status">
+      <CTooltip
+        v-if="patlite_status"
+        :content="patlite_status && patlite_status.message"
+        placement="bottom"
+        trigger="hover"
+      >
         <template #toggler="{ on }">
           <div
             style="cursor: auto; --cui-btn-hover-bg: inherit; --cui-btn-hover-color: inherit"
             class="btn btn-outline-danger"
             v-on="on"
           >
-           {{ patlite_status.title }}
+            {{ patlite_status.title }}
           </div>
         </template>
       </CTooltip>
-  <!--
-  <div v-if="timestamp != null">
-    Last fetch at {{ timestamp }}
-  </div>
-  -->
-      <CButton class="singleline" v-c-tooltip="{content: 'Clear', placement: 'bottom'}" color="info" @click="resetPatlite()">Clear <i class="la la-redo-alt la-lg"></i></CButton>
+      <CButton
+        v-c-tooltip="{content: 'Clear', placement: 'bottom'}"
+        class="singleline"
+        color="info"
+        @click="resetPatlite()"
+      >
+        Clear <i class="la la-redo-alt la-lg"></i>
+      </CButton>
       <CTooltip :content="auto_mode ? 'Auto Refresh ON':'Auto Refresh OFF'" trigger="hover">
         <template #toggler="{ on }">
           <CButton :color="auto_mode ? 'success':'secondary'" @click="toggle_auto" v-on="on">
@@ -45,22 +58,32 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue'
+import { is } from 'typescript-is'
 import { API } from '@/api'
 import moment from 'moment'
 
 var default_options = {}
-const COLOR_MAP = {
-  red: 'danger',
-  yellow: 'warning',
-  green: 'success',
-  blue: 'primary',
-  white: 'secondary',
-  alert: 'info',
+
+type BlinkType = 'on'|'off'|'blink1'|'blink2'
+type ColorType = 'red'|'yellow'|'green'|'blue'|'white'
+
+const COLOR_MAP = new Map<ColorType, string>([
+  ['red', 'danger'],
+  ['yellow', 'warning'],
+  ['green', 'success'],
+  ['blue', 'primary'],
+  ['white', 'secondary'],
+])
+
+interface PatliteStatus {
+  title: string
+  message: string
 }
 
 // Create a card fed by an API endpoint.
-export default {
+export default defineComponent({
   name: 'PatliteWidget',
   props: {
     options: {type: Object, default: () => Object.assign({}, default_options)},
@@ -69,15 +92,14 @@ export default {
     return {
       patlite_data: {},
       auto_mode: true,
-      auto_interval: null,
+      autoInterval: setInterval(this.refresh, 10000),
       timestamp: 'No Data',
-      patlite_status: null,
-      timeout: null
+      patliteStatus: null as PatliteStatus|null,
+      timeout: null as number|null
     }
   },
   mounted() {
     this.getPatliteStatus()
-    this.auto_interval = setInterval(this.refresh, 10000);
   },
   methods: {
     refresh() {
@@ -88,7 +110,10 @@ export default {
      */
     getPatliteStatus() {
       this.timeout = setTimeout(() => {
-        this.patlite_status = {title: 'Connecting to Patlite...', message: `Trying ${this.options.widget.subcontent.host}:${this.options.widget.subcontent.port}...`}
+        this.patliteStatus = {
+          title: 'Connecting to Patlite...',
+          message: `Trying ${this.options.widget.subcontent.host}:${this.options.widget.subcontent.port}...`,
+        }
         this.timeout = null
       }, 1000)
       var parameters = 'host='+encodeURI(this.options.widget.subcontent.host)+'&port='+this.options.widget.subcontent.port
@@ -103,28 +128,30 @@ export default {
           if (response.data !== undefined) {
             this.patlite_data = response.data
             this.timestamp = moment().format()
-            this.patlite_status = null
+            this.patliteStatus = null
           } else {
-            this.patlite_status = {title: 'Could not connect', message: response.message }
+            const message: string = response.message
+            this.patliteStatus: PatliteStatus = {title: 'Could not connect', message: message }
             this.timestamp = 'No Data'
           }
         })
     },
     /**
      * Get the variant to use for a given color and status (on/off/blinking)
-     * @param {string} color - The color of the patlite (red/yellow/green/blue/white)
-     * @param {string} stat - The status of the light  (on/off/blink1/blink2)
+     * @param color The color of the patlite (red/yellow/green/blue/white)
+     * @param type The status of the light (on/off/blink1/blink2)
+     * @returns {string} The button variant to use
      */
-    getStatusVariant(color, stat) {
-      var variant_color = COLOR_MAP[color]
-      switch(stat) {
-        case 'on':
-        case 'blink1':
-        case 'blink2':
-          return `btn-${variant_color}`
-        case 'off':
-          return `btn-outline-${variant_color}`
+    getStatusVariant(color: ColorType, status: BlinkType): string {
+      const variant = COLOR_MAP.get(color)
+      if (is<'on'|'blink1'|'blink2'>(status)) {
+        return `btn-${variant}`
       }
+      else if (is<'off'>(status)) {
+        return `btn-outline-${variant}`
+      }
+      const exhaustiveCheck: never = status
+      throw `Unsupported operator: ${exhaustiveCheck}`
     },
     /**
      * Order the snooze server to reset the Patlite status
@@ -139,18 +166,14 @@ export default {
         .catch(error => console.log(error))
     },
     toggle_auto() {
-      if(this.auto_interval) {
-        clearInterval(this.auto_interval);
+      if(this.autoInterval) {
+        clearInterval(this.autoInterval);
       }
       this.auto_mode = !this.auto_mode
       if (this.auto_mode) {
-        this.auto_interval = setInterval(this.refresh, 10000);
+        this.autoInterval = setInterval(this.refresh, 10000);
       }
     },
   },
-}
+})
 </script>
-
-<style lang="scss" scoped>
-
-</style>

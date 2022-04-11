@@ -1,45 +1,54 @@
 <template>
   <div>
-    <CFormTextarea name="string" v-model="datavalue" :disabled="disabled" aria-describedby="feedback" :required="required" :invalid="required && !checkField" :valid="required && checkField" :placeholder="placeholder"/>
-    <CFormFeedback invalid id="feedback" :state="checkField">
+    <CFormTextarea
+      v-model="dataValue"
+      name="string"
+      :disabled="disabled"
+      aria-describedby="feedback"
+      :invalid="isInvalid"
+      :placeholder="placeholder"
+    />
+    <CFormFeedback id="feedback" invalid :state="checkField">
       Field is required
     </CFormFeedback>
   </div>
 </template>
 
-<script>
-
+<script lang="ts">
+import { defineComponent, PropType } from 'vue'
 import Base from './Base.vue'
 
-export default {
+export default defineComponent({
+  name: 'Text',
   extends: Base,
-  emits: ['update:modelValue'],
   props: {
-    'modelValue': {type: String, default: () => ''},
-    'options': {type: Array, default: () => []},
-    'disabled': {type: Boolean, default: () => false},
-    'required': {type: Boolean, default: () => false},
-    'placeholder': {type: String, default: () => ''},
-    'default_value': {type: String, default: () => ''},
+    modelValue: {
+      type: String as PropType<string|null>,
+      default(props: {defaultValue: string|null}) { props.defaultValue },
+    },
+    defaultValue: {type: String as PropType<string|null>, default: null},
+    disabled: {type: Boolean, default: false},
+    required: {type: Boolean, default: false},
+    placeholder: {type: String, default: ''},
   },
+  emits: ['update:modelValue'],
   data() {
     return {
-      datavalue: [undefined, '', [], {}].includes(this.modelValue) ? (this.default_value == undefined ? '' : this.default_value) : this.modelValue
+      dataValue: this.modelValue,
     }
   },
+  computed: {
+    isInvalid() {
+      return (this.required && this.dataValue == null)
+    },
+  },
   watch: {
-    datavalue: {
-      handler: function () {
-        this.$emit('update:modelValue', this.datavalue)
+    dataValue: {
+      handler() {
+        this.$emit('update:modelValue', this.dataValue)
       },
       immediate: true
     },
   },
-  computed: {
-    checkField () {
-      return this.datavalue != ''
-    }
-  },
-}
-
+})
 </script>

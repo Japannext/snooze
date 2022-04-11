@@ -119,21 +119,96 @@ export function capitalizeFirstLetter(string: string): string {
 }
 
 
-export function truncateMessage(message: string, size: number = 280): string {
+/** Truncate a message after a given number of characters, and suffix it with '...'
+ * @param message The string to truncate
+ * @param size The size limit in number of characters
+**/
+export function truncateMessage(message: string|null, size=280): string|null {
   if (message == null || message.length <= size) {
     return message
   }
   return message.slice(0, size) + '...'
 }
 
-export function more(data, limit=5) {
-  var lines = data.split(/\r?\n/)
+/** Separate a message into a truncated version, and the rest, based of a number of lines.
+ * @param data The string to truncate
+ * @param limit The number of lines after which we will truncate
+ * @returns The lines before truncate, and after the truncate
+**/
+export function more(data: string, limit=5): [string, string] {
+  const lines = data.split(/\r?\n/)
   if (lines.length > limit) {
-    var start = lines.slice(0, limit).join('\n')
-    var end = lines.slice(limit+1, -1).join('\n')
+    const start = lines.slice(0, limit).join('\n')
+    const end = lines.slice(limit+1, -1).join('\n')
     return [start, end]
   } else {
     return [data, '']
   }
 }
 
+/** Parse an input, and try to determine if it's a string or a number
+ * @param data The value to parse
+ * @returns The parsed value
+**/
+export function inputParser(data: string): number|string {
+
+  const dataAsNumber = Number(data)
+
+  // Handling the quote case (dequote it)
+  if (/^".*"$/.test(data) || /^'.*'$/.test(data)) {
+    const subString = data.substr(1, data.length -2)
+    return subString
+  }
+
+  if (isNaN(dataAsNumber)) {
+    return data
+  } else {
+    return dataAsNumber
+  }
+}
+
+/** Get a number or string from the database, and return a string compatible
+ * with inputParse.
+ * @param data The data that should result of inputParser
+ * @returns A string compatible with inputParser
+**/
+export function inputDeParser(data: number|string): string {
+  switch(typeof data) {
+    case 'number': {
+      return String(data)
+    }
+    case 'string': {
+      const dataAsNumber = Number(data)
+      if (data == '' || isNaN(dataAsNumber)) {
+        return data
+      } else {
+        return `"${dataAsNumber}"`
+      }
+    }
+  }
+}
+
+/** Return the human readable name for weekday by number
+ * @param index The index of weekday (starting at 0 from Sunday)
+ * @returns The corresponding human readable weekday
+**/
+export function getWeekday(index: number): string {
+  switch(index) {
+    case 0:
+      return 'Sunday'
+    case 1:
+      return 'Monday'
+    case 2:
+      return 'Tuesday'
+    case 3:
+      return 'Wednesday'
+    case 4:
+      return 'Thursday'
+    case 5:
+      return 'Friday'
+    case 6:
+      return 'Saturday'
+    default:
+      return 'Invalid weekday ' + String(index)
+  }
+}

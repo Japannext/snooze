@@ -1,6 +1,5 @@
 import { API } from '@/api'
 import { vm } from '@/main'
-import moment from 'moment'
 import router from '@/router'
 import jwt_decode from "jwt-decode"
 import { join_queries, object_to_query } from '@/utils/query'
@@ -143,27 +142,6 @@ export function delete_items(endpoint, items, callback = null, callback_argument
     })
 }
 
-export function get_weekday(nb) {
-  switch(nb) {
-    case 0:
-      return 'Sunday'
-    case 1:
-      return 'Monday'
-    case 2:
-      return 'Tuesday'
-    case 3:
-      return 'Wednesday'
-    case 4:
-      return 'Thursday'
-    case 5:
-      return 'Friday'
-    case 6:
-      return 'Saturday'
-    default:
-      return 'Invalid weekday ' + nb
-  }
-}
-
 export function to_clipboard(txt) {
   var textArea = document.createElement("textarea");
   textArea.style.position = 'fixed';
@@ -265,41 +243,3 @@ export function safe_jwt_decode(token, redirect = true) {
   }
 }
 
-export function parseNumber(string) {
-  if (string) {
-    if (isNaN(string)) {
-      if (string.length > 1) {
-        var first_char = string.charAt(0)
-        var last_char = string.charAt(string.length -1)
-        if (first_char == last_char && (first_char == "\"" || first_char == "\'")) {
-          var sub = string.substr(1, string.length -2)
-          if (!isNaN(sub)) {
-            return sub
-          } else {
-            return string
-          }
-        } else {
-          return string
-        }
-      } else {
-        return string
-      }
-    } else {
-      if (string.charAt(0) == '0' && string.length > 1) {
-        return string
-      } else {
-        return parseFloat(string)
-      }
-    }
-  } else {
-    return ''
-  }
-}
-
-export function revParseNumber(value) {
-  if (value && !isNaN(value) && typeof value == 'string') {
-    return '"' + value + '"'
-  } else {
-    return value
-  }
-}

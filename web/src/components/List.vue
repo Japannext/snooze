@@ -1,315 +1,322 @@
 <template>
   <div>
-  <CCard no-body ref="main">
-    <CCardHeader class="p-2" v-if="show_tabs">
-      <CNav variant="pills" role="tablist" card v-model="tab_index" class='m-0'>
-        <CNavItem
-          v-for="(tab, i) in tabs"
-          v-bind:key="tab.title"
-          v-on:click="changeTab(tab)"
-        >
-          <CNavLink href="javascript:void(0);" :active="tab_index == i">{{ tab.title }}</CNavLink>
-        </CNavItem>
+    <CCard no-body ref="main">
+      <CCardHeader class="p-2" v-if="show_tabs">
+        <CNav variant="pills" role="tablist" card v-model="tab_index" class='m-0'>
+          <CNavItem
+            v-for="(tab, i) in tabs"
+            v-bind:key="tab.title"
+            v-on:click="changeTab(tab)"
+          >
+            <CNavLink href="javascript:void(0);" :active="tab_index == i">{{ tab.title }}</CNavLink>
+          </CNavItem>
 
-        <CNavItem class="ms-auto">
-          <CButtonToolbar key-nav>
+          <CNavItem class="ms-auto">
+            <CButtonToolbar key-nav>
 
-            <CButtonGroup role="group" class="mx-2" v-if="Array.isArray(selected) && selected.length">
-              <!-- Slot for placing buttons that appear only when a selection is made -->
+              <CButtonGroup role="group" class="mx-2" v-if="Array.isArray(selected) && selected.length">
+                <!-- Slot for placing buttons that appear only when a selection is made -->
+                <slot name="selected_buttons"></slot>
+                <CButton
+                  color="danger"
+                  v-if="delete_m"
+                  @click="modal_delete(selected)"
+                >Delete selection</CButton>
+              </CButtonGroup>
+
+              <CButtonGroup role="group">
+                <!-- Slots for placing additional buttons in the header of the table -->
+                <slot name="head_buttons"></slot>
+                <CButton v-if="add_m" color="success" @click="modal_add()">New</CButton>
+                <CButton @click="refreshTable(true)" color="secondary"><i class="la la-refresh la-lg"></i></CButton>
+              </CButtonGroup>
+
+            </CButtonToolbar>
+          </CNavItem>
+        </CNav>
+      </CCardHeader>
+      <CForm @submit.prevent="">
+        <Search @search="search" v-model="search_value" @clear="search_clear" ref='search' class="pt-2 px-2 pb-0">
+          <template #search_buttons v-if="!show_tabs">
+            <!-- Slots for placing additional buttons in the header of the table -->
+            <template v-if="Array.isArray(selected) && selected.length">
               <slot name="selected_buttons"></slot>
               <CButton
                 color="danger"
                 v-if="delete_m"
                 @click="modal_delete(selected)"
               >Delete selection</CButton>
-            </CButtonGroup>
-
-            <CButtonGroup role="group">
-              <!-- Slots for placing additional buttons in the header of the table -->
-              <slot name="head_buttons"></slot>
-              <CButton v-if="add_m" color="success" @click="modal_add()">New</CButton>
-              <CButton @click="refreshTable(true)" color="secondary"><i class="la la-refresh la-lg"></i></CButton>
-            </CButtonGroup>
-
-          </CButtonToolbar>
-        </CNavItem>
-      </CNav>
-    </CCardHeader>
-    <CForm @submit.prevent="">
-      <Search @search="search" v-model="search_value" @clear="search_clear" ref='search' class="pt-2 px-2 pb-0">
-        <template #search_buttons v-if="!show_tabs">
-          <!-- Slots for placing additional buttons in the header of the table -->
-          <template v-if="Array.isArray(selected) && selected.length">
-            <slot name="selected_buttons"></slot>
-            <CButton
-              color="danger"
-              v-if="delete_m"
-              @click="modal_delete(selected)"
-            >Delete selection</CButton>
+            </template>
+            <slot name="head_buttons"></slot>
+            <CButton v-if="add_m" color="success" @click="modal_add()">New</CButton>
+            <CButton @click="refreshTable(true)" color="secondary" style="border-bottom-right-radius: 0"><i class="la la-refresh la-lg"></i></CButton>
           </template>
-          <slot name="head_buttons"></slot>
-          <CButton v-if="add_m" color="success" @click="modal_add()">New</CButton>
-          <CButton @click="refreshTable(true)" color="secondary" style="border-bottom-right-radius: 0"><i class="la la-refresh la-lg"></i></CButton>
-        </template>
-      </Search>
-    </CForm>
-    <CCardBody class="px-2 pb-2 pt-0">
-      <CTabContent>
-      <SDataTable
-        ref="table"
-        @cell-clicked="select"
-        @celltitle-clicked="selectall_toggle"
-        @update:sorter-value="sortingChanged"
-        @row-contextmenu="contextMenu"
-        v-contextmenu:contextmenu
-        :fields="fields"
-        :items="items"
-        :sorter='{external: true}'
-        :sorterValue="{column: orderby, asc: isascending}"
-        :loading="is_busy"
-        :noItemsView="noItemsView"
-        striped
-        small
-        border
-      >
-        <template v-for="(_, slot) of $slots" v-slot:[slot]="scope">
-          <!-- cell() slots for the b-table -->
-          <slot :name="slot" v-bind="scope" />
-        </template>
-
-        <template v-slot:timestamp="row">
-          <DateTime :date="dig(row.item, 'timestamp')" show_secs />
-        </template>
-        <template v-slot:message="row">
-          {{ truncate_message(dig(row.item, 'message')) }}
-        </template>
-        <template v-slot:condition="row">
-          <Condition :data="dig(row.item, 'condition')" />
-        </template>
-        <template v-slot:filter="row">
-          <Condition :data="dig(row.item, 'filter')" />
-        </template>
-        <template v-slot:modifications="row">
-          <Modification :data="dig(row.item, 'modifications')" />
-        </template>
-        <template v-slot:fields="row">
-          <Field :data="dig(row.item, 'fields')" />
-        </template>
-        <template v-slot:watch="row">
-          <Field :data="dig(row.item, 'watch')" />
-        </template>
-        <template v-slot:severity="row">
-          <Field :data="[dig(row.item, 'severity')]" colorize/>
-        </template>
-        <template v-slot:ttl="row">
-          {{ dig(row.item, 'ttl') >= 0 ? countdown(dig(row.item, 'ttl') - timestamp + dig(row.item, 'date_epoch')) : '-' }}
-        </template>
-        <template v-slot:permissions="row">
-          <Field :data="dig(row.item, 'permissions')" colorize/>
-        </template>
-        <template v-slot:groups="row">
-          <Field :data="dig(row.item, 'groups')" />
-        </template>
-        <template v-slot:method="row">
-          <Field :data="[dig(row.item, 'method')]" colorize/>
-        </template>
-        <template v-slot:throttle="row">
-          {{ prettyDuration(dig(row.item, 'throttle')) }}
-        </template>
-        <template v-slot:delay="row">
-          {{ prettyDuration(dig(row.item, 'delay')) }}
-        </template>
-        <template v-slot:roles="row">
-          <Field :data="(dig(row.item, 'roles') || []).concat(dig(row.item, 'static_roles') || [])" colorize/>
-        </template>
-        <template v-slot:time_constraints="row">
-          <TimeConstraint :date="dig(row.item, 'time_constraints')" />
-        </template>
-        <template v-slot:state="row">
-          <Field :data="[(dig(row.item, 'state') || '-')]" colorize/>
-        </template>
-        <template v-slot:duplicates="row">
-          {{ dig(row.item, 'duplicates') || '1' }}
-        </template>
-        <template v-slot:discard="row">
-          <CBadge v-if="dig(row.item, 'discard')" color="quaternary">yes</CBadge>
-          <CBadge v-else color="success">no</CBadge>
-        </template>
-        <template v-slot:actions="row">
-          <Field :data="dig(row.item, 'actions')" />
-        </template>
-        <template v-slot:enabled="row">
-          <Field :data="[(dig(row.item, 'enabled') == undefined || dig(row.item, 'enabled') == true) ? 'enabled' : 'disabled']" colorize/>
-        </template>
-        <template v-slot:pprint="row">
-          <table class="table-borderless"><tr style="background-color: transparent !important"><td class="p-0 pe-1"><i :class="'la la-'+dig(row.item, 'icon')+' la-lg'"></i></td><td class="p-0"><b>{{ dig(row.item, 'widget', 'selected') || '' + dig(row.item, 'action', 'selected') || '' }}</b> @ {{ dig(row.item, 'pprint') }}</td></tr></table>
-        </template>
-        <template v-slot:color="row">
-          <ColorBadge :data="dig(row.item, 'color') || '#ffffff'" />
-        </template>
-        <template v-slot:login="row">
-          <DateTime :date="dig(row.item, 'last_login') || '0'"/>
-        </template>
-        <template v-slot:select="row">
-          <input type="checkbox" class="pointer mx-1" :checked="dig(row.item, '_selected') == true">
-        </template>
-        <template v-slot:select-header="row">
-          <input type="checkbox" class="pointer mx-1" :checked="this.items.length == this.selected.length">
-        </template>
-
-        <template v-slot:button="row">
-          <CButtonGroup role="group">
-            <!-- Action buttons -->
-            <CButton color="secondary" size="sm" @click="toggleDetails(row.item, $event)">
-              <i v-if="Boolean(row.item._showDetails)" class="la la-angle-up la-lg"></i>
-              <i v-else class="la la-angle-down la-lg"></i>
-            </CButton>
-            <slot name="custom_buttons" v-bind="row" />
-            <CButton v-if="edit_m" size="sm" @click="modal_edit(row.item)" color="primary" v-c-tooltip="{content: 'Edit'}"><i class="la la-pencil-alt la-lg"></i></CButton>
-            <CButton v-if="delete_m" size="sm" @click="modal_delete([row.item])" color="danger" v-c-tooltip="{content: 'Delete'}"><i class="la la-trash la-lg"></i></CButton>
-          </CButtonGroup>
-        </template>
-        <template v-slot:details="row">
-          <CCard v-if="Boolean(row.item._showDetails)">
-            <CRow class="m-0">
-              <CCol class="p-2">
-                <slot name="info" v-bind="row" />
-                <Info :myobject="row.item" :excluded_fields="info_excluded_fields" />
-              </CCol>
-              <slot name="details_side" v-bind="row" />
-            </CRow>
-            <CButton size="sm" @click="toggleDetails(row.item, $event)"><i class="la la-angle-up la-lg"></i></CButton>
-          </CCard>
-        </template>
-      </SDataTable>
-      <div class="d-flex align-items-center">
-        <div class="me-2">
-          <SPagination
-            v-model:activePage="current_page"
-            :pages="Math.ceil(nb_rows / per_page)"
-            ulClass="m-0"
-          />
-        </div>
-        <div>
-          <CRow class="align-items-center gx-0">
-            <CCol xs="auto px-1">
-              <CFormLabel for="perPageSelect" class="col-form-label col-form-label-sm">Per page</CFormLabel>
-            </CCol>
-            <CCol xs="auto px-1">
-              <CFormSelect
-                v-model="per_page"
-                :value="per_page"
-                id="perPageSelect"
-                size="sm"
-              >
-                <option v-for="opts in page_options" :value="opts">{{ opts }}</option>
-              </CFormSelect>
-            </CCol>
-          </CRow>
-        </div>
-      </div>
-      </CTabContent>
-    </CCardBody>
-  </CCard>
-
-  <CModal
-    ref="edit"
-    :visible="show_edit"
-    @close="modal_clear"
-    size ="xl"
-    alignment="center"
-    backdrop="static"
-  >
-    <CModalHeader class="bg-primary">
-      <CModalTitle class="text-white">{{ modal_title_edit }}</CModalTitle>
-    </CModalHeader>
-    <CModalBody>
-      <CForm @submit.stop.prevent="checkForm" novalidate ref="edit_form">
-        <Form v-model="modal_data.edit" :metadata="form" />
+        </Search>
       </CForm>
-    </CModalBody>
-    <CModalFooter>
-      <CButton @click="modal_clear" color="secondary">Cancel</CButton>
-      <CButton @click="submit_edit" color="primary">OK</CButton>
-    </CModalFooter>
-  </CModal>
+      <CCardBody class="px-2 pb-2 pt-0">
+        <CTabContent>
+          <SDataTable
+            ref="table"
+            v-contextmenu:contextmenu
+            :fields="fields"
+            :items="items"
+            :sorter='{external: true}'
+            :sorterValue="{column: orderby, asc: isascending}"
+            :loading="is_busy"
+            :noItemsView="noItemsView"
+            striped
+            small
+            border
+            @cell-clicked="select"
+            @celltitle-clicked="selectall_toggle"
+            @update:sorter-value="sortingChanged"
+            @row-contextmenu="contextMenu"
+          >
+            <template v-for="(_, slot) of $slots" v-slot:[slot]="scope">
+              <!-- cell() slots for the b-table -->
+              <slot :name="slot" v-bind="scope" />
+            </template>
 
-  <CModal
-    ref="add"
-    :visible="show_add"
-    @close="modal_clear"
-    size="xl"
-    alignment="center"
-    backdrop="static"
-  >
-    <CModalHeader class="bg-success">
-      <CModalTitle class="text-white">{{ modal_title_add }}</CModalTitle>
-    </CModalHeader>
-    <CModalBody>
-      <CForm @submit.stop.prevent="checkForm" novalidate ref="add_form">
-        <Form v-model="modal_data.add" :metadata="form" />
-      </CForm>
-    </CModalBody>
-    <CModalFooter>
-      <CButton @click="modal_clear" color="secondary">Cancel</CButton>
-      <CButton @click="submit_add" color="success">OK</CButton>
-    </CModalFooter>
-  </CModal>
+            <template #timestamp="row">
+              <DateTime :date="dig(row.item, 'timestamp')" show_secs />
+            </template>
+            <template #message="row">
+              {{ truncate_message(dig(row.item, 'message')) }}
+            </template>
+            <template #condition="row">
+              <Condition :data="dig(row.item, 'condition')" />
+            </template>
+            <template #filter="row">
+              <Condition :data="dig(row.item, 'filter')" />
+            </template>
+            <template #modifications="row">
+              <Modification :data="dig(row.item, 'modifications')" />
+            </template>
+            <template #fields="row">
+              <Field :data="dig(row.item, 'fields')" />
+            </template>
+            <template #watch="row">
+              <Field :data="dig(row.item, 'watch')" />
+            </template>
+            <template #severity="row">
+              <Field :data="[dig(row.item, 'severity')]" colorize/>
+            </template>
+            <template #ttl="row">
+              {{ dig(row.item, 'ttl') >= 0 ? countdown(dig(row.item, 'ttl') - timestamp + dig(row.item, 'date_epoch')) : '-' }}
+            </template>
+            <template #permissions="row">
+              <Field :data="dig(row.item, 'permissions')" colorize/>
+            </template>
+            <template #groups="row">
+              <Field :data="dig(row.item, 'groups')" />
+            </template>
+            <template #method="row">
+              <Field :data="[dig(row.item, 'method')]" colorize/>
+            </template>
+            <template #throttle="row">
+              {{ prettyDuration(dig(row.item, 'throttle')) }}
+            </template>
+            <template #delay="row">
+              {{ prettyDuration(dig(row.item, 'delay')) }}
+            </template>
+            <template #roles="row">
+              <Field :data="(dig(row.item, 'roles') || []).concat(dig(row.item, 'static_roles') || [])" colorize/>
+            </template>
+            <template #time_constraints="row">
+              <TimeConstraint :date="dig(row.item, 'time_constraints')" />
+            </template>
+            <template #state="row">
+              <Field :data="[(dig(row.item, 'state') || '-')]" colorize/>
+            </template>
+            <template #duplicates="row">
+              {{ dig(row.item, 'duplicates') || '1' }}
+            </template>
+            <template #discard="row">
+              <CBadge v-if="dig(row.item, 'discard')" color="quaternary">yes</CBadge>
+              <CBadge v-else color="success">no</CBadge>
+            </template>
+            <template #actions="row">
+              <Field :data="dig(row.item, 'actions')" />
+            </template>
+            <template #enabled="row">
+              <Field :data="[(dig(row.item, 'enabled') == undefined || dig(row.item, 'enabled') == true) ? 'enabled' : 'disabled']" colorize/>
+            </template>
+            <template #pprint="row">
+              <table class="table-borderless"><tr style="background-color: transparent !important"><td class="p-0 pe-1"><i :class="'la la-'+dig(row.item, 'icon')+' la-lg'"></i></td><td class="p-0"><b>{{ dig(row.item, 'widget', 'selected') || '' + dig(row.item, 'action', 'selected') || '' }}</b> @ {{ dig(row.item, 'pprint') }}</td></tr></table>
+            </template>
+            <template #color="row">
+              <ColorBadge :data="dig(row.item, 'color') || '#ffffff'" />
+            </template>
+            <template #login="row">
+              <DateTime :date="dig(row.item, 'last_login') || '0'"/>
+            </template>
+            <template #select="row">
+              <input type="checkbox" class="pointer mx-1" :checked="dig(row.item, '_selected') == true">
+            </template>
+            <template #select-header="row">
+              <input type="checkbox" class="pointer mx-1" :checked="this.items.length == this.selected.length">
+            </template>
 
-  <CModal
-    ref="delete"
-    :visible="show_delete"
-    @close="modal_clear"
-    size="xl"
-    alignment="center"
-    backdrop="static"
-  >
-    <CModalHeader class="bg-danger">
-      <CModalTitle class="text-white" v-if="modal_data.delete.length > 1">Delete {{ modal_data.delete.length }} items</CModalTitle>
-      <CModalTitle class="text-white" v-else>{{ modal_title_delete }}</CModalTitle>
-    </CModalHeader>
-    <CModalBody>
-      <p v-if="modal_data.delete.length > 1">This operation cannot be undone. Are you sure?</p>
-      <p v-else>{{ modal_data.delete[0] }}</p>
-    </CModalBody>
-    <CModalFooter>
-      <CButton @click="modal_clear" color="secondary">Cancel</CButton>
-      <CButton @click="submit_delete" color="danger">OK</CButton>
-    </CModalFooter>
-  </CModal>
+            <template v-slot:button="row">
+              <CButtonGroup role="group">
+                <!-- Action buttons -->
+                <CButton color="secondary" size="sm" @click="toggleDetails(row.item, $event)">
+                  <i v-if="Boolean(row.item._showDetails)" class="la la-angle-up la-lg"></i>
+                  <i v-else class="la la-angle-down la-lg"></i>
+                </CButton>
+                <slot name="custom_buttons" v-bind="row" />
+                <CButton v-if="edit_m" size="sm" @click="modal_edit(row.item)" color="primary" v-c-tooltip="{content: 'Edit'}"><i class="la la-pencil-alt la-lg"></i></CButton>
+                <CButton v-if="delete_m" size="sm" @click="modal_delete([row.item])" color="danger" v-c-tooltip="{content: 'Delete'}"><i class="la la-trash la-lg"></i></CButton>
+              </CButtonGroup>
+            </template>
+            <template v-slot:details="row">
+              <CCard v-if="Boolean(row.item._showDetails)">
+                <CRow class="m-0">
+                  <CCol class="p-2">
+                    <slot name="info" v-bind="row" />
+                    <Info :myobject="row.item" :excluded_fields="info_excluded_fields" />
+                  </CCol>
+                  <slot name="details_side" v-bind="row" />
+                </CRow>
+                <CButton size="sm" @click="toggleDetails(row.item, $event)"><i class="la la-angle-up la-lg"></i></CButton>
+              </CCard>
+            </template>
+          </SDataTable>
+          <div class="d-flex align-items-center">
+            <div class="me-2">
+              <SPagination
+                v-model:activePage="current_page"
+                :pages="Math.ceil(nb_rows / per_page)"
+                ulClass="m-0"
+              />
+            </div>
+            <div>
+              <CRow class="align-items-center gx-0">
+                <CCol xs="auto px-1">
+                  <CFormLabel for="perPageSelect" class="col-form-label col-form-label-sm">Per page</CFormLabel>
+                </CCol>
+                <CCol xs="auto px-1">
+                  <CFormSelect
+                    v-model="per_page"
+                    :value="per_page"
+                    id="perPageSelect"
+                    size="sm"
+                  >
+                    <option v-for="opts in page_options" :value="opts">{{ opts }}</option>
+                  </CFormSelect>
+                </CCol>
+              </CRow>
+            </div>
+          </div>
+        </CTabContent>
+      </CCardBody>
+    </CCard>
 
-  <v-contextmenu ref="contextmenu" @show="store_selection">
-    <v-contextmenu-item @click="copy_browser">
-      <i class="la la-copy la-lg"></i> Copy
-    </v-contextmenu-item>
-    <v-contextmenu-item @click="select_all">
-      <i class="la la-check-square la-lg"></i> Select All
-    </v-contextmenu-item>
-    <v-contextmenu-item @click="context_search">
-      <i class="la la-search la-lg"></i> Search
-    </v-contextmenu-item>
-    <v-contextmenu-submenu title="To Clipboard">
-      <template v-slot:title><i class="la la-clipboard la-lg"></i> To Clipboard</template>
-      <v-contextmenu-item @click="copy_clipboard" method="yaml">
-        As YAML
-      </v-contextmenu-item>
-      <v-contextmenu-item @click="copy_clipboard" method="yaml" full="true">
-        As YAML (Full)
-      </v-contextmenu-item>
-      <v-contextmenu-divider />
-      <v-contextmenu-item @click="copy_clipboard" method="json">
-        As JSON
-      </v-contextmenu-item>
-      <v-contextmenu-item @click="copy_clipboard" method="json" full="true">
-        As JSON (Full)
-      </v-contextmenu-item>
-      <v-contextmenu-divider />
-      <v-contextmenu-item v-for="field in fields.filter(field => field.key != 'button' && field.key != 'select')" :key="field.key" @click="copy_clipboard" method="simple" :field="field.key">
-        {{ capitalizeFirstLetter(field.key) }}
-      </v-contextmenu-item>
-    </v-contextmenu-submenu>
-  </v-contextmenu>
+    <CModal
+      ref="edit"
+      :visible="show_edit"
+      size ="xl"
+      alignment="center"
+      backdrop="static"
+      @close="modal_clear"
+    >
+      <CModalHeader class="bg-primary">
+        <CModalTitle class="text-white">{{ modal_title_edit }}</CModalTitle>
+      </CModalHeader>
+      <CModalBody>
+        <CForm @submit.stop.prevent="checkForm" novalidate ref="edit_form">
+          <Form v-model="modal_data.edit" :metadata="form" />
+        </CForm>
+      </CModalBody>
+      <CModalFooter>
+        <CButton @click="modal_clear" color="secondary">Cancel</CButton>
+        <CButton @click="submit_edit" color="primary">OK</CButton>
+      </CModalFooter>
+    </CModal>
 
+    <CModal
+      ref="add"
+      :visible="show_add"
+      size="xl"
+      alignment="center"
+      backdrop="static"
+      @close="modal_clear"
+    >
+      <CModalHeader class="bg-success">
+        <CModalTitle class="text-white">{{ modal_title_add }}</CModalTitle>
+      </CModalHeader>
+      <CModalBody>
+        <CForm ref="add_form" novalidate @submit.stop.prevent="checkForm">
+          <Form v-model="modal_data.add" :metadata="form" />
+        </CForm>
+      </CModalBody>
+      <CModalFooter>
+        <CButton color="secondary" @click="modal_clear">Cancel</CButton>
+        <CButton color="success" @click="submit_add">OK</CButton>
+      </CModalFooter>
+    </CModal>
+
+    <CModal
+      ref="delete"
+      :visible="show_delete"
+      size="xl"
+      alignment="center"
+      backdrop="static"
+      @close="modal_clear"
+    >
+      <CModalHeader class="bg-danger">
+        <CModalTitle v-if="modal_data.delete.length > 1" class="text-white">Delete {{ modal_data.delete.length }} items</CModalTitle>
+        <CModalTitle v-else class="text-white">{{ modal_title_delete }}</CModalTitle>
+      </CModalHeader>
+      <CModalBody>
+        <p v-if="modal_data.delete.length > 1">This operation cannot be undone. Are you sure?</p>
+        <p v-else>{{ modal_data.delete[0] }}</p>
+      </CModalBody>
+      <CModalFooter>
+        <CButton color="secondary" @click="modal_clear">Cancel</CButton>
+        <CButton color="danger" @click="submit_delete">OK</CButton>
+      </CModalFooter>
+    </CModal>
+
+    <v-contextmenu ref="contextmenu" @show="store_selection">
+      <v-contextmenu-item @click="copy_browser">
+        <i class="la la-copy la-lg"></i> Copy
+      </v-contextmenu-item>
+      <v-contextmenu-item @click="select_all">
+        <i class="la la-check-square la-lg"></i> Select All
+      </v-contextmenu-item>
+      <v-contextmenu-item @click="context_search">
+        <i class="la la-search la-lg"></i> Search
+      </v-contextmenu-item>
+      <v-contextmenu-submenu title="To Clipboard">
+        <template #title>
+          <i class="la la-clipboard la-lg"></i> To Clipboard
+        </template>
+        <v-contextmenu-item method="yaml" @click="copy_clipboard">
+          As YAML
+        </v-contextmenu-item>
+        <v-contextmenu-item method="yaml" full="true" @click="copy_clipboard">
+          As YAML (Full)
+        </v-contextmenu-item>
+        <v-contextmenu-divider />
+        <v-contextmenu-item method="json" @click="copy_clipboard">
+          As JSON
+        </v-contextmenu-item>
+        <v-contextmenu-item method="json" full="true" @click="copy_clipboard">
+          As JSON (Full)
+        </v-contextmenu-item>
+        <v-contextmenu-divider />
+        <v-contextmenu-item
+          v-for="field in fields.filter(field => field.key != 'button' && field.key != 'select')"
+          :key="field.key"
+          method="simple"
+          :field="field.key"
+          @click="copy_clipboard"
+        >
+          {{ capitalizeFirstLetter(field.key) }}
+        </v-contextmenu-item>
+      </v-contextmenu-submenu>
+    </v-contextmenu>
   </div>
 </template>
 
@@ -318,7 +325,7 @@ import dig from 'object-dig'
 import moment from 'moment'
 import yaml from 'js-yaml'
 import { API } from '@/api'
-import { get_data, prettyDuration, countdown, preprocess_data, delete_items, truncate_message, to_clipboard, capitalizeFirstLetter } from '@/utils/api'
+import { get_data, countdown, preprocess_data, delete_items, truncate_message, to_clipboard, capitalizeFirstLetter } from '@/utils/api'
 import { join_queries } from '@/utils/query'
 import Form from '@/components/Form.vue'
 import Search from '@/components/Search.vue'

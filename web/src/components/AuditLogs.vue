@@ -140,6 +140,10 @@ export default defineComponent({
   },
   data () {
     return {
+      ACTIONS: ACTIONS,
+      COLORS: colors,
+      AUTHORIZED_PERMISSIONS: AUTHORIZED_PERMISSIONS,
+      auditEndpoint: api2.endpoint('audit'),
       objectId: this.object.uid,
       auditLogs: [],
       curatedLogs: [],
@@ -159,18 +163,12 @@ export default defineComponent({
       this.refresh()
     },
   },
-  created () {
-    this.ACTIONS = ACTIONS
-    this.COLORS = colors
-    this.AUTHORIZED_PERMISSIONS = AUTHORIZED_PERMISSIONS
+  mounted() {
     this.authorized = this.isAuthorized()
-  },
-  mounted () {
-    this.audits = api2.endpoint('audit')
     this.refresh()
     //this.auto_interval = setInterval(this.refresh, 2000);
   },
-  beforeUnmount () {
+  beforeUnmount() {
     if (this.auto_interval) {
       clearInterval(this.auto_interval)
     }
@@ -187,8 +185,8 @@ export default defineComponent({
         asc: false,
         orderby: 'timestamp',
       }
-      this.audits.find(query, options)
-        .then(results => {
+      this.auditEndpoint.find(query, options)
+        .then((results: AuditItem[]) => {
           this.auditLogs = results
           this.curatedLogs = this.auditLogs.map(auditLog => this.appendMetadata(auditLog))
           this.numberOfRows = results.length

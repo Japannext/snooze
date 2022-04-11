@@ -5,69 +5,66 @@
         <VueDatePicker
           v-model="datavalue"
           format="yyyy-MM-dd HH:mm"
-          previewFormat="yyyy-MM-dd HH:mm"
-          :placeholder="placeholder"
-          :inputClassName="datavalue != null ? 'form-control is-valid' : 'form-control is-invalid'"
-          :weekStart="week_start"
-          :closeOnAutoApply="false"
-          textInput
-          autoApply
+          preview-format="yyyy-MM-dd HH:mm"
+          placeholder="Select date"
+          :input-class-name="datavalue != null ? 'form-control is-valid' : 'form-control is-invalid'"
+          :week-start="weekStart"
+          :close-on-auto-apply="false"
+          text-input
+          auto-apply
         />
       </CCol>
     </CRow>
   </div>
 </template>
 
-<script>
-
-import Base from './Base.vue'
-import { getStyle } from '@coreui/utils/src'
-import VueDatePicker from '@vuepic/vue-datepicker';
-import '@vuepic/vue-datepicker/src/VueDatePicker/style/main.scss';
+<script lang="ts">
+import { defineComponent } from 'vue'
 import moment from 'moment'
 
-export default {
-  extends: Base,
+import VueDatePicker from '@vuepic/vue-datepicker'
+import Base from './Base.vue'
+
+export default defineComponent({
   name: 'DateTimeSingle',
   components: {
     VueDatePicker,
   },
-  emits: ['update:modelValue'],
+  extends: Base,
   props: {
-    modelValue: {
-      type: String,
-      default: function () {
-        return moment().format()
-      }
-    },
-    options: {},
-    placeholder: {type: String, default: () => 'Select Date'}
+    modelValue: {type: String, default: () => moment().format()},
   },
+  emits: ['update:modelValue'],
   data() {
     return {
-      datavalue: this.modelValue || moment().format(),
-      week_start: moment().startOf('week').weekday(),
+      dataValue: this.modelValue || moment().format(),
+      weekStart: moment().startOf('week').weekday(),
     }
   },
-  mounted() {
-    this.datavalue = this.modelValue || moment().format()
-  },
   computed: {
-    formatted_date () {
-       if (this.datavalue != null) {
-         return moment(this.datavalue).format("YYYY-MM-DDTHH:mmZ")
+    formattedDate () {
+       if (this.dataValue != null) {
+         return moment(this.dataValue).format("YYYY-MM-DDTHH:mmZ")
        } else {
          return ''
        }
     }
   },
   watch: {
-    datavalue: {
-      handler() { this.$emit('update:modelValue', this.formatted_date) },
+    dataValue: {
+      handler() {
+        this.$emit('update:modelValue', this.formattedDate)
+      },
       immediate: true,
       deep: true,
     },
-  }
-}
-
+  },
+  mounted() {
+    this.dataValue = this.modelValue || moment().format()
+  },
+})
 </script>
+
+<style lang="scss">
+@import '@vuepic/vue-datepicker/src/VueDatePicker/style/main.scss'
+</style>

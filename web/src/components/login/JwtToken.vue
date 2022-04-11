@@ -3,22 +3,30 @@
     <p class="text-muted">Please enter your JWT token</p>
     <CInputGroup class="mb-4">
       <CInputGroupText><i class="la la-lock la-lg"></i></CInputGroupText>
-      <CFormInput v-model="token" type="password" class="login" placeholder="JWT Token" @input="reset_validation"/>
+      <CFormInput
+        v-model="token"
+        type="password"
+        class="login"
+        placeholder="JWT Token"
+        @input="reset_validation"
+      />
       <div v-if="!validate" class="w-100 text-danger mt-1" style="font-size: 0.875rem;">
         Error: {{ error_message }}
       </div>
     </CInputGroup>
     <CRow>
       <CCol col="6">
-        <CButton v-on:click="login" color="primary" class="px-4">Login</CButton>
+        <CButton color="primary" class="px-4" @click="login">Login</CButton>
       </CCol>
     </CRow>
   </CForm>
 </template>
-<script>
+
+<script lang="ts">
+import { defineComponent } from 'vue'
 import { safe_jwt_decode } from '@/utils/api'
 
-export default {
+export default defineComponent({
   name: 'JwtToken',
   data () {
     return {
@@ -28,7 +36,7 @@ export default {
     }
   },
   methods: {
-    login: function () {
+    login() {
       console.log("Got authentication token")
       var decoded_token = safe_jwt_decode(this.token, false)
       if (decoded_token) {
@@ -44,5 +52,5 @@ export default {
       this.error_message = ''
     }
   },
-}
+})
 </script>

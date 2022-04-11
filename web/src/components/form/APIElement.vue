@@ -1,115 +1,109 @@
 <template>
   <div>
-    <CFormSelect v-model="selected" :value="selected" :required="required" @change="onChange" :class="{ 'is-invalid': required && !checkField, 'is-valid': required && checkField }">
+    <CFormSelect
+      v-model="dataValue.selected"
+      :value="dataValue.selected"
+      :invalid="isInvalid"
+      @change="onChange"
+    >
       <option disabled value="" :selected="selected == ''">Please select an option</option>
-      <option v-for="item in this.items" :key="item[primary]" :value="item[primary]">
+      <option v-for="item in items" :key="item[primary]" :value="item[primary]">
         {{ item['name'] }}
       </option>
     </CFormSelect>
     <CFormFeedback invalid>
       Field is required
     </CFormFeedback>
-    <Form v-if="selection && selection[form]" v-model="subcontent" :metadata="selection[form]" class="pt-2"/>
+    <Form
+      v-if="selection && selection[form]"
+      v-model="dataValue.subcontent"
+      :metadata="selection[form]"
+      class="pt-2"
+    />
   </div>
 </template>
 
-<script>
-import { API } from '@/api'
-import Base from './Base.vue'
+<script lang="ts">
+import { defineComponent, PropType } from 'vue'
+import { api2 } from '@/api2'
+
+import Base from '@/components/form/Base.vue'
 import Form from '@/components/Form.vue'
 
-export default {
-  extends: Base,
-  emits: ['update:modelValue'],
+interface ModelValue {
+  selected: string
+  subcontent: object
+}
+
+function defaultModelValue(): ModelValue {
+  return {
+    selected: '',
+    subcontent: {},
+  }
+}
+
+export default defineComponent({
+  name: 'APIElement',
   components: {
     Form
   },
+  extends: Base,
+
   props: {
-    modelValue: {
-      type: [Object, String],
-      default: function () {
-        return {'selected': '', 'subcontent': {}}
-      }
-    },
-    // Endpoint of the API to query and
-    // fetch the objects
-    endpoint: {
-      type: String,
-      required: true,
-    },
-    primary: {
-      type: String,
-      required: true,
-    },
-    form: {
-      type: String,
-      default: () => 'form',
-    },
-    subkey: {
-      type: String,
-    },
-    required: {
-      type: Boolean,
-      default: () => false
-    },
+    modelValue: {type: Object as PropType<ModelValue>, default: defaultModelValue},
+    metadata: {type: Object, default: () => new Object()},
   },
+
+  emits: ['update:modelValue'],
+
   data() {
     return {
-      selected: (this.modelValue['selected'] == undefined) ? this.modelValue : this.modelValue['selected'],
-      subcontent: this.modelValue['subcontent'],
-      items: [],
+      apiEndpoint: api2.endpoint(this.metadata.endpoint),
+      primary: this.metadata.primary as string,
+      form: this.metadata.form,
+      required: this.metadata.required,
+      dataValue: this.modelValue,
+      items: [] as object[],
     }
   },
-  watch: {
-    selected: {
-      handler: function () {
-        if (this.subcontent && Object.keys(this.subcontent).length > 0 && this.subcontent.constructor === Object) {
-          this.$emit('update:modelValue', {'selected': this.selected, 'subcontent': this.subcontent})
-        } else {
-          this.$emit('update:modelValue', this.selected)
-        }
-      },
-      immediate: true
+
+  computed: {
+    isInvalid() {
+      return (this.required && this.dataValue.selected == '')
     },
-    subcontent: {
-      handler: function () {
-        if (this.subcontent && Object.keys(this.subcontent).length > 0 && this.subcontent.constructor === Object) {
-          this.$emit('update:modelValue', {'selected': this.selected, 'subcontent': this.subcontent})
-        } else {
-          this.$emit('update:modelValue', this.selected)
-        }
+    selection() {
+      return this.items.find((item: unknown) => {
+        this.primary in item &&
+        typeof item[this.primary] == 'string' &&
+        item[this.primary] == this.dataValue.selected
+      })
+    },
+  },
+
+  watch: {
+    dataValue: {
+      handler() {
+        this.$emit('update:modelValue', this.dataValue)
       },
       deep: true,
-      immediate: true
+      immediate: true,
     },
   },
-  mounted () {
-    this.reload_items()
+  mounted() {
+    this.reload()
   },
+
   methods: {
-    reload_items() {
-      API
-        .get(`/${this.endpoint}`)
-        .then(response => {
-          if (response.data) {
-            this.items = response.data.data
-            if (this.subkey && this.items[this.subkey]) {
-              this.items = this.items[this.subkey]
-            }
-          }
+    reload() {
+      this.apiEndpoint.find()
+        .then((results: object[]) => {
+          this.items = results
         })
     },
     onChange() {
-      this.subcontent = {}
+      this.dataValue.subcontent = {}
     }
   },
-  computed: {
-    selection() {
-      return this.items.find(opt => opt[this.primary] == this.selected)
-    },
-    checkField () {
-      return this.selected != ''
-    }
-  },
-}
+
+})
 </script>

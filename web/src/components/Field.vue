@@ -13,14 +13,9 @@ export default {
   name: 'Field',
   props: {
     // Array representing the condition
-    data: {
-      // Array (it accepts String for recursion, but is not meant to be used like this)
-      type: Array,
-    },
-    colorize: {
-      // Assign random colors
-      type: Boolean,
-    },
+    data: {type: Array},
+    // Assign random colors
+    colorize: {type: Boolean},
   },
   data() {
     return {

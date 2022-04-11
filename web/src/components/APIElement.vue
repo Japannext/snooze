@@ -10,12 +10,8 @@ export default {
   props: {
     value: {},
     attr: undefined,
-    // Endpoint of the API to query and
-    // fetch the objects
-    endpoint: {
-      type: String,
-      required: true,
-    },
+    // Endpoint of the API to query and fetch the objects
+    endpoint: {type: String, required: true},
   },
   data() {
     return {

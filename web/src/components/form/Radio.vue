@@ -3,59 +3,55 @@
     <CForm class="m-0">
       <CButtonGroup role="group">
         <CFormCheck
+          v-for="(opts, i) in options"
+          :id="id + i"
+          :key="opts.value"
           type="radio"
           autocomplete="off"
           :name="id"
           :button="{color: 'primary', variant: 'outline'}"
-          v-for="(opts, i) in options"
-          :id="id + i"
-          @click="opts.value != undefined ? (datavalue = opts.value) : (datavalue = opts)"
-          :checked="opts.value != undefined ? (opts.value == datavalue) : (opts == datavalue)"
+          :checked="opts.value != undefined ? (opts.value == dataValue) : (opts == dataValue)"
           :value="opts.value != undefined ? opts.value : opts"
           :label="opts.text != undefined ? opts.text : opts"
+          @click="opts.value != undefined ? (dataValue = opts.value) : (dataValue = opts)"
         />
       </CButtonGroup>
     </CForm>
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent, PropType } from 'vue'
+import { SelectorOptions } from '@/utils/types'
 
 import Base from './Base.vue'
 
 // Create a selector form
-export default {
+export default defineComponent({
+  name: 'Radio',
   extends: Base,
-  emits: ['update:modelValue'],
   props: {
-    id: {
-      type: String,
-    },
-    modelValue: {
-      type: [Object, String, Number, Boolean],
-    },
-    // Object containing the `{value: display_name}` of the
-    // options of the selector
-    options: {
-      type: Array,
-    },
-    default_value: {
-      type: [Object, String, Number, Boolean],
-    },
+    id: {type: String, required: true},
+    modelValue: {type: String, default: null},
+    options: {type: Array as PropType<SelectorOptions>, required: true},
   },
+  emits: ['update:modelValue'],
   data() {
+    let value = this.modelValue
+    if (value == null) {
+      value = this.options[0].value as string
+    }
     return {
-      datavalue: [undefined, '', [], {}].includes(this.modelValue) ? (this.default_value == undefined ? '' : this.default_value) : this.modelValue
+      dataValue: value,
     }
   },
   watch: {
-    datavalue: {
-      handler: function () {
-        this.$emit('update:modelValue', this.datavalue)
+    dataValue: {
+      handler() {
+        this.$emit('update:modelValue', this.dataValue)
       },
       immediate: true
     },
   },
-}
-
+})
 </script>

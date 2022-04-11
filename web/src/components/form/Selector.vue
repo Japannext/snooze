@@ -1,63 +1,61 @@
 <template>
   <div>
-    <CFormSelect @change="onChange" :value="datavalue" :required="required" :class="{ 'is-invalid': required && !checkField, 'is-valid': required && checkField }">
-      <option v-if="!default_value && default_value != ''" disabled value="" :selected="datavalue == ''">Please select an option</option>
-      <option v-for="opts in options" :value="opts.value || opts">{{ opts.text || opts }}</option>
+    <CFormSelect
+      v-model="dataValue"
+      :invalid="isInvalid"
+    >
+      <option disabled :value="null">
+        Please select an option
+      </option>
+
+      <option v-for="opt in options" :key="opt.value" :value="opt.value">
+        {{ opts.text }}
+      </option>
     </CFormSelect>
+
     <CFormFeedback invalid>
       Field is required
     </CFormFeedback>
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent, PropType } from 'vue'
+import { SelectorValue, SelectorOptions } from '@/utils/types'
 
 import Base from './Base.vue'
 
 // Create a selector form
-export default {
+export default defineComponent({
+  name: 'Selector',
   extends: Base,
-  emits: ['update:modelValue'],
   props: {
     modelValue: {
-      type: [String, Number, Boolean],
+      type: Object as PropType<SelectorValue|null>,
+      default(props: {defaultValue: SelectorValue}) { props.defaultValue },
     },
-    // Object containing the `{value: display_name}` of the
-    // options of the selector
-    options: {
-      type: Array,
-    },
-    default_value: {
-      type: [String, Number, Boolean],
-    },
-    required: {
-      type: Boolean,
-      default: () => false
-    },
+    options: {type: Array as PropType<SelectorOptions>, required: true},
+    defaultValue: {type: Object as PropType<SelectorValue>, default: null},
+    required: {type: Boolean, default: false},
   },
+  emits: ['update:modelValue'],
   data() {
     return {
-      datavalue: [undefined, '', [], {}].includes(this.modelValue) ? (this.default_value == undefined ? '' : this.default_value) : this.modelValue
+      dataValue: this.modelValue,
     }
-  },
-  methods: {
-    onChange(e) {
-      this.datavalue = this.options[e.target.selectedIndex].value || this.options[e.target.selectedIndex]
-    }
-  },
-  watch: {
-    datavalue: {
-      handler: function () {
-        this.$emit('update:modelValue', this.datavalue)
-      },
-      immediate: true
-    },
   },
   computed: {
-    checkField () {
-      return this.datavalue != ''
-    }
+    isInvalid() {
+      return (this.required && this.dataValue == null)
+    },
   },
-}
-
+  watch: {
+    dataValue: {
+      handler() {
+        this.$emit('update:modelValue', this.dataValue)
+      },
+      immediate: true,
+    },
+  },
+})
 </script>
