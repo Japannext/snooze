@@ -1,5 +1,6 @@
 <template>
   <CModal
+    v-if="auditLog !== null"
     ref="diff"
     :visible="visible"
     alignment="center"
@@ -81,17 +82,17 @@
 </template>
 
 <script lang="ts">
-
-const FORMAT_OPTIONS = ['yaml', 'json']
-const STYLE_OPTIONS = ['side-by-side', 'line-by-line']
-
 import { defineComponent, PropType } from 'vue'
+import { assertType } from 'typescript-is'
 import yaml from 'js-yaml'
 import { CodeDiff } from 'v-code-diff'
 
 import DateTime from '@/components/DateTime.vue'
 import { api2 } from '@/api2'
-import { AuditItem } from '@/utils/types'
+import { AuditItem, Query } from '@/utils/types'
+
+const FORMAT_OPTIONS = ['yaml', 'json']
+const STYLE_OPTIONS = ['side-by-side', 'line-by-line']
 
 export default defineComponent({
   name: 'AuditModal',
@@ -100,8 +101,8 @@ export default defineComponent({
     CodeDiff,
   },
   props: {
-    collection: {type: String, required: true},
-    objectId: {type: String, required: true},
+    collection: {type: String as PropType<string>, required: true},
+    objectId: {type: String as PropType<string>, required: true},
     auditLogs: {type: Array as PropType<Array<AuditItem>>, required: true},
   },
   data () {
@@ -112,8 +113,8 @@ export default defineComponent({
       index: null as number|null,
       visible: false,
       diffComputed: false,
-      modalBefore: new Object() as object|null,
-      modalAfter: new Object() as object|null,
+      modalBefore: new Object() as object,
+      modalAfter: new Object() as object,
       stringBefore: null as string|null,
       stringAfter: null as string|null,
       diffConfig: {
@@ -125,11 +126,11 @@ export default defineComponent({
   },
   computed: {
     // Used to show the current audit log in the modal
-    auditLog(): AuditItem {
+    auditLog(): AuditItem|null {
       if (this.index !== null) {
         return this.auditLogs[this.index]
       } else {
-        return {}
+        return null
       }
     },
   },
@@ -177,15 +178,15 @@ export default defineComponent({
     },
     // Query the most recent audit log which timestamp is strictly lower than `from`
     fetchLastAudit(from: string): Promise<AuditItem> {
-      var query = ['AND',
+      const query = ['AND',
         ['=', 'object_id', this.objectId],
         ['<', 'timestamp', from],
         ['!=', 'action', 'rejected'],
-      ]
+      ] as Query
       return this.auditEndpoint.find(query, {asc: false, orderby: 'timestamp'})
-        .then((results: AuditItem[]) => {
+        .then(results => {
           if (results.length > 0) {
-            const lastAuditLog: AuditItem = results[0]
+            const lastAuditLog: AuditItem = assertType<AuditItem>(results[0])
             console.log(`[QUERY] Found previous audit log: ${lastAuditLog.uid}`)
             return lastAuditLog
           } else {
@@ -233,8 +234,8 @@ export default defineComponent({
     clear() {
       console.log("AuditModal.clear()")
       this.visible = false
-      this.modalBefore = null
-      this.modalAfter = null
+      this.modalBefore = {}
+      this.modalAfter = {}
       this.index = null
       this.diffComputed = false
       const classes = ['modal', 'modal-backdrop'].reduce((classes: Element[], cls: string) => {

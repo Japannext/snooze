@@ -1,54 +1,70 @@
 <template>
   <div>
-    <CForm @submit.prevent="checkForm" novalidate>
-      <CCard v-if="current_tab" no-body ref="main">
+    <CForm novalidate @submit.prevent="checkForm">
+      <CCard v-if="current_tab" ref="main" no-body>
         <CCardHeader header-tag="nav" class="p-2">
-          <CNav variant="pills" role="tablist" card v-model="tab_index" class='m-0'>
+          <CNav
+            v-model="tab_index"
+            variant="pills"
+            role="tablist"
+            card
+            class="m-0"
+          >
             <CNavItem
               v-for="tab in tabs"
-              v-bind:key="tab.key"
-              v-on:click="changeTab(tab)"
+              :key="tab.key"
+              @click="changeTab(tab)"
             >
               <CNavLink href="javascript:void(0);" :active="tab.key == current_tab.key">{{ tab.name }}</CNavLink>
             </CNavItem>
           </CNav>
         </CCardHeader>
         <CCardBody class="p-2">
-          <Form v-model="form_data" :metadata="form[current_tab.key]" :key="form_key" ref='form'/>
+          <Form
+            ref="form"
+            :key="form_key"
+            v-model="form_data"
+            :metadata="form[current_tab.key]"
+          />
         </CCardBody>
         <CCardFooter class="p-2">
-          <CButton type="submit" :color="save_variant" :disabled="save_disabled">Save {{ current_tab.name }}</CButton>
+          <CButton type="submit" :color="save_variant" :disabled="save_disabled">
+            Save {{ current_tab.name }}
+          </CButton>
         </CCardFooter>
       </CCard>
     </CForm>
   </div>
 </template>
 
-<script>
-import { API } from '@/api'
+<script lang="ts">
+import { defineComponent, PropType } from 'vue'
 import dig from 'object-dig'
+import { api2 } from '@/api2'
+import { Result, DatabaseItem } from '@/utils/types'
+
 import Form from '@/components/Form.vue'
-import { get_data } from '@/utils/api'
+
+interface SettingResult {
+  form: object
+  tabs: string[]
+  endpoint: string
+}
 
 // Create a card fed by an API endpoint.
-export default {
+export default defineComponent({
   name: 'Card',
   components: {
     Form
   },
   props: {
     // The tabs name and their associated search
-    tabs_prop: {type: Array, default: () => []},
+    tabs: {type: Array as PropType<string[]>, default: () => []},
     // The API path to query
     endpoint_prop: {type: String, required: true},
     form_prop: {type: Object, default: () => new Object()},
     loaded_callback: {type: Function},
     onSubmit: {type: Function},
-  },
-  mounted () {
-    this.save_enable()
-    this.settings = JSON.parse(localStorage.getItem(this.endpoint+'_json') || '{}')
-    get_data('settings/?c='+encodeURIComponent(`web/${this.endpoint}`)+'&checksum='+(this.settings.checksum || ""), null, {}, this.load_table)
   },
   data () {
     return {
@@ -66,7 +82,32 @@ export default {
       loaded: false,
     }
   },
-  computed: {
+  watch: {
+    form_data () {
+      this.$emit('input', this.form_data)
+    },
+    $route() {
+      if (this.loaded && this.$route.path == `/${this.endpoint_prop}`) {
+        this.$nextTick(this.reload);
+      }
+    }
+  },
+  mounted () {
+    this.save_enable()
+    this.settings = JSON.parse(localStorage.getItem(this.endpoint+'_json') || '{}')
+    /**
+    const params {
+      c: `web/${this.endpoint}`,
+      checksum: this.settings.checksum || ''
+    }
+    api2.axios.get('/api/settings', params)
+    .then(response => {
+      const result: Result<DatabaseItem[]> = response.data
+      const data = result.data
+      localStorage.setItem(`${this.endpoint}_json`, JSON.stringify(data))
+    })
+    **/
+    get_data('settings/?c='+encodeURIComponent(`web/${this.endpoint}`)+'&checksum='+(this.settings.checksum || ""), null, {}, this.load_table)
   },
   methods: {
     load_table(response) {
@@ -175,23 +216,11 @@ export default {
       }
     },
   },
-  watch: {
-    form_data () {
-      this.$emit('input', this.form_data)
-    },
-    $route() {
-      if (this.loaded && this.$route.path == `/${this.endpoint_prop}`) {
-        this.$nextTick(this.reload);
-      }
-    }
-  },
-}
+})
 </script>
 
 <style>
-
 .fix-nav {
   height: 100%;
 }
-
 </style>

@@ -6,19 +6,17 @@
   />
 </template>
 
-<script>
-import SChart from '@/components/SChart.vue'
+<script lang="ts">
+import { defineComponent } from 'vue'
 import { gen_palette, hexToRgba } from '@/utils/colors'
-import { ref } from 'vue'
 
-export default {
+import SChart from '@/components/SChart.vue'
+
+export default defineComponent({
   name: 'ChartDoughnut',
   components: { SChart },
   props: {
-    datasets: {
-      type: Object,
-      default: () => {},
-    },
+    datasets: {type: Object, default: () => new Object()},
   },
   computed: {
     default_options () {
@@ -26,7 +24,15 @@ export default {
         maintainAspectRatio: false,
       }
     },
-    data () {
+    data() {
+      return {
+        doughnut: {
+          labels: [],
+          datasets: this.datasets,
+        },
+      }
+    },
+    /**
       if (this.datasets) {
         var series_array = Object.keys(this.datasets).map(key => [key, this.datasets[key]])
         series_array = series_array.sort((a, b) => (a[1] < b[1]) ? 1: -1)
@@ -43,6 +49,7 @@ export default {
         return {datasets:[], labels: []}
       }
     },
+  **/
   },
-}
+})
 </script>

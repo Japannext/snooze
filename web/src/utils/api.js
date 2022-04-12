@@ -213,21 +213,6 @@ export function get_alert_tooltip(type) {
   }
 }
 
-export const stopEvent = (
-  event,
-  { preventDefault = true, propagation = true, immediatePropagation = false } = {}
-) => {
-  if (preventDefault) {
-    event.preventDefault()
-  }
-  if (propagation) {
-    event.stopPropagation()
-  }
-  if (immediatePropagation) {
-    event.stopImmediatePropagation()
-  }
-}
-
 export function safe_jwt_decode(token, redirect = true) {
   var decoded_token = ''
   try {

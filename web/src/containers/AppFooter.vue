@@ -2,7 +2,7 @@
   <CFooter>
     <div>
       <a href="https://snoozeweb.net" target="_blank">Snooze Web</a>
-      <span> - {{new Date()}}</span>
+      <span> - {{ new Date() }}</span>
     </div>
     <div class="ms-auto">
       <span target="_blank">Contribute on </span>

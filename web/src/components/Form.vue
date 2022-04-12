@@ -18,15 +18,16 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue'
+import { defineComponent, PropType } from 'vue'
 
 import Base from '@/components/form/Base.vue'
 
 export default defineComponent({
+  name: 'Form',
   components: { Base },
   props: {
-    modelValue: {type: Object, required: true},
-    metadata: {type: Object, default: () => new Object()},
+    modelValue: {type: Object as PropType<object>, required: true},
+    metadata: {type: Object as PropType<object>, default: () => new Object()},
   },
   emits: ['update:modelValue'],
   data() {

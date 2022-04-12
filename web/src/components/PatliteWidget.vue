@@ -130,8 +130,10 @@ export default defineComponent({
             this.timestamp = moment().format()
             this.patliteStatus = null
           } else {
-            const message: string = response.message
-            this.patliteStatus: PatliteStatus = {title: 'Could not connect', message: message }
+            this.patliteStatus = {
+              title: 'Could not connect',
+              message: response.message,
+            }
             this.timestamp = 'No Data'
           }
         })

@@ -39,6 +39,12 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import { API } from '@/api'
+import { api2 } from '@/api2'
+
+interface LoginData {
+  token: string
+  default_page?: string
+}
 
 export default defineComponent({
   name: 'BasicAuth',
@@ -59,8 +65,41 @@ export default defineComponent({
     }
   },
   methods: {
+    login(): Promise<LoginData> {
+      const data = {
+        username: this.username,
+        password: this.password,
+      }
+      return api2.axios.post(`/api/login/${this.endpoint}`, data)
+      .then(response => {
+        const result: LoginData = response.data
+        return result
+      })
+    },
+    reRoute(data: LoginData) {
+      // ?return_to field in the query
+      let url: string
+      if (typeof this.$route.query.return_to == 'string') {
+        url = decodeURIComponent(this.$route.query.return_to)
+      } else if (data.default_page) {
+        url = data.default_page
+      } else {
+        url = 'record'
+      }
+      this.$router.push(url)
+    },
     onSubmit(event) {
       event.preventDefault()
+      this.login()
+      .then(data => {
+        console.log("Got authentication token")
+        localStorage.setItem('snooze-token', data.token)
+        this.reRoute(data)
+      })
+      .catch(error => {
+        this.validate = false
+        this.error_message = error
+      })
       API
         .post(`/login/${this.endpoint}`, {}, {"auth": {"username": this.username, "password": this.password}})
         .then(response => {

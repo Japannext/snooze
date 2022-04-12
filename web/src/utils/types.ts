@@ -21,11 +21,11 @@ export interface RejectedItem {
   error: string
 }
 
-export interface ChangeResult {
-  added?: DatabaseItem[]
-  updated?: DatabaseItem[]
-  replaced?: DatabaseItem[]
-  rejected?: RejectedItem[]
+export interface ChangeResult<T=DatabaseItem, E=RejectedItem> {
+  added?: T[]
+  updated?: T[]
+  replaced?: T[]
+  rejected?: E[]
 }
 
 export interface Result<U> {
@@ -68,6 +68,8 @@ export interface AuditItem extends DatabaseItem {
   snapshot: object
   source_ip?: string
   user_agent?: string
+  error?: string
+  traceback?: string[]
   summary?: AuditSummary,
 }
 

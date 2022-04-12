@@ -12,12 +12,12 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-
-import { gen_palette } from '@/utils/colors'
+import { PALETTE } from '@/utils/colors2'
 
 import VSwatches from 'vue3-swatches'
-
 import Base from './Base.vue'
+
+const PALETTE_8 = Array.from(PALETTE.values()).slice(7)
 
 export default defineComponent({
   components: {
@@ -31,7 +31,7 @@ export default defineComponent({
   data() {
     return {
       dataValue: this.modelValue,
-      swatches: [],
+      swatches: PALETTE_8,
     }
   },
   watch: {
@@ -41,9 +41,6 @@ export default defineComponent({
       },
       immediate: true
     },
-  },
-  mounted() {
-    this.swatches = gen_palette(8, 8)
   },
 })
 </script>

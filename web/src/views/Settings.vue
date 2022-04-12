@@ -17,8 +17,6 @@ export default {
   components: {
     Card,
   },
-  mounted () {
-  },
   methods: {
     submit(data) {
       this.$refs.card.submit({'conf': data, 'reload': this.$refs.card.current_tab.reload})

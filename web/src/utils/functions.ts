@@ -212,3 +212,33 @@ export function getWeekday(index: number): string {
       return 'Invalid weekday ' + String(index)
   }
 }
+
+/** Stop an event, and its propagation
+ * @param event The event to stop
+ * @param {object} obj
+ * @param {boolean} obj.preventDefault Prevent the default propagation of an event
+ * @param {boolean} obj.propagation Stop the propagation of an event
+ * @param {boolean} obj.immediatePropagation Stop the immediate propagation of an event
+**/
+export function stopEvent(event: Event, {preventDefault=true, propagation=true, immediatePropagation=false} = {}) {
+  if (preventDefault) {
+    event.preventDefault()
+  }
+  if (propagation) {
+    event.stopPropagation()
+  }
+  if (immediatePropagation) {
+    event.stopImmediatePropagation()
+  }
+}
+
+/** Copy a given string to the user's clipboard
+ * @param {string} text The text to copy to clipboard
+**/
+export function copyToClipBoard(text: string) {
+  navigator.clipboard.writeText(text)
+  .catch(err => {
+    console.error('Could not copy text to clipboard: ', err)
+  })
+}
+

@@ -26,6 +26,7 @@
 <script lang="ts">
 import { defineComponent, PropType } from 'vue'
 import { api2 } from '@/api2'
+import { DatabaseItem } from '@/utils/types'
 
 import Base from '@/components/form/Base.vue'
 import Form from '@/components/Form.vue'
@@ -63,7 +64,7 @@ export default defineComponent({
       form: this.metadata.form,
       required: this.metadata.required,
       dataValue: this.modelValue,
-      items: [] as object[],
+      items: [] as DatabaseItem[],
     }
   },
 
@@ -72,10 +73,9 @@ export default defineComponent({
       return (this.required && this.dataValue.selected == '')
     },
     selection() {
-      return this.items.find((item: unknown) => {
-        this.primary in item &&
-        typeof item[this.primary] == 'string' &&
-        item[this.primary] == this.dataValue.selected
+      return this.items.find((item: DatabaseItem) => {
+        // We're making the type assumption that `item` has a key `this.primary`
+        item[this.primary as keyof DatabaseItem] == this.dataValue.selected
       })
     },
   },
@@ -96,7 +96,7 @@ export default defineComponent({
   methods: {
     reload() {
       this.apiEndpoint.find()
-        .then((results: object[]) => {
+        .then(results => {
           this.items = results
         })
     },
