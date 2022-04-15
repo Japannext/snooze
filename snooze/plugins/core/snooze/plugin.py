@@ -46,8 +46,8 @@ class Snooze(Plugin):
         for filt in (self.data or []):
             filters.append(SnoozeObject(filt))
         self.filters = filters
-        if sync and self.core.cluster:
-            self.core.cluster.reload_plugin(self.name)
+        if sync:
+            self.core.sync_neighbors(self.name)
 
     def retro_apply(self, filter_names):
         '''Retro applying a list of snooze filters'''

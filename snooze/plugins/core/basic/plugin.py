@@ -124,6 +124,14 @@ class Plugin:
                 pagination['asc'] = self.metadata['default_ordering']
             self.data = self.db.search(self.name, **pagination)['data']
 
+    def sync_neighbors(self):
+        '''Trigger the reload of the module to neighbors (async)'''
+        self.core.threads['cluster'].reload_plugin(self.name)
+
+    def reload_data(self):
+        '''Abstract method for loading data'''
+        self.load_data()
+
     def process(self, record: Record) -> Record:
         '''Process a record if it's a process plugin'''
         return record
