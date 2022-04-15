@@ -130,7 +130,7 @@ class Route(FalconRoute):
             result = self.insert(self.plugin.name, validated)
             result['data']['rejected'] += rejected
             resp.media = result
-            self.plugin.reload_data(True)
+            self.plugin.reload_data()
             resp.status = falcon.HTTP_201
             self._audit(result, req)
         except Exception as err:
@@ -160,7 +160,7 @@ class Route(FalconRoute):
             result = self.update(self.plugin.name, validated)
             result['data']['rejected'] += rejected
             resp.media = result
-            self.plugin.reload_data(True)
+            self.plugin.reload_data()
             resp.status = falcon.HTTP_201
             self._audit(result, req)
         except Exception as err:
@@ -188,7 +188,7 @@ class Route(FalconRoute):
         if result_dict:
             result = result_dict
             resp.media = result
-            self.plugin.reload_data(True)
+            self.plugin.reload_data()
             resp.status = falcon.HTTP_OK
         else:
             resp.media = {}

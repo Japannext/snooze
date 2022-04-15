@@ -145,14 +145,12 @@ class Aggregaterule(Plugin):
         record.pop('notifications', '')
         return record
 
-    def reload_data(self, sync = False):
-        super().reload_data()
+    def reload_data(self):
+        self.load_data(sync=True)
         aggregate_rules = []
         for aggrule in (self.data or []):
             aggregate_rules.append(AggregateruleObject(aggrule))
         self.aggregate_rules = aggregate_rules
-        if sync and self.core.cluster:
-            self.core.cluster.reload_plugin(self.name)
 
 class AggregateruleObject:
     def __init__(self, aggregate_rule):

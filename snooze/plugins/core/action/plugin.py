@@ -51,8 +51,8 @@ class Action(Plugin):
                     self.core.db.delete('action.delay', ['=', 'uid', action_uid])
             log.debug("Restored delayed actions %s", self.deffered_actions.delayed)
 
-    def reload_data(self, sync = False):
-        super().reload_data()
+    def reload_data(self):
+        self.load_data(sync=True)
         actions = []
         for action in self.data or []:
             action_object = ActionObject(action, self)
@@ -66,8 +66,6 @@ class Action(Plugin):
         notification_plugin = self.core.get_core_plugin('notification')
         if notification_plugin:
             notification_plugin.reload_data()
-        if sync and self.core.cluster:
-            self.core.cluster.reload_plugin(self.name)
 
 class ActionObject:
     '''Object representing an action in the database'''

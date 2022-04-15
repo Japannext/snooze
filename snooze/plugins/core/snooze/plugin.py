@@ -41,13 +41,11 @@ class Snooze(Plugin):
         validate_condition(obj)
 
     def reload_data(self, sync: bool = False):
-        super().reload_data()
+        self.load_data(sync=True)
         filters = []
         for filt in (self.data or []):
             filters.append(SnoozeObject(filt))
         self.filters = filters
-        if sync and self.core.cluster:
-            self.core.cluster.reload_plugin(self.name)
 
     def retro_apply(self, filter_names):
         '''Retro applying a list of snooze filters'''

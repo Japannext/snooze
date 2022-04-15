@@ -113,7 +113,7 @@ class Plugin:
         '''Hook to execute something after the default init'''
         self.reload_data()
 
-    def reload_data(self, sync: bool = False):
+    def load_data(self, sync: bool = True):
         '''Reload the data of a plugin from the database'''
         if self.metadata.get('auto_reload', False):
             log.debug("Reloading data for plugin %s", self.name)
@@ -123,6 +123,16 @@ class Plugin:
             if 'asc' in self.metadata:
                 pagination['asc'] = self.metadata['default_ordering']
             self.data = self.db.search(self.name, **pagination)['data']
+        if sync:
+            self.sync_neighbors()
+
+    def sync_neighbors(self):
+        '''Trigger the reload of the module to neighbors (async)'''
+        self.core.threads['cluster'].reload_plugin(self.name)
+
+    def reload_data(self):
+        '''Abstract method for loading data'''
+        self.load_data()
 
     def process(self, record: Record) -> Record:
         '''Process a record if it's a process plugin'''
