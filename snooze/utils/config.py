@@ -8,83 +8,102 @@
 '''Module for managing loading and writing the configuration files'''
 
 import os
+from contextlib import contextmanager
 from logging import getLogger
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List, Any
 
 import yaml
+from filelock import FileLock
 
 from snooze import __file__ as SNOOZE_PATH
-from snooze.utils.typing import Config
 
 log = getLogger('snooze.utils.config')
 
-SNOOZE_CONFIG_PATH = os.environ.get('SNOOZE_SERVER_CONFIG', '/etc/snooze/server')
+SNOOZE_CONFIG_PATH = Path(os.environ.get('SNOOZE_SERVER_CONFIG', '/etc/snooze/server'))
+DEFAULTS = Path(SNOOZE_PATH).parent / 'defaults'
 
-def config(configname: str = 'core', configpath: str = SNOOZE_CONFIG_PATH) -> Config:
-    '''Read a configuration file and return its content'''
-    server_config_path = Path(configpath) / (configname + '.yaml')
+class ReadOnlyConfig:
+    '''A class representing a config file at a given path.
+    Can only be read.'''
+    path: Path
+    data: dict
+    default_data: dict
 
-    default_file = Path(SNOOZE_PATH).parent / 'defaults' / (configname + '.yaml')
-    if default_file.is_file():
-        return_config = yaml.safe_load(default_file.read_text())
-    else:
-        log.debug('No default config for %s', default_file)
-        return_config = {}
+    def __init__(self, section: str, default_basedir: Path = DEFAULTS):
+        path = SNOOZE_CONFIG_PATH / (section + '.yaml')
 
-    log.debug('Attempting to load configuration at %s', server_config_path)
-    if server_config_path.is_file():
-        config_dict = yaml.safe_load(server_config_path.read_text())
-        return_config.update(config_dict)
-    else:
-        log.warning('Could not find config at %s', server_config_path)
-
-    environment_variables = {
-        key: value
-        for (key, value) in os.environ.items()
-        if key.startswith('SNOOZE_SERVER_') and key != 'SNOOZE_SERVER_CONFIG'
-    }
-    return_config.update(environment_variables)
-
-    log.debug('Retreived the following config: %s', return_config)
-
-    return return_config
-
-def write_config(config_name: str = 'core', config_dict: Optional[dict] = None, config_path=SNOOZE_CONFIG_PATH) -> dict:
-    '''Update or create a configuration file'''
-    if config_dict is None:
-        config_dict = {}
-    config_file = Path(config_path) / (config_name + '.yaml')
-    log.debug('Write: Loading configuration from %s', config_file)
-
-    try:
-        if config_file.is_file():
-            log.debug('Write: %s found', config_file)
-            current_config = yaml.safe_load(config_file.read_text())
-            current_config.update(config_dict)
+        if default_basedir:
+            try:
+                default_path = default_basedir / path.name
+                data = default_path.read_text(encoding='utf-8')
+                self.default_data = yaml.safe_load(data)
+            except (OSError, yaml.YAMLError):
+                self.default_data = {}
         else:
-            log.debug('Write: YAML config file not found. Creating %s', config_file)
-            current_config = config_dict
+            self.default_data = {}
 
-        # Write config
-        with config_file.open("w") as config_fd:
-            yaml.dump(current_config, config_fd)
-            log.debug('New config: %s', current_config)
-        return {'file': str(config_file)}
+        self.path = path
+        self.data = {}
+        # pylint: disable=abstract-class-instantiated
+        self.filelock = FileLock(path)
+        self.read()
 
-    except Exception as err:
-        log.error(err)
-        return {'error': str(err)}
+    def read(self):
+        '''Read the config file to load the config'''
+        data = self.path.read_text(encoding='utf-8')
+        self.data = {**self.default_data, **yaml.safe_load(data)}
 
-def get_metadata(plugin_name: str) -> dict:
-    '''Read metadata at a given plugin path'''
-    plugin_root = Path(SNOOZE_PATH).parent / 'plugins/core'
-    metadata_path = plugin_root / plugin_name / 'metadata.yaml'
-    try:
-        log.debug("Attempting to read metadata at %s for %s module", metadata_path, plugin_name)
-        data = metadata_path.read_text()
-        metadata = yaml.safe_load(data)
-        return metadata
-    except Exception as err:
-        log.warning("Skipping. Cannot read %s due to: %s", metadata_path, err)
-        return {}
+    def get(self, key: str, default: Optional[Any] = None) -> Any:
+        '''Same as data get method'''
+        return self.data.get(key, default)
+
+    def __getitem__(self, key: str):
+        return self.data[key]
+
+    def dig(self, *keys: List[str], default: Optional[Any] = None) -> Any:
+        '''Get a nested key from the config'''
+        cursor = self.data
+        for key in keys:
+            cursor = cursor.get(key)
+            if not isinstance(cursor, dict):
+                return default
+        return cursor
+
+class Config(ReadOnlyConfig):
+    '''A class representing a writable config file at a given path.
+    Can be explored, and updated with a lock file.'''
+
+    @contextmanager
+    def lock(self):
+        '''A context manager to filelock the config during an update (lock, read, update, write, release)'''
+        self.filelock.acquire()
+        self.read()
+        try:
+            yield # Update the config
+        finally:
+            self.write()
+            self.filelock.release()
+
+    def write(self):
+        '''Write a new config to the config file'''
+        data = yaml.dump(self.data)
+        self.path.write_text(data, encoding='utf-8')
+
+    def __setitem__(self, key: str, value: Any):
+        self.set(key, value)
+
+    def set(self, key: str, value: Any):
+        '''Rewrite a config key with a given value'''
+        with self.lock():
+            self.data[key] = value
+
+class Metadata(ReadOnlyConfig):
+    '''A class to fetch metadata configuration'''
+    def __init__(self, plugin_name: str):
+        path = Path(SNOOZE_PATH).parent / 'plugins/core' / plugin_name / 'metadata.yaml'
+        if path.is_file():
+            ReadOnlyConfig.__init__(self, path, False)
+        else:
+            self.default_data = {}
+            self.data = {}
