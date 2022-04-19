@@ -14,11 +14,10 @@ from datetime import datetime, timedelta
 from threading import Event
 from typing import Callable, Optional
 
-from snooze.utils import config
+from snooze.utils.config import HousekeeperConfig, BackupConfig
 from snooze.utils.threading import SurvivingThread
 
 log = getLogger('snooze.housekeeping')
-
 
 class AbstractJob(ABC):
     '''An abstract class for a job'''
@@ -89,26 +88,21 @@ class IntervalJob(AbstractJob):
 
 class BackupJob(AbstractJob):
     '''A dedicated class for the backup job'''
-    def __init__(self, conf: dict, interval: timedelta):
-        self.path = '/var/log/snooze'
-        self.excludes = ('record', 'stats', 'comment', 'secrets')
+    def __init__(self, config: BackupConfig, interval: timedelta):
+        self.config = config
         self.interval = interval
-        self.reload(conf)
+        self.config.path.mkdir(parents=True, exist_ok=True)
+        self.reload({})
         AbstractJob.__init__(self)
 
     def next(self):
         self.next_run += self.interval
 
     def run(self, db):
-        db.backup(self.path, self.excludes)
+        db.backup(self.config.path, self.config.excludes)
 
     def reload(self, conf: dict):
-        path = conf.get('path')
-        excludes = conf.get('excludes')
-        if path is not None:
-            self.path = path
-        if excludes is not None:
-            self.excludes = excludes
+        self.config.refresh()
 
 class Housekeeper(SurvivingThread):
     '''Main class starting the housekeeping thread in the background'''
@@ -117,8 +111,7 @@ class Housekeeper(SurvivingThread):
             exit_event = Event()
         log.debug('Init Housekeeper')
         self.db = db
-        self.config = {}
-        self.trigger_on_startup = True
+        self.config = HousekeeperConfig()
         self.jobs = {
             'cleanup_alert': BasicJob('cleanup_alert', timedelta(minutes=5),
                 lambda db: db.cleanup_timeout('record')),
@@ -133,25 +126,24 @@ class Housekeeper(SurvivingThread):
         }
         self.backup_job = None
         self.reload()
-        if self.trigger_on_startup:
+        if self.config.trigger_on_startup:
             for job in self.jobs.values():
                 job.next_run = datetime.now()
         SurvivingThread.__init__(self, exit_event)
 
     def reload(self):
         ''' Reload the housekeeper configuration'''
-        self.config = config('housekeeping')
-        log.debug("Reloading Housekeeper with conf %s", self.config)
-        self.trigger_on_startup = self.config.get('trigger_on_startup', True)
+        self.config.refresh()
+        log.debug("Reloading Housekeeper with config %s", self.config)
         for job in self.jobs.values():
             job.reload(self.config)
 
         # Backup config
-        backup_conf = self.config.get('backup', {})
-        if backup_conf.get('enabled', True):
+        backup = BackupConfig()
+        if backup.enabled:
             if not self.backup_job:
-                self.backup_job = BackupJob(backup_conf, timedelta(days=1))
-            self.backup_job.reload(backup_conf)
+                self.backup_job = BackupJob(backup, timedelta(days=1))
+            self.backup_job.reload(backup)
         else:
             self.backup_job = None
 
@@ -169,7 +161,7 @@ class Housekeeper(SurvivingThread):
         time.sleep(1)
 
     def start_thread(self):
-        if self.trigger_on_startup:
+        if self.config.trigger_on_startup:
             for job in self.jobs:
                 job.next_run = datetime.now()
         while True:

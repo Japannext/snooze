@@ -17,7 +17,7 @@ from typing import Optional, Union, List
 from snooze.utils import Cluster
 from snooze.db.database import Pagination
 from snooze.utils.functions import unique
-from snooze.utils.typing import DuplicatePolicy, AuthorizationPolicy
+from snooze.utils.typing import DuplicatePolicy, AuthorizationPolicy, RouteArgs
 
 log = getLogger('snooze.api')
 
@@ -27,22 +27,12 @@ class BasicRoute:
     def __init__(self,
         api: 'Api',
         plugin: Optional[str] = None,
-        primary: Optional[str] = None,
-        duplicate_policy: DuplicatePolicy = 'update',
-        authorization_policy: Optional[AuthorizationPolicy] = None,
-        check_permissions: bool = False,
-        check_constant: Optional[str] = None,
-        inject_payload: bool = False
+        route_args: RouteArgs = RouteArgs(),
     ):
         self.api = api
         self.core = api.core
         self.plugin = plugin
-        self.primary = primary
-        self.duplicate_policy = duplicate_policy
-        self.authorization_policy = authorization_policy
-        self.check_permissions = check_permissions
-        self.check_constant = check_constant
-        self.inject_payload = inject_payload
+        self.options = route_args
 
     def search(self, collection: str, cond_or_uid: ConditionOrUid = None, **pagination: Pagination):
         '''Wrapping the search of an object by condition or uid. Also handling options for pagination'''
@@ -68,11 +58,13 @@ class BasicRoute:
 
     def insert(self, collection: str, record: dict):
         '''Wrapping the insertion of a new object'''
-        return self.core.db.write(collection, record, self.primary, self.duplicate_policy, constant=self.check_constant)
+        return self.core.db.write(collection, record,
+            self.options.primary, self.options.duplicate_policy, constant=self.options.check_constant)
 
     def update(self, collection: str, record: dict):
         '''Wrapping the update of an existing object'''
-        return self.core.db.write(collection, record, self.primary, constant = self.check_constant)
+        return self.core.db.write(collection, record,
+            self.options.primary, constant = self.options.check_constant)
 
     def get_roles(self, username: str, method: str) -> List[str]:
         '''Get the authorization roles for a user/auth method pair'''
@@ -139,28 +131,13 @@ class Api:
                 log.exception(err)
                 log.debug("Skip loading plugin `%s` routes", plugin.name)
                 continue
-            primary = plugin.metadata.get('primary') or None
-            duplicate_policy = plugin.metadata.get('duplicate_policy') or 'update'
-            authorization_policy = plugin.metadata.get('authorization_policy')
-            check_permissions = plugin.metadata.get('check_permissions', False)
-            check_constant = plugin.metadata.get('check_constant')
-            injectpayload = plugin.metadata.get('inject_payload', False)
-            prefix = plugin.metadata.get('prefix', '/api')
-            for path, route in plugin.metadata.get('routes', {}).items():
-                route_class_name = route['class']
-                log.debug("For %s loading route class `%s`", path, route_class_name)
-                route_class = getattr(plugin_module, route_class_name)
-                route_duplicate_policy = route.get('duplicate_policy', duplicate_policy)
-                route_authorization_policy = route.get('authorization_policy', authorization_policy)
-                route_check_permissions = route.get('check_permissions', check_permissions)
-                route_check_constant = route.get('check_constant', check_constant)
-                route_injectpayload = route.get('inject_payload', injectpayload)
-                route_prefix = route.get('prefix', prefix)
-                log.debug("Route `%s` attributes: Primary (%s). Duplicate Policy (%s), Authorization Policy (%s), Check Permissions (%s), Check Constant (%s), Inject Payload (%s)", route_class_name, primary, route_duplicate_policy, route_authorization_policy, route_check_permissions, route_check_constant, route_injectpayload)
-                self.add_route(path, route_class(self, plugin, primary, route_duplicate_policy, route_authorization_policy, route_check_permissions, route_check_constant, route_injectpayload), route_prefix)
+            for path, route_args in plugin.meta.routes:
+                log.debug("For %s loading route: %s", path, route_args.dict())
+                instance = getattr(plugin_module, route_args.class_name)(self, route_args)
+                self.add_route(path, instance)
 
     @abstractmethod
     def init_api(self, *args, **kwargs): pass
 
     @abstractmethod
-    def add_route(self, route, action, prefix): pass
+    def add_route(self, route, action, prefix=None): pass

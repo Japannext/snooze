@@ -38,9 +38,11 @@ tinydb = "4.5.2"
 waitress = "^2.0.0"
 netifaces = "^0.11.0"
 kombu = "^5.1.0"
+pydantic = "^1.9.0"
+pydantic-yaml = "^0.6.3"
 
 [tool.poetry.group.lint.dependencies]
-pylint = "^2.11.1"
+pylint = "^2.13.5"
 pyright = "^1.1.238"
 
 [tool.poetry.group.security.dependencies]
@@ -64,7 +66,7 @@ toml = "^0.10.2"
 
 [tool.pylint.format]
 max-line-length = 120
-extension-pkg-whitelist = ['falcon', 'netifaces']
+extension-pkg-whitelist = ['falcon', 'netifaces', 'pydantic']
 disable = ['no-else-return']
 
 [tool.pyright]

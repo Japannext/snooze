@@ -9,38 +9,39 @@
 
 import os
 import functools
-from logging import getLogger
-from hashlib import sha256
-from base64 import b64decode
 from abc import abstractmethod
-
-from dataclasses import asdict
+from base64 import b64decode
+from hashlib import sha256
+from logging import getLogger
+from pathlib import Path
+from typing import Optional
 
 import bson.json_util
 import falcon
-from falcon_auth import FalconAuthMiddleware, BasicAuthBackend, JWTAuthBackend
+from falcon_auth import FalconAuthMiddleware, JWTAuthBackend
 from falcon.errors import HTTPInternalServerError
-from wsgiref.simple_server import make_server, WSGIServer
-from socketserver import ThreadingMixIn
-from ldap3 import Server, Connection, ALL, SUBTREE
-from ldap3.core.exceptions import LDAPOperationResult, LDAPExceptionError
+from pydantic import BaseModel
 
+from snooze.core import CoreConfig
 from snooze.api.base import BasicRoute
 from snooze.api.static import StaticRoute
-from snooze.utils import config, write_config
+from snooze.api.ldap import LdapAuthRoute
+from snooze.utils.cluster import ClusterRoute
 from snooze.utils.functions import ensure_kv
 from snooze.health import HealthRoute
 
 log = getLogger('snooze.api')
 
-class LoggerMiddleware(object):
+class WebConfig(BaseModel):
+    enabled: bool = True
+    path: Path = Path('/opt/snooze/web')
+
+class LoggerMiddleware:
     '''Middleware for logging'''
 
-    def __init__(self, conf=None):
-        if conf is None:
-            conf = {}
+    def __init__(self, excluded_paths: List[str]):
         self.logger = getLogger('snooze.audit')
-        self.excluded_paths = conf.get('audit_excluded_paths', [])
+        self.excluded_paths = excluded_paths
 
     def process_response(self, req, resp, *_args):
         '''Method for handling requests as a middleware'''
@@ -53,14 +54,10 @@ class LoggerMiddleware(object):
             self.logger.debug(message)
 
 
-class ThreadingWSGIServer(ThreadingMixIn, WSGIServer):
-    '''Daemonized threaded WSGI server'''
-    daemon_threads = True
-
 def authorize(func):
     '''Decorator for methods that are protected by authorization'''
     def _f(self, req, resp, *args, **kw):
-        if os.environ.get('SNOOZE_NO_LOGIN', self.core.conf.get('no_login', False)):
+        if os.environ.get('SNOOZE_NO_LOGIN', self.core.config.get('no_login', False)):
             return func(self, req, resp, *args, **kw)
         user_payload = req.context['user']['user']
         if (self.plugin and hasattr(self.plugin, 'name')):
@@ -245,7 +242,7 @@ class LoginRoute(BasicRoute):
 
     def on_get(self, req, resp):
         log.debug("Listing authentication backends")
-        if os.environ.get('SNOOZE_NO_LOGIN', self.core.conf.get('no_login', False)):
+        if os.environ.get('SNOOZE_NO_LOGIN', self.core.config.get('no_login', False)):
             resp.content_type = falcon.MEDIA_JSON
             resp.status = falcon.HTTP_200
             resp.media = {
@@ -293,24 +290,6 @@ class ReloadRoute(BasicRoute):
         else:
             resp.status = falcon.HTTP_401
             resp.text = 'Invalid secret reload token'
-
-class ClusterRoute(BasicRoute):
-    auth = {
-        'auth_disabled': True
-    }
-
-    def on_get(self, req, resp):
-        log.debug("Listing cluster members")
-        cluster = self.core.threads['cluster']
-        if req.params.get('self', False):
-            members = [cluster.status()]
-        else:
-            members = cluster.members_status()
-        resp.content_type = falcon.MEDIA_JSON
-        resp.status = falcon.HTTP_200
-        resp.media = {
-            'data': [asdict(m) for m in members],
-        }
 
 class CORS:
     '''A falcon middleware to handle CORS when the snooze-server and
@@ -442,11 +421,12 @@ class AnonymousAuthRoute(AuthRoute):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = 'Anonymous'
+        self.enabled = False
         self.reload()
 
     def reload(self):
-        conf = config('general')
-        self.enabled = conf.get('anonymous_enabled', False)
+        config = Config('general')
+        self.enabled = config.get('anonymous_enabled', False)
         log.debug("Authentication backend 'anonymous' status: %s", self.enabled)
 
     def authenticate(self, req, resp):
@@ -461,11 +441,12 @@ class LocalAuthRoute(AuthRoute):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = 'Local'
+        self.enabled = False
         self.reload()
 
     def reload(self):
-        conf = config('general')
-        self.enabled = conf.get('local_users_enabled', False)
+        self.core.general_conf.refresh()
+        self.enabled = self.core.general_conf.local_users_enabled
         log.debug("Authentication backend 'local' status: %s", self.enabled)
 
     def authenticate(self, req, resp):
@@ -501,120 +482,6 @@ class LocalAuthRoute(AuthRoute):
     def parse_user(self, user):
         return {'name': user, 'method': 'local'}
 
-class LdapAuthRoute(AuthRoute):
-    '''An authentication route for LDAP users'''
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.name = 'Ldap'
-        self.reload()
-
-    def reload(self):
-        conf = config('ldap_auth')
-        self.enabled = conf.get('enabled') or False
-        if self.enabled:
-            try:
-                self.base_dn = conf['base_dn']
-                self.group_dn = conf.get('group_dn', self.base_dn)
-                self.user_filter = conf['user_filter']
-                self.email_attribute = conf.get('email_attribute') or 'mail'
-                self.display_name_attribute = conf.get('display_name_attribute') or 'cn'
-                self.member_attribute = conf.get('member_attribute') or 'memberof'
-                self.auth_header_prefix = conf.get('auth_header_prefix') or 'Basic'
-                self.bind_dn = conf['bind_dn']
-                self.bind_password = conf['bind_password']
-                self.port = conf.get('port') or ''
-                self.host = conf['host']
-                if not self.host.startswith('ldap://') and not self.host.startswith('ldaps://'):
-                    if str(self.port) == '636':
-                        self.host = 'ldaps://' + self.host
-                    else:
-                        self.host = 'ldap://' + self.host
-                if self.port:
-                    self.server = Server(self.host, port=self.port, get_info=ALL, connect_timeout=10)
-                else:
-                    self.server = Server(self.host, get_info=ALL, connect_timeout=10)
-                bind_con = Connection(
-                    self.server,
-                    user=self.bind_dn,
-                    password=self.bind_password,
-                    raise_exceptions=True
-                )
-                if not bind_con.bind():
-                    log.error("Cannot BIND to LDAP server: %s:%s", conf['host'], conf['port'])
-                    self.enabled = False
-            except Exception as err:
-                log.exception(err)
-                self.enabled = False
-        log.debug("Authentication backend 'ldap'. Enabled: %s", self.enabled)
-
-    def _search_user(self, username):
-        try:
-            bind_con = Connection(
-                self.server,
-                user=self.bind_dn,
-                password=self.bind_password,
-                raise_exceptions=True
-            )
-            bind_con.bind()
-            user_filter = self.user_filter.replace('%s', username)
-            bind_con.search(
-                search_base = self.base_dn,
-                search_filter = user_filter,
-                attributes = [self.display_name_attribute, self.email_attribute, self.member_attribute],
-                search_scope = SUBTREE
-            )
-            response = bind_con.response
-            if (
-                bind_con.result['result'] == 0
-                and len(response) > 0
-                and 'dn' in response[0].keys()
-            ):
-                user_dn = response[0]['dn']
-                attributes = response[0]['attributes']
-                groups = [
-                    group for group in attributes[self.member_attribute]
-                    for dn in self.group_dn.split(':')
-                    if group.endswith(dn)
-                ]
-                return {'name': username, 'dn': user_dn, 'groups': groups}
-            else:
-                # Could not find user in search
-                raise falcon.HTTPUnauthorized(description=f"Error in search: Could not find user {username} in LDAP search")
-        except LDAPOperationResult as err:
-            raise falcon.HTTPUnauthorized(description=f"Error during search: {err}")
-        except LDAPExceptionError as err:
-            raise falcon.HTTPUnauthorized(description=f"Error during search: {err}")
-
-    def _bind_user(self, user_dn, password):
-        try:
-            user_con = Connection(
-                self.server,
-                user=user_dn,
-                password=password,
-                raise_exceptions=True
-            )
-            user_con.bind()
-            return user_con
-        except LDAPOperationResult as err:
-            raise falcon.HTTPUnauthorized(description=f"Error during bind: {err}")
-        except LDAPExceptionError as err:
-            raise falcon.HTTPUnauthorized(description=f"Error during bind: {err}")
-        finally:
-            user_con.unbind()
-
-    def authenticate(self, req, resp):
-        username, password = self._extract_credentials(req)
-        user = self._search_user(username)
-        user_con = self._bind_user(user['dn'], password)
-        if user_con.result['result'] == 0:
-            req.context['user'] = user
-        else:
-            raise falcon.HTTPUnauthorized(description="")
-
-    def parse_user(self, user):
-        groups = list(map(lambda x: x.split(',')[0].split('=')[1], user['groups']))
-        return {'name': user['name'], 'groups': groups, 'method': 'ldap'}
-
 class RedirectRoute:
     '''A falcon route for managing the default redirection'''
     auth = {
@@ -634,14 +501,19 @@ class BackendApi():
         self.cluster = core.threads['cluster']
 
         # JWT setup
-        self.secret = '' if os.environ.get('SNOOZE_NO_LOGIN', self.core.conf.get('no_login', False)) else self.core.secrets['jwt_private_key']
+        self.secret = '' if os.environ.get('SNOOZE_NO_LOGIN', self.core.config.get('no_login', False)) else self.core.secrets['jwt_private_key']
         def auth(payload):
             log.debug("Payload received: %s", payload.get('user', {}).get('name', payload))
             return payload
         self.jwt_auth = JWTAuthBackend(auth, self.secret)
 
         # Handler
-        self.handler = falcon.API(middleware=[CORS(), LoggerMiddleware(self.core.conf), FalconAuthMiddleware(self.jwt_auth)])
+        middlewares = [
+            CORS(),
+            LoggerMiddleware(self.core.config.authorization_excluded_paths),
+            FalconAuthMiddleware(self.jwt_auth),
+        ]
+        self.handler = falcon.App(middleware=middlewares)
         self.handler.req_options.auto_parse_qs_csv = False
 
         json_handler = falcon.media.JSONHandler(
@@ -678,7 +550,7 @@ class BackendApi():
         if self.core.stats.enabled:
             self.add_route('/metrics', MetricsRoute(self), '')
 
-        web_conf = self.core.conf.get('web', {})
+        web_conf = self.core.config.get('web', {})
         if web_conf.get('enabled', True):
             self.add_route('/', RedirectRoute(), '')
             self.add_route('/web', RedirectRoute(), '')
