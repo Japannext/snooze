@@ -15,6 +15,7 @@ from typing import List
 from snooze.plugins.core import Plugin
 from snooze.utils.condition import get_condition, validate_condition
 from snooze.utils.time_constraints import get_record_date, init_time_constraints
+from snooze.utils.typing import Record
 
 log = getLogger('snooze.notification')
 
@@ -80,15 +81,10 @@ class NotificationObject:
         '''Whether a record match the Notification object'''
         return self.condition.match(record) and self.time_constraint.match(get_record_date(record))
 
-    def get_default(self, record, key, default_val):
-        val = record.get(key)
-        notif_val = self.options.get(key)
-        if val is not None:
-            return val
-        elif notif_val is not None:
-            return notif_val
-        else:
-            return self.core.notif_conf.get(key, default_val)
+    def get_default(self, record: Record, key: str):
+        return record.get(key) \
+            or self.options.get(key) \
+            or self.core.config.notifications[key]
 
     def send(self, record):
         if not 'notifications' in record:
@@ -96,8 +92,8 @@ class NotificationObject:
         if self.name not in record['notifications']:
             record['notifications'].append(self.name)
         if len(self.action_plugins) > 0:
-            retry = self.get_default(record, 'notification_retry', 3)
-            freq = self.get_default(record, 'notification_freq', 60)
+            retry = self.get_default(record, 'notification_retry')
+            freq = self.get_default(record, 'notification_freq')
             action_obj = {
                 'record': record,
                 'delay': self.delay,

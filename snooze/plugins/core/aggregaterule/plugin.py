@@ -12,7 +12,7 @@ import datetime
 import hashlib
 from logging import getLogger
 
-from snooze.plugins.core import Plugin, Abort_and_update
+from snooze.plugins.core import Plugin, AbortAndUpdate
 from snooze.utils.condition import get_condition, validate_condition
 from snooze.utils.functions import dig
 
@@ -89,7 +89,7 @@ class Aggregaterule(Plugin):
                     return record
                 else:
                     LOG.debug("OK received but the alert is already closed, discarding")
-                    raise Abort_and_update(record)
+                    raise AbortAndUpdate(record)
             watched_fields = []
             for watched_field in watch:
                 aggregate_field = dig(aggregate, *watched_field.split('.'))
@@ -124,7 +124,7 @@ class Aggregaterule(Plugin):
             elif (throttle < 0) or (now.timestamp() - aggregate.get('date_epoch', 0) < throttle):
                 LOG.debug("Alert %s Time within throttle %s range, discarding", record['hash'], throttle)
                 self.core.stats.inc('alert_throttled', {'name': aggrule_name})
-                raise Abort_and_update(record)
+                raise AbortAndUpdate(record)
             else:
                 if record.get('state') == 'ack':
                     comment['type'] = 'esc'
@@ -137,7 +137,7 @@ class Aggregaterule(Plugin):
             record['comment_count'] = aggregate.get('comment_count', 0) + 1
             if record.get('flapping_countdown', 0) < 0:
                 LOG.debug("Alert %s is flapping, discarding", record['hash'])
-                raise Abort_and_update(record)
+                raise AbortAndUpdate(record)
         else:
             LOG.debug("Not found, creating a new aggregate")
             record['duplicates'] = 1

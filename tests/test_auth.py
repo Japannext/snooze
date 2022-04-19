@@ -5,23 +5,22 @@
 # SPDX-License-Identifier: AFL-3.0
 #
 
-#!/usr/bin/python3.6
 
-from snooze.core import Core
-from snooze.api.base import Api
+import json
+import mongomock
+from base64 import b64encode
+from hashlib import sha256
+from logging import getLogger
+
+
+import pytest
+import yaml
 from falcon import testing
 
-import mongomock
-import json
-import pytest
+from snooze.api.base import Api
+from snooze.core import Core
 
-from logging import getLogger
 log = getLogger('snooze.tests.api')
-
-import yaml
-from base64 import b64encode
-
-from hashlib import sha256
 
 @mongomock.patch('mongodb://localhost:27017')
 def test_basic_auth(core):

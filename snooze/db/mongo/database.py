@@ -20,9 +20,9 @@ import pymongo
 from bson.code import Code
 from bson.json_util import dumps
 
-from snooze.db.database import Database, Pagination, DatabaseError
+from snooze.db.database import Database, DatabaseError
 from snooze.utils.functions import dig
-from snooze.utils.typing import Condition, Config
+from snooze.utils.typing import Condition, Pagination
 
 log = getLogger('snooze.db.mongo')
 

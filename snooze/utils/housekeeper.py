@@ -13,8 +13,9 @@ from abc import abstractmethod, ABC
 from datetime import datetime, timedelta
 from threading import Event
 from typing import Callable, Optional
+from pathlib import Path
 
-from snooze.utils.config import HousekeeperConfig, BackupConfig
+from snooze.utils.config import HousekeeperConfig, BackupConfig, SNOOZE_CONFIG
 from snooze.utils.threading import SurvivingThread
 
 log = getLogger('snooze.housekeeping')
@@ -55,9 +56,9 @@ class BasicJob(AbstractJob):
 
     def reload(self, conf: dict):
         '''Called to reload the configuration of the job'''
-        new_interval = conf.get(self.config_key)
+        new_interval = getattr(conf, self.config_key)
         if new_interval:
-            self.interval = timedelta(seconds=new_interval)
+            self.interval = new_interval
 
 class IntervalJob(AbstractJob):
     '''A housekeeping job triggerring a db based callback at a regular interval,
@@ -82,9 +83,9 @@ class IntervalJob(AbstractJob):
 
     def reload(self, conf: dict):
         '''Called to reload the configuration of the job'''
-        new_interval = conf.get(self.config_key)
+        new_interval = getattr(conf, self.config_key)
         if new_interval:
-            self.cleanup_interval = timedelta(seconds=new_interval)
+            self.cleanup_interval = new_interval
 
 class BackupJob(AbstractJob):
     '''A dedicated class for the backup job'''
@@ -106,12 +107,12 @@ class BackupJob(AbstractJob):
 
 class Housekeeper(SurvivingThread):
     '''Main class starting the housekeeping thread in the background'''
-    def __init__(self, db: 'Database', exit_event: Optional[Event] = None):
+    def __init__(self, db: 'Database', exit_event: Optional[Event] = None, basedir: Path = SNOOZE_CONFIG):
         if exit_event is None:
             exit_event = Event()
         log.debug('Init Housekeeper')
         self.db = db
-        self.config = HousekeeperConfig()
+        self.config = HousekeeperConfig(basedir)
         self.jobs = {
             'cleanup_alert': BasicJob('cleanup_alert', timedelta(minutes=5),
                 lambda db: db.cleanup_timeout('record')),
@@ -139,7 +140,7 @@ class Housekeeper(SurvivingThread):
             job.reload(self.config)
 
         # Backup config
-        backup = BackupConfig()
+        backup = BackupConfig(basedir)
         if backup.enabled:
             if not self.backup_job:
                 self.backup_job = BackupJob(backup, timedelta(days=1))

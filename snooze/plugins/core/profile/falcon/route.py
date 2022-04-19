@@ -11,7 +11,7 @@ from urllib.parse import unquote
 import falcon
 import bson.json_util
 
-from snooze.api.falcon import authorize, FalconRoute
+from snooze.api.auth import authorize, FalconRoute
 
 log = getLogger('snooze.api')
 

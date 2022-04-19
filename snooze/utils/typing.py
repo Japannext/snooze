@@ -7,7 +7,7 @@
 
 '''Typing utils for snooze'''
 
-from typing import NewType, List, Literal, Optional, List
+from typing import NewType, List, Literal, Optional, List, TypedDict
 
 from pydantic import BaseModel, Field
 
@@ -19,6 +19,7 @@ SnoozeFilter = NewType('SnoozeFilter', dict)
 
 Config = NewType('Config', dict)
 Condition = NewType('Condition', list)
+ConditionOrUid = Optional[Union[str, list]]
 
 DuplicatePolicy = Literal['insert', 'reject', 'replace', 'update']
 
@@ -37,3 +38,22 @@ class RouteArgs(BaseModel):
     check_constant: Optional[str] = None
     inject_payload: bool = False
     prefix: str = '/api'
+
+class PeerStatus(BaseModel):
+    '''A dataclass containing the status of one peer'''
+    host: str
+    port: str
+    version: str
+    healthy: bool
+
+class HostPort(BaseModel):
+    '''An object to represent a host-port pair'''
+    host: str
+    port: int = Field(5200)
+
+class Pagination(TypedDict, total=False):
+    '''A type hint for pagination options'''
+    orderby: str
+    nb_per_page: int
+    page_nb: int
+    asc: bool

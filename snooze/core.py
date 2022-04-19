@@ -13,18 +13,18 @@ from importlib import import_module
 from logging import getLogger
 from os import listdir
 from os.path import dirname, isdir, join as joindir
-from pathlib import Path
 from random import random
 from secrets import token_urlsafe
 from threading import Event
 from time import sleep
-from typing import Dict, Optional
+from typing import Dict, Optional, List
+from pathlib import Path
 
 from dateutil import parser
 from pkg_resources import iter_entry_points
 
 from snooze import __file__ as rootdir
-from snooze.api.base import Api
+from snooze.api import Api
 from snooze.api.socket import WSGISocketServer, admin_api
 from snooze.api.tcp import TcpThread
 from snooze.db.database import Database
@@ -32,19 +32,21 @@ from snooze.plugins.core import Abort, AbortAndWrite, AbortAndUpdate
 from snooze.token import TokenEngine
 from snooze.utils import Housekeeper, Stats, MQManager
 from snooze.utils.cluster import Cluster
-from snooze.utils.config import CoreConfig, GeneralConfig, NotificationConfig
+from snooze.utils.config import Config, SNOOZE_CONFIG
 from snooze.utils.threading import SurvivingThread
 from snooze.utils.typing import Record
 
 log = getLogger('snooze')
 
+MAIN_THREADS = ('housekeeper', 'cluster', 'tcp', 'socket')
+
 class Core:
     '''The main class of snooze, passed to all plugins'''
-    def __init__(self, core_config: Optional[CoreConfig] = None):
-        self.config = core_config or CoreConfig()
-        self.db = Database(self.config.database)
-        self.general_conf = GeneralConfig()
-        self.notif_conf = NotificationConfig()
+    def __init__(self, basedir: Optional[Path] = SNOOZE_CONFIG, allowed_threads: List[str] = MAIN_THREADS):
+        self.basedir = basedir
+        self.config = Config(basedir)
+        core_config = self.config.core
+        self.db = Database(core_config.database)
 
         self.stats = Stats(self)
         self.stats.init('process_alert_duration', 'summary', 'snooze_process_alert_duration',
@@ -65,16 +67,20 @@ class Core:
         self.token_engine = TokenEngine(self.secrets['jwt_private_key'])
 
         self.threads:  Dict[str, SurvivingThread] = {}
-        self.threads['housekeeper'] = Housekeeper(self)
-        self.threads['cluster'] = Cluster(self)
+        if 'housekeeper' in allowed_threads:
+            self.threads['housekeeper'] = Housekeeper(self.config.housekeeper,
+                self.config.backup, self.db, self.exit_event)
+        if 'cluster' in allowed_threads:
+            self.threads['cluster'] = Cluster(self.config.core, self.config.cluster, self.exit_event)
+
         self.mq = MQManager(self)
 
-        if self.config.unix_socket:
+        if 'socket' in allowed_threads and core_config.unix_socket:
             try:
                 admin_app = admin_api(self.token_engine)
-                self.threads['socket'] = WSGISocketServer(admin_app, self.config.unix_socket, self.exit_event)
+                self.threads['socket'] = WSGISocketServer(admin_app, core_config.unix_socket, self.exit_event)
             except Exception as err:
-                log.warning("Error starting unix socket at %s: %s", self.config.unix_socket, err)
+                log.warning("Error starting unix socket at %s: %s", core_config.unix_socket, err)
 
         self.plugins = []
         self.process_plugins = []
@@ -83,8 +89,10 @@ class Core:
 
         self.api = Api(self)
         self.api.load_plugin_routes()
-        tcp_config = self.config.listen_addr, self.config.port, self.config.ssl
-        self.threads['tcp'] = TcpThread(tcp_config, self.api.handler, self.exit_event)
+
+        if 'tcp' in allowed_threads:
+            tcp_config = core_config.listen_addr, core_config.port, core_config.ssl
+            self.threads['tcp'] = TcpThread(tcp_config, self.api.handler, self.exit_event)
 
     def load_plugins(self):
         '''Load the plugins from the configuration'''
@@ -114,7 +122,7 @@ class Core:
                 continue
             plugin_instance = plugin_class(self)
             self.plugins.append(plugin_instance)
-        for plugin_name in self.config.process_plugins:
+        for plugin_name in self.config.core.process_plugins:
             for plugin in self.plugins:
                 if plugin_name == plugin.name:
                     log.debug("Detected %s as a process plugin", plugin_name)
@@ -147,8 +155,8 @@ class Core:
         source = record.get('source', 'unknown')
         environment = record.get('environment', 'unknown')
         severity = record.get('severity', 'unknown')
-        record['ttl'] = self.threads['housekeeper'].config.record_ttl
-        if severity.casefold() in self.general_conf.ok_severities:
+        record['ttl'] = self.config.housekeeper.record_ttl
+        if severity.casefold() in self.config.general.ok_severities:
             record['state'] = 'close'
         else:
             record['state'] = ''
@@ -189,6 +197,16 @@ class Core:
         self.stats.inc('alert_hit', {'source': source, 'environment': environment, 'severity': severity})
         return data
 
+    def reload_plugin(self, plugin_name: str):
+        '''Reload a plugin, and notify the cluster members'''
+
+        cluster = self.threads.get('cluster')
+        if cluster:
+            cluster.reload_plugin_others(plugin_name)
+
+    def reload_and_write(self, section: str):
+        pass
+
     def get_core_plugin(self, plugin_name: str) -> Optional['Plugin']:
         '''Return a core plugin object by name'''
         return next(iter([plug for plug in self.plugins if plug.name == plugin_name]), None)
@@ -217,7 +235,7 @@ class Core:
         towrite = []
         for name, method in should.items():
             if name not in actual:
-                sleep(random() * self.config.init_sleep)
+                sleep(random() * self.config.core.init_sleep)
                 actual = self.get_secrets()
                 break
         for name, method in should.items():
@@ -251,10 +269,10 @@ class Core:
         '''Will attempt to bootstrap the database with default values for the core collections.
         Will not bootstrap anything if it detects a bootstrap happened in the past.
         '''
-        if self.config.bootstrap_db:
+        if self.config.core.bootstrap_db:
             result = self.db.search('general')
             if result['count'] == 0:
-                sleep(random() * self.config.init_sleep)
+                sleep(random() * self.config.core.init_sleep)
                 result = self.db.search('general')
             if result['count'] == 0:
                 log.debug("First time starting Snooze with self database. Let us configure it...")
@@ -282,7 +300,7 @@ class Core:
                     },
                 ]
                 self.db.write('role', roles)
-                if self.config.create_root_user:
+                if self.config.core.create_root_user:
                     users = [{"name": "root", "method": "local", "roles": ["admin"], "enabled": True}]
                     self.db.write('user', users)
                     user_passwords = [

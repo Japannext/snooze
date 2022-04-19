@@ -10,7 +10,7 @@ import os
 from logging import getLogger
 from os.path import dirname, join as joindir
 from abc import abstractmethod
-from typing import Dict
+from typing import Dict, Optional
 
 import yaml
 from pydantic import BaseModel
@@ -25,7 +25,7 @@ log = getLogger('snooze')
 class Metadata(BaseModel):
     name: str
     auto_reload: bool
-    default_sorting: str
+    default_sorting: Optional[str]
     default_ordering: bool
     widgets: dict
     action_form: dict
@@ -40,8 +40,8 @@ class Plugin:
         self.data = []
         self.rootdir = joindir(dirname(rootdir), 'plugins', 'core', self.name)
         config = MetadataConfig(self.name)
-        if config.route_defaults.class_name:
-            routes = {}
+        routes = {}
+        if config.route_defaults:
             default_routes = [
                 '',
                 '{search}',

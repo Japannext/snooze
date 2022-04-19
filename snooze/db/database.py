@@ -15,14 +15,7 @@ from typing import List, Optional, Union
 
 from typing_extensions import TypedDict
 
-from snooze.utils.typing import Config, Condition
-
-class Pagination(TypedDict, total=False):
-    '''A type hint for pagination options'''
-    orderby: str
-    nb_per_page: int
-    page_nb: int
-    asc: bool
+from snooze.utils.typing import Config, Condition, Pagination
 
 class DatabaseError(RuntimeError):
     '''Wrapper for database errors (putting more info about each query)'''

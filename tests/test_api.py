@@ -5,21 +5,18 @@
 # SPDX-License-Identifier: AFL-3.0
 #
 
-#!/usr/bin/python3.6
-
+import os
 import json
+from logging import getLogger
+from pathlib import Path
 
 import pytest
-from pytest_data.functions import use_data
 from freezegun import freeze_time
-
-from logging import getLogger
-log = getLogger('snooze.tests.api')
+from pytest_data.functions import use_data
 
 from snooze.api.base import Api
 
-from pathlib import Path
-import os
+log = getLogger('snooze.tests.api')
 
 class TestApi:
 

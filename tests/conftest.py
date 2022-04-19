@@ -14,9 +14,9 @@ import pytest
 from falcon.testing import TestClient
 from pytest_data.functions import get_data
 
-from snooze.db.database import Database
+from snooze.api import Api
 from snooze.core import Core
-from snooze.api.base import Api
+from snooze.db.database import Database
 
 log = getLogger('snooze')
 

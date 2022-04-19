@@ -8,10 +8,11 @@
 '''Module for managing loading and writing the configuration files'''
 
 import os
+from abc import ABC
 from contextlib import contextmanager
 from logging import getLogger
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Optional, List, Any, Dict, Literal
 
 import yaml
@@ -19,26 +20,44 @@ from filelock import FileLock
 from pydantic import BaseModel, Field, PrivateAttr, validator
 
 from snooze import __file__ as SNOOZE_PATH
-from snooze.utils.typing import RouteArgs
+from snooze.utils.typing import RouteArgs, HostPort
 
 log = getLogger('snooze.utils.config')
 
 SNOOZE_CONFIG = Path(os.environ.get('SNOOZE_SERVER_CONFIG', '/etc/snooze/server'))
 SNOOZE_PLUGIN_PATH = Path(SNOOZE_PATH).parent / 'plugins/core'
-DEFAULTS = Path(SNOOZE_PATH).parent / 'defaults'
 
-class ReadOnlyConfig(BaseModel):
+class ReadOnlyConfig(BaseModel, ABC):
     '''A class representing a config file at a given path.
     Can only be read.'''
-    _path: Path = PrivateAttr()
+    _section: Optional[str] = PrivateAttr(None)
+    _path: Optional[Path] = PrivateAttr(None)
 
-    def __init__(self):
-        data = self._read()
-        super().__init__(**data)
+    def __init__(self, basedir: Path = SNOOZE_CONFIG, data: Optional[dict] = None):
+        section = self._class_get('_section')
+        if section:
+            self._class_set('_path', basedir / f"{section}.yaml")
+        data = data or self._read()
+        BaseModel.__init__(self, **data)
+
+    def _class_get(self, key: str):
+        '''Get a class attribute'''
+        return getattr(self.__class__, key)
+
+    def _class_set(self, key: str, value: Any):
+        '''Set a class attribute'''
+        # Using this workaround to avoid pydantic and WritableConfig own __setattr__
+        setattr(self.__class__, key, value)
 
     def _read(self) -> dict:
         '''Read the config file and return the raw dict'''
-        return yaml.safe_load(self._path.read_text(encoding='utf-8'))
+        if self._path:
+            try:
+                return yaml.safe_load(self._path.read_text(encoding='utf-8'))
+            except OSError:
+                return {}
+        else:
+            return {}
 
     def refresh(self):
         '''Read the config file to load the config'''
@@ -64,25 +83,30 @@ class WritableConfig(ReadOnlyConfig):
     Can be explored, and updated with a lock file.'''
     _filelock: FileLock = PrivateAttr()
 
-    def __init__(self):
-        self._filelock = FileLock(self._path, timeout=1)
-        super().__init__()
+    def __init__(self, basedir: Path = SNOOZE_CONFIG, data: Optional[dict] = None):
+        ReadOnlyConfig.__init__(self, basedir, data)
+        path = self._class_get('_path')
+        path.touch(mode=0o600)
+        self._class_set('_filelock', FileLock(path, timeout=1))
 
     @contextmanager
     def _lock(self):
-        '''A context manager to filelock the config during an update (lock, read, update, write, release)'''
-        self._filelock.acquire()
+        print(self)
+        filelock = self._class_get('_filelock')
+        filelock.acquire()
         self.refresh()
         try:
             yield # Update the config
         finally:
             self._update()
-            self._filelock.release()
+            filelock.release()
 
     def _update(self):
         '''Write a new config to the config file'''
-        data = yaml.dump(self.dict())
-        self._path.write_text(data, encoding='utf-8')
+        path = self._class_get('_path')
+        if path:
+            data = yaml.dump(self.dict())
+            path.write_text(data, encoding='utf-8')
 
     def __setitem__(self, key: str, value: Any):
         self._set(key, value)
@@ -103,7 +127,7 @@ class WritableConfig(ReadOnlyConfig):
 
 class MetadataConfig(ReadOnlyConfig):
     '''A class to fetch metadata configuration'''
-    class_name: str = Field(alias='class')
+    class_name: str = Field('Route', alias='class')
     auto_reload: bool = False
     default_sorting: Optional[str] = None
     default_ordering: bool = True
@@ -111,20 +135,20 @@ class MetadataConfig(ReadOnlyConfig):
     action_form: dict  = Field(default_factory=dict)
     audit: bool = True
     provides: List[str] = Field(default_factory=list)
+    routes: Dict[str, RouteArgs] = Field(default_factory=dict)
+    route_defaults: Optional[RouteArgs] = None
     icon: str = 'question-circle'
-    routes: Dict[str, RouteArgs]
-    route_defaults: RouteArgs
     options: dict = Field(default_factory=dict)
     search_fields: List[str] = Field(default_factory=list)
 
     def __init__(self, plugin_name: str):
-        self._path = SNOOZE_PLUGIN_PATH / plugin_name / 'metadata.yaml'
-        data = self._read()
-        super().__init__(**data)
+        path = SNOOZE_PLUGIN_PATH / plugin_name / 'metadata.yaml'
+        self._class_set('_path', path)
+        ReadOnlyConfig.__init__(self)
 
 class LdapConfig(WritableConfig):
-    '''A dataclass representing the LDAP configuration'''
-    _path = SNOOZE_CONFIG / 'ldap_auth.yaml'
+    '''Configuration for LDAP authentication'''
+    _section = 'ldap_auth'
 
     enabled: bool
     base_dn: str
@@ -141,16 +165,22 @@ class LdapConfig(WritableConfig):
 class SslConfig(BaseModel):
     '''SSL configuration'''
     enabled: bool = True
-    certfile: Path = Field(env='SNOOZE_CERT_FILE')
-    keyfile: Path = Field(env='SNOOZE_KEY_FILE')
+    certfile: Optional[Path] = Field(None, env='SNOOZE_CERT_FILE')
+    keyfile: Optional[Path] = Field(None, env='SNOOZE_KEY_FILE')
+
+class WebConfig(BaseModel):
+    '''The subconfig for the web server (snooze-web)'''
+    enabled: bool = True
+    path: Path = Path('/opt/snooze/web')
 
 class CoreConfig(ReadOnlyConfig):
-    '''pydantic model representing the core config'''
-    _path = SNOOZE_CONFIG / 'core.yaml'
+    '''Core configuration. Not editable live.'''
+    _section = 'core'
 
     listen_addr: str = '0.0.0.0'
     port: int = 5200
-    ssl: SslConfig
+    ssl: SslConfig = SslConfig()
+    web: WebConfig = WebConfig()
     debug: bool = False
     bootstrap_db: bool = True
     unix_socket: Optional[Path] = Path('/var/run/snooze/server.socket')
@@ -158,13 +188,13 @@ class CoreConfig(ReadOnlyConfig):
     audit_excluded_paths: List[str] = ('/api/patlite', '/metrics', '/web')
     ssl: dict
     process_plugins: List[str] = ('rule', 'aggregaterule', 'snooze', 'notification')
-    database: dict
+    database: dict = Field(default_factory=lambda: {'type': 'file'})
     init_sleep: int = 5
     create_root_user: bool = False
 
 class GeneralConfig(WritableConfig):
-    '''pydantic model representing the general config'''
-    _path = SNOOZE_CONFIG / 'general.yaml'
+    '''General configuration of snooze'''
+    _section = 'general'
 
     default_auth_backend: Literal['local', 'ldap'] = 'local'
     local_users_enabled: bool = True
@@ -178,14 +208,15 @@ class GeneralConfig(WritableConfig):
         return value.casefold()
 
 class NotificationConfig(WritableConfig):
-    '''pydantic model representing the notification config'''
-    _path = SNOOZE_CONFIG / 'notifications.yaml'
+    '''Configuration for default notification delays/retry'''
+    _section = 'notifications'
 
     notification_freq: int = 60
     notification_retry: int = 3
 
 class HousekeeperConfig(WritableConfig):
-    _path = SNOOZE_CONFIG / 'housekeeper.yaml'
+    '''Config for the housekeeper thread'''
+    _section = 'housekeeper'
 
     trigger_on_startup: bool = True
     record_ttl: timedelta = timedelta(days=2)
@@ -196,8 +227,27 @@ class HousekeeperConfig(WritableConfig):
     cleanup_notification: timedelta = timedelta(days=3)
 
 class BackupConfig(ReadOnlyConfig):
-    _path = SNOOZE_CONFIG / 'backup.yaml'
+    '''Configuration for the backup job'''
+    _section = 'backup'
 
     enabled: bool = True
     path: Path = Path('/var/lib/snooze')
     excludes: List[str] = ('record', 'stats', 'comment', 'secrets')
+
+class ClusterConfig(ReadOnlyConfig):
+    '''Configuration for the cluster'''
+    _section = 'cluster'
+
+    enabled: bool = False
+    members: List[HostPort] = Field(tuple(HostPort(host='localhost')), env='SNOOZE_CLUSTER')
+
+    @validator('members')
+    def parse_members_env(cls, value): # pylint: disable=no-self-argument,no-self-use
+        '''In case the environment (a string) is passed, parse the environment string'''
+        if isinstance(value, str):
+            members = []
+            for member in value.split(','):
+                members.append(HostPort(member.split(':', 1)))
+            return members
+        return value
+

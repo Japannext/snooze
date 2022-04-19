@@ -14,7 +14,7 @@ import sys
 from logging import getLogger
 
 from snooze.core import Core
-from snooze.api.base import Api
+from snooze.api import Api
 from snooze.utils import config
 
 def setup_logging(conf):

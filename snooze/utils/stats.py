@@ -19,7 +19,7 @@ class Stats():
     '''A wrapped backend for registrating and emitting metrics'''
     def __init__(self, core):
         self.core = core
-        self.conf = self.core.general_conf
+        self.enabled = False
         self.metrics = {}
         self.reload()
         if self.enabled:
@@ -28,7 +28,7 @@ class Stats():
 
     def reload(self):
         '''Reload prometheus related configuration'''
-        self.enabled = self.conf.get('metrics_enabled', True)
+        self.enabled = self.core.general_conf.metrics_enabled
         log.debug('Prometheus server is %s', self.enabled)
 
     def init(self, metric, mtype, name, desc, labels):

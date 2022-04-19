@@ -17,8 +17,8 @@ from wsgiref.simple_server import WSGIServer, WSGIRequestHandler
 
 from socketserver import ThreadingMixIn
 
+from snooze.utils.config import SslConfig
 from snooze.utils.threading import SurvivingThread
-from snooze.core import SslConfig
 
 log = getLogger('snooze.api.tcp')
 
