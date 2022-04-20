@@ -92,7 +92,8 @@ class TestAudit:
 
     def test_update_error(self, client):
         rule = {'name': 'rule01', 'condition': ['=', 'a', 'x'], 'modifications': [['SET', 'x', 1]]}
-        added = client.simulate_post('/api/rule', json=rule).json['data']['added']
+        resp = client.simulate_post('/api/rule', json=rule)
+        added = resp.json['data']['added']
         assert len(added) == 1
         rule_uid = added[0]['uid']
 

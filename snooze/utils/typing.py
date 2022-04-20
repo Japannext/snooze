@@ -7,7 +7,7 @@
 
 '''Typing utils for snooze'''
 
-from typing import NewType, List, Literal, Optional, List, TypedDict
+from typing import NewType, List, Literal, Optional, TypedDict, Union
 
 from pydantic import BaseModel, Field
 
@@ -25,17 +25,18 @@ DuplicatePolicy = Literal['insert', 'reject', 'replace', 'update']
 
 class AuthorizationPolicy(BaseModel):
     '''A list of authorized policy for read and write'''
-    read: List[str]
-    write: List[str]
+    read: Optional[List[str]]
+    write: Optional[List[str]]
 
 class RouteArgs(BaseModel):
     '''Description of the arguments passed to a route'''
-    class_name: Optional[str] = Field(alias='class')
-    primary: Optional[str] = None
+    class_name: Optional[str] = Field('Route', alias='class')
+    desc: Optional[str] = None
+    primary: List[str] = Field(default_factory=list)
     duplicate_policy: DuplicatePolicy = 'update'
     authorization_policy: Optional[AuthorizationPolicy]
     check_permissions: bool = False
-    check_constant: Optional[str] = None
+    check_constant: List[str] = Field(default_factory=list)
     inject_payload: bool = False
     prefix: str = '/api'
 
@@ -57,3 +58,15 @@ class Pagination(TypedDict, total=False):
     nb_per_page: int
     page_nb: int
     asc: bool
+
+class SettingUpdatePayload(BaseModel):
+    filename: str
+    conf: dict
+    reload: bool
+
+class Widget(BaseModel):
+    '''A widget representation in the config'''
+    widget_name: Optional[str] = None
+    icon: str
+    vue_component: str
+    form: dict

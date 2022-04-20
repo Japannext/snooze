@@ -13,7 +13,7 @@ from logging import getLogger
 import falcon
 
 from snooze.api.routes import BasicRoute
-from snooze.api.auth import authorize
+from snooze.utils.functions import authorize
 
 log = getLogger('snooze.stats')
 

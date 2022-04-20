@@ -14,7 +14,7 @@ import pytest
 from freezegun import freeze_time
 from pytest_data.functions import use_data
 
-from snooze.api.base import Api
+from snooze.api import Api
 
 log = getLogger('snooze.tests.api')
 

@@ -11,7 +11,7 @@ from logging import getLogger
 
 import falcon
 
-from snooze.api.auth import authorize
+from snooze.utils.functions import authorize
 from snooze.api.routes import BasicRoute
 from snooze.plugins.core.basic.falcon.route import Route
 
@@ -30,8 +30,9 @@ class WidgetPluginRoute(BasicRoute):
             for plugin in loaded_plugins:
                 for name, widget in plugin.meta.widgets.items():
                     log.debug("Retrieving widget %s from %s", name, plugin.name)
-                    widget['widget_name'] = name
-                    plugins.append(widget)
+                    if widget.widget_name is None:
+                        widget.widget_name = name
+                    plugins.append(widget.dict())
             log.debug("List of widgets: %s", plugins)
             resp.content_type = falcon.MEDIA_JSON
             resp.status = falcon.HTTP_200
@@ -47,13 +48,13 @@ class WidgetRoute(Route):
     def on_post(self, req, resp):
         for req_media in req.media:
             self.inject_meta(req_media)
-        super(WidgetRoute, self).on_post(req, resp)
+        Route.on_post(self, req, resp)
 
     @authorize
     def on_put(self, req, resp):
         for req_media in req.media:
             self.inject_meta(req_media)
-        super(WidgetRoute, self).on_put(req, resp)
+        Route.on_put(self, req, resp)
 
     def inject_meta(self, media):
         widget = media.get('widget', [])
@@ -64,5 +65,7 @@ class WidgetRoute(Route):
             media['pprint'] = plugin.pprint(content)
         else:
             media['pprint'] = widget_name
-        media['icon'] = plugin.meta.widgets.get(widget_name. {}).get('icon')
-        media['vue_component'] = plugin.meta.widgets.get(widget_name, {}).get('vue_component')
+        widget_config = plugin.meta.widgets.get(widget_name)
+        if widget_config:
+            media['icon'] = widget_config.icon
+            media['vue_component'] = widget_config.vue_component

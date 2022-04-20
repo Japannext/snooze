@@ -15,7 +15,7 @@ from typing import List, Optional, Union
 
 from typing_extensions import TypedDict
 
-from snooze.utils.typing import Config, Condition, Pagination
+from snooze.utils.typing import Condition, Pagination
 
 class DatabaseError(RuntimeError):
     '''Wrapper for database errors (putting more info about each query)'''
@@ -24,7 +24,7 @@ class DatabaseError(RuntimeError):
 
 class Database:
     '''Abstract class for the database backend'''
-    def __init__(self, conf: Config):
+    def __init__(self, conf: dict):
         config = conf.copy()
         db_type = config.pop('type', 'file')
         if 'DATABASE_URL' in os.environ:
@@ -36,7 +36,7 @@ class Database:
         self.init_db(config)
 
     @abstractmethod
-    def init_db(self, conf: Config):
+    def init_db(self, conf: dict):
         '''Initialize the database connection'''
 
     @abstractmethod

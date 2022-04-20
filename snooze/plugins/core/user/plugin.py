@@ -50,7 +50,7 @@ class User(Plugin):
                     if user_roles:
                         log.debug("Will cleanup regular roles")
                         user['roles'] = [x for x in user_roles if x not in static_roles]
-        primary = self.metadata.get('primary') or None
+        primary = self.meta.route_defaults.primary
         display_name = user.pop('display_name', '')
         email = user.pop('email', '')
         self.db.write('user', user, primary)

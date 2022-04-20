@@ -20,7 +20,7 @@ import bson.json_util
 import falcon
 from falcon_auth import FalconAuthMiddleware, JWTAuthBackend
 from falcon.errors import HTTPInternalServerError
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from snooze.api.routes import *
 from snooze.utils.config import WebConfig
@@ -113,8 +113,6 @@ class Api:
         self.add_route('/alert', AlertRoute(self))
         # List route
         self.add_route('/login', LoginRoute(self))
-        # Reload route
-        self.add_route('/reload', ReloadRoute(self))
         # Cluster route
         self.add_route('/cluster', ClusterRoute(self))
         # Health route
@@ -128,14 +126,14 @@ class Api:
         if self.core.config.general.anonymous_enabled:
             self.auth_routes['anonymous'] = AnonymousAuthRoute(self)
             self.add_route('/login/anonymous', self.auth_routes['anonymous'])
-        # Ldap auth
-        self.auth_routes['ldap'] = LdapAuthRoute(self)
-        self.add_route('/login/ldap', self.auth_routes['ldap'])
+        if self.core.config.ldap:
+            self.auth_routes['ldap'] = LdapAuthRoute(self)
+            self.add_route('/login/ldap', self.auth_routes['ldap'])
         # Optional metrics
         if self.core.stats.enabled:
             self.add_route('/metrics', MetricsRoute(self), '')
 
-        web = self.core.config.web
+        web = self.core.config.core.web
         if web.enabled:
             prefix = '/web'
             self.add_route('/', RedirectRoute(), '')
@@ -143,11 +141,11 @@ class Api:
             sink_handler = StaticRoute(web.path, prefix).on_get
             self.handler.add_sink(sink_handler, prefix)
 
-    def custom_handle_uncaught_exception(self, e, req, resp, params):
+    def custom_handle_uncaught_exception(self, err, req, resp, params):
         '''Custom handler for logging uncaught exceptions in falcon inside python logger.
         Make use of an internal method of falcon to do so.
         '''
-        log.exception(e)
+        log.exception(err)
         self.handler._compose_error_response(req, resp, HTTPInternalServerError())
 
     def add_route(self, route, action, prefix='/api'):
@@ -158,58 +156,13 @@ class Api:
         '''Return a root token for the root user. Used only when requesting it from the internal unix socket'''
         return self.jwt_auth.get_auth_token({'name': 'root', 'method': 'root', 'permissions': ['rw_all']})
 
-    def reload(self, filename, auth_backends):
-        '''Reload authentication backends configuration'''
-        reloaded_auth = []
-        reloaded_conf = []
-        try:
-            if self.core.reload_conf(filename):
-                reloaded_conf.append(filename)
-            for auth_backend in auth_backends:
-                if self.auth_routes.get(auth_backend):
-                    log.debug("Reloading %s auth backend", auth_backend)
-                    self.auth_routes[auth_backend].reload()
-                    reloaded_auth.append(auth_backend)
-                else:
-                    log.debug("Authentication backend '%s' not found", auth_backend)
-            if len(reloaded_auth) > 0 or len(reloaded_conf) > 0:
-                return {'status': falcon.HTTP_200, 'text': f"Reloaded auth '{reloaded_auth}' and conf {reloaded_conf}"}
-            else:
-                return {'status': falcon.HTTP_404, 'text': 'Error while reloading'}
-        except Exception as e:
-            log.exception(e)
-            return {'status': falcon.HTTP_503}
-
-    def write_and_reload(self, filename, conf, reload_conf, sync=False):
-        '''Override the config files and reload. This is mainly used when changing the configuration
-        from the web interface.
-        '''
-        result_dict = {}
-        log.debug("Will write to %s config %s and reload %s", filename, conf, reload_conf)
-        if filename and conf:
-            res = write_config(filename, conf)
-            if 'error' in res:
-                return {'status': falcon.HTTP_503, 'text': res['error']}
-            else:
-                result_dict = {'status': falcon.HTTP_200, 'text': f"Reloaded config file {res['file']}"}
-        if reload_conf:
-            auth_backends = reload_conf.get('auth_backends', [])
-            if auth_backends:
-                result_dict = self.reload(filename, auth_backends)
-            plugins = reload_conf.get('plugins', [])
-            if plugins:
-                result_dict = self.reload_plugins(plugins)
-        if sync and self.cluster:
-            self.cluster.write_and_reload(filename, conf, reload_conf)
-        return result_dict
-
     def load_plugin_routes(self):
         log.debug('Loading plugin routes for API')
         for plugin in self.core.plugins:
-            log.debug('Loading routes for %s at %s/%s/route.py', plugin.name, plugin.rootdir, self.api_type)
+            log.debug("Loading routes for %s", plugin.name)
             spec = importlib.util.spec_from_file_location(
-                f"snooze.plugins.core.{plugin.name}.{self.api_type}.route",
-                joindir(plugin.rootdir, self.api_type, 'route.py')
+                f"snooze.plugins.core.{plugin.name}.falcon.route",
+                joindir(plugin.rootdir, 'falcon', 'route.py')
             )
             plugin_module = importlib.util.module_from_spec(spec)
             try:
@@ -218,30 +171,15 @@ class Api:
             except FileNotFoundError:
                 # Loading default
                 log.debug("Loading default route for `%s`", plugin.name)
-                plugin_module = import_module(f"snooze.plugins.core.basic.{self.api_type}.route")
+                plugin_module = import_module('snooze.plugins.core.basic.falcon.route')
             except Exception as err:
                 log.exception(err)
                 log.debug("Skip loading plugin `%s` routes", plugin.name)
                 continue
-            for path, route_args in plugin.meta.routes:
+            log.debug('Routes: %s', plugin.meta.routes)
+            for path, route_args in plugin.meta.routes.items():
                 log.debug("For %s loading route: %s", path, route_args.dict())
-                instance = getattr(plugin_module, route_args.class_name)(self, route_args)
-                self.add_route(path, instance)
-
-    def reload_plugins(self, plugins):
-        '''Reload plugins'''
-        plugins_error = []
-        plugins_success = []
-        log.debug("Reloading plugins %s", plugins)
-        for plugin_name in plugins:
-            plugin = self.core.get_core_plugin(plugin_name)
-            if plugin:
-                plugin.reload_data()
-                plugins_success.append(plugin)
-            else:
-                plugins_error.append(plugin)
-        if plugins_error:
-            return {'status': falcon.HTTP_404, 'text': f"The following plugins could not be found: {plugin_error}"}
-        else:
-            return {'status': falcon.HTTP_200, 'text': "Reloaded plugins: {plugin_success}"}
-
+                if route_args.class_name is not None:
+                    instance = getattr(plugin_module, route_args.class_name)(self, plugin, route_args)
+                    log.debug("Adding route %s: %s", path, instance)
+                    self.add_route(path, instance)

@@ -31,6 +31,8 @@ class SurvivingThread(Thread):
                 if self.restart:
                     continue
                 else:
+                    class_name = self.__class__.__name__
+                    log.error("Exit triggered by class %s", class_name)
                     self.exit.set()
                     break
 

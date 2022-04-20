@@ -42,7 +42,7 @@ class BackendDB(Database):
 
     name = 'mongo'
 
-    def init_db(self, conf: Config):
+    def init_db(self, conf: dict):
         if 'DATABASE_URL' in os.environ:
             self.db = pymongo.MongoClient(os.environ.get('DATABASE_URL'))[database]
         else:

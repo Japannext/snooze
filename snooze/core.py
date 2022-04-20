@@ -20,7 +20,7 @@ from time import sleep
 from typing import Dict, Optional, List
 from pathlib import Path
 
-from dateutil import parser
+import dateutil.parser
 from pkg_resources import iter_entry_points
 
 from snooze import __file__ as rootdir
@@ -48,7 +48,7 @@ class Core:
         core_config = self.config.core
         self.db = Database(core_config.database)
 
-        self.stats = Stats(self)
+        self.stats = Stats(self.db, self.config.general)
         self.stats.init('process_alert_duration', 'summary', 'snooze_process_alert_duration',
             'Average time spend processing a alert', ['source', 'environment', 'severity'])
         self.stats.init('alert_hit', 'counter', 'snooze_alert_hit',
@@ -155,17 +155,23 @@ class Core:
         source = record.get('source', 'unknown')
         environment = record.get('environment', 'unknown')
         severity = record.get('severity', 'unknown')
-        record['ttl'] = self.config.housekeeper.record_ttl
+        record['ttl'] = int(self.config.housekeeper.record_ttl.total_seconds())
+        log.debug("OK severities: %s", self.config.general.ok_severities)
         if severity.casefold() in self.config.general.ok_severities:
             record['state'] = 'close'
         else:
             record['state'] = ''
         record['plugins'] = []
+
         try:
-            record['timestamp'] = parser.parse(record['timestamp']).astimezone().strftime("%Y-%m-%dT%H:%M:%S%z")
-        except Exception as err:
+            timestamp = dateutil.parser.parse(record['timestamp'])
+        except KeyError:
+            timestamp = datetime.now()
+        except dateutil.parser.ParserError as err:
             log.warning(err)
-            record['timestamp'] = datetime.now().astimezone().strftime("%Y-%m-%dT%H:%M:%S%z")
+            timestamp = datetime.now()
+        record['timestamp'] = timestamp.astimezone().strftime("%Y-%m-%dT%H:%M:%S%z")
+
         with self.stats.time('process_alert_duration', {'source': source, 'environment': environment, 'severity': severity}):
             for plugin in self.process_plugins:
                 try:
@@ -197,15 +203,30 @@ class Core:
         self.stats.inc('alert_hit', {'source': source, 'environment': environment, 'severity': severity})
         return data
 
-    def reload_plugin(self, plugin_name: str):
-        '''Reload a plugin, and notify the cluster members'''
+    def sync_reload_plugin(self, plugin_name: str):
+        '''Notify the cluster members to reload the plugin data'''
+        cluster = self.threads.get('cluster')
+        if cluster:
+            cluster.sync_reload_plugin(plugin_name)
+
+    def setting_update(self, section: str, data: dict):
+        '''Update the settings of a section'''
+        try:
+            config = getattr(self.core.config, section)
+            config.update(data)
+        except KeyError:
+            raise Exception("Unknown config section %s", section)
+        except AttributeError:
+            raise Exception("Config section %s not writable", section)
+        except ValidationError as err: # Bad data
+            raise err
+
+        if section in self.api.auth_routes:
+            self.api.auth_routes[section].reload()
 
         cluster = self.threads.get('cluster')
         if cluster:
-            cluster.reload_plugin_others(plugin_name)
-
-    def reload_and_write(self, section: str):
-        pass
+            cluster.sync_setting_update(section, data)
 
     def get_core_plugin(self, plugin_name: str) -> Optional['Plugin']:
         '''Return a core plugin object by name'''

@@ -10,7 +10,7 @@ class TestHousekeeper:
         'backup': {'enabled': False},
     }
 
-    def test_cleanup_alert(self, db, basedir):
+    def test_cleanup_alert(self, db, config):
         now = datetime.now()
         last_week = now - timedelta(days=7)
         yesterday = now - timedelta(days=1)
@@ -21,14 +21,14 @@ class TestHousekeeper:
         ]
         for record in records:
             db.write('record', record, update_time=False)
-        housekeeper = Housekeeper(db, basedir=basedir)
+        housekeeper = Housekeeper(config.housekeeper, config.backup, db)
         job = housekeeper.jobs['cleanup_alert']
         job.run(db)
         results = db.search('record')['data']
         assert len(results) == 1
         assert results[0]['name'] == '2'
 
-    def test_cleanup_comment(self, db, basedir):
+    def test_cleanup_comment(self, db, config):
         now = datetime.now()
         last_week = now - timedelta(days=7)
         yesterday = now - timedelta(days=1)
@@ -46,7 +46,7 @@ class TestHousekeeper:
             {'record_uid': 'unknown', 'message': 'comment 4'}
         ]
         db.write('comment', comments)
-        housekeeper = Housekeeper(db, basedir=basedir)
+        housekeeper = Housekeeper(config.housekeeper, config.backup, db)
         job = housekeeper.jobs['cleanup_comment']
         job.run(db)
         results = db.search('comment')['data']

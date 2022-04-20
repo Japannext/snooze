@@ -68,7 +68,7 @@ class BackendDB(Database):
 
     name = 'file'
 
-    def init_db(self, conf):
+    def init_db(self, conf: dict):
         if conf.get('path'):
             filename = conf.get('path')
         else:

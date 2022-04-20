@@ -11,6 +11,7 @@ import functools
 import mimetypes
 from abc import abstractmethod
 from hashlib import sha256
+from base64 import b64decode
 from logging import getLogger
 from typing import Optional, List
 
@@ -31,7 +32,7 @@ def merge_batch_results(rec_list):
 class BasicRoute:
     def __init__(self,
         api: 'Api',
-        plugin: Optional[str] = None,
+        plugin: 'Optional[Plugin]' = None,
         route_args: RouteArgs = RouteArgs(),
     ):
         self.api = api
@@ -227,9 +228,7 @@ class LoginRoute(BasicRoute):
             resp.status = falcon.HTTP_503
 
 class ClusterRoute(BasicRoute):
-    auth = {
-        'auth_disabled': True
-    }
+    auth = {'auth_disabled': True}
 
     def on_get(self, req, resp):
         log.debug("Listing cluster members")
@@ -243,28 +242,6 @@ class ClusterRoute(BasicRoute):
         resp.media = {
             'data': [m.dict() for m in members],
         }
-
-class ReloadRoute(BasicRoute):
-    '''A falcon route to reload one's token'''
-    auth = {
-        'auth_disabled': True
-    }
-
-    def on_post(self, req, resp):
-        media = req.media.copy()
-        if media.get('reload_token', '-') == self.api.core.secrets.get('reload_token', '+'):
-            filename = media.get('filename')
-            conf = media.get('conf')
-            _reload = media.get('reload')
-            sync = media.get('sync', False)
-            log.debug("Reloading conf (%s, %s), backend %s, sync %s", filename, conf, _reload, sync)
-            results = self.api.write_and_reload(filename, conf, _reload, sync)
-            resp.content_type = falcon.MEDIA_TEXT
-            resp.status = results.get('status', falcon.HTTP_503)
-            resp.text = results.get('text', '')
-        else:
-            resp.status = falcon.HTTP_401
-            resp.text = 'Invalid secret reload token'
 
 MAX_AGE = 24 * 3600
 
@@ -503,7 +480,7 @@ class LocalAuthRoute(AuthRoute):
         self.reload()
 
     def reload(self):
-        self.core.general.refresh()
+        self.core.config.general.refresh()
         self.enabled = self.core.config.general.local_users_enabled
         log.debug("Authentication backend 'local' status: %s", self.enabled)
 

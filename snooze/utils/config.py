@@ -17,10 +17,11 @@ from typing import Optional, List, Any, Dict, Literal
 
 import yaml
 from filelock import FileLock
-from pydantic import BaseModel, Field, PrivateAttr, validator
+from pydantic import BaseModel, Field, PrivateAttr, validator, ValidationError
+from pydantic.dataclasses import dataclass
 
 from snooze import __file__ as SNOOZE_PATH
-from snooze.utils.typing import RouteArgs, HostPort
+from snooze.utils.typing import RouteArgs, HostPort, Widget
 
 log = getLogger('snooze.utils.config')
 
@@ -37,7 +38,7 @@ class ReadOnlyConfig(BaseModel, ABC):
         section = self._class_get('_section')
         if section:
             self._class_set('_path', basedir / f"{section}.yaml")
-        data = data or self._read()
+        data = data or self._read() or {}
         BaseModel.__init__(self, **data)
 
     def _class_get(self, key: str):
@@ -84,6 +85,8 @@ class WritableConfig(ReadOnlyConfig):
     _filelock: FileLock = PrivateAttr()
 
     def __init__(self, basedir: Path = SNOOZE_CONFIG, data: Optional[dict] = None):
+        if data is None:
+            data = {}
         ReadOnlyConfig.__init__(self, basedir, data)
         path = self._class_get('_path')
         path.touch(mode=0o600)
@@ -117,26 +120,28 @@ class WritableConfig(ReadOnlyConfig):
     def _set(self, key: str, value: Any):
         '''Rewrite a config key with a given value'''
         with self._lock():
-            setattr(self, key, value)
+            object.__setattr__(self, key, value)
 
     def update(self, values: dict):
         '''Update the config with a dictionary'''
         with self._lock():
             for key, value in values.items():
-                setattr(self, key, value)
+                object.__setattr__(self, key, value)
 
 class MetadataConfig(ReadOnlyConfig):
     '''A class to fetch metadata configuration'''
-    class_name: str = Field('Route', alias='class')
+    name: Optional[str] = None
+    desc: Optional[str] = None
+    class_name: Optional[str] = Field('Route', alias='class')
     auto_reload: bool = False
     default_sorting: Optional[str] = None
     default_ordering: bool = True
-    widgets: dict = Field(default_factory=dict)
-    action_form: dict  = Field(default_factory=dict)
     audit: bool = True
+    widgets: Dict[str, Widget] = Field(default_factory=dict)
+    action_form: dict  = Field(default_factory=dict)
     provides: List[str] = Field(default_factory=list)
     routes: Dict[str, RouteArgs] = Field(default_factory=dict)
-    route_defaults: Optional[RouteArgs] = None
+    route_defaults: RouteArgs = RouteArgs()
     icon: str = 'question-circle'
     options: dict = Field(default_factory=dict)
     search_fields: List[str] = Field(default_factory=list)
@@ -144,7 +149,11 @@ class MetadataConfig(ReadOnlyConfig):
     def __init__(self, plugin_name: str):
         path = SNOOZE_PLUGIN_PATH / plugin_name / 'metadata.yaml'
         self._class_set('_path', path)
-        ReadOnlyConfig.__init__(self)
+        data = self._read() or {}
+        try:
+            BaseModel.__init__(self, **data)
+        except ValidationError as err:
+            raise Exception(f"Cannot load metadata for plugin {plugin_name}") from err
 
 class LdapConfig(WritableConfig):
     '''Configuration for LDAP authentication'''
@@ -184,7 +193,7 @@ class CoreConfig(ReadOnlyConfig):
     debug: bool = False
     bootstrap_db: bool = True
     unix_socket: Optional[Path] = Path('/var/run/snooze/server.socket')
-    no_login: bool = False
+    no_login: bool = Field(False, env='SNOOZE_NO_LOGIN')
     audit_excluded_paths: List[str] = ('/api/patlite', '/metrics', '/web')
     ssl: dict
     process_plugins: List[str] = ('rule', 'aggregaterule', 'snooze', 'notification')
@@ -226,6 +235,9 @@ class HousekeeperConfig(WritableConfig):
     cleanup_snooze: timedelta = timedelta(days=3)
     cleanup_notification: timedelta = timedelta(days=3)
 
+    class Config:
+        json_encoders = {timedelta: lambda dt: dt.total_seconds()}
+
 class BackupConfig(ReadOnlyConfig):
     '''Configuration for the backup job'''
     _section = 'backup'
@@ -251,3 +263,27 @@ class ClusterConfig(ReadOnlyConfig):
             return members
         return value
 
+@dataclass
+class Config:
+    '''An object representing the complete snooze configuration'''
+    basedir: Path
+
+    core: CoreConfig
+    general: GeneralConfig
+    housekeeper: HousekeeperConfig
+    cluster: ClusterConfig
+    backup: BackupConfig
+    ldap: Optional[LdapConfig]
+
+    def __init__(self, basedir: Path = SNOOZE_CONFIG):
+        self.basedir = basedir
+        self.core = CoreConfig(basedir)
+        self.general = GeneralConfig(basedir)
+        self.notifications = NotificationConfig(basedir)
+        self.housekeeper = HousekeeperConfig(basedir)
+        self.cluster = ClusterConfig(basedir)
+        self.backup = BackupConfig(basedir)
+        try:
+            self.ldap = LdapConfig(basedir)
+        except (FileNotFoundError, ValidationError):
+            self.ldap = None

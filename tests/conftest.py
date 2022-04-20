@@ -11,61 +11,71 @@ from logging import getLogger
 
 import mongomock
 import pytest
+import yaml
 from falcon.testing import TestClient
 from pytest_data.functions import get_data
 
-from snooze.api import Api
-from snooze.core import Core
+from snooze.core import Core, MAIN_THREADS
 from snooze.db.database import Database
+from snooze.utils.config import Config
 
-log = getLogger('snooze')
+log = getLogger('tests')
 
-@pytest.fixture(scope='module')
-def config():
-    return {
-        'api': {'type': 'falcon'},
-        'process_plugins': ['rule', 'aggregaterule', 'snooze', 'notification'],
+DEFAULT_CONFIG = {
+    'core': {
         'database': {'type': 'mongo', 'host': 'localhost', 'port': 27017},
         'socket_path': './test.socket',
-        'stats': False,
-        'bootstrap_db': True,
         'init_sleep': 0,
-    }
+        'stats': False,
+    },
+    'backup': {'enabled': False},
+}
 
-def write_data(db, request):
+def write_data(database, request):
     '''Write data fetch with get_data(request, 'data') to a database'''
-    data = get_data(request, 'data')
+    data = get_data(request, 'data', {})
     for key, value in data.items():
-        db.delete(key, [], True)
+        database.delete(key, [], True)
     for key, value in data.items():
-        db.write(key, value)
+        database.write(key, value)
 
-@pytest.fixture(scope='function')
-@mongomock.patch('mongodb://localhost:27017')
-def db(config, request):
-    db = Database(config.get('database'))
-    write_data(db, request)
-    return db
+@pytest.fixture(name='config', scope='function')
+def fixture_config(tmp_path, request):
+    '''Fixture for writable configuration files returning a Config'''
+    configs = {**DEFAULT_CONFIG, **get_data(request, 'configs', {})}
 
-@pytest.fixture(scope='function')
+    for section, data in configs.items():
+        path = tmp_path / f"{section}.yaml"
+        path.write_text(yaml.dump(data), encoding='utf-8')
+
+    return Config(tmp_path)
+
+@pytest.fixture(name='db', scope='function')
 @mongomock.patch('mongodb://localhost:27017')
-def core(config, request):
-    core = Core(config)
+def fixture_db(config, request):
+    '''Fixture returning a mocked mongodb Database'''
+    database = Database(config.core.database)
+    write_data(database, request)
+    return database
+
+@pytest.fixture(name='core', scope='function')
+@mongomock.patch('mongodb://localhost:27017')
+def fixture_core(config, request):
+    '''Fixture returning a Core'''
+    allowed_threads = get_data(request, 'allowed_threads') or MAIN_THREADS
+    core = Core(config.basedir, allowed_threads)
     write_data(core.db, request)
     return core
 
-@pytest.fixture(scope='class')
-def api(core):
+@pytest.fixture(name='api', scope='function')
+def fixture_api(core):
+    '''Fixture returning an Api'''
     return core.api
 
-@pytest.fixture(scope='function')
-@mongomock.patch('mongodb://localhost:27017')
-def client(config, request):
-    core = Core(config)
-    data = get_data(request, 'data')
-    log.debug("data: {}".format(data))
-    write_data(core.db, request)
-    token = core.api.get_root_token()
-    log.info("Token obtained from get_root_token: {}".format(token))
-    headers = {'Authorization': 'JWT {}'.format(token)}
-    return TestClient(core.api.handler, headers=headers)
+@pytest.fixture(name='client', scope='function')
+def fixture_client(api):
+    '''Fixture returning a falcon TestClient'''
+    token = api.get_root_token()
+    log.info("Token obtained from get_root_token: %s", token)
+    headers = {'Authorization': f"JWT {token}"}
+    return TestClient(api.handler, headers=headers)

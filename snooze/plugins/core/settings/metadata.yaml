@@ -1,9 +1,18 @@
 ---
 name: 'Settings'
 desc: 'An endpoint to store config files'
-class: ''
-check_permissions: True
+route_defaults:
+    class: ~
+    check_permissions: true
+provides:
+    - settings_update
 routes:
-  '/settings/{conf}':
-    desc: ''
-    class: SettingsRoute
+    '/settings/{section}':
+        desc: ''
+        class: SettingsRoute
+    '/settings_update/{section}':
+        desc: 'Route meant for the cluster to trigger a setting change'
+        class: SettingsUpdateRoute
+        authorization_policy:
+            read: []
+            write: [settings_update]

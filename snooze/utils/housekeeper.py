@@ -13,9 +13,8 @@ from abc import abstractmethod, ABC
 from datetime import datetime, timedelta
 from threading import Event
 from typing import Callable, Optional
-from pathlib import Path
 
-from snooze.utils.config import HousekeeperConfig, BackupConfig, SNOOZE_CONFIG
+from snooze.utils.config import HousekeeperConfig, BackupConfig
 from snooze.utils.threading import SurvivingThread
 
 log = getLogger('snooze.housekeeping')
@@ -107,12 +106,18 @@ class BackupJob(AbstractJob):
 
 class Housekeeper(SurvivingThread):
     '''Main class starting the housekeeping thread in the background'''
-    def __init__(self, db: 'Database', exit_event: Optional[Event] = None, basedir: Path = SNOOZE_CONFIG):
+    def __init__(self,
+        config: HousekeeperConfig,
+        backup: BackupConfig,
+        db: 'Database',
+        exit_event: Optional[Event] = None,
+    ):
         if exit_event is None:
             exit_event = Event()
         log.debug('Init Housekeeper')
+        self.config = config
         self.db = db
-        self.config = HousekeeperConfig(basedir)
+        self.backup = backup
         self.jobs = {
             'cleanup_alert': BasicJob('cleanup_alert', timedelta(minutes=5),
                 lambda db: db.cleanup_timeout('record')),
@@ -140,11 +145,10 @@ class Housekeeper(SurvivingThread):
             job.reload(self.config)
 
         # Backup config
-        backup = BackupConfig(basedir)
-        if backup.enabled:
+        if self.backup.enabled:
             if not self.backup_job:
-                self.backup_job = BackupJob(backup, timedelta(days=1))
-            self.backup_job.reload(backup)
+                self.backup_job = BackupJob(self.backup, timedelta(days=1))
+            self.backup_job.reload(self.backup)
         else:
             self.backup_job = None
 

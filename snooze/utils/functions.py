@@ -110,12 +110,13 @@ def ensure_hash(record: Record):
 def authorize(func):
     '''Decorator for methods that are protected by authorization'''
     def _f(self, req, resp, *args, **kw):
-        if os.environ.get('SNOOZE_NO_LOGIN', self.core.config.get('no_login', False)):
+        if self.core.config.core.no_login:
             return func(self, req, resp, *args, **kw)
         user_payload = req.context['user']['user']
+        plugin_name = None
         if (self.plugin and hasattr(self.plugin, 'name')):
             plugin_name = self.plugin.name
-        elif self.name:
+        elif hasattr(self, 'name'):
             plugin_name = self.name
         if plugin_name:
             read_permissions = ['ro_all', 'rw_all', 'ro_'+plugin_name, 'rw_'+plugin_name]

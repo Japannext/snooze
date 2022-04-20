@@ -31,6 +31,7 @@ class Metadata(BaseModel):
     action_form: dict
     audit: bool
     routes: Dict[str, RouteArgs]
+    route_defaults: RouteArgs
 
 class Plugin:
     def __init__(self, core: 'Core'):
@@ -41,17 +42,16 @@ class Plugin:
         self.rootdir = joindir(dirname(rootdir), 'plugins', 'core', self.name)
         config = MetadataConfig(self.name)
         routes = {}
-        if config.route_defaults:
-            default_routes = [
-                '',
-                '{search}',
-                '{search}/{perpage}/{pagenb}',
-                '{search}/{perpage}/{pagenb}/{orderby}/{asc}',
-            ]
-            for path in default_routes:
-                routes[f"/{self.name}/{path}"] = config.route_defaults
-            if config.routes:
-                routes.update(config.routes)
+        default_routes = [
+            f"/{self.name}",
+            f"/{self.name}" + '/{search}',
+            f"/{self.name}" + '/{search}/{perpage}/{pagenb}',
+            f"/{self.name}" + '/{search}/{perpage}/{pagenb}/{orderby}/{asc}',
+        ]
+        for path in default_routes:
+            routes[path] = config.route_defaults
+        if config.routes:
+            routes.update(config.routes)
         self.meta = Metadata(
             name=self.name,
             auto_reload=config.auto_reload,
@@ -60,6 +60,7 @@ class Plugin:
             widgets=config.widgets,
             action_form=config.action_form,
             routes=routes,
+            route_defaults=config.route_defaults,
             audit=config.audit,
         )
         if config.search_fields:
@@ -84,11 +85,11 @@ class Plugin:
             pagination['asc'] = self.meta.default_ordering
             self.data = self.db.search(self.name, **pagination)['data']
         if sync:
-            self.sync_neighbors()
+            self.sync_reload_plugin()
 
-    def sync_neighbors(self):
+    def sync_reload_plugin(self):
         '''Trigger the reload of the module to neighbors (async)'''
-        self.core.threads['cluster'].reload_plugin(self.name)
+        self.core.sync_reload_plugin(self.name)
 
     def reload_data(self):
         '''Abstract method for loading data'''

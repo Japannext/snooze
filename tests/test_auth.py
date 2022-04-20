@@ -17,7 +17,7 @@ import pytest
 import yaml
 from falcon import testing
 
-from snooze.api.base import Api
+from snooze.api import Api
 from snooze.core import Core
 
 log = getLogger('snooze.tests.api')

@@ -24,7 +24,7 @@ from requests.exceptions import RequestException
 
 from snooze.utils.threading import SurvivingThread
 from snooze.utils.config import CoreConfig, ClusterConfig
-from snooze.utils.typing import HostPort, PeerStatus
+from snooze.utils.typing import HostPort, PeerStatus, SettingUpdatePayload
 
 log = getLogger('snooze.cluster')
 ADAPTER = HTTPAdapter(max_retries=Retry(total=20, backoff_factor=0.1))
@@ -116,67 +116,36 @@ class Cluster(SurvivingThread):
             log.debug("Cluster members: %s", statuses)
         return statuses
 
-    """
-    def reload_plugin(self, plugin_name):
-        plugins_error = []
-        plugins_success = []
-        log.debug("Reloading plugins %s", plugins)
-        for plugin_name in plugins:
-            plugin = self.core.get_core_plugin(plugin_name)
-            if plugin:
-                plugin.reload_data()
-                plugins_success.append(plugin)
-            else:
-                plugins_error.append(plugin)
-        if plugins_error:
-            return {'status': falcon.HTTP_404, 'text': f"The following plugins could not be found: {plugins_error}"}
-        else:
-            return {'status': falcon.HTTP_200, 'text': "Reloaded plugins: {plugin_success}"}
-
-    def write_and_reload(self, filename: str, conf: dict, reload: dict):
-        result_dict = {}
-        log.debug("Will write to %s config %s and reload %s", filename, conf, reload)
-        if filename and conf:
-            path = write_config(filename, conf)
-            result_dict = {'status': falcon.HTTP_200, 'text': f"Reloaded config file {path}"}
-        if reload:
-            auth_backends = reload.get('auth_backends', [])
-            if auth_backends:
-                result_dict = self.reload(filename, auth_backends)
-            plugins = reload_conf.get('plugins', [])
-            if plugins:
-                result_dict = self.reload_plugins(plugins)
-    """
-
-    def reload_plugin_others(self, plugin_name):
+    def sync_reload_plugin(self, plugin_name: str):
         '''Async function to ask other members to reload the configuration of a plugin'''
         for member in self.others:
-            self.queue.put(RequestReload(member, plugin_name))
+            self.queue.put(RequestReloadPlugin(member, plugin_name))
 
-    def write_and_reload_others(self, filename: str, conf: dict, reload: dict):
+    def sync_setting_update(self, filename: str, conf: dict, reload: dict):
         '''Async function to ask other members to update their configuration and reload'''
         for member in self.others:
-            self.queue.put(RequestWriteAndReload(member, filename, conf, reload))
+            self.queue.put(RequestSettingUpdate(member, filename, conf, reload))
 
-class RequestReload(Request):
+class RequestReloadPlugin(Request):
     '''Request another member to reload a given plugin'''
     def __init__(self, member: HostPort, plugin_name: str):
         url = f"{member.host}:{member.port}/api/reload"
         payload = {'reload': plugin_name}
         Request.__init__('POST', url, json=payload)
 
-class RequestWriteAndReload(Request):
+class RequestSettingUpdate(Request):
     '''Request another member to rewrite a config'''
     def __init__(self, member: HostPort, filename: str, conf: dict, reload):
         url = f"{member.host}:{member.port}/api/reload"
-        payload = {'filename': filename, 'conf': conf, 'reload': reload}
-        Request.__init__('POST', url, json=payload)
+        payload = SettingUpdatePayload(filename, conf, reload)
+        Request.__init__('POST', url, json=payload.dict())
 
 def who_am_i(members: List[HostPort]) -> Tuple[HostPort, List[HostPort]]:
     '''Return which member of the cluster the running program is.
     Raise exceptions in the following cases:
     * NonResolvableHost: if one member of the cluster has its DNS not resolvable
     * SelfNotInCluster: if the running node cannot be found in the cluster
+    * SelfTooMuchInCluster: if the running node is found more than one time in the cluster
     '''
     my_addresses = [
         link.get('addr') for interface in interfaces()

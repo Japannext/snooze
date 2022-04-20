@@ -13,32 +13,23 @@ from pydantic import ValidationError
 
 from snooze.api.routes import BasicRoute
 from snooze.utils.functions import authorize
-from snooze.utils.config import GeneralConfig, NotificationConfig, LdapConfig, HousekeeperConfig
 from snooze.utils.typing import SettingUpdatePayload
 
 log = getLogger('snooze.api')
 
-CONFIGS = {
-    'general': GeneralConfig,
-    'notifications': NotificationConfig,
-    'ldap': LdapConfig,
-    'housekeeper': HousekeeperConfig,
-}
-
 class SettingsRoute(BasicRoute):
     @authorize
-    def on_get(self, req, resp, conf=''):
+    def on_get(self, req, resp, section):
         '''Fetch a config file data.
         Secrets are protected thanks to the `Field(exclude=True)` of pydantic.
         ValidationError are server side errors (the local config file is broken)'''
-        section = req.params.get('c') or conf
-        checksum = req.params.get('checksum')
 
         log.debug("Loading config file %s", section)
         resp.content_type = falcon.MEDIA_JSON
         try:
-            result_dict = CONFIGS[section](basedir=self.api.core.basedir).dict()
-        except KeyError:
+            config = getattr(self.core.config, section)
+            checksum = hashlib.md5(config.json()).encode('utf-8').hexdigest()
+        except AttributeError:
             resp.status = falcon.HTTP_400
             resp.media = {'message': f"Unknown config '{section}'"}
         except ValidationError as err:
@@ -62,6 +53,7 @@ class SettingsRoute(BasicRoute):
 
     @authorize
     def on_put(self, req, resp, conf=''):
+        '''Action trigerred when a user change a setting section on the web interface'''
         '''Rewrite a config file on the server.
         ValidationError are client side.
         A refresh of the class is needed (`self.api.core.reload(section)`).
@@ -73,9 +65,8 @@ class SettingsRoute(BasicRoute):
         log.debug("Trying write to configfile %s: %s", section, req.media)
         try:
             payload = SettingUpdatePayload(**req.media[0])
-            config_class = CONFIGS[section]
-            config_class().update(payload.conf)
-            self.api.core.reload(section)
+            self.core.setting_update(payload.section, payload.data)
+            self.core.sync_setting_update()
             resp.status = falcon.HTTP_CREATED
             resp.media = {'data': f"Config {section} reloaded"}
         except KeyError:
@@ -88,3 +79,19 @@ class SettingsRoute(BasicRoute):
             log.exception(err)
             resp.status = falcon.HTTP_503
             resp.media = {'data': str(err)}
+
+class SettingsUpdateRoute(BasicRoute):
+    '''A falcon route to reload one's token'''
+    auth = {'auth_disabled': True}
+
+    def on_put(self, req, resp):
+        '''Action triggerred by a cluster member to propagate a setting change'''
+
+        try:
+            payload = SettingUpdatePayload(**req.media)
+        except ValidationError as err: # Bad payload
+            raise err
+        try:
+            self.core.setting_update(payload.section, payload.data)
+        except ValidationError as err: # Bad data for config
+            raise err
