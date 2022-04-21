@@ -6,9 +6,18 @@
 #
 
 import inspect
-from pathlib import Path
 
 from snooze.utils.config import *
+
+class TestConfig:
+    def test_empty(self, tmp_path):
+        config = Config(tmp_path)
+        assert isinstance(config.core, CoreConfig)
+        assert isinstance(config.general, GeneralConfig)
+        assert isinstance(config.notifications, NotificationConfig)
+        assert isinstance(config.cluster, ClusterConfig)
+        assert isinstance(config.backup, BackupConfig)
+        assert config.ldap is None
 
 class TestCoreConfig:
     def test_empty(self, tmp_path):
