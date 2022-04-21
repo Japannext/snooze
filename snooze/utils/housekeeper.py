@@ -35,6 +35,7 @@ class AbstractJob(ABC):
     def reload(self, conf: dict):
         '''A method to reload the configuration (if any)'''
 
+# TODO Support negative intervals with a enabled/disabled system
 class BasicJob(AbstractJob):
     '''A housekeeping job triggerring a db based callback at a regular interval'''
     def __init__(self,
@@ -59,6 +60,7 @@ class BasicJob(AbstractJob):
         if new_interval:
             self.interval = new_interval
 
+# TODO Support negative intervals with a enabled/disabled system
 class IntervalJob(AbstractJob):
     '''A housekeeping job triggerring a db based callback at a regular interval,
     with another interval passed to the db callback'''

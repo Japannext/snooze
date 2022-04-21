@@ -146,7 +146,7 @@ class Aggregaterule(Plugin):
         return record
 
     def reload_data(self):
-        self.load_data(sync=True)
+        super().reload_data()
         aggregate_rules = []
         for aggrule in (self.data or []):
             aggregate_rules.append(AggregateruleObject(aggrule))

@@ -22,6 +22,7 @@ from pathlib import Path
 
 import dateutil.parser
 from pkg_resources import iter_entry_points
+from pydantic import ValidationError
 
 from snooze import __file__ as rootdir
 from snooze.api import Api
@@ -204,20 +205,20 @@ class Core:
         return data
 
     def sync_reload_plugin(self, plugin_name: str):
-        '''Notify the cluster members to reload the plugin data'''
+        '''Trigger a plugin reload to other cluster peers'''
         cluster = self.threads.get('cluster')
         if cluster:
             cluster.sync_reload_plugin(plugin_name)
 
-    def setting_update(self, section: str, data: dict):
+    def setting_update(self, section: str, data: dict, auth: str, propagate: bool = False):
         '''Update the settings of a section'''
         try:
             config = getattr(self.core.config, section)
             config.update(data)
         except KeyError:
-            raise Exception("Unknown config section %s", section)
+            raise KeyError(f"Unknown config section {section}")
         except AttributeError:
-            raise Exception("Config section %s not writable", section)
+            raise Exception(f"Config section {section} not writable")
         except ValidationError as err: # Bad data
             raise err
 
@@ -225,8 +226,8 @@ class Core:
             self.api.auth_routes[section].reload()
 
         cluster = self.threads.get('cluster')
-        if cluster:
-            cluster.sync_setting_update(section, data)
+        if propagate and cluster:
+            cluster.sync_setting_update(section, data, auth)
 
     def get_core_plugin(self, plugin_name: str) -> Optional['Plugin']:
         '''Return a core plugin object by name'''

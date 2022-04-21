@@ -24,26 +24,11 @@ from requests.exceptions import RequestException
 
 from snooze.utils.threading import SurvivingThread
 from snooze.utils.config import CoreConfig, ClusterConfig
-from snooze.utils.typing import HostPort, PeerStatus, SettingUpdatePayload
+from snooze.utils.typing import HostPort, PeerStatus
+from snooze.utils.exceptions import NonResolvableHost, SelfNotInCluster, SelfTooMuchInCluster
 
 log = getLogger('snooze.cluster')
 ADAPTER = HTTPAdapter(max_retries=Retry(total=20, backoff_factor=0.1))
-
-class NonResolvableHost(RuntimeError):
-    '''Thrown when one member of the cluster address cnanot be resolved
-    by DNS.'''
-    def __init__(self, host: str):
-        self.host = host
-        super().__init__(f"DNS cannot resolve {host}")
-
-class SelfNotInCluster(RuntimeError):
-    '''Thrown when the running application addresses are not defined in the cluster
-    configuration'''
-
-class SelfTooMuchInCluster(RuntimeError):
-    '''Thrown when the current node has too many entries of his addresses in the cluster
-    configuration'''
-
 
 class Cluster(SurvivingThread):
     '''A class representing the cluster and used for interacting with it.'''
@@ -119,26 +104,29 @@ class Cluster(SurvivingThread):
     def sync_reload_plugin(self, plugin_name: str):
         '''Async function to ask other members to reload the configuration of a plugin'''
         for member in self.others:
-            self.queue.put(RequestReloadPlugin(member, plugin_name))
+            site = f"{self.schema}://{member.host}:{member.port}"
+            self.queue.put(RequestReloadPlugin(site, plugin_name))
 
-    def sync_setting_update(self, filename: str, conf: dict, reload: dict):
+    def sync_setting_update(self, section: str, data: dict, auth: str):
         '''Async function to ask other members to update their configuration and reload'''
         for member in self.others:
-            self.queue.put(RequestSettingUpdate(member, filename, conf, reload))
+            site = f"{self.schema}://{member.host}:{member.port}"
+            self.queue.put(RequestSettingUpdate(site, section, data, auth))
 
 class RequestReloadPlugin(Request):
     '''Request another member to reload a given plugin'''
-    def __init__(self, member: HostPort, plugin_name: str):
-        url = f"{member.host}:{member.port}/api/reload"
+    def __init__(self, site: str, plugin_name: str):
+        url = f"{site}/api/reload"
         payload = {'reload': plugin_name}
         Request.__init__('POST', url, json=payload)
 
 class RequestSettingUpdate(Request):
     '''Request another member to rewrite a config'''
-    def __init__(self, member: HostPort, filename: str, conf: dict, reload):
-        url = f"{member.host}:{member.port}/api/reload"
-        payload = SettingUpdatePayload(filename, conf, reload)
-        Request.__init__('POST', url, json=payload.dict())
+    def __init__(self, site: str, section: str, data: dict, auth: str):
+        url = f"{site}/api/settings/{section}"
+        # Forwarding the authentication to the next peer
+        headers = {'Authorization': auth}
+        Request.__init__('PUT', url, headers=headers, json=data)
 
 def who_am_i(members: List[HostPort]) -> Tuple[HostPort, List[HostPort]]:
     '''Return which member of the cluster the running program is.

@@ -115,6 +115,8 @@ class Api:
         self.add_route('/login', LoginRoute(self))
         # Cluster route
         self.add_route('/cluster', ClusterRoute(self))
+        # Plugin reload route
+        self.add_route('/reload/{plugin_name}', ReloadPluginRoute(self))
         # Health route
         self.add_route('/health', HealthRoute(self))
         # Permissions route

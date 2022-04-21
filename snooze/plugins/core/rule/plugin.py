@@ -94,4 +94,3 @@ class Rule(Plugin):
         for rule in (self.data or []):
             rules.append(RuleObject(rule, self.core))
         self.rules = rules
-        self.sync_reload_plugin()

@@ -16,7 +16,7 @@ log = getLogger('snooze.kv')
 class Kv(Plugin):
     '''Plugin for managing a user/script defined key-value in the database'''
     def reload_data(self):
-        self.load_data(sync=True)
+        super().reload_data()
         kv = {}
         for key_val in self.data:
             try:

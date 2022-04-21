@@ -40,8 +40,8 @@ class Snooze(Plugin):
         '''Validate a snooze object'''
         validate_condition(obj)
 
-    def reload_data(self, sync: bool = False):
-        self.load_data(sync=True)
+    def reload_data(self):
+        super().reload_data()
         filters = []
         for filt in (self.data or []):
             filters.append(SnoozeObject(filt))

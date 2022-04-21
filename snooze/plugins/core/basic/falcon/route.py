@@ -5,26 +5,25 @@
 # SPDX-License-Identifier: AFL-3.0
 #
 
-import traceback
-import sys
 from datetime import datetime
 from urllib.parse import unquote
 from logging import getLogger
-from typing import Dict, Any, Union, NamedTuple
+from typing import Dict, Union, NamedTuple
 
 from typing_extensions import Literal
 
 import falcon
 import bson.json_util
+from pyparsing import ParseException
+from pydantic import ValidationError
 
 from snooze.api.routes import FalconRoute
 from snooze.utils.parser import parser
 from snooze.utils.functions import authorize
+from snooze.utils.typing import Query
+from snooze.utils.exceptions import ApiError
 
 log = getLogger('snooze.api')
-
-class ValidationError(RuntimeError):
-    '''Raised when the validation fails'''
 
 def convert_type(mytype: type, value: str) -> Union[str, bool, int, None]:
     '''Convert a query string value to a given type. Returns None in case of empty string'''
@@ -111,26 +110,31 @@ class Route(FalconRoute):
 
             # Validation
             try:
-                self._validate(req_media, req, resp)
-            except ValidationError:
+                self.plugin.validate(req_media)
+            except Exception as err:
+                log.warning('Validation error', exc_info=ApiError(req, err, req_media))
                 rejected.append(req_media)
                 continue
-
-            for query in queries:
-                try:
-                    parsed_query = parser(query['ql'])
-                    log.debug("Parsed query: %s -> %s", query['ql'], parsed_query)
-                    req_media[query['field']] = parsed_query
-                except Exception as err:
-                    log.exception(err)
-                    rejected.append(req_media)
-                    continue
+            try:
+                for data in queries:
+                    query = Query(**data)
+                    parsed_query = parser(query.ql)
+                    req_media[query.field] = parsed_query
+            except ValidationError as err:
+                log.warning('Invalid query', exc_info=ApiError(req, err, req_media))
+                rejected.append(req_media)
+                continue
+            except ParseException as err:
+                log.warning('Query parsing error', exc_info=ApiError(req, err, req_media))
+                rejected.append(req_media)
+                continue
             validated.append(req_media)
         try:
             result = self.insert(self.plugin.name, validated)
             result['data']['rejected'] += rejected
             resp.media = result
             self.plugin.reload_data()
+            self.core.sync_reload_plugin(self.plugin.name)
             resp.status = falcon.HTTP_201
             self._audit(result, req)
         except Exception as err:
@@ -151,8 +155,9 @@ class Route(FalconRoute):
         validated = []
         for req_media in media:
             try:
-                self._validate(req_media, req, resp)
-            except ValidationError:
+                self.plugin.validate(req_media)
+            except Exception as err:
+                log.warning('Error during validation', exc_info=ApiError(req, err, req_media))
                 rejected.append(req_media)
                 continue
             validated.append(req_media)
@@ -161,6 +166,7 @@ class Route(FalconRoute):
             result['data']['rejected'] += rejected
             resp.media = result
             self.plugin.reload_data()
+            self.core.sync_reload_plugin(self.plugin.name)
             resp.status = falcon.HTTP_201
             self._audit(result, req)
         except Exception as err:
@@ -189,22 +195,11 @@ class Route(FalconRoute):
             result = result_dict
             resp.media = result
             self.plugin.reload_data()
+            self.core.sync_reload_plugin(self.plugin.name)
             resp.status = falcon.HTTP_OK
         else:
             resp.media = {}
             resp.status = falcon.HTTP_NOT_FOUND
-
-    def _validate(self, obj, req, resp):
-        '''Validate an object and handle the response in case of exception'''
-        try:
-            self.plugin.validate(obj)
-        except Exception as err:
-            rejected = obj
-            rejected['error'] = f"Error during validation: {err}"
-            rejected['traceback'] = traceback.format_exception(*sys.exc_info())
-            results = {'data': {'rejected': [rejected]}}
-            log.exception(err)
-            raise ValidationError("Invalid object")
 
     def _audit(self, results, req):
         '''Audit the changed objects in a dedicated collection'''

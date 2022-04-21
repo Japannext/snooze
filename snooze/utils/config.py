@@ -159,57 +159,180 @@ class LdapConfig(WritableConfig):
     '''Configuration for LDAP authentication'''
     _section = 'ldap_auth'
 
-    enabled: bool
-    base_dn: str
-    user_filter: str
-    bind_dn: str
-    bind_password: str = Field(exclude=True)
-    host: str
-    port: int = 636
-    group_dn: Optional[str] = None
-    email_attribute: str = 'mail'
-    display_name_attribute: str = 'cn'
-    member_attribute: str = 'memberof'
+    enabled: bool = Field(
+        description='Enable or disable LDAP Authentication',
+        default=False,
+    )
+    base_dn: str = Field(
+        title='Base DN',
+        description='LDAP users location. Multiple DNs can be added if separated by semicolons',
+    )
+    user_filter: str = Field(
+        title='User base filter',
+        description='LDAP search filter for the base DN (eg. (objectClass=posixAccount))',
+    )
+    bind_dn: str = Field(
+        title='Bind DN',
+        description='Distinguished name to bind to the LDAP server (eg. '
+        'CN=john.doe,OU=users,DC=example,DC=com)',
+    )
+    bind_password: str = Field(
+        title='Bind DN password',
+        description='Password for the Bind DN user',
+        exclude=True,
+    )
+    host: str = Field(
+        description='LDAP host (eg. ldaps://example.com)',
+    )
+    port: int = Field(
+        default=636,
+        description='LDAP server port (389 by default if no SSL, 636 if SSL is enabled)',
+    )
+    group_dn: Optional[str] = Field(
+        title='Group DN',
+        default=None,
+        description='Base DN used to filter out groups. Will default to the User base DN'
+        ' Multiple DNs can be added if separated by semicolons',
+    )
+    email_attribute: str = Field(
+        title='Email attribute',
+        default='mail',
+        description='User attribute that displays the user email adress',
+    )
+    display_name_attribute: str = Field(
+        title='Display name attribute',
+        default='cn',
+        description='User attribute that displays the user real name',
+    )
+    member_attribute: str = Field(
+        title='Member attribute',
+        default='memberof',
+        description='Member attribute that displays groups membership',
+    )
 
 class SslConfig(BaseModel):
     '''SSL configuration'''
-    enabled: bool = True
-    certfile: Optional[Path] = Field(None, env='SNOOZE_CERT_FILE')
-    keyfile: Optional[Path] = Field(None, env='SNOOZE_KEY_FILE')
+    enabled: bool = Field(
+        default=True,
+        description='Enabling TLS termination',
+    )
+    certfile: Optional[Path] = Field(
+        title='Certificate file',
+        env='SNOOZE_CERT_FILE',
+        default=None,
+        description='Path to the x509 PEM style certificate to use for TLS termination',
+    )
+    keyfile: Optional[Path] = Field(
+        title='Key file',
+        default=None,
+        env='SNOOZE_KEY_FILE',
+        description='Path to the private key to use for TLS termination',
+    )
 
 class WebConfig(BaseModel):
     '''The subconfig for the web server (snooze-web)'''
-    enabled: bool = True
-    path: Path = Path('/opt/snooze/web')
+    enabled: bool = Field(
+        default=True,
+        description='Enable the web interface',
+    )
+    path: Path = Field(
+        default='/opt/snooze/web',
+        description='Path to the web interface dist files',
+    )
 
 class CoreConfig(ReadOnlyConfig):
     '''Core configuration. Not editable live.'''
     _section = 'core'
 
-    listen_addr: str = '0.0.0.0'
-    port: int = 5200
-    ssl: SslConfig = SslConfig()
-    web: WebConfig = WebConfig()
-    debug: bool = False
-    bootstrap_db: bool = True
-    unix_socket: Optional[Path] = Path('/var/run/snooze/server.socket')
-    no_login: bool = Field(False, env='SNOOZE_NO_LOGIN')
-    audit_excluded_paths: List[str] = ('/api/patlite', '/metrics', '/web')
-    ssl: dict
-    process_plugins: List[str] = ('rule', 'aggregaterule', 'snooze', 'notification')
-    database: dict = Field(default_factory=lambda: {'type': 'file'})
-    init_sleep: int = 5
-    create_root_user: bool = False
+    listen_addr: str = Field(
+        title='Listening address',
+        default='0.0.0.0',
+        description="IPv4 address on which Snooze process is listening to",
+    )
+    port: int = Field(
+        default=5200,
+        description='Port on which Snooze process is listening to',
+    )
+    debug: bool = Field(
+        default=False,
+        description='Activate debug log output',
+    )
+    bootstrap_db: bool = Field(
+        title='Bootstrap database',
+        default=True,
+        description='Populate the database with an initial configuration',
+    )
+    unix_socket: Optional[Path] = Field(
+        title='Unix socket',
+        default='/var/run/snooze/server.socket',
+        description='Listen on this unix socket to issue root tokens',
+    )
+    no_login: bool = Field(
+        title='No login',
+        default=False,
+        env='SNOOZE_NO_LOGIN',
+        description='Disable Authentication (everyone has admin priviledges)',
+    )
+    audit_excluded_paths: List[str] = Field(
+        title='Audit excluded paths',
+        default=('/api/patlite', '/metrics', '/web'),
+        description='A list of HTTP paths excluded from audit logs. Any path'
+        'that starts with a path in this list will be excluded.',
+    )
+    process_plugins: List[str] = Field(
+        title='Process plugins',
+        default=('rule', 'aggregaterule', 'snooze', 'notification'),
+        description='List of plugins that will be used for processing alerts.'
+        ' Order matters.',
+    )
+    database: dict = Field(
+        title='Database',
+        default_factory=lambda: {'type': 'file'},
+    )
+    init_sleep: int = Field(
+        title='Init sleep',
+        default=5,
+        description='Time to sleep before retrying certain operations (bootstrap, clustering)',
+    )
+    create_root_user: bool = Field(
+        title='Create root user',
+        default=False,
+        description='Create a *root* user with a default password *root*',
+    )
+    ssl: SslConfig = Field(title='SSL configuration', default_factory=SslConfig)
+    web: WebConfig = Field(title='Web server configuration', default_factory=WebConfig)
 
 class GeneralConfig(WritableConfig):
     '''General configuration of snooze'''
     _section = 'general'
 
-    default_auth_backend: Literal['local', 'ldap'] = 'local'
-    local_users_enabled: bool = True
-    metrics_enabled: bool = True
-    anonymous_enabled: bool = False
-    ok_severities: List[str] = ('ok', 'success')
+    default_auth_backend: Literal['local', 'ldap'] = Field(
+        title='Default authentication backend',
+        description='Backend that will be first in the list of displayed authentication backends',
+        default='local',
+    )
+    local_users_enabled: bool = Field(
+        title='Local users enabled',
+        description='Enable the creation of local users in snooze. This can be disabled when another'
+        ' reliable authentication backend is used, and the admin want to make auditing easier',
+        default=True,
+    )
+    metrics_enabled: bool = Field(
+        title='Metrics enabled',
+        description='Enable Prometheus metrics',
+        default=True,
+    )
+    anonymous_enabled: bool = Field(
+        title='Anonymous enabled',
+        description='Enable anonymous user login. When a user log in as anonymous, he will be given user permissions',
+        default=False,
+    )
+    ok_severities: List[str] = Field(
+        title='OK severities',
+        description='List of severities that will automatically close the aggregate upon entering the system.'
+        ' This is mainly for icinga/grafana that can close the alert when the status becomes green again',
+        default=('ok', 'success'),
+    )
 
     @validator('ok_severities', each_item=True)
     def normalize_severities(cls, value): # pylint: disable=no-self-argument,no-self-use
@@ -220,38 +343,94 @@ class NotificationConfig(WritableConfig):
     '''Configuration for default notification delays/retry'''
     _section = 'notifications'
 
-    notification_freq: int = 60
-    notification_retry: int = 3
+    notification_freq: int = Field(
+        title='Frequency',
+        description='Time to wait before sending the next notification',
+        default=60,
+    )
+    notification_retry: int = Field(
+        title='Retry number',
+        description='',
+        default=3,
+    )
 
 class HousekeeperConfig(WritableConfig):
     '''Config for the housekeeper thread'''
     _section = 'housekeeper'
 
-    trigger_on_startup: bool = True
-    record_ttl: timedelta = timedelta(days=2)
-    cleanup_alert: timedelta = timedelta(minutes=5)
-    cleanup_comment: timedelta = timedelta(days=1)
-    cleanup_audit: timedelta = timedelta(days=28)
-    cleanup_snooze: timedelta = timedelta(days=3)
-    cleanup_notification: timedelta = timedelta(days=3)
+    trigger_on_startup: bool = Field(
+        title='Trigger on startup',
+        default=True,
+        description='Trigger all housekeeping job on startup',
+    )
+    record_ttl: timedelta = Field(
+        title='Record Time-To-Live',
+        description='Default TTL for alerts incoming',
+        default=timedelta(days=2),
+    )
+    cleanup_alert: timedelta = Field(
+        title='Cleanup alert',
+        description='Time between each run of alert cleaning. Alerts that exceeded their TTL will be deleted',
+        default=timedelta(minutes=5),
+    )
+    cleanup_comment: timedelta = Field(
+        title='Cleanup comment',
+        description='Time between each run of comment cleaning. Comments which are not bound to any alert will'
+        ' be deleted',
+        default=timedelta(days=1),
+    )
+    cleanup_audit: timedelta = Field(
+        title='Cleanup audit',
+        description='Cleanup orphans audit logs that are older than the given duration. Run daily',
+        default=timedelta(days=28),
+    )
+    cleanup_snooze: timedelta = Field(
+        title='Cleanup snooze',
+        description="Cleanup snooze filters that have been expired for the given duration. Run daily",
+        default=timedelta(days=3),
+    )
+    cleanup_notification: timedelta = Field(
+        title='Cleanup notifications',
+        description='Cleanup notifications that have been expired for the given duration. Run daily',
+        default=timedelta(days=3),
+    )
 
     class Config:
-        json_encoders = {timedelta: lambda dt: dt.total_seconds()}
+        json_encoders = {
+            # timedelta should be serialized into seconds (int)
+            timedelta: lambda dt: dt.total_seconds(),
+        }
 
 class BackupConfig(ReadOnlyConfig):
     '''Configuration for the backup job'''
     _section = 'backup'
 
-    enabled: bool = True
-    path: Path = Path('/var/lib/snooze')
-    excludes: List[str] = ('record', 'stats', 'comment', 'secrets')
+    enabled: bool = Field(
+        default=True,
+        description='Enable backups',
+    )
+    path: Path = Field(
+        default='/var/lib/snooze',
+        description='Path to store database backups',
+    )
+    excludes: List[str] = Field(
+        description='Collections to exclude from backups',
+        default=('record', 'stats', 'comment', 'secrets'),
+    )
 
 class ClusterConfig(ReadOnlyConfig):
     '''Configuration for the cluster'''
     _section = 'cluster'
 
-    enabled: bool = False
-    members: List[HostPort] = Field(tuple(HostPort(host='localhost')), env='SNOOZE_CLUSTER')
+    enabled: bool = Field(
+        default=False,
+        description='Enable clustering. Required when running multiple backends',
+    )
+    members: List[HostPort] = Field(
+        env='SNOOZE_CLUSTER',
+        default=tuple(HostPort(host='localhost')),
+        description='List of snooze servers in the cluster {host, port}'
+    )
 
     @validator('members')
     def parse_members_env(cls, value): # pylint: disable=no-self-argument,no-self-use

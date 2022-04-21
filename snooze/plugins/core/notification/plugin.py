@@ -39,7 +39,7 @@ class Notification(Plugin):
         validate_condition(obj)
 
     def reload_data(self):
-        self.load_data(sync=True)
+        super().reload_data()
         if not self.action:
             self.action = self.core.get_core_plugin('action')
         notifications = []

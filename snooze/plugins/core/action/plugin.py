@@ -52,7 +52,7 @@ class Action(Plugin):
             log.debug("Restored delayed actions %s", self.deffered_actions.delayed)
 
     def reload_data(self):
-        self.load_data(sync=True)
+        super().reload_data()
         actions = []
         for action in self.data or []:
             action_object = ActionObject(action, self)

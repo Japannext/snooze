@@ -59,14 +59,13 @@ class Pagination(TypedDict, total=False):
     page_nb: int
     asc: bool
 
-class SettingUpdatePayload(BaseModel):
-    filename: str
-    conf: dict
-    reload: bool
-
 class Widget(BaseModel):
     '''A widget representation in the config'''
     widget_name: Optional[str] = None
     icon: str
     vue_component: str
     form: dict
+
+class Query(BaseModel):
+    ql: str
+    field: str

@@ -19,7 +19,7 @@ log = getLogger('snooze.api')
 
 class SettingsRoute(BasicRoute):
     @authorize
-    def on_get(self, req, resp, section):
+    def on_get(self, req, resp, section: str):
         '''Fetch a config file data.
         Secrets are protected thanks to the `Field(exclude=True)` of pydantic.
         ValidationError are server side errors (the local config file is broken)'''
@@ -52,46 +52,25 @@ class SettingsRoute(BasicRoute):
             resp.status = falcon.HTTP_404
 
     @authorize
-    def on_put(self, req, resp, conf=''):
-        '''Action trigerred when a user change a setting section on the web interface'''
+    def on_put(self, req, resp, section: str):
         '''Rewrite a config file on the server.
         ValidationError are client side.
         A refresh of the class is needed (`self.api.core.reload(section)`).
         Sharing within the cluster is needed.
         '''
-        section = req.params.get('c') or conf
         resp.content_type = falcon.MEDIA_JSON
+        propagate_str = str(req.params.get('propagate'))
+        propagate = (propagate_str == 'true')
 
-        log.debug("Trying write to configfile %s: %s", section, req.media)
         try:
-            payload = SettingUpdatePayload(**req.media[0])
-            self.core.setting_update(payload.section, payload.data)
-            self.core.sync_setting_update()
-            resp.status = falcon.HTTP_CREATED
-            resp.media = {'data': f"Config {section} reloaded"}
-        except KeyError:
-            resp.status = falcon.HTTP_400
-            resp.media = {'data': f"Unknown config '{section}'"}
+            auth = req.headers['Authorization']
+            self.core.setting_update(section, req.media, auth, propagate)
+            if propagate:
+                resp.status = falcon.HTTP_ACCEPTED
+            else:
+                resp.status = falcon.HTTP_OK
+        except KeyError as err:
+            raise falcon.HTTPNotFound(description=f"Unknown config section '{section}'") from err
         except ValidationError as err:
-            resp.status = falcon.HTTP_400
-            resp.media = {'data': str(err)}
-        except Exception as err:
-            log.exception(err)
-            resp.status = falcon.HTTP_503
-            resp.media = {'data': str(err)}
-
-class SettingsUpdateRoute(BasicRoute):
-    '''A falcon route to reload one's token'''
-    auth = {'auth_disabled': True}
-
-    def on_put(self, req, resp):
-        '''Action triggerred by a cluster member to propagate a setting change'''
-
-        try:
-            payload = SettingUpdatePayload(**req.media)
-        except ValidationError as err: # Bad payload
-            raise err
-        try:
-            self.core.setting_update(payload.section, payload.data)
-        except ValidationError as err: # Bad data for config
-            raise err
+            raise falcon.HTTPInternalServerError(
+                description=f"Config section '{section}' is invalid on the server: {err}") from err
