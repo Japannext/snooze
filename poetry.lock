@@ -503,6 +503,18 @@ typing-extensions = {version = ">=3.10.0", markers = "python_version < \"3.10\""
 testutil = ["gitpython (>3)"]
 
 [[package]]
+name = "pylint-pytest"
+version = "1.1.2"
+description = "A Pylint plugin to suppress pytest-related false positives."
+category = "dev"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+pylint = "*"
+pytest = ">=4.6"
+
+[[package]]
 name = "pymongo"
 version = "3.12.1"
 description = "Python driver for MongoDB <http://www.mongodb.org>"
@@ -860,7 +872,7 @@ python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "13ad5286fdf9d030ccf49592813f5b786c5a896e89adf7352fa5631bf0571f9d"
+content-hash = "b97e73ef0a81aeb31c8f592a0a9d7a49eacf3228c0b19a4b3ca605b21bf8a0d7"
 
 [metadata.files]
 amqp = [
@@ -1252,6 +1264,9 @@ pyjwt = [
 pylint = [
     {file = "pylint-2.13.5-py3-none-any.whl", hash = "sha256:c149694cfdeaee1aa2465e6eaab84c87a881a7d55e6e93e09466be7164764d1e"},
     {file = "pylint-2.13.5.tar.gz", hash = "sha256:dab221658368c7a05242e673c275c488670144123f4bd262b2777249c1c0de9b"},
+]
+pylint-pytest = [
+    {file = "pylint_pytest-1.1.2-py2.py3-none-any.whl", hash = "sha256:fb20ef318081cee3d5febc631a7b9c40fa356b05e4f769d6e60a337e58c8879b"},
 ]
 pymongo = [
     {file = "pymongo-3.12.1-cp27-cp27m-macosx_10_14_intel.whl", hash = "sha256:c4653830375ab019b86d218c749ad38908b74182b2863d09936aa8d7f990d30e"},

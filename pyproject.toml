@@ -44,6 +44,7 @@ pydantic-yaml = "^0.6.3"
 [tool.poetry.group.lint.dependencies]
 pylint = "^2.13.5"
 pyright = "^1.1.238"
+pylint-pytest = "^1.1.2"
 
 [tool.poetry.group.security.dependencies]
 bandit = "^1.7.0"
@@ -64,10 +65,15 @@ virtualenv = "^20.8.1"
 invoke = "^1.6.0"
 toml = "^0.10.2"
 
-[tool.pylint.format]
-max-line-length = 120
+[tool.pylint.MASTER]
+load-plugins = ['pylint_pytest']
 extension-pkg-whitelist = ['falcon', 'netifaces', 'pydantic']
+
+[tool.pylint."MESSAGE CONTROL"]
 disable = ['no-else-return']
+
+[tool.pylint.FORMAT]
+max-line-length = 120
 
 [tool.pyright]
 typeCheckingMode = "strict"
