@@ -240,6 +240,45 @@ class WebConfig(BaseModel):
         description='Path to the web interface dist files',
     )
 
+class BackupConfig(BaseModel):
+    '''Configuration for the backup job'''
+
+    enabled: bool = Field(
+        default=True,
+        description='Enable backups',
+    )
+    path: Path = Field(
+        default=Path('/var/lib/snooze'),
+        description='Path to store database backups',
+    )
+    excludes: List[str] = Field(
+        description='Collections to exclude from backups',
+        default=('record', 'stats', 'comment', 'secrets'),
+    )
+
+class ClusterConfig(BaseModel):
+    '''Configuration for the cluster'''
+
+    enabled: bool = Field(
+        default=False,
+        description='Enable clustering. Required when running multiple backends',
+    )
+    members: List[HostPort] = Field(
+        env='SNOOZE_CLUSTER',
+        default=tuple(HostPort(host='localhost')),
+        description='List of snooze servers in the cluster {host, port}'
+    )
+
+    @validator('members')
+    def parse_members_env(cls, value): # pylint: disable=no-self-argument,no-self-use
+        '''In case the environment (a string) is passed, parse the environment string'''
+        if isinstance(value, str):
+            members = []
+            for member in value.split(','):
+                members.append(HostPort(member.split(':', 1)))
+            return members
+        return value
+
 class CoreConfig(ReadOnlyConfig):
     '''Core configuration. Not editable live.'''
     _section = 'core'
@@ -301,6 +340,8 @@ class CoreConfig(ReadOnlyConfig):
     )
     ssl: SslConfig = Field(title='SSL configuration', default_factory=SslConfig)
     web: WebConfig = Field(title='Web server configuration', default_factory=WebConfig)
+    cluster: ClusterConfig = Field(default_factory=ClusterConfig)
+    backup: BackupConfig = Field(default_factory=BackupConfig)
 
 class GeneralConfig(WritableConfig):
     '''General configuration of snooze'''
@@ -401,68 +442,27 @@ class HousekeeperConfig(WritableConfig):
             timedelta: lambda dt: dt.total_seconds(),
         }
 
-class BackupConfig(ReadOnlyConfig):
-    '''Configuration for the backup job'''
-    _section = 'backup'
-
-    enabled: bool = Field(
-        default=True,
-        description='Enable backups',
-    )
-    path: Path = Field(
-        default='/var/lib/snooze',
-        description='Path to store database backups',
-    )
-    excludes: List[str] = Field(
-        description='Collections to exclude from backups',
-        default=('record', 'stats', 'comment', 'secrets'),
-    )
-
-class ClusterConfig(ReadOnlyConfig):
-    '''Configuration for the cluster'''
-    _section = 'cluster'
-
-    enabled: bool = Field(
-        default=False,
-        description='Enable clustering. Required when running multiple backends',
-    )
-    members: List[HostPort] = Field(
-        env='SNOOZE_CLUSTER',
-        default=tuple(HostPort(host='localhost')),
-        description='List of snooze servers in the cluster {host, port}'
-    )
-
-    @validator('members')
-    def parse_members_env(cls, value): # pylint: disable=no-self-argument,no-self-use
-        '''In case the environment (a string) is passed, parse the environment string'''
-        if isinstance(value, str):
-            members = []
-            for member in value.split(','):
-                members.append(HostPort(member.split(':', 1)))
-            return members
-        return value
-
 @dataclass
-class Config:
+class Config(BaseModel):
     '''An object representing the complete snooze configuration'''
     basedir: Path
 
     core: CoreConfig
     general: GeneralConfig
     housekeeper: HousekeeperConfig
-    cluster: ClusterConfig
-    backup: BackupConfig
+    notifications: NotificationConfig
     ldap: Optional[LdapConfig]
 
     def __init__(self, basedir: Path = SNOOZE_CONFIG):
-        self.basedir = basedir
-        self.core = CoreConfig(basedir)
-        self.general = GeneralConfig(basedir)
-        self.notifications = NotificationConfig(basedir)
-        self.housekeeper = HousekeeperConfig(basedir)
-        self.cluster = ClusterConfig(basedir)
-        self.backup = BackupConfig(basedir)
+        configs = {
+            'basedir': basedir,
+            'core': CoreConfig(basedir),
+            'general': GeneralConfig(basedir),
+            'notifications': NotificationConfig(basedir),
+            'housekeeper': HousekeeperConfig(basedir),
+        }
         try:
-            self.ldap = LdapConfig(basedir)
+            configs['ldap'] = LdapConfig(basedir)
         except (FileNotFoundError, ValidationError):
-            self.ldap = None
+            configs['ldap'] = None
+        BaseModel.__init__(self, **configs)

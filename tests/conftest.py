@@ -27,8 +27,8 @@ DEFAULT_CONFIG = {
         'socket_path': './test.socket',
         'init_sleep': 0,
         'stats': False,
+        'backup': {'enabled': False},
     },
-    'backup': {'enabled': False},
 }
 
 def write_data(database, request):

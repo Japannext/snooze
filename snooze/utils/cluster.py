@@ -33,10 +33,10 @@ ADAPTER = HTTPAdapter(max_retries=Retry(total=20, backoff_factor=0.1))
 class Cluster(SurvivingThread):
     '''A class representing the cluster and used for interacting with it.'''
 
-    def __init__(self, core_config: CoreConfig, config: ClusterConfig, exit_event: Event = None):
+    def __init__(self, core_config: CoreConfig, exit_event: Event = None):
         if exit_event is None:
             exit_event = Event()
-        self.config = config
+        self.config = core_config.cluster
 
         self.myself = HostPort(host=socket.gethostname(), port=core_config.port)
         self.others: List[HostPort] = []

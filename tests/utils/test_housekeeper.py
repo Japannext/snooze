@@ -6,10 +6,6 @@ from snooze.utils.housekeeper import Housekeeper
 
 class TestHousekeeper:
 
-    configs = {
-        'backup': {'enabled': False},
-    }
-
     def test_cleanup_alert(self, db, config):
         now = datetime.now()
         last_week = now - timedelta(days=7)
@@ -21,7 +17,7 @@ class TestHousekeeper:
         ]
         for record in records:
             db.write('record', record, update_time=False)
-        housekeeper = Housekeeper(config.housekeeper, config.backup, db)
+        housekeeper = Housekeeper(config.housekeeper, config.core.backup, db)
         job = housekeeper.jobs['cleanup_alert']
         job.run(db)
         results = db.search('record')['data']
@@ -46,7 +42,7 @@ class TestHousekeeper:
             {'record_uid': 'unknown', 'message': 'comment 4'}
         ]
         db.write('comment', comments)
-        housekeeper = Housekeeper(config.housekeeper, config.backup, db)
+        housekeeper = Housekeeper(config.housekeeper, config.core.backup, db)
         job = housekeeper.jobs['cleanup_comment']
         job.run(db)
         results = db.search('comment')['data']

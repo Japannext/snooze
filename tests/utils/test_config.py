@@ -15,8 +15,6 @@ class TestConfig:
         assert isinstance(config.core, CoreConfig)
         assert isinstance(config.general, GeneralConfig)
         assert isinstance(config.notifications, NotificationConfig)
-        assert isinstance(config.cluster, ClusterConfig)
-        assert isinstance(config.backup, BackupConfig)
         assert config.ldap is None
 
 class TestCoreConfig:
@@ -69,16 +67,6 @@ class TestGeneralConfig:
 class TestNotificationConfig:
     def test_empty(self, tmp_path):
         config = NotificationConfig(tmp_path)
-        assert config
-
-class TestClusterConfig:
-    def test_empty(self, tmp_path):
-        config = ClusterConfig(tmp_path)
-        assert config
-
-class TestBackupConfig:
-    def test_empty(self, tmp_path):
-        config = BackupConfig(tmp_path)
         assert config
 
 class TestMetadataConfig:

@@ -70,9 +70,9 @@ class Core:
         self.threads:  Dict[str, SurvivingThread] = {}
         if 'housekeeper' in allowed_threads:
             self.threads['housekeeper'] = Housekeeper(self.config.housekeeper,
-                self.config.backup, self.db, self.exit_event)
+                self.config.core.backup, self.db, self.exit_event)
         if 'cluster' in allowed_threads:
-            self.threads['cluster'] = Cluster(self.config.core, self.config.cluster, self.exit_event)
+            self.threads['cluster'] = Cluster(self.config.core, self.exit_event)
 
         self.mq = MQManager(self)
 

@@ -7,6 +7,9 @@
 
 class TestCore:
     data = {'record': []}
+    configs = {
+        'general': {'ok_severities': ['ok']},
+    }
 
     def test_load_plugins(self, core):
         plugins = [plugin.name for plugin in core.plugins]
@@ -23,7 +26,6 @@ class TestCore:
     def test_process_ok(self, core):
         records = core.db.search('record')
         print(records)
-        core.config.general.ok_severities = ['ok']
         record = {'severity': 'ok'}
         core.process_record(record)
         data = core.db.search('record')['data'][0]
