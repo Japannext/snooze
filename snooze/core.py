@@ -222,6 +222,10 @@ class Core:
         except ValidationError as err: # Bad data
             raise err
 
+        for auth in config._auth_routes:
+            auth_route = self.api.auth_routes.get(auth)
+            if auth_route:
+                auth_route.reload()
         if section in self.api.auth_routes:
             self.api.auth_routes[section].reload()
 

@@ -61,7 +61,7 @@ export default {
   mounted () {
     this.save_enable()
     this.settings = JSON.parse(localStorage.getItem(this.endpoint+'_json') || '{}')
-    get_data('settings/?c='+encodeURIComponent(`web/${this.endpoint}`)+'&checksum='+(this.settings.checksum || ""), null, {}, this.load_table)
+    get_data(`settings/${this.endpoint}`, null, {}, this.load_table)
   },
   data () {
     return {
@@ -157,9 +157,9 @@ export default {
       this.save_variant = 'secondary'
     },
     submit(data, callback = null) {
-      console.log(`PUT /${this.current_endpoint}`)
+      console.log(`PUT /${this.current_endpoint}?propagate`)
       API
-        .put(`/${this.current_endpoint}`, [data])
+        .put(`/${this.current_endpoint}?propagate`, data)
         .then(response => {
           console.log(response)
           if (response.data) {

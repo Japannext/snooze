@@ -246,8 +246,7 @@ class ClusterRoute(BasicRoute):
 class ReloadPluginRoute(BasicRoute):
     '''A route to trigger the reload of a given plugin'''
     def on_post(self, req, resp, plugin_name: str):
-        propagate_str = str(req.params.get('propagate'))
-        propagate = (propagate_str == 'true')
+        propagate = bool(req.params.get('propagate')) # Key existence
         plugin = self.core.get_core_plugin(plugin_name)
         if plugin is None:
             raise falcon.HTTPNotFound(f"Plugin '{plugin_name}' not loaded in core")

@@ -59,8 +59,7 @@ class SettingsRoute(BasicRoute):
         Sharing within the cluster is needed.
         '''
         resp.content_type = falcon.MEDIA_JSON
-        propagate_str = str(req.params.get('propagate'))
-        propagate = (propagate_str == 'true')
+        propagate = bool(req.params.get('propagate')) # Key existence
 
         try:
             auth = req.headers['Authorization']

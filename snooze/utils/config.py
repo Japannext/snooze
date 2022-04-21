@@ -83,6 +83,7 @@ class WritableConfig(ReadOnlyConfig):
     '''A class representing a writable config file at a given path.
     Can be explored, and updated with a lock file.'''
     _filelock: FileLock = PrivateAttr()
+    _auth_routes: List[str] = PrivateAttr(default_factory=list)
 
     def __init__(self, basedir: Path = SNOOZE_CONFIG, data: Optional[dict] = None):
         if data is None:
@@ -158,6 +159,7 @@ class MetadataConfig(ReadOnlyConfig):
 class LdapConfig(WritableConfig):
     '''Configuration for LDAP authentication'''
     _section = 'ldap_auth'
+    _auth_routes = ['ldap']
 
     enabled: bool = Field(
         description='Enable or disable LDAP Authentication',
@@ -346,6 +348,7 @@ class CoreConfig(ReadOnlyConfig):
 class GeneralConfig(WritableConfig):
     '''General configuration of snooze'''
     _section = 'general'
+    _auth_routes = ['local']
 
     default_auth_backend: Literal['local', 'ldap'] = Field(
         title='Default authentication backend',
