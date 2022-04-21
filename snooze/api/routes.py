@@ -9,6 +9,7 @@
 import os.path
 import functools
 import mimetypes
+import binascii
 from abc import abstractmethod
 from hashlib import sha256
 from base64 import b64decode
@@ -313,11 +314,11 @@ class AuthRoute(BasicRoute):
             raise falcon.HTTPUnauthorized(
                 description='Missing Authorization Header')
 
-        parts = auth_header.split()
+        parts = auth_header.split(' ')
 
         if parts[0].lower() != self.auth_header_prefix.lower():
-            raise falcon.HTTPUnauthorized(
-                description=f"Invalid Authorization Header: Must start with {self.auth_header_prefix}")
+            raise falcon.HTTPInvalidHeader(header_name="Authorization",
+                message=f"Must start with '{self.auth_header_prefix} '")
 
         elif len(parts) == 1:
             raise falcon.HTTPUnauthorized(
@@ -333,16 +334,16 @@ class AuthRoute(BasicRoute):
         token = self.parse_auth_token_from_request(auth_header=auth)
         try:
             token = b64decode(token).decode('utf-8')
-
-        except Exception:
-            raise falcon.HTTPUnauthorized(
-                description='Invalid Authorization Header: Unable to decode credentials')
-
-        try:
             username, password = token.split(':', 1)
-        except ValueError:
-            raise falcon.HTTPUnauthorized(
-                description='Invalid Authorization: Unable to decode credentials')
+        except binascii.Error as err:
+            raise falcon.HTTPInvalidHeader(header_name="Authorization",
+                message=f"Authorization Basic not in base64: {err}")
+        except UnicodeError as err:
+            raise falcon.HTTPInvalidHeader(header_name="Authorization",
+                message=f"Decoded Authorization Basic not unicode: {err}")
+        except ValueError: # Cannot unpack username, password
+            raise falcon.HTTPInvalidHeader(header_name="Authorization",
+                message='Decoded entry should be in format `<user>:<password>`')
 
         return username, password
 
