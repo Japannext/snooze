@@ -55,3 +55,10 @@ class ConditionValidationError(ApiError):
     '''Raised when the validation fails during an API call'''
     def __init__(self, req: Request, err: Exception, obj: dict):
         super().__init__(req, err, obj, f"Validation error: {err}")
+
+class DatabaseError(RuntimeError):
+    '''Wrapper for database errors (putting more info about each query)'''
+    def __init__(self, operation: str, details: dict, err: Exception):
+        self.operation = operation
+        self.details = details
+        super().__init__(self, f"Database error during {operation} ({details}): {err}")

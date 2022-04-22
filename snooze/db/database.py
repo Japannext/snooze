@@ -17,11 +17,6 @@ from typing_extensions import TypedDict
 
 from snooze.utils.typing import Condition, Pagination
 
-class DatabaseError(RuntimeError):
-    '''Wrapper for database errors (putting more info about each query)'''
-    def __init__(self, operation: str, details: dict, err: Exception):
-        super().__init__(self, f"Database error during {operation} ({details}): {err}")
-
 class Database:
     '''Abstract class for the database backend'''
     def __init__(self, conf: dict):

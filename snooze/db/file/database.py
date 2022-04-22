@@ -21,6 +21,7 @@ from tinydb import TinyDB, Query as BaseQuery
 
 from snooze.db.database import Database
 from snooze.utils.functions import dig, to_tuple
+from snooze.utils.exceptions import DatabaseError
 
 log = getLogger('snooze.db.file')
 DEFAULT_PAGINATION = {
@@ -141,152 +142,160 @@ class BackendDB(Database):
         return deleted_count
 
     def write(self, collection, obj, primary=None, duplicate_policy='update', update_time=True, constant=None):
-        mutex.acquire()
-        added = []
-        updated = []
-        replaced = []
-        rejected = []
-        obj_copy = []
-        tobj = obj
-        add_obj = False
-        table = self.db.table(collection)
-        tobj = deepcopy(obj)
-        if not isinstance(tobj, list):
-            tobj = [tobj]
-        if primary:
-            if isinstance(primary , str):
-                primary = primary.split(',')
-        if constant:
-            if isinstance(constant , str):
-                constant = constant.split(',')
-        for o in tobj:
-            primary_docs = None
-            old = {}
-            o.pop('_old', None)
-            if update_time:
-                o['date_epoch'] = datetime.now().timestamp()
-            if primary and all(dig(o, *p.split('.')) for p in primary):
-                primary_query = map(lambda a: dig(Query(), *a.split('.')) == dig(o, *a.split('.')), primary)
-                primary_query = reduce(lambda a, b: a & b, primary_query)
-                primary_docs = table.search(primary_query)
-                if primary_docs:
-                    log.debug('Documents with same primary %s: %s', primary, primary_docs[0].doc_id)
-            if 'uid' in o:
-                query = Query()
-                docs = table.search(query.uid == o['uid'])
-                if docs:
-                    doc = docs[0]
-                    doc_id = doc.doc_id
-                    old = doc
-                    log.debug('Found: %s', doc_id)
-                    if primary_docs and doc_id != primary_docs[0].doc_id:
-                        error_message = f"Found another document with same primary {primary}: {primary_docs}. " \
-                            "Since UID is different, cannot update"
-                        log.error(error_message)
-                        o['error'] = error_message
-                        rejected.append(o)
-                    elif constant and any(doc.get(c, '') != o.get(c) for c in constant):
-                        error_message = f"Found a document with existing uid {o['uid']} but different constant " \
-                            f"values: {constant}. Since UID is different, cannot update"
-                        log.error(error_message)
-                        o['error'] = error_message
-                        rejected.append(o)
-                    elif duplicate_policy == 'replace':
-                        log.debug('Replacing with: %s', doc_id)
-                        table.remove(doc_ids=[doc_id])
-                        table.insert(o)
-                        replaced.append(o)
-                    else:
-                        log.debug('Updating with: %s', doc_id)
-                        table.update(o, doc_ids=[doc_id])
-                        updated.append(o)
-                else:
-                    error_message = f"UID {o['uid']} not found. Skipping..."
-                    log.error(error_message)
-                    o['error'] = error_message
-                    rejected.append(o)
-            elif primary:
-                if primary_docs:
-                    doc = primary_docs[0]
-                    doc_id = doc.doc_id
-                    old = doc
-                    if constant and any(doc.get(c, '') != o.get(c) for c in constant):
-                        error_message = f"Found a document with existing primary {primary} but different "\
-                            f"constant values: {constant}. Since UID is different, cannot update"
-                        log.error(error_message)
-                        o['error'] = error_message
-                        rejected.append(o)
-                    else:
-                        log.debug('Evaluating duplicate policy: %s', duplicate_policy)
-                        if duplicate_policy == 'insert':
-                            add_obj = True
-                        elif duplicate_policy == 'reject':
-                            error_message = "Another object exist with the same {primary}"
+        try:
+            mutex.acquire()
+            added = []
+            updated = []
+            replaced = []
+            rejected = []
+            obj_copy = []
+            tobj = obj
+            add_obj = False
+            table = self.db.table(collection)
+            tobj = deepcopy(obj)
+            if not isinstance(tobj, list):
+                tobj = [tobj]
+            if primary:
+                if isinstance(primary , str):
+                    primary = primary.split(',')
+            if constant:
+                if isinstance(constant , str):
+                    constant = constant.split(',')
+            for o in tobj:
+                primary_docs = None
+                old = {}
+                o.pop('_old', None)
+                if update_time:
+                    o['date_epoch'] = datetime.now().timestamp()
+                if primary and all(dig(o, *p.split('.')) for p in primary):
+                    primary_query = map(lambda a: dig(Query(), *a.split('.')) == dig(o, *a.split('.')), primary)
+                    primary_query = reduce(lambda a, b: a & b, primary_query)
+                    primary_docs = table.search(primary_query)
+                    if primary_docs:
+                        log.debug('Documents with same primary %s: %s', primary, primary_docs[0].doc_id)
+                if 'uid' in o:
+                    query = Query()
+                    docs = table.search(query.uid == o['uid'])
+                    if docs:
+                        doc = docs[0]
+                        doc_id = doc.doc_id
+                        old = doc
+                        log.debug('Found: %s', doc_id)
+                        if primary_docs and doc_id != primary_docs[0].doc_id:
+                            error_message = f"Found another document with same primary {primary}: {primary_docs}. " \
+                                "Since UID is different, cannot update"
+                            log.error(error_message)
+                            o['error'] = error_message
+                            rejected.append(o)
+                        elif constant and any(doc.get(c, '') != o.get(c) for c in constant):
+                            error_message = f"Found a document with existing uid {o['uid']} but different constant " \
+                                f"values: {constant}. Since UID is different, cannot update"
+                            log.error(error_message)
                             o['error'] = error_message
                             rejected.append(o)
                         elif duplicate_policy == 'replace':
-                            log.debug('Replace with: %s', doc_id)
+                            log.debug('Replacing with: %s', doc_id)
                             table.remove(doc_ids=[doc_id])
-                            if 'uid' in doc:
-                                o['uid'] = doc['uid']
                             table.insert(o)
                             replaced.append(o)
                         else:
-                            log.debug('Update with: %s', doc_id)
+                            log.debug('Updating with: %s', doc_id)
                             table.update(o, doc_ids=[doc_id])
                             updated.append(o)
+                    else:
+                        error_message = f"UID {o['uid']} not found. Skipping..."
+                        log.error(error_message)
+                        o['error'] = error_message
+                        rejected.append(o)
+                elif primary:
+                    if primary_docs:
+                        doc = primary_docs[0]
+                        doc_id = doc.doc_id
+                        old = doc
+                        if constant and any(doc.get(c, '') != o.get(c) for c in constant):
+                            error_message = f"Found a document with existing primary {primary} but different "\
+                                f"constant values: {constant}. Since UID is different, cannot update"
+                            log.error(error_message)
+                            o['error'] = error_message
+                            rejected.append(o)
+                        else:
+                            log.debug('Evaluating duplicate policy: %s', duplicate_policy)
+                            if duplicate_policy == 'insert':
+                                add_obj = True
+                            elif duplicate_policy == 'reject':
+                                error_message = "Another object exist with the same {primary}"
+                                o['error'] = error_message
+                                rejected.append(o)
+                            elif duplicate_policy == 'replace':
+                                log.debug('Replace with: %s', doc_id)
+                                table.remove(doc_ids=[doc_id])
+                                if 'uid' in doc:
+                                    o['uid'] = doc['uid']
+                                table.insert(o)
+                                replaced.append(o)
+                            else:
+                                log.debug('Update with: %s', doc_id)
+                                table.update(o, doc_ids=[doc_id])
+                                updated.append(o)
+                    else:
+                        log.debug("Could not find document with primary {}. Inserting instead".format(primary))
+                        add_obj = True
                 else:
-                    log.debug("Could not find document with primary {}. Inserting instead".format(primary))
                     add_obj = True
-            else:
-                add_obj = True
-            if add_obj:
-                obj_copy.append(o)
-                obj_copy[-1]['uid'] = str(uuid.uuid4())
-                added.append(o)
-                add_obj = False
-                log.debug("In %s, inserting %s", collection, o.get('uid', ''))
-            if old:
-                o['_old'] = old
-        if len(obj_copy) > 0:
-            table.insert_multiple(obj_copy)
-        mutex.release()
-        return {
-            'data': {
-                'added': deepcopy(added),
-                'updated': deepcopy(updated),
-                'replaced': deepcopy(replaced),
-                'rejected': deepcopy(rejected),
-            },
-        }
+                if add_obj:
+                    obj_copy.append(o)
+                    obj_copy[-1]['uid'] = str(uuid.uuid4())
+                    added.append(o)
+                    add_obj = False
+                    log.debug("In %s, inserting %s", collection, o.get('uid', ''))
+                if old:
+                    o['_old'] = old
+            if len(obj_copy) > 0:
+                table.insert_multiple(obj_copy)
+            mutex.release()
+            return {
+                'data': {
+                    'added': deepcopy(added),
+                    'updated': deepcopy(updated),
+                    'replaced': deepcopy(replaced),
+                    'rejected': deepcopy(rejected),
+                },
+            }
+        except Exception as err:
+            details = {'collection': collection, 'obj': obj}
+            raise DatabaseError('write', details, err) from err
 
     def inc(self, collection, field, labels={}):
-        now = int((datetime.now().timestamp() // 3600) * 3600)
-        mutex.acquire()
-        table = self.db.table(collection)
-        query = Query()
-        keys = []
-        added = []
-        updated = []
-        if labels:
-            for key, value in labels.items():
-                keys.append(f"{field}__{key}__{value}")
-        else:
-            keys.append(field)
-        for key in keys:
-            result = table.search((query.date == now) & (query.key == key))
-            if result:
-                result = result[0]
-                result['value'] = result.get('value', 0) + 1
-                table.update(result, doc_ids=[result.doc_id])
-                updated.append(deepcopy(result))
+        try:
+            now = int((datetime.now().timestamp() // 3600) * 3600)
+            mutex.acquire()
+            table = self.db.table(collection)
+            query = Query()
+            keys = []
+            added = []
+            updated = []
+            if labels:
+                for key, value in labels.items():
+                    keys.append(f"{field}__{key}__{value}")
             else:
-                result = {'date': now, 'type': 'counter', 'key': key}
-                result['value'] = 1
-                table.insert(result)
-                added.append(deepcopy(result))
-        mutex.release()
-        return {'data': {'added': added, 'updated': updated}}
+                keys.append(field)
+            for key in keys:
+                result = table.search((query.date == now) & (query.key == key))
+                if result:
+                    result = result[0]
+                    result['value'] = result.get('value', 0) + 1
+                    table.update(result, doc_ids=[result.doc_id])
+                    updated.append(deepcopy(result))
+                else:
+                    result = {'date': now, 'type': 'counter', 'key': key}
+                    result['value'] = 1
+                    table.insert(result)
+                    added.append(deepcopy(result))
+            mutex.release()
+            return {'data': {'added': added, 'updated': updated}}
+        except Exception as err:
+            details = {'collection': collection, 'field': field, 'labels': labels}
+            raise DatabaseError('inc', details, err) from err
 
     def update_fields(self, collection, fields, condition=[]):
         log.debug("Update collection '%s' with fields '%s' based on the following search", collection, fields)
@@ -357,64 +366,71 @@ class BackendDB(Database):
         return {'data': results_agg, 'count': count}
 
     def search(self, collection, condition=[], **pagination):
-        mutex.acquire()
-        pagination = {**DEFAULT_PAGINATION, **pagination}
-        orderby = pagination['orderby']
-        page_number = pagination['page_number']
-        nb_per_page = pagination['nb_per_page']
-        asc = pagination['asc']
-        tinydb_search = self.convert(condition)
-        if collection in self.db.tables():
-            table = self.db.table(collection)
-            if tinydb_search:
-                results = table.search(tinydb_search)
+        try:
+            mutex.acquire()
+            pagination = {**DEFAULT_PAGINATION, **pagination}
+            orderby = pagination['orderby']
+            page_number = pagination['page_number']
+            nb_per_page = pagination['nb_per_page']
+            asc = pagination['asc']
+            tinydb_search = self.convert(condition)
+            if collection in self.db.tables():
+                table = self.db.table(collection)
+                if tinydb_search:
+                    results = table.search(tinydb_search)
+                else:
+                    results = table.all()
+                total = len(results)
+                if nb_per_page > 0:
+                    from_el = max((page_number-1)*nb_per_page, 0)
+                    to_el = page_number*nb_per_page
+                else:
+                    from_el = None
+                    to_el = None
+                if len(orderby) > 0 and all(dig(res, *orderby.split('.')) for res in list(results)):
+                    results = sorted(list(results),  key=lambda x: reduce(lambda c, k: c.get(k, {}), orderby.split('.'), x))
+                if not asc:
+                    results = list(reversed(results))
+                results = results[from_el:to_el]
+                log.debug("Found %d result(s) for search %s in collection %s. Pagination: %s",
+                    total, tinydb_search, collection, pagination)
+                mutex.release()
+                return {'data': deepcopy(results), 'count': total}
             else:
-                results = table.all()
-            total = len(results)
-            if nb_per_page > 0:
-                from_el = max((page_number-1)*nb_per_page, 0)
-                to_el = page_number*nb_per_page
-            else:
-                from_el = None
-                to_el = None
-            if len(orderby) > 0 and all(dig(res, *orderby.split('.')) for res in list(results)):
-                results = sorted(list(results),  key=lambda x: reduce(lambda c, k: c.get(k, {}), orderby.split('.'), x))
-            if not asc:
-                results = list(reversed(results))
-            results = results[from_el:to_el]
-            log.debug("Found %d result(s) for search %s in collection %s. Pagination: %s",
-                total, tinydb_search, collection, pagination)
-            mutex.release()
-            return {'data': deepcopy(results), 'count': total}
-        else:
-            log.warning("Cannot find collection %s", collection)
-            mutex.release()
-            return {'data': [], 'count': 0}
+                log.warning("Cannot find collection %s", collection)
+                mutex.release()
+                return {'data': [], 'count': 0}
+        except Exception as err:
+            details = {'collection': collection, 'condition': condition, 'pagination': pagination}
+            raise DatabaseError('search', details, err) from err
 
     def delete(self, collection, condition=[], force=False):
-        mutex.acquire()
-        tinydb_search = self.convert(condition)
-        if collection in self.db.tables():
-            table = self.db.table(collection)
-            if len(condition) == 0 and not force:
-                results_count = 0
-                log.debug("Too dangerous to delete everything. Aborting")
-            else:
-                if len(condition) == 0:
-                    results_count = len(table)
-                    results = table.truncate()
+        try:
+            mutex.acquire()
+            tinydb_search = self.convert(condition)
+            if collection in self.db.tables():
+                table = self.db.table(collection)
+                if len(condition) == 0 and not force:
+                    results_count = 0
+                    log.debug("Too dangerous to delete everything. Aborting")
                 else:
-                    results = table.remove(tinydb_search)
-                    results_count = len(results)
-                log.debug("Found %d item(s) to delete in collection %s for search %s",
-                    results_count, collection, tinydb_search)
-            mutex.release()
-            return {'data': [], 'count': results_count}
-        else:
-            mutex.release()
-            log.error("Cannot find collection %s", collection)
-            return {'data': 0}
-
+                    if len(condition) == 0:
+                        results_count = len(table)
+                        results = table.truncate()
+                    else:
+                        results = table.remove(tinydb_search)
+                        results_count = len(results)
+                    log.debug("Found %d item(s) to delete in collection %s for search %s",
+                        results_count, collection, tinydb_search)
+                mutex.release()
+                return {'data': [], 'count': results_count}
+            else:
+                mutex.release()
+                log.error("Cannot find collection %s", collection)
+                return {'data': 0}
+        except Exception as err:
+            details = {'collection': collection, 'condition': condition, 'force': force}
+            raise DatabaseError('delete', details, err) from err
     def convert(self, array):
         """
         Convert `Condition` type from snooze.utils
