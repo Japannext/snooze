@@ -210,27 +210,10 @@ class Core:
         if cluster:
             cluster.sync_reload_plugin(plugin_name)
 
-    def setting_update(self, section: str, data: dict, auth: str, propagate: bool = False):
-        '''Update the settings of a section'''
-        try:
-            config = getattr(self.core.config, section)
-            config.update(data)
-        except KeyError:
-            raise KeyError(f"Unknown config section {section}")
-        except AttributeError:
-            raise Exception(f"Config section {section} not writable")
-        except ValidationError as err: # Bad data
-            raise err
-
-        for auth in config._auth_routes:
-            auth_route = self.api.auth_routes.get(auth)
-            if auth_route:
-                auth_route.reload()
-        if section in self.api.auth_routes:
-            self.api.auth_routes[section].reload()
-
+    def sync_setting_update(self, section, data, auth):
+        '''Trigger a setting update to other cluster peers'''
         cluster = self.threads.get('cluster')
-        if propagate and cluster:
+        if cluster:
             cluster.sync_setting_update(section, data, auth)
 
     def get_core_plugin(self, plugin_name: str) -> Optional['Plugin']:

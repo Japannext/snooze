@@ -13,12 +13,11 @@ from contextlib import contextmanager
 from logging import getLogger
 from pathlib import Path
 from datetime import timedelta
-from typing import Optional, List, Any, Dict, Literal
+from typing import Optional, List, Any, Dict, Literal, ClassVar
 
 import yaml
 from filelock import FileLock
-from pydantic import BaseModel, Field, PrivateAttr, validator, ValidationError
-from pydantic.dataclasses import dataclass
+from pydantic import BaseModel, Field, validator, ValidationError, PrivateAttr
 
 from snooze import __file__ as SNOOZE_PATH
 from snooze.utils.typing import RouteArgs, HostPort, Widget
@@ -28,16 +27,17 @@ log = getLogger('snooze.utils.config')
 SNOOZE_CONFIG = Path(os.environ.get('SNOOZE_SERVER_CONFIG', '/etc/snooze/server'))
 SNOOZE_PLUGIN_PATH = Path(SNOOZE_PATH).parent / 'plugins/core'
 
-class ReadOnlyConfig(BaseModel, ABC):
+class ReadOnlyConfig(BaseModel):
     '''A class representing a config file at a given path.
     Can only be read.'''
-    _section: Optional[str] = PrivateAttr(None)
-    _path: Optional[Path] = PrivateAttr(None)
+    _section: ClassVar[Optional[str]] = None
+    _path: ClassVar[Optional[Path]] = None
 
     def __init__(self, basedir: Path = SNOOZE_CONFIG, data: Optional[dict] = None):
-        section = self._class_get('_section')
-        if section:
-            self._class_set('_path', basedir / f"{section}.yaml")
+        #section = self._class_get('_section')
+        if self._section:
+            #self._class_set('_path', basedir / f"{section}.yaml")
+            self.__class__._path = basedir / f"{self._section}.yaml"
         data = data or self._read() or {}
         BaseModel.__init__(self, **data)
 
@@ -54,7 +54,7 @@ class ReadOnlyConfig(BaseModel, ABC):
         '''Read the config file and return the raw dict'''
         if self._path:
             try:
-                return yaml.safe_load(self._path.read_text(encoding='utf-8'))
+                return yaml.safe_load(self._path.read_text(encoding='utf-8')) or {}
             except OSError:
                 return {}
         else:
@@ -82,34 +82,34 @@ class ReadOnlyConfig(BaseModel, ABC):
 class WritableConfig(ReadOnlyConfig):
     '''A class representing a writable config file at a given path.
     Can be explored, and updated with a lock file.'''
-    _filelock: FileLock = PrivateAttr()
-    _auth_routes: List[str] = PrivateAttr(default_factory=list)
+    _filelock: ClassVar[FileLock] = None
+    _auth_routes: ClassVar[List[str]] = Field(default_factory=list)
 
     def __init__(self, basedir: Path = SNOOZE_CONFIG, data: Optional[dict] = None):
         if data is None:
             data = {}
         ReadOnlyConfig.__init__(self, basedir, data)
-        path = self._class_get('_path')
-        path.touch(mode=0o600)
-        self._class_set('_filelock', FileLock(path, timeout=1))
+        #path = self._class_get('_path')
+        self._path.touch(mode=0o600)
+        #self._class_set('_filelock', FileLock(path, timeout=1))
+        self.__class__._filelock = FileLock(self._path, timeout=1)
 
     @contextmanager
     def _lock(self):
-        print(self)
-        filelock = self._class_get('_filelock')
-        filelock.acquire()
+        #filelock = self._class_get('_filelock')
+        self._class_get('_filelock').acquire()
         self.refresh()
         try:
             yield # Update the config
         finally:
             self._update()
-            filelock.release()
+            self._class_get('_filelock').release()
 
     def _update(self):
         '''Write a new config to the config file'''
         path = self._class_get('_path')
         if path:
-            data = yaml.dump(self.dict())
+            data = yaml.safe_dump(self.dict())
             path.write_text(data, encoding='utf-8')
 
     def __setitem__(self, key: str, value: Any):
@@ -267,7 +267,7 @@ class ClusterConfig(BaseModel):
     )
     members: List[HostPort] = Field(
         env='SNOOZE_CLUSTER',
-        default=tuple(HostPort(host='localhost')),
+        default_factory=lambda: [HostPort(host='localhost')],
         description='List of snooze servers in the cluster {host, port}'
     )
 
@@ -445,7 +445,6 @@ class HousekeeperConfig(WritableConfig):
             timedelta: lambda dt: dt.total_seconds(),
         }
 
-@dataclass
 class Config(BaseModel):
     '''An object representing the complete snooze configuration'''
     basedir: Path

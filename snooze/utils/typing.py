@@ -43,14 +43,14 @@ class RouteArgs(BaseModel):
 class PeerStatus(BaseModel):
     '''A dataclass containing the status of one peer'''
     host: str
-    port: str
+    port: int
     version: str
     healthy: bool
 
 class HostPort(BaseModel):
     '''An object to represent a host-port pair'''
-    host: str
-    port: int = Field(5200)
+    host: str = ...
+    port: int = Field(default=5200)
 
 class Pagination(TypedDict, total=False):
     '''A type hint for pagination options'''

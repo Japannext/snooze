@@ -43,21 +43,10 @@ class Cluster(SurvivingThread):
 
         self.schema = 'https' if core_config.ssl.enabled else 'http'
 
-        self.initialize_config(self.config)
+        self.myself, self.others = who_am_i(self.config.members)
 
         self.queue = Queue()
         SurvivingThread.__init__(self, exit_event)
-
-    def initialize_config(self, config: ClusterConfig):
-        '''Validate the config and set the attributes'''
-        if self.config.enabled:
-            log.debug('Init Cluster Manager')
-            try:
-                self.myself, self.others = who_am_i(self.config.members)
-            except Exception as err:
-                log.exception(err)
-                log.error('Error while setting up the cluster. Disabling cluster...')
-                self.enabled = False
 
     def handle_query(self, req: Request) -> dict:
         '''Handle a request to other members of the cluster. We will not catch exceptions here
@@ -81,24 +70,32 @@ class Cluster(SurvivingThread):
     def status(self) -> PeerStatus:
         '''Return the status, health and info of the current node'''
         version = get_version()
-        status = PeerStatus(self.myself.host, self.myself.port, version, True)
-        log.debug("Self cluster status: %s", status)
+        status = PeerStatus(
+            host=self.myself.host,
+            port=self.myself.port,
+            version=version,
+            healthy=True,
+        )
         return status
 
     def members_status(self) -> List[PeerStatus]:
         '''Fetch the status of all members of the cluster'''
         statuses = []
         statuses.append(self.status())
-        if self.enabled:
-            for member in self.others:
-                try:
-                    url = f"{self.schema}://{member.host}:{member.port}/api/cluster"
-                    params = {}
-                    resp = requests.get(url, params=params, timeout=10)
-                    statuses.append(PeerStatus(**resp.json()))
-                except RequestException:
-                    statuses.append(PeerStatus(member.host, member.port, 'unknown', False))
-            log.debug("Cluster members: %s", statuses)
+        for member in self.others:
+            try:
+                url = f"{self.schema}://{member.host}:{member.port}/api/cluster"
+                params = {}
+                resp = requests.get(url, params=params, timeout=10)
+                status = PeerStatus(**resp.json())
+            except RequestException:
+                status = PeerStatus(
+                    host=member.host,
+                    port=member.port,
+                    version='unknown',
+                    healthy=False,
+            )
+            statuses.append(status)
         return statuses
 
     def sync_reload_plugin(self, plugin_name: str):
@@ -110,8 +107,8 @@ class Cluster(SurvivingThread):
     def sync_setting_update(self, section: str, data: dict, auth: str):
         '''Async function to ask other members to update their configuration and reload'''
         for member in self.others:
-            site = f"{self.schema}://{member.host}:{member.port}"
-            self.queue.put(RequestSettingUpdate(site, section, data, auth))
+                site = f"{self.schema}://{member.host}:{member.port}"
+                self.queue.put(RequestSettingUpdate(site, section, data, auth))
 
 class RequestReloadPlugin(Request):
     '''Request another member to reload a given plugin'''
@@ -136,7 +133,8 @@ def who_am_i(members: List[HostPort]) -> Tuple[HostPort, List[HostPort]]:
     * SelfTooMuchInCluster: if the running node is found more than one time in the cluster
     '''
     my_addresses = [
-        link.get('addr') for interface in interfaces()
+        link.get('addr')
+        for interface in interfaces()
         for link in ifaddresses(interface).get(AF_INET, [])
     ]
     matches = []

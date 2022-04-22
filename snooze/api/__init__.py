@@ -29,6 +29,29 @@ from snooze.utils.typing import DuplicatePolicy, AuthorizationPolicy, RouteArgs,
 
 log = getLogger('snooze.api')
 
+# We're listing only the ones we might raise.
+# It will not affect performance to list many, since falcon keep a dictionary of exception => handler.
+USER_ERRORS = (
+    # HTTP 400
+    falcon.HTTPBadRequest, falcon.HTTPInvalidHeader, falcon.HTTPInvalidParam, falcon.HTTPMissingParam,
+    # HTTP 401
+    falcon.HTTPUnauthorized,
+    # HTTP 403
+    falcon.HTTPForbidden,
+    # HTTP 404
+    falcon.HTTPNotFound, falcon.HTTPRouteNotFound,
+)
+
+def log_warning_handler(err, _req, _resp, _params):
+    '''Log caught exceptions as a warning'''
+    log.warning(str(err), exc_info=err)
+    raise err
+
+def log_error_handler(err, _req, _resp, _params):
+    '''Log caught exceptions as an error'''
+    log.exception(err)
+    raise err
+
 class LoggerMiddleware:
     '''Middleware for logging'''
 
@@ -107,7 +130,8 @@ class Api:
         )
         self.handler.req_options.media_handlers.update({'application/json': json_handler})
         self.handler.resp_options.media_handlers.update({'application/json': json_handler})
-        self.handler.add_error_handler(Exception, self.custom_handle_uncaught_exception)
+        self.handler.add_error_handler(USER_ERRORS, log_warning_handler)
+        self.handler.add_error_handler(Exception, log_error_handler)
         self.auth_routes = {}
         # Alert route
         self.add_route('/alert', AlertRoute(self))
@@ -142,13 +166,6 @@ class Api:
             self.add_route(prefix, RedirectRoute(), '')
             sink_handler = StaticRoute(web.path, prefix).on_get
             self.handler.add_sink(sink_handler, prefix)
-
-    def custom_handle_uncaught_exception(self, err, req, resp, params):
-        '''Custom handler for logging uncaught exceptions in falcon inside python logger.
-        Make use of an internal method of falcon to do so.
-        '''
-        log.exception(err)
-        self.handler._compose_error_response(req, resp, HTTPInternalServerError())
 
     def add_route(self, route, action, prefix='/api'):
         '''Map a falcon route class to a given path'''
