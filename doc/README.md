@@ -14,3 +14,4 @@
 * [12 - Housekeeping](12_Housekeeping.md)
 * [13 - Configure LDAP Authentication](13_LDAP.md)
 * [14 - Query Language](14_QueryLanguage.md)
+* [15 - Configuration](15_Configuration.md)

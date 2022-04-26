@@ -32,6 +32,9 @@ class ReadOnlyConfig(BaseModel):
     _section: ClassVar[Optional[str]] = None
     _path: ClassVar[Optional[Path]] = None
 
+    class Config:
+        allow_mutation = False
+
     def __init__(self, basedir: Path = SNOOZE_CONFIG, data: Optional[dict] = None):
         #section = self._class_get('_section')
         if self._section:
@@ -83,6 +86,11 @@ class WritableConfig(ReadOnlyConfig):
     Can be explored, and updated with a lock file.'''
     _filelock: ClassVar[FileLock] = None
     _auth_routes: ClassVar[List[str]] = Field(default_factory=list)
+
+    class Config:
+        # Setting values should trigger validation
+        validate_assignment = True
+        allow_mutation = True
 
     def __init__(self, basedir: Path = SNOOZE_CONFIG, data: Optional[dict] = None):
         if data is None:
