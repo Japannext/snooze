@@ -503,6 +503,18 @@ typing-extensions = {version = ">=3.10.0", markers = "python_version < \"3.10\""
 testutil = ["gitpython (>3)"]
 
 [[package]]
+name = "pylint-pydantic"
+version = "0.1.4"
+description = "A Pylint plugin to help Pylint understand the Pydantic"
+category = "dev"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+pydantic = "<2.0"
+pylint = ">2.0,<3.0"
+
+[[package]]
 name = "pylint-pytest"
 version = "1.1.2"
 description = "A Pylint plugin to suppress pytest-related false positives."
@@ -887,7 +899,7 @@ python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "86902c7de367587334b64e28e011be7b8e4eb6ca1abb482ed702f7f05407062b"
+content-hash = "6ab758715a273c5a627be5127ca405885d9b983999022566ce4ce2a9ee9ec3b7"
 
 [metadata.files]
 amqp = [
@@ -1279,6 +1291,9 @@ pyjwt = [
 pylint = [
     {file = "pylint-2.13.5-py3-none-any.whl", hash = "sha256:c149694cfdeaee1aa2465e6eaab84c87a881a7d55e6e93e09466be7164764d1e"},
     {file = "pylint-2.13.5.tar.gz", hash = "sha256:dab221658368c7a05242e673c275c488670144123f4bd262b2777249c1c0de9b"},
+]
+pylint-pydantic = [
+    {file = "pylint_pydantic-0.1.4-py3-none-any.whl", hash = "sha256:d42d9e95255b2f70f82a674cec159f417263363c7da0e28998964d83d7330c72"},
 ]
 pylint-pytest = [
     {file = "pylint_pytest-1.1.2-py2.py3-none-any.whl", hash = "sha256:fb20ef318081cee3d5febc631a7b9c40fa356b05e4f769d6e60a337e58c8879b"},

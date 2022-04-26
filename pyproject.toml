@@ -45,6 +45,7 @@ pydantic-yaml = "^0.6.3"
 pylint = "^2.13.5"
 pyright = "^1.1.238"
 pylint-pytest = "^1.1.2"
+pylint-pydantic = "^0.1.4"
 
 [tool.poetry.group.security.dependencies]
 bandit = "^1.7.0"
@@ -67,7 +68,7 @@ invoke = "^1.7.0"
 toml = "^0.10.2"
 
 [tool.pylint.MASTER]
-load-plugins = ['pylint_pytest']
+load-plugins = ['pylint_pytest', 'pylint_pydantic']
 extension-pkg-whitelist = ['falcon', 'netifaces', 'pydantic']
 
 [tool.pylint."MESSAGE CONTROL"]

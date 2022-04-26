@@ -33,25 +33,24 @@ def prop_to_markdown(name: str, prop: dict, required: bool) -> str:
     if 'type' in prop:
         prop_line += f" ({compute_type(prop)})"
     if required:
-        prop_line += ' <required>'
-    else:
-        ref = get_ref(prop)
-        if ref:
-            ref_name = ref.split('/')[-1]
-            ref_link = ref
-            prop_line += f" ([{ref_name}]({ref_link}))"
-    prop_line += ':'
-    if 'title' in prop and (
-        prop['title'] != name.capitalize().replace('_', ' ')
-        or 'description' not in prop
-    ):
-        prop_line += f" {append_dot(prop['title'])}"
+        prop_line += ' (**required**)'
+    ref = get_ref(prop)
+    if ref:
+        ref_name = ref.split('/')[-1]
+        prop_line += f" ([{ref_name}](#{ref_name}))"
+    prop_line += ':' # The 2 spaces matters for indentation
+    if 'title' in prop and 'description' not in prop:
+        prop_line += f" {append_dot(prop['title'])}  "
     if 'description' in prop:
-        prop_line += f" {append_dot(prop['description'])}"
+        prop_line += f" {append_dot(prop['description'])}  "
     if 'env' in prop:
-        prop_line += f" Environment variable: `{prop['env']}`."
+        prop_line += f"\n**Environment variable**: `{prop['env']}`.  "
     if 'default' in prop:
-        prop_line += f" Default: `{prop['default']}`."
+        prop_line += f"\n**Default**: `{prop['default']}`.  "
+    if 'examples' in prop:
+        prop_line += f"\n**Example(s)**:  \n"
+        for example in prop['examples']:
+            prop_line += f"    - `{example}`\n"
     return prop_line
 
 def definition_to_markdown(name: str, definition: dict) -> str:
@@ -92,13 +91,16 @@ def schema_to_markdown(schema: dict) -> str:
 @task
 def config(ctx):
     '''Generate documentation for configuration files'''
-    doc_path = Path('doc/config.md')
-    doc_str = ''
-    doc_str += schema_to_markdown(CoreConfig.schema())
-    doc_str += schema_to_markdown(GeneralConfig.schema())
-    doc_str += schema_to_markdown(HousekeeperConfig.schema())
-    doc_str += schema_to_markdown(NotificationConfig.schema())
-    doc_str += schema_to_markdown(LdapConfig.schema())
+    doc_path = Path('doc/15_Configuration.md')
+    configs = [CoreConfig, GeneralConfig, HousekeeperConfig, NotificationConfig, LdapConfig]
+    print(LdapConfig.schema_json(indent=2))
+    doc_str = "# Summary\n\n"
+    for config in configs:
+        title = config.schema()['title']
+        doc_str += f"* [{title}](#{title.replace(' ', '-').lower()})\n"
+    doc_str += "\n"
+    for config in configs:
+        doc_str += schema_to_markdown(config.schema())
     doc_path.write_text(doc_str, encoding='utf-8')
     print(f"Documentation generated in {doc_path}")
 

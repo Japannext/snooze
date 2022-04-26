@@ -8,7 +8,6 @@
 '''Module for managing loading and writing the configuration files'''
 
 import os
-from abc import ABC
 from contextlib import contextmanager
 from logging import getLogger
 from pathlib import Path
@@ -17,7 +16,7 @@ from typing import Optional, List, Any, Dict, Literal, ClassVar
 
 import yaml
 from filelock import FileLock
-from pydantic import BaseModel, Field, validator, ValidationError, PrivateAttr
+from pydantic import BaseModel, Field, validator, ValidationError
 
 from snooze import __file__ as SNOOZE_PATH
 from snooze.utils.typing import RouteArgs, HostPort, Widget
@@ -89,14 +88,11 @@ class WritableConfig(ReadOnlyConfig):
         if data is None:
             data = {}
         ReadOnlyConfig.__init__(self, basedir, data)
-        #path = self._class_get('_path')
         self._path.touch(mode=0o600)
-        #self._class_set('_filelock', FileLock(path, timeout=1))
         self.__class__._filelock = FileLock(self._path, timeout=1)
 
     @contextmanager
     def _lock(self):
-        #filelock = self._class_get('_filelock')
         self._class_get('_filelock').acquire()
         self.refresh()
         try:
@@ -156,7 +152,7 @@ class MetadataConfig(ReadOnlyConfig):
         except ValidationError as err:
             raise Exception(f"Cannot load metadata for plugin {plugin_name}") from err
 
-class LdapConfig(WritableConfig):
+class LdapConfig(WritableConfig, title='LDAP configuration'):
     '''Configuration for LDAP authentication. Can be edited live in the web interface.
     Usually located at `/etc/snooze/server/ldap_auth.yaml`.'''
     _section = 'ldap_auth'
@@ -172,12 +168,13 @@ class LdapConfig(WritableConfig):
     )
     user_filter: str = Field(
         title='User base filter',
-        description='LDAP search filter for the base DN (eg. (objectClass=posixAccount))',
+        description='LDAP search filter for the base DN',
+        examples=['(objectClass=posixAccount)'],
     )
     bind_dn: str = Field(
         title='Bind DN',
-        description='Distinguished name to bind to the LDAP server (eg. '
-        'CN=john.doe,OU=users,DC=example,DC=com)',
+        description='Distinguished name to bind to the LDAP server',
+        examples=['CN=john.doe,OU=users,DC=example,DC=com'],
     )
     bind_password: str = Field(
         title='Bind DN password',
@@ -185,11 +182,12 @@ class LdapConfig(WritableConfig):
         exclude=True,
     )
     host: str = Field(
-        description='LDAP host (eg. ldaps://example.com)',
+        description='LDAP host',
+        examples=['ldaps://example.com'],
     )
     port: int = Field(
         default=636,
-        description='LDAP server port (389 by default if no SSL, 636 if SSL is enabled)',
+        description='LDAP server port',
     )
     group_dn: Optional[str] = Field(
         title='Group DN',
@@ -224,12 +222,14 @@ class SslConfig(BaseModel):
         env='SNOOZE_CERT_FILE',
         default=None,
         description='Path to the x509 PEM style certificate to use for TLS termination',
+        examples=['/etc/pki/tls/certs/snooze.crt', '/etc/ssl/certs/snooze.crt'],
     )
     keyfile: Optional[Path] = Field(
         title='Key file',
         default=None,
         env='SNOOZE_KEY_FILE',
         description='Path to the private key to use for TLS termination',
+        examples=['/etc/pki/tls/private/snooze.key', '/etc/ssl/private/snooze.key'],
     )
 
 class WebConfig(BaseModel):
@@ -256,7 +256,7 @@ class BackupConfig(BaseModel):
     )
     excludes: List[str] = Field(
         description='Collections to exclude from backups',
-        default=('record', 'stats', 'comment', 'secrets'),
+        default=['record', 'stats', 'comment', 'secrets'],
     )
 
 class ClusterConfig(BaseModel):
@@ -269,11 +269,21 @@ class ClusterConfig(BaseModel):
     members: List[HostPort] = Field(
         env='SNOOZE_CLUSTER',
         default_factory=lambda: [HostPort(host='localhost')],
-        description='List of snooze servers in the cluster {host, port}'
+        description='List of snooze servers in the cluster. If the environment variable is provided,'
+        ' a special syntax is expected (`"<host>:<port>,<host>:<port>,..."`).',
+        examples=[
+            [
+                {'host': 'host01', 'port': 5200},
+                {'host': 'host02', 'port': 5200},
+                {'host': 'host03', 'port': 5200},
+            ],
+            "host01:5200,host02:5200,host03:5200",
+        ],
+
     )
 
     @validator('members')
-    def parse_members_env(cls, value): # pylint: disable=no-self-argument,no-self-use
+    def parse_members_env(cls, value):
         '''In case the environment (a string) is passed, parse the environment string'''
         if isinstance(value, str):
             members = []
@@ -282,7 +292,7 @@ class ClusterConfig(BaseModel):
             return members
         return value
 
-class CoreConfig(ReadOnlyConfig):
+class CoreConfig(ReadOnlyConfig, title='Core configuration'):
     '''Core configuration. Not editable live. Require a restart of the server.
     Usually located at `/etc/snooze/server/core.yaml`'''
     _section = 'core'
@@ -318,13 +328,13 @@ class CoreConfig(ReadOnlyConfig):
     )
     audit_excluded_paths: List[str] = Field(
         title='Audit excluded paths',
-        default=('/api/patlite', '/metrics', '/web'),
+        default=['/api/patlite', '/metrics', '/web'],
         description='A list of HTTP paths excluded from audit logs. Any path'
         'that starts with a path in this list will be excluded.',
     )
     process_plugins: List[str] = Field(
         title='Process plugins',
-        default=('rule', 'aggregaterule', 'snooze', 'notification'),
+        default=['rule', 'aggregaterule', 'snooze', 'notification'],
         description='List of plugins that will be used for processing alerts.'
         ' Order matters.',
     )
@@ -342,12 +352,24 @@ class CoreConfig(ReadOnlyConfig):
         default=False,
         description='Create a *root* user with a default password *root*',
     )
-    ssl: SslConfig = Field(title='SSL configuration', default_factory=SslConfig)
-    web: WebConfig = Field(title='Web server configuration', default_factory=WebConfig)
-    cluster: ClusterConfig = Field(default_factory=ClusterConfig)
-    backup: BackupConfig = Field(default_factory=BackupConfig)
+    ssl: SslConfig = Field(
+        title='SSL configuration',
+        default_factory=SslConfig,
+    )
+    web: WebConfig = Field(
+        title='Web server configuration',
+        default_factory=WebConfig,
+    )
+    cluster: ClusterConfig = Field(
+        title='Cluster configuration',
+        default_factory=ClusterConfig,
+    )
+    backup: BackupConfig = Field(
+        title='Backup configuration',
+        default_factory=BackupConfig,
+    )
 
-class GeneralConfig(WritableConfig):
+class GeneralConfig(WritableConfig, title='General configuration'):
     '''General configuration of snooze. Can be edited live in the web interface.
     Usually located at `/etc/snooze/server/general.yaml`.'''
     _section = 'general'
@@ -378,11 +400,11 @@ class GeneralConfig(WritableConfig):
         title='OK severities',
         description='List of severities that will automatically close the aggregate upon entering the system.'
         ' This is mainly for icinga/grafana that can close the alert when the status becomes green again',
-        default=('ok', 'success'),
+        default=['ok', 'success'],
     )
 
     @validator('ok_severities', each_item=True)
-    def normalize_severities(cls, value): # pylint: disable=no-self-argument,no-self-use
+    def normalize_severities(cls, value):
         '''Normalizing severities upon retrieval and insertion'''
         return value.casefold()
 
@@ -391,16 +413,22 @@ class NotificationConfig(WritableConfig):
     Usually located at `/etc/snooze/server/notifications.yaml`.'''
     _section = 'notifications'
 
-    notification_freq: int = Field(
+    notification_freq: timedelta = Field(
         title='Frequency',
-        description='Time to wait before sending the next notification',
-        default=60,
+        description='Time (in seconds) to wait before sending the next notification',
+        default=timedelta(minutes=1),
     )
     notification_retry: int = Field(
         title='Retry number',
-        description='',
+        description='Number of times to retry sending a failed notification',
         default=3,
     )
+    class Config:
+        title = 'Notification configuration'
+        json_encoders = {
+            # timedelta should be serialized into seconds (int)
+            timedelta: lambda dt: int(dt.total_seconds()),
+        }
 
 class HousekeeperConfig(WritableConfig):
     '''Config for the housekeeper thread. Can be edited live in the web interface.
@@ -414,40 +442,42 @@ class HousekeeperConfig(WritableConfig):
     )
     record_ttl: timedelta = Field(
         title='Record Time-To-Live',
-        description='Default TTL for alerts incoming',
+        description='Default TTL (in seconds) for alerts incoming',
         default=timedelta(days=2),
     )
     cleanup_alert: timedelta = Field(
         title='Cleanup alert',
-        description='Time between each run of alert cleaning. Alerts that exceeded their TTL will be deleted',
+        description='Time (in seconds) between each run of alert cleaning. Alerts that exceeded their TTL '
+        ' will be deleted',
         default=timedelta(minutes=5),
     )
     cleanup_comment: timedelta = Field(
         title='Cleanup comment',
-        description='Time between each run of comment cleaning. Comments which are not bound to any alert will'
-        ' be deleted',
+        description='Time (in seconds) between each run of comment cleaning. Comments which are not bound to'
+        ' any alert will be deleted',
         default=timedelta(days=1),
     )
     cleanup_audit: timedelta = Field(
         title='Cleanup audit',
-        description='Cleanup orphans audit logs that are older than the given duration. Run daily',
+        description='Cleanup orphans audit logs that are older than the given duration (in seconds). Run daily',
         default=timedelta(days=28),
     )
     cleanup_snooze: timedelta = Field(
         title='Cleanup snooze',
-        description="Cleanup snooze filters that have been expired for the given duration. Run daily",
+        description="Cleanup snooze filters that have been expired for the given duration (in seconds). Run daily",
         default=timedelta(days=3),
     )
     cleanup_notification: timedelta = Field(
         title='Cleanup notifications',
-        description='Cleanup notifications that have been expired for the given duration. Run daily',
+        description='Cleanup notifications that have been expired for the given duration (in seconds). Run daily',
         default=timedelta(days=3),
     )
 
     class Config:
+        title = 'Housekeeper configuration'
         json_encoders = {
             # timedelta should be serialized into seconds (int)
-            timedelta: lambda dt: dt.total_seconds(),
+            timedelta: lambda dt: int(dt.total_seconds()),
         }
 
 class Config(BaseModel):
