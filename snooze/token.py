@@ -10,6 +10,9 @@
 import falcon
 import jwt
 from jwt.exceptions import InvalidTokenError
+from pydantic import ValidationError
+
+from snooze.utils.typing import AuthPayload
 
 class TokenEngine:
     '''Sign and verify tokens'''
@@ -28,11 +31,15 @@ class TokenEngine:
         return payload
 
 class TokenAuthMiddleware:
-    '''A falcon middleware for '''
+    '''A falcon middleware for verifying JWT tokens'''
+
     def __init__(self, engine: TokenEngine):
         self.scheme = 'JWT'
         self.engine = engine
-    def process_resource(self, req, resp, resource, *args, **kwargs):
+
+    def process_request(self, req) -> AuthPayload:
+        '''Process a request which we need to verify the authentication.
+        Return the authentication payload.'''
         authorization = req.get_header('Authorization')
         try:
             scheme, credentials = authorization.split(' ', 1)
@@ -47,5 +54,13 @@ class TokenAuthMiddleware:
         except InvalidTokenError as err:
             raise falcon.HTTPUnauthorized(header_name='Authorization',
                 message=str(err)) from err
+        try:
+            return AuthPayload(**payload.get('payload', {}))
+        except ValidationError as err:
+            raise falcon.HTTPUnauthorized(
+                description=f"Invalid payload found in JWT token: {err}") from err
 
-        req.context['auth'] = AuthPayload(**payload)
+    def process_resource(self, req, _resp, resource, *_args, **_kwargs):
+        '''Method called for every request. Set the authentication payload in `req.context['auth']`'''
+        if getattr(resource, 'authentication', True):
+            req.context['auth'] = self.process_request(req)

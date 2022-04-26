@@ -107,7 +107,7 @@ class BasicRoute:
 class FalconRoute(BasicRoute):
     '''Basic falcon route'''
     def inject_payload_media(self, req, resp):
-        user_payload = req.context['user']['user']
+        user_payload = req.context['auth']['payload']
         log.debug("Injecting payload %s to %s", user_payload, req.media)
         if isinstance(req.media, list):
             for media in req.media:
@@ -141,9 +141,7 @@ class FalconRoute(BasicRoute):
 
 
 class AlertRoute(BasicRoute):
-    auth = {
-        'auth_disabled': True
-    }
+    authentication = False
 
     def on_post(self, req, resp):
         log.debug("Received log %s", req.media)
@@ -165,9 +163,7 @@ class AlertRoute(BasicRoute):
 
 class MetricsRoute(BasicRoute):
     '''A falcon route to serve prometheus metrics'''
-    auth = {
-        'auth_disabled': True
-    }
+    authentication = False
 
     def on_get(self, req, resp):
         try:
@@ -182,17 +178,14 @@ class MetricsRoute(BasicRoute):
 
 class RedirectRoute:
     '''A falcon route for managing the default redirection'''
-    auth = {
-        'auth_disabled': True
-    }
+    authentication = False
+
     def on_get(self, req, resp):
         raise falcon.HTTPMovedPermanently('/web/')
 
 class LoginRoute(BasicRoute):
     '''A falcon route for users to login'''
-    auth = {
-        'auth_disabled': True
-    }
+    authentication = False
 
     def on_get(self, req, resp):
         log.debug("Listing authentication backends")
@@ -224,7 +217,7 @@ class LoginRoute(BasicRoute):
             resp.status = falcon.HTTP_503
 
 class ClusterRoute(BasicRoute):
-    auth = {'auth_disabled': True}
+    authentication = False
 
     def on_get(self, req, resp):
         cluster = self.core.threads['cluster']
@@ -240,6 +233,7 @@ class ClusterRoute(BasicRoute):
 
 class ReloadPluginRoute(BasicRoute):
     '''A route to trigger the reload of a given plugin'''
+
     def on_post(self, req, resp, plugin_name: str):
         propagate = (req.params.get('propagate') is not None) # Key existence
         plugin = self.core.get_core_plugin(plugin_name)
@@ -256,6 +250,8 @@ MAX_AGE = 24 * 3600
 
 class StaticRoute:
     '''Handler route for static files (for the web server)'''
+    authentication = False
+
     def __init__(self, root, prefix='', indexes=('index.html',)):
         self.prefix = prefix
         self.indexes = indexes
@@ -303,9 +299,7 @@ class StaticRoute:
         return None
 
 class AuthRoute(BasicRoute):
-    auth = {
-        'auth_disabled': True
-    }
+    authentication = False
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -418,9 +412,7 @@ class PermissionsRoute(BasicRoute):
             resp.status = falcon.HTTP_503
 
 class WebhookRoute(FalconRoute):
-    auth = {
-        'auth_disabled': True
-    }
+    authentication = False
 
     @abstractmethod
     def parse_webhook(self, req, media):
@@ -453,6 +445,7 @@ class WebhookRoute(FalconRoute):
 
 class AnonymousAuthRoute(AuthRoute):
     '''An authentication route for anonymous users'''
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = 'Anonymous'
@@ -470,6 +463,7 @@ class AnonymousAuthRoute(AuthRoute):
 
 class LocalAuthRoute(AuthRoute):
     '''An authentication route for local users'''
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = 'Local'
@@ -514,6 +508,7 @@ class LocalAuthRoute(AuthRoute):
 
 class LdapAuthRoute(AuthRoute):
     '''An authentication route for LDAP users'''
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = 'Ldap'
