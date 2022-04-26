@@ -48,7 +48,7 @@ class TokenAuthMiddleware:
                 description=f"Must be in the form `{self.scheme} <credentials>`") from err
         if scheme != self.scheme:
             raise falcon.HTTPUnauthorized(description=f"Invalid authorization scheme: {scheme}."
-                f"Must be {self.scheme}")
+                f" Must be {self.scheme}")
         try:
             payload = self.engine.verify(credentials)
         except InvalidTokenError as err:

@@ -9,10 +9,8 @@
 import os.path
 import functools
 import mimetypes
-import binascii
 from abc import abstractmethod
 from hashlib import sha256
-from base64 import b64decode
 from logging import getLogger
 from typing import Optional, List
 
@@ -20,7 +18,7 @@ import falcon
 from ldap3 import Server, Connection, ALL, SUBTREE
 from ldap3.core.exceptions import LDAPOperationResult, LDAPExceptionError
 
-from snooze.utils.functions import unique, ensure_kv, authorize
+from snooze.utils.functions import unique, ensure_kv, authorize, extract_basic_auth
 from snooze.utils.typing import RouteArgs, ConditionOrUid, Pagination, AuthPayload
 from snooze.utils.config import GeneralConfig, LdapConfig
 
@@ -307,48 +305,6 @@ class AuthRoute(BasicRoute):
         self.userplugin = self.api.core.get_core_plugin('user')
         self.enabled = True
 
-    def parse_auth_token_from_request(self, auth_header):
-        """
-        Parses and returns Auth token from the request header. Raises
-        `falcon.HTTPUnauthoried exception` with proper error message
-        """
-        if not auth_header:
-            raise falcon.HTTPUnauthorized(
-                description='Missing Authorization Header')
-
-        parts = auth_header.split(' ')
-
-        if parts[0].lower() != self.auth_header_prefix.lower():
-            raise falcon.HTTPInvalidHeader(header_name="Authorization",
-                message=f"Must start with '{self.auth_header_prefix} '")
-
-        elif len(parts) == 1:
-            raise falcon.HTTPUnauthorized(
-                description='Invalid Authorization Header: Token Missing')
-        elif len(parts) > 2:
-            raise falcon.HTTPUnauthorized(
-                description='Invalid Authorization Header: Contains extra content')
-
-        return parts[1]
-
-    def _extract_credentials(self, req):
-        auth = req.get_header('Authorization')
-        token = self.parse_auth_token_from_request(auth_header=auth)
-        try:
-            token = b64decode(token).decode('utf-8')
-            username, password = token.split(':', 1)
-        except binascii.Error as err:
-            raise falcon.HTTPInvalidHeader(header_name="Authorization",
-                message=f"Authorization Basic not in base64: {err}")
-        except UnicodeError as err:
-            raise falcon.HTTPInvalidHeader(header_name="Authorization",
-                message=f"Decoded Authorization Basic not unicode: {err}")
-        except ValueError: # Cannot unpack username, password
-            raise falcon.HTTPInvalidHeader(header_name="Authorization",
-                message='Decoded entry should be in format `<user>:<password>`')
-
-        return username, password
-
     def on_post(self, req, resp):
         if self.enabled:
             payload = self.authenticate(req)
@@ -476,7 +432,7 @@ class LocalAuthRoute(AuthRoute):
         log.debug("Authentication backend 'local' status: %s", self.enabled)
 
     def authenticate(self, req) -> AuthPayload:
-        username, password = self._extract_credentials(req)
+        username, password = extract_basic_auth(req)
         password_hash = sha256(password.encode('utf-8')).hexdigest()
         log.debug("Attempting login for %s, with password hash %s", username, password_hash)
         user_search = self.core.db.search('user', ['AND', ['=', 'name', username], ['=', 'method', 'local']])
@@ -604,7 +560,7 @@ class LdapAuthRoute(AuthRoute):
             user_con.unbind()
 
     def authenticate(self, req) -> AuthPayload:
-        username, password = self._extract_credentials(req)
+        username, password = extract_basic_auth(req)
         user = self._search_user(username)
         user_con = self._bind_user(user['dn'], password)
         if user_con.result['result'] == 0:

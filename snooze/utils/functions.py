@@ -9,11 +9,14 @@
 
 import os
 import hashlib
+import binascii
 from pathlib import Path
-from typing import Optional, List, Union, Any, TypeVar
+from base64 import b64decode
+from typing import Optional, List, Union, Any, TypeVar, Tuple
 from logging import getLogger
 
 import falcon
+from falcon import Request
 
 from snooze.utils.typing import Record
 
@@ -150,3 +153,31 @@ def authorize(func):
         log.warning("Access denied. User %s on endpoint '%s' for plugin %s", name, endpoint, plugin_name)
         raise falcon.HTTPForbidden('Forbidden', 'Permission Denied')
     return _f
+
+def extract_basic_auth(req: Request) -> Tuple[str, str]:
+    '''Decode the user:password from an authorization header, as per the basic authentication'''
+    authorization = req.get_header('Authorization')
+    if authorization is None:
+        raise falcon.HTTPMissingHeader(header_name='Authorization')
+    try:
+        scheme, credentials = authorization.split(' ', 1)
+    except ValueError as err:
+        raise falcon.HTTPInvalidHeader(header_name='Authorization',
+            description='Must be in the form `Basic <credentials>`') from err
+    if scheme != 'Basic':
+        raise falcon.HTTPUnauthorized(description=f"Invalid authorization scheme: {scheme}."
+            ' Must be `Basic`')
+    try:
+        result = b64decode(credentials).decode('utf-8')
+        username, password = result.split(':', 1)
+    except binascii.Error as err:
+        raise falcon.HTTPInvalidHeader(header_name="Authorization",
+            message=f"Authorization Basic not in base64: {err}") from err
+    except UnicodeError as err:
+        raise falcon.HTTPInvalidHeader(header_name="Authorization",
+            message=f"Decoded Authorization Basic not unicode: {err}")
+    except ValueError as err: # Cannot unpack username, password
+        raise falcon.HTTPInvalidHeader(header_name='Authorization',
+            message='Decoded entry should be in format `<user>:<password>`') from err
+
+    return username, password
