@@ -105,21 +105,22 @@ class BasicRoute:
 class FalconRoute(BasicRoute):
     '''Basic falcon route'''
     def inject_payload_media(self, req, resp):
-        user_payload = req.context['auth']['payload']
-        log.debug("Injecting payload %s to %s", user_payload, req.media)
+        auth: AuthPayload = req.context['auth']
+        log.debug("Injecting payload %s to %s", auth, req.media)
         if isinstance(req.media, list):
             for media in req.media:
-                media['name'] = user_payload['name']
-                media['method'] = user_payload['method']
+                media['name'] = auth.username
+                media['method'] = auth.method
         else:
-            req.media['name'] = user_payload['name']
-            req.media['method'] = user_payload['method']
+            req.media['name'] = auth.username
+            req.media['method'] = auth.method
 
-    def inject_payload_search(self, req, s):
-        user_payload = req.context['user']['user']
-        to_inject = ['AND', ['=', 'name', user_payload['name']], ['=', 'method', user_payload['method']]]
-        if s:
-            return ['AND', s, to_inject]
+    def inject_payload_search(self, req, search):
+        '''Filter a given search with the current auth payload'''
+        auth: AuthPayload = req.context['auth']
+        to_inject = ['AND', ['=', 'name', auth.username], ['=', 'method', auth.method]]
+        if search:
+            return ['AND', search, to_inject]
         else:
             return to_inject
 

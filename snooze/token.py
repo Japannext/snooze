@@ -7,6 +7,8 @@
 
 '''A module for managing the token engine'''
 
+from datetime import datetime, timedelta
+
 import falcon
 import jwt
 from jwt.exceptions import InvalidTokenError
@@ -20,15 +22,19 @@ class TokenEngine:
         self.secret = secret_key
         self.algorithm = algorithm
 
-    def sign(self, payload):
+    def sign(self, payload: AuthPayload, lease: timedelta = timedelta(hours=1)) -> str:
         '''Sign a payload and return the token'''
-        token = jwt.encode(payload, self.secret, algorithm=self.algorithm)
+        data = payload.dict()
+        now = datetime.now().astimezone()
+        data['exp'] = (now + lease).timestamp()
+        data['nbt'] = now.timestamp()
+        token = jwt.encode(data, self.secret, algorithm=self.algorithm)
         return token
 
-    def verify(self, token):
+    def verify(self, token: str) -> AuthPayload:
         '''Verify the token and return the payload'''
-        payload = jwt.decode(token, self.secret, algorithm=[self.algorithm])
-        return payload
+        data = jwt.decode(token, self.secret, algorithms=[self.algorithm], options={'require': ['exp', 'nbf']})
+        return AuthPayload(**data)
 
 class TokenAuthMiddleware:
     '''A falcon middleware for verifying JWT tokens'''
@@ -37,10 +43,12 @@ class TokenAuthMiddleware:
         self.scheme = 'JWT'
         self.engine = engine
 
-    def process_request(self, req) -> AuthPayload:
+    def _process_request(self, req) -> AuthPayload:
         '''Process a request which we need to verify the authentication.
         Return the authentication payload.'''
         authorization = req.get_header('Authorization')
+        if authorization is None:
+            raise falcon.HTTPMissingHeader(header_name='Authorization')
         try:
             scheme, credentials = authorization.split(' ', 1)
         except ValueError as err:
@@ -50,12 +58,9 @@ class TokenAuthMiddleware:
             raise falcon.HTTPUnauthorized(description=f"Invalid authorization scheme: {scheme}."
                 f" Must be {self.scheme}")
         try:
-            payload = self.engine.verify(credentials)
+            return self.engine.verify(credentials)
         except InvalidTokenError as err:
-            raise falcon.HTTPUnauthorized(header_name='Authorization',
-                message=str(err)) from err
-        try:
-            return AuthPayload(**payload.get('payload', {}))
+            raise falcon.HTTPUnauthorized(description=str(err)) from err
         except ValidationError as err:
             raise falcon.HTTPUnauthorized(
                 description=f"Invalid payload found in JWT token: {err}") from err
@@ -63,4 +68,4 @@ class TokenAuthMiddleware:
     def process_resource(self, req, _resp, resource, *_args, **_kwargs):
         '''Method called for every request. Set the authentication payload in `req.context['auth']`'''
         if getattr(resource, 'authentication', True):
-            req.context['auth'] = self.process_request(req)
+            req.context['auth'] = self._process_request(req)

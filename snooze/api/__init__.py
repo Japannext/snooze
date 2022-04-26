@@ -18,7 +18,6 @@ from typing import Optional, List
 
 import bson.json_util
 import falcon
-from falcon_auth import FalconAuthMiddleware, JWTAuthBackend
 from falcon.errors import HTTPInternalServerError
 from pydantic import BaseModel, ValidationError
 
@@ -112,7 +111,7 @@ class Api:
             LoggerMiddleware(self.core.config.core.audit_excluded_paths),
         ]
         if not self.core.config.core.no_login:
-            middlewares += TokenAuthMiddleware(self.core.token_engine)
+            middlewares.append(TokenAuthMiddleware(self.core.token_engine))
         self.handler = falcon.App(middleware=middlewares)
         self.handler.req_options.auto_parse_qs_csv = False
 
@@ -165,7 +164,8 @@ class Api:
 
     def get_root_token(self):
         '''Return a root token for the root user. Used only when requesting it from the internal unix socket'''
-        return self.jwt_auth.get_auth_token({'name': 'root', 'method': 'root', 'permissions': ['rw_all']})
+        auth = AuthPayload(username='root', method='root', permissions=['rw_all'])
+        return self.core.token_engine.sign(auth)
 
     def load_plugin_routes(self):
         log.debug('Loading plugin routes for API')
