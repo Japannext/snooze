@@ -157,7 +157,8 @@ class MetadataConfig(ReadOnlyConfig):
             raise Exception(f"Cannot load metadata for plugin {plugin_name}") from err
 
 class LdapConfig(WritableConfig):
-    '''Configuration for LDAP authentication'''
+    '''Configuration for LDAP authentication. Can be edited live in the web interface.
+    Usually located at `/etc/snooze/server/ldap_auth.yaml`.'''
     _section = 'ldap_auth'
     _auth_routes = ['ldap']
 
@@ -282,7 +283,8 @@ class ClusterConfig(BaseModel):
         return value
 
 class CoreConfig(ReadOnlyConfig):
-    '''Core configuration. Not editable live.'''
+    '''Core configuration. Not editable live. Require a restart of the server.
+    Usually located at `/etc/snooze/server/core.yaml`'''
     _section = 'core'
 
     listen_addr: str = Field(
@@ -346,7 +348,8 @@ class CoreConfig(ReadOnlyConfig):
     backup: BackupConfig = Field(default_factory=BackupConfig)
 
 class GeneralConfig(WritableConfig):
-    '''General configuration of snooze'''
+    '''General configuration of snooze. Can be edited live in the web interface.
+    Usually located at `/etc/snooze/server/general.yaml`.'''
     _section = 'general'
     _auth_routes = ['local']
 
@@ -384,7 +387,8 @@ class GeneralConfig(WritableConfig):
         return value.casefold()
 
 class NotificationConfig(WritableConfig):
-    '''Configuration for default notification delays/retry'''
+    '''Configuration for default notification delays/retry. Can be edited live in the web interface.
+    Usually located at `/etc/snooze/server/notifications.yaml`.'''
     _section = 'notifications'
 
     notification_freq: int = Field(
@@ -399,7 +403,8 @@ class NotificationConfig(WritableConfig):
     )
 
 class HousekeeperConfig(WritableConfig):
-    '''Config for the housekeeper thread'''
+    '''Config for the housekeeper thread. Can be edited live in the web interface.
+    Usually located at `/etc/snooze/server/housekeeper.yaml`.'''
     _section = 'housekeeper'
 
     trigger_on_startup: bool = Field(
