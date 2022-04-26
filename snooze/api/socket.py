@@ -22,6 +22,7 @@ from waitress.server import UnixWSGIServer
 
 from snooze.api import LoggerMiddleware
 from snooze.utils.threading import SurvivingThread
+from snooze.utils.typing import AuthPayload
 
 log = getLogger('snooze.api.socket')
 
@@ -33,8 +34,9 @@ class RootTokenRoute:
     def on_get(self, req, resp):
         log.debug("Received root token request from client")
         now = datetime.utcnow()
+        auth_payload = AuthPayload(name='root', method='root', permissions=['rw_all'])
         payload = {
-            'user': {'name': 'root', 'method': 'root', 'permissions': ['rw_all']},
+            'payload': auth_payload.dict(),
             'iat': now,
             'nbf': now,
             'exp': now + timedelta(seconds=3600),

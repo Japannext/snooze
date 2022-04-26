@@ -21,7 +21,7 @@ from ldap3 import Server, Connection, ALL, SUBTREE
 from ldap3.core.exceptions import LDAPOperationResult, LDAPExceptionError
 
 from snooze.utils.functions import unique, ensure_kv, authorize
-from snooze.utils.typing import RouteArgs, ConditionOrUid, Pagination
+from snooze.utils.typing import RouteArgs, ConditionOrUid, Pagination, AuthPayload
 from snooze.utils.config import GeneralConfig, LdapConfig
 
 log = getLogger('snooze.api.routes')
@@ -73,19 +73,16 @@ class BasicRoute:
         return self.core.db.write(collection, record,
             self.options.primary, constant = self.options.check_constant)
 
-    def get_roles(self, username: str, method: str) -> List[str]:
-        '''Get the authorization roles for a user/auth method pair'''
-        if username and method:
-            log.debug("Getting roles for user %s (%s)", username, method)
-            user_search = self.core.db.search('user', ['AND', ['=', 'name', username], ['=', 'method', method]])
-            if user_search['count'] > 0:
-                user = user_search['data'][0]
-                log.debug("User found in database: %s", user)
-                roles = unique(user.get('roles', []) + user.get('static_roles', []))
-                log.debug("User roles: %s", roles)
-                return roles
-            else:
-                return []
+    def get_roles(self, auth: AuthPayload) -> List[str]:
+        '''Get the authorization roles for an authentication payload'''
+        log.debug("Getting roles for user %s (%s)", auth.username, auth.method)
+        user_search = self.core.db.search('user', ['AND', ['=', 'name', auth.username], ['=', 'method', auth.method]])
+        if user_search['count'] > 0:
+            user = user_search['data'][0]
+            log.debug("User found in database: %s", user)
+            roles = unique(user.get('roles', []) + user.get('static_roles', []))
+            log.debug("User roles: %s", roles)
+            return roles
         else:
             return []
 
@@ -93,10 +90,8 @@ class BasicRoute:
         '''Return the permissions for a given list of roles'''
         if isinstance(roles, list) and len(roles) > 0:
             log.debug("Getting permissions for roles %s", roles)
-            query = ['=', 'name', roles[0]]
-            for role in roles[1:]:
-                query = ['OR', ['=', 'name', role], query]
-            role_search = self.core.db.search('role', query)
+            role_queries = [['=', 'name', role] for role in roles]
+            role_search = self.core.db.search('role', ['OR', *role_queries])
             permissions = []
             if role_search['count'] > 0:
                 for role in role_search['data']:
@@ -360,23 +355,14 @@ class AuthRoute(BasicRoute):
 
         return username, password
 
-    def parse_user(self, user):
-        return user
-
-    def inject_permissions(self, user):
-        roles = self.get_roles(user['name'], user['method'])
-        permissions = self.get_permissions(roles)
-        user['roles'] = roles
-        user['permissions'] = permissions
-
     def on_post(self, req, resp):
         if self.enabled:
-            self.authenticate(req, resp)
-            user = self.parse_user(req.context['user'])
+            payload = self.authenticate(req)
+            payload.roles = self.get_roles(payload)
+            payload.permissions = self.get_permissions(payload.roles)
             preferences = None
             if self.userplugin:
                 _, preferences = self.userplugin.manage_db(user)
-            self.inject_permissions(user)
             log.debug("Context user: %s", user)
             token = self.api.jwt_auth.get_auth_token(user)
             log.debug("Generated token: %s", token)
@@ -395,7 +381,7 @@ class AuthRoute(BasicRoute):
             }
 
     @abstractmethod
-    def authenticate(self, req, resp):
+    def authenticate(self, req) -> AuthPayload:
         '''Abstract method called to authenticate the user.
         Is expected to set req.context['user'], and to raise
         falcon.HTTPUnauthorized when unauthorized.
@@ -478,12 +464,9 @@ class AnonymousAuthRoute(AuthRoute):
         self.enabled = self.core.config.general.anonymous_enabled
         log.debug("Authentication backend 'anonymous' status: %s", self.enabled)
 
-    def authenticate(self, req, resp):
+    def authenticate(self, req) -> AuthPayload:
         log.debug('Anonymous login')
-        req.context['user'] = 'anonymous'
-
-    def parse_user(self, user):
-        return {'name': 'anonymous', 'method': 'local'}
+        return AuthPayload(username='anonymous', method='local')
 
 class LocalAuthRoute(AuthRoute):
     '''An authentication route for local users'''
@@ -498,7 +481,7 @@ class LocalAuthRoute(AuthRoute):
         self.enabled = self.core.config.general.local_users_enabled
         log.debug("Authentication backend 'local' status: %s", self.enabled)
 
-    def authenticate(self, req, resp):
+    def authenticate(self, req) -> AuthPayload:
         username, password = self._extract_credentials(req)
         password_hash = sha256(password.encode('utf-8')).hexdigest()
         log.debug("Attempting login for %s, with password hash %s", username, password_hash)
@@ -511,25 +494,23 @@ class LocalAuthRoute(AuthRoute):
                     db_password = db_password_search['data'][0]['password']
                 except Exception as _err:
                     raise falcon.HTTPUnauthorized(
-                		description='Password not found')
+                        description='Password not found')
                 if db_password == password_hash:
                     log.debug('Password was correct for user %s', username)
                     req.context['user'] = username
+                    return AuthPayload(username=username, method='local')
                 else:
                     log.debug('Password was incorrect for user %s', username)
                     raise falcon.HTTPUnauthorized(
-                		description='Invalid Username/Password')
+                        description='Invalid Username/Password')
             else:
                 log.debug('User %s does not exist', username)
                 raise falcon.HTTPUnauthorized(
-                	description='User does not exist')
+                    description='User does not exist')
         except Exception as e:
             log.exception('Exception while trying to compare passwords')
             raise falcon.HTTPUnauthorized(
-           		description='Exception while trying to compare passwords')
-
-    def parse_user(self, user):
-        return {'name': user, 'method': 'local'}
+           	    description='Exception while trying to compare passwords')
 
 class LdapAuthRoute(AuthRoute):
     '''An authentication route for LDAP users'''
@@ -627,15 +608,12 @@ class LdapAuthRoute(AuthRoute):
         finally:
             user_con.unbind()
 
-    def authenticate(self, req, resp):
+    def authenticate(self, req) -> AuthPayload:
         username, password = self._extract_credentials(req)
         user = self._search_user(username)
         user_con = self._bind_user(user['dn'], password)
         if user_con.result['result'] == 0:
-            req.context['user'] = user
+            groups = [group.split(',')[0].split('=', 1)[-1] for group in user['groups']]
+            return AuthPayload(username=user['name'], method='ldap', groups=groups)
         else:
             raise falcon.HTTPUnauthorized(description="")
-
-    def parse_user(self, user):
-        groups = list(map(lambda x: x.split(',')[0].split('=')[1], user['groups']))
-        return {'name': user['name'], 'groups': groups, 'method': 'ldap'}

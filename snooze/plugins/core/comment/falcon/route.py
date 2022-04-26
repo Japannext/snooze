@@ -46,7 +46,7 @@ class Comment(BaseModel, extra=Extra.allow):
     '''A data model representing a comment'''
     date: str = Field(default_factory=lambda: datetime.now().astimezone().isoformat())
     type: CommentType = CommentType.COMMENT
-    record_uid: str = Field(default_factory=lambda: str(uuid4()))
+    record_uid: str
     name: str = 'unknown'
     message: str = ''
     edited: bool = False

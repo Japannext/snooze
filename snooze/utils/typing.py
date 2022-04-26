@@ -7,6 +7,7 @@
 
 '''Typing utils for snooze'''
 
+from datetime import datetime
 from typing import NewType, List, Literal, Optional, TypedDict, Union
 
 from pydantic import BaseModel, Field
@@ -49,8 +50,14 @@ class PeerStatus(BaseModel):
 
 class HostPort(BaseModel):
     '''An object to represent a host-port pair'''
-    host: str = ...
-    port: int = Field(default=5200)
+    host: str = Field(
+        required=True,
+        description='The host address to reach (IP or resolvable hostname)',
+    )
+    port: int = Field(
+        default=5200,
+        description='The port where the host is expected to listen to'
+    )
 
 class Pagination(TypedDict, total=False):
     '''A type hint for pagination options'''
@@ -69,3 +76,19 @@ class Widget(BaseModel):
 class Query(BaseModel):
     ql: str
     field: str
+
+class AuthPayload(BaseModel):
+    '''An object representing the authentication payload that will
+    be contained in the JWT token'''
+    username: str
+    method: str
+    roles: List[str] = Field(default_factory=list)
+    permissions: List[str] = Field(default_factory=list)
+    groups: List[str] = Field(default_factory=list)
+
+class Profile(BaseModel):
+    '''Represent a user and its preferences in the database'''
+    username: str
+    method: str
+    display_name: Optional[str] = None
+    email: Optional[str] = None

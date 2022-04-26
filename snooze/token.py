@@ -43,9 +43,9 @@ class TokenAuthMiddleware:
             raise falcon.HTTPUnauthorized(description=f"Invalid authorization scheme: {scheme}."
                 f"Must be {self.scheme}")
         try:
-            self.engine.verify(credentials)
+            payload = self.engine.verify(credentials)
         except InvalidTokenError as err:
             raise falcon.HTTPUnauthorized(header_name='Authorization',
                 message=str(err)) from err
 
-        #req.context['auth'] = AuthPayload()
+        req.context['auth'] = AuthPayload(**payload)
