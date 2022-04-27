@@ -30,7 +30,7 @@ Usually located at `/etc/snooze/server/core.yaml`
 **Default**: `['/api/patlite', '/metrics', '/web']`.  
 - `process_plugins` (array[string]): List of plugins that will be used for processing alerts. Order matters.  
 **Default**: `['rule', 'aggregaterule', 'snooze', 'notification']`.  
-- `database` (object): Database.  
+- `database` ([MongodbConfig](#MongodbConfig)|[FileConfig](#FileConfig)): Database.  
 - `init_sleep` (integer): Time to sleep before retrying certain operations (bootstrap, clustering).  
 **Default**: `5`.  
 - `create_root_user` (boolean): Create a *root* user with a default password *root*.  
@@ -41,6 +41,23 @@ Usually located at `/etc/snooze/server/core.yaml`
 - `backup` ([BackupConfig](#BackupConfig)): Backup configuration.  
 
 ## Definitions
+
+### MongodbConfig
+
+Mongodb configuration passed to pymongo MongoClient
+
+#### Properties
+
+- `type` ('mongo') (**required**): Type.  
+- `host` (string|array[string]): Hostname or IP address or Unix domain socket path of a single mongod or mongos instance to connect to.  
+- `port` (integer): Port number on which to connect.  
+
+### FileConfig
+
+#### Properties
+
+- `type` ('file') (**required**): Type.  
+- `path` (string) (**required**): Path.  
 
 ### SslConfig
 
@@ -120,7 +137,7 @@ Usually located at `/etc/snooze/server/general.yaml`.
 
 ## Properties
 
-- `default_auth_backend` (string): Backend that will be first in the list of displayed authentication backends.  
+- `default_auth_backend` ('local'|'ldap'): Backend that will be first in the list of displayed authentication backends.  
 **Default**: `local`.  
 - `local_users_enabled` (boolean): Enable the creation of local users in snooze. This can be disabled when another reliable authentication backend is used, and the admin want to make auditing easier.  
 **Default**: `True`.  

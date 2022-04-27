@@ -42,7 +42,7 @@ class RootTokenRoute:
 
 def admin_api(token_engine):
     '''Return a falcon WSGI app for returning the root token. Only used by the unix socket'''
-    app = falcon.API(middleware=[LoggerMiddleware()])
+    app = falcon.App(middleware=[LoggerMiddleware()])
     app.add_error_handler(USER_ERRORS, log_warning_handler)
     app.add_error_handler(Exception, log_error_handler)
     app.add_route('/api/root_token', RootTokenRoute(token_engine))
@@ -55,7 +55,7 @@ class WSGISocketServer(SurvivingThread, UnixWSGIServer):
         self.timeout = 10
         self.exit_event = exit_event or Event()
 
-        unix_socket_adj = Adjustments(unix_socket=str(self.path))
+        unix_socket_adj = Adjustments(unix_socket=str(self.path), clear_untrusted_proxy_headers=True)
         UnixWSGIServer.__init__(self, api, adj=unix_socket_adj)
 
         SurvivingThread.__init__(self, exit_event)

@@ -45,8 +45,8 @@ def fixture_port() -> int:
 def write_data(database, request):
     '''Write data fetch with get_data(request, 'data') to a database'''
     data = get_data(request, 'data', {})
-    for key, value in data.items():
-        database.delete(key, [], True)
+    for collection in database.db.list_collection_names():
+        database.db[collection].drop()
     for key, value in data.items():
         database.write(key, value)
 

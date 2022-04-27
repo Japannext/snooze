@@ -23,6 +23,7 @@ Config = NewType('Config', dict)
 Condition = NewType('Condition', list)
 ConditionOrUid = Optional[Union[str, list]]
 
+
 DuplicatePolicy = Literal['insert', 'reject', 'replace', 'update']
 
 # We're listing only the ones we might raise.

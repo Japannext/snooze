@@ -12,11 +12,12 @@ from contextlib import contextmanager
 from logging import getLogger
 from pathlib import Path
 from datetime import timedelta
+from urllib.parse import urlparse
 from typing import Optional, List, Any, Dict, Literal, ClassVar, Union
 
 import yaml
 from filelock import FileLock
-from pydantic import BaseModel, Field, validator, ValidationError
+from pydantic import BaseModel, Field, validator, ValidationError, Extra
 
 from snooze import __file__ as SNOOZE_PATH
 from snooze.utils.typing import RouteArgs, HostPort, Widget
@@ -300,6 +301,36 @@ class ClusterConfig(BaseModel):
             return members
         return value
 
+class MongodbConfig(BaseModel, extra=Extra.allow):
+    '''Mongodb configuration passed to pymongo MongoClient'''
+    type: Literal['mongo'] = 'mongo'
+    host: Optional[Union[str, List[str]]] = Field(
+        title='Host',
+        default=None,
+        env='DATABASE_URL',
+        description='Hostname or IP address or Unix domain socket path of a single mongod or mongos instance'
+        'to connect to',
+    )
+    port: Optional[int] = Field(
+        title='Port',
+        default=None,
+        description='Port number on which to connect',
+    )
+
+class FileConfig(BaseModel, extra=Extra.allow):
+    type: Literal['file'] = 'file'
+    path: Path = Path(f"{os.getcwd()}/db.json")
+
+def select_db() -> Union[MongodbConfig, FileConfig]:
+    '''Return the correct database config type'''
+    if 'DATABASE_URL' in os.environ:
+        scheme = urlparse(os.environ['DATABASE_URL']).scheme
+        if scheme == 'mongodb':
+            return MongodbConfig()
+    return FileConfig()
+
+DatabaseConfig = Union[MongodbConfig, FileConfig]
+
 class CoreConfig(ReadOnlyConfig, title='Core configuration'):
     '''Core configuration. Not editable live. Require a restart of the server.
     Usually located at `/etc/snooze/server/core.yaml`'''
@@ -346,9 +377,9 @@ class CoreConfig(ReadOnlyConfig, title='Core configuration'):
         description='List of plugins that will be used for processing alerts.'
         ' Order matters.',
     )
-    database: dict = Field(
+    database: DatabaseConfig = Field(
         title='Database',
-        default_factory=lambda: {'type': 'file'},
+        default_factory=select_db,
     )
     init_sleep: int = Field(
         title='Init sleep',

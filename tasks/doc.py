@@ -10,17 +10,20 @@ from snooze.utils.config import *
 #from tasks.utils import get_versions, print_github_kv, get_paths
 
 def compute_type(prop: dict) -> str:
+    if '$ref' in prop:
+        ref_name = prop['$ref'].split('/')[-1]
+        return f"[{ref_name}](#{ref_name})"
+    if 'enum' in prop:
+        return '|'.join(map(repr, prop['enum']))
+    if 'anyOf' in prop:
+        return '|'.join([compute_type(obj) for obj in prop['anyOf']])
+    if 'allOf' in prop:
+        return '+'.join([compute_type(obj) for obj in prop['allOf']])
     if prop['type'] == 'array' and prop.get('items', {}).get('type'):
         return f"array[{prop['items']['type']}]"
-    else:
+    if 'type' in prop:
         return prop['type']
-
-def get_ref(obj: dict) -> str:
-    if '$ref' in obj:
-        return obj['$ref']
-    if 'allOf' in obj:
-        return obj['allOf'][0]['$ref']
-    return None
+    return 'unknown'
 
 def append_dot(line: str) -> str:
     if line[-1] != '.':
@@ -30,14 +33,11 @@ def append_dot(line: str) -> str:
 def prop_to_markdown(name: str, prop: dict, required: bool) -> str:
     prop_line = '- '
     prop_line += f"`{name}`"
-    if 'type' in prop:
-        prop_line += f" ({compute_type(prop)})"
+    prop_type = compute_type(prop)
+    if prop_type:
+        prop_line += f" ({prop_type})"
     if required:
         prop_line += ' (**required**)'
-    ref = get_ref(prop)
-    if ref:
-        ref_name = ref.split('/')[-1]
-        prop_line += f" ([{ref_name}](#{ref_name}))"
     prop_line += ':' # The 2 spaces matters for indentation
     if 'title' in prop and 'description' not in prop:
         prop_line += f" {append_dot(prop['title'])}  "
@@ -93,7 +93,7 @@ def config(ctx):
     '''Generate documentation for configuration files'''
     doc_path = Path('doc/15_Configuration.md')
     configs = [CoreConfig, GeneralConfig, HousekeeperConfig, NotificationConfig, LdapConfig]
-    print(LdapConfig.schema_json(indent=2))
+    print(CoreConfig.schema_json(indent=2))
     doc_str = "# Summary\n\n"
     for config in configs:
         title = config.schema()['title']

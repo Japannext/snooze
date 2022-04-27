@@ -24,6 +24,7 @@ from snooze.db.database import Database
 from snooze.utils.functions import dig
 from snooze.utils.typing import Condition, Pagination
 from snooze.utils.exceptions import DatabaseError
+from snooze.utils.config import MongodbConfig
 
 log = getLogger('snooze.db.mongo')
 
@@ -43,14 +44,10 @@ class BackendDB(Database):
 
     name = 'mongo'
 
-    def init_db(self, conf: dict):
-        if 'DATABASE_URL' in os.environ:
-            self.db = pymongo.MongoClient(os.environ.get('DATABASE_URL'))[database]
-        else:
-            self.db = pymongo.MongoClient(**conf)[database]
+    def init_db(self, config: MongodbConfig):
+        self.db = pymongo.MongoClient(**config.dict(exclude={'type'}))[database]
         self.search_fields = {}
-        self.conf = conf
-        log.debug("Initialized Mongodb with config %s", conf)
+        log.debug("Initialized Mongodb")
         log.debug("db: %s", self.db)
         log.debug("List of collections: %s", self.db.list_collection_names())
 
@@ -299,8 +296,8 @@ class BackendDB(Database):
                         .sort(orderby, asc_int)
                 else:
                     results = self.db[collection].find(mongo_search).sort(orderby, asc_int)
+                total = self.db[collection].count_documents(mongo_search)
                 results = list(results)
-                total = len(results)
                 log.debug("Found %d result(s) for search %s in collection %s. Pagination options: %s",
                     total, mongo_search, collection, pagination)
                 return {'data': results, 'count': total}

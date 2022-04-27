@@ -5,7 +5,9 @@
 # SPDX-License-Identifier: AFL-3.0
 #
 
+import os
 import inspect
+from unittest.mock import patch
 
 from snooze.utils.config import *
 
@@ -53,6 +55,49 @@ class TestCoreConfig:
         assert config.port == 5200
         assert config.debug == True
         assert config.bootstrap_db == True
+
+class TestDatabaseConfig:
+    def test_mongo(self, tmp_path):
+        data = inspect.cleandoc('''---
+        database:
+            type: mongo
+            host:
+                - host01
+                - host02
+                - host03
+            port: 27017
+            username: snooze
+            password: secret123
+            authSource: snooze
+            replicaSet: rs0
+            tls: true
+            tlsCAFile: '/etc/pki/tls/cert.pem'
+        ''')
+        core_path = tmp_path / 'core.yaml'
+        core_path.write_text(data)
+
+        config = CoreConfig(tmp_path)
+        assert config.database.type == 'mongo'
+        assert config.database.host == ['host01', 'host02', 'host03']
+
+    def test_select_db_file(self):
+        database = select_db()
+        assert database.type == 'file'
+
+    @patch.dict(os.environ, {'DATABASE_URL': 'mongodb://host01,host02,host03/snooze'}, clear=True)
+    def test_select_db_mongo(self):
+        database = select_db()
+        assert database.type == 'mongo'
+
+    @patch.dict(os.environ, {'DATABASE_URL': 'mongodb://host01,host02,host03/snooze'}, clear=True)
+    def test_mongo_environ(self, tmp_path):
+        print(os.environ)
+        config = CoreConfig(tmp_path)
+        assert config.database.type == 'mongo'
+
+    def test_file(self, tmp_path):
+        config = CoreConfig(tmp_path)
+        assert config.database.type == 'file'
 
 class TestHousekeeperConfig:
     def test_empty(self, tmp_path):
