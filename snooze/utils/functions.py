@@ -24,6 +24,21 @@ log = getLogger('snooze.utils')
 
 T = TypeVar('T')
 
+def log_warning_handler(err, _req, _resp, _params):
+    '''Log caught exceptions as a warning'''
+    log.warning(str(err), exc_info=err)
+    raise err
+
+def log_error_handler(err, _req, _resp, _params):
+    '''Log caught exceptions as an error'''
+    log.exception(err)
+    raise err
+
+def log_uncaught_handler(err, _req, _resp, _params):
+    '''Log uncaught exceptions and return a clean 5xx'''
+    log.exception(err)
+    raise falcon.HTTPInternalServerError(description=str(err)) from err
+
 def unique(lst: list) -> list:
     '''Return a list with only unique elements'''
     return list(set(lst))
@@ -110,49 +125,55 @@ def ensure_hash(record: Record):
         else:
             record['hash'] = hashlib.md5(repr(sorted(record.items())).encode('utf-8')).hexdigest()
 
-def authorize(func):
-    '''Decorator for methods that are protected by authorization'''
-    def _f(self, req, resp, *args, **kw):
-        if self.core.config.core.no_login:
-            return func(self, req, resp, *args, **kw)
-        user_payload = req.context['user']['user']
-        plugin_name = None
-        if (self.plugin and hasattr(self.plugin, 'name')):
-            plugin_name = self.plugin.name
-        elif hasattr(self, 'name'):
-            plugin_name = self.name
-        if plugin_name:
-            read_permissions = ['ro_all', 'rw_all', 'ro_'+plugin_name, 'rw_'+plugin_name]
-            write_permissions = ['rw_all', 'rw_'+plugin_name]
-        else:
-            plugin_name = 'unknown'
-            read_permissions = ['ro_all', 'rw_all']
-            write_permissions = ['rw_all']
-        endpoint = func.__name__
-        method = user_payload['method']
-        name = user_payload['name']
-        if name == 'root' and method == 'root':
-            log.warning("Root user detected! Authorized but please use a proper admin role if possible (authorization '{}' for plugin {})".format(endpoint, plugin_name))
-            return func(self, req, resp, *args, **kw)
-        else:
-            permissions = user_payload.get('permissions', [])
-            permissions.append('any')
-            if endpoint == 'on_get':
-                if self.authorization_policy and any(perm in permissions for perm in self.authorization_policy.get('read', [])):
-                    return func(self, req, resp, *args, **kw)
-                elif any(perm in permissions for perm in read_permissions):
-                    return func(self, req, resp, *args, **kw)
-            elif endpoint in ['on_post', 'on_put', 'on_delete']:
-                if self.check_permissions:
-                    permissions = self.get_permissions(self.get_roles(name, method))
-                if len(permissions) > 0:
-                    if self.authorization_policy and any(perm in permissions for perm in self.authorization_policy.get('write', [])):
-                        return func(self, req, resp, *args, **kw)
-                    elif any(perm in permissions for perm in write_permissions):
-                        return func(self, req, resp, *args, **kw)
-        log.warning("Access denied. User %s on endpoint '%s' for plugin %s", name, endpoint, plugin_name)
-        raise falcon.HTTPForbidden('Forbidden', 'Permission Denied')
-    return _f
+def authorize_wrapper(route, req: Request):
+    '''A wrapper function that check the authorization of a request.
+    If the request is allowed on the given route, it will returns.
+    If the request is forbidden, it will raise the appropriate falcon
+    exception.'''
+    if route.core.config.core.no_login:
+        return
+
+    auth = req.context['auth']
+    if auth.username == 'root' and auth.method == 'root':
+        return
+
+    if (route.plugin and hasattr(route.plugin, 'name')):
+        name = route.plugin.name
+    elif hasattr(route, 'name'):
+        name = route.name
+    else:
+        name = None
+
+    # `any` is added here for convenience. Routes can declare `any`
+    # in their authorization policy, which means any user can access it
+    read_permissions = ['any', 'ro_all', 'rw_all']
+    write_permissions = ['any', 'rw_all']
+    if name:
+        read_permissions += [f"ro_{name}", f"rw_{name}"]
+        write_permissions += [f"rw_{name}"]
+
+    authorization_policy = route.options.authorization_policy
+
+    read_permissions += authorization_policy.read
+    write_permissions += authorization_policy.write
+
+    if req.method in ['GET']:
+        valid_permissions = read_permissions
+    elif req.method in ['PUT', 'POST', 'DELETE']:
+        valid_permissions = write_permissions
+    else:
+        valid_permissions = []
+
+    if any(p in valid_permissions for p in auth.permissions):
+        return
+    raise falcon.HTTPForbidden(description=f"On {req.method} {req.path}, auth: {auth.dict()}")
+
+def authorize(callback):
+    '''A decorator that guards a '''
+    def wrapper(self, req, resp, *args, **kwargs):
+        authorize_wrapper(self, req)
+        return callback(self, req, resp, *args, **kwargs)
+    return wrapper
 
 def extract_basic_auth(req: Request) -> Tuple[str, str]:
     '''Decode the user:password from an authorization header, as per the basic authentication'''

@@ -126,11 +126,11 @@ class Housekeeper(SurvivingThread):
             'cleanup_comment': BasicJob('cleanup_comment', timedelta(days=1),
                 lambda db: db.cleanup_orphans('comment', 'record_uid', 'record', 'uid')),
             'cleanup_audit': IntervalJob('cleanup_audit', timedelta(days=1), timedelta(days=28),
-                lambda db, interval: db.cleanup_audit_logs(interval)),
+                lambda db, interval: db.cleanup_audit_logs(interval.total_seconds())),
             'cleanup_snooze': IntervalJob('cleanup_snooze', timedelta(days=1), timedelta(days=3),
-                lambda db, interval: cleanup_expired(db, 'snooze', interval)),
+                lambda db, interval: cleanup_expired(db, 'snooze', interval.total_seconds())),
             'cleanup_notification': IntervalJob('cleanup_notification', timedelta(days=1), timedelta(days=3),
-                lambda db, interval: cleanup_expired(db, 'notification', interval)),
+                lambda db, interval: cleanup_expired(db, 'notification', interval.total_seconds())),
         }
         self.backup_job = None
         self.reload()
@@ -165,14 +165,14 @@ class Housekeeper(SurvivingThread):
             if self.backup_job.next_run <= datetime.now():
                 log.debug("Running backup job")
                 self.backup_job.run(self.db)
-        time.sleep(1)
 
     def start_thread(self):
         if self.config.trigger_on_startup:
-            for job in self.jobs:
+            for _, job in self.jobs.items():
                 job.next_run = datetime.now()
-        while True:
+        while not self.exit.wait(0.1):
             self.handler()
+            time.sleep(1)
 
 def cleanup_expired(db: 'Database', collection: str, cleanup_delay: int):
     '''Cleanup expired objects. Used for objects containing a time constraint, and

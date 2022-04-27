@@ -7,7 +7,6 @@
 
 import os
 import re
-import threading
 import time
 
 import pytest
@@ -17,19 +16,20 @@ from snooze.cli.__main__ import snooze
 from snooze.api.socket import WSGISocketServer, admin_api
 from snooze.token import TokenEngine
 
-@pytest.fixture(scope='class')
-def mysocket():
+@pytest.fixture(scope='function')
+def mysocket(tmp_path):
     token_engine = TokenEngine('secret')
     api = admin_api(token_engine)
-    thread = WSGISocketServer(api, './test_root_token.socket')
+    path = tmp_path / 'snooze.socket'
+    thread = WSGISocketServer(api, path)
     thread.daemon = True
     thread.start()
     time.sleep(0.1)
-    return thread
+    yield thread
+    #thread.stop_thread()
 
 def test_root_token(mysocket):
-    path = os.path.abspath('./test_root_token.socket')
     runner = CliRunner()
-    result = runner.invoke(snooze, ['root-token', '--socket', path])
+    result = runner.invoke(snooze, ['root-token', '--socket', str(mysocket.path)])
     assert result.exit_code == 0
     assert re.match('Root token: .*', result.output)

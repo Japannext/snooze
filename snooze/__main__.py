@@ -38,13 +38,6 @@ def setup_logging(conf):
     log.debug("Log system on")
     return log
 
-def exit_all(threads, exit_code=0):
-    '''Stop all threads, and exit'''
-    for thread in threads:
-        if thread.is_alive():
-            thread.stop_thread()
-    sys.exit(exit_code)
-
 def app(conf=None):
     '''Used to initialize the application in Docker Heroku'''
     if conf is None:
@@ -58,19 +51,17 @@ def app(conf=None):
 
 def main(conf=None):
     '''Main thread when running snooze-server executable'''
-    if conf is None:
-        conf = {}
-    conf.update(config())
     log = setup_logging(conf)
-    core = Core(conf)
+    core = Core()
 
     try:
-        for thread in core.threads.values():
-            thread.start()
+        core.start()
         if core.exit_event.wait():
-            exit_all(core.threads.values())
+            core.stop()
+            sys.exit(0)
     except (KeyboardInterrupt, SystemExit):
-        exit_all(core.threads.values(), 1)
+        core.stop()
+        sys.exit(1)
 
 if __name__ == '__main__':
     main()

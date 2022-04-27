@@ -22,7 +22,8 @@ from waitress.server import UnixWSGIServer
 
 from snooze.api import LoggerMiddleware
 from snooze.utils.threading import SurvivingThread
-from snooze.utils.typing import AuthPayload
+from snooze.utils.typing import AuthPayload, USER_ERRORS
+from snooze.utils.functions import log_error_handler, log_warning_handler
 
 log = getLogger('snooze.api.socket')
 
@@ -33,24 +34,19 @@ class RootTokenRoute:
 
     def on_get(self, req, resp):
         log.debug("Received root token request from client")
-        now = datetime.utcnow()
-        auth_payload = AuthPayload(name='root', method='root', permissions=['rw_all'])
-        payload = {
-            'payload': auth_payload.dict(),
-            'iat': now,
-            'nbf': now,
-            'exp': now + timedelta(seconds=3600),
-        }
-        root_token = self.token_engine.sign(payload).decode()
+        auth = AuthPayload(username='root', method='root', permissions=['rw_all'])
+        root_token = self.token_engine.sign(auth)
         resp.content_type = falcon.MEDIA_JSON
         resp.status = falcon.HTTP_200
         resp.media = {'root_token': root_token}
 
 def admin_api(token_engine):
     '''Return a falcon WSGI app for returning the root token. Only used by the unix socket'''
-    api = falcon.API(middleware=[LoggerMiddleware()])
-    api.add_route('/api/root_token', RootTokenRoute(token_engine))
-    return api
+    app = falcon.API(middleware=[LoggerMiddleware()])
+    app.add_error_handler(USER_ERRORS, log_warning_handler)
+    app.add_error_handler(Exception, log_error_handler)
+    app.add_route('/api/root_token', RootTokenRoute(token_engine))
+    return app
 
 class WSGISocketServer(SurvivingThread, UnixWSGIServer):
     '''Listen on a Unix socket and serve the application'''

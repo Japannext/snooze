@@ -140,9 +140,11 @@ class FalconRoute(BasicRoute):
 
 
 class AlertRoute(BasicRoute):
+    '''Alerta compatibility route'''
     authentication = False
 
     def on_post(self, req, resp):
+        '''Expect an alerta-style input, and will process it like a snooze alert'''
         log.debug("Received log %s", req.media)
         media = req.media.copy()
         rec_list = [{'data': {}}]
@@ -152,80 +154,68 @@ class AlertRoute(BasicRoute):
             try:
                 rec = self.core.process_record(req_media)
                 rec_list.append(rec)
-            except Exception as e:
-                log.exception(e)
+            except Exception as err:
+                log.warning('Error while processing Alerta alert', exc_info=err)
                 rec_list.append({'data': {'rejected': [req_media]}})
                 continue
         resp.content_type = falcon.MEDIA_JSON
-        resp.status = falcon.HTTP_200
+        resp.status = falcon.HTTP_OK
         resp.media = merge_batch_results(rec_list)
 
 class MetricsRoute(BasicRoute):
     '''A falcon route to serve prometheus metrics'''
     authentication = False
 
-    def on_get(self, req, resp):
-        try:
-            resp.content_type = falcon.MEDIA_TEXT
-            data = self.api.core.stats.get_metrics()
-            resp.body = str(data.decode('utf-8'))
-            resp.status = falcon.HTTP_200
-        except Exception as err:
-            log.exception(err)
-            resp.status = falcon.HTTP_503
-
+    def on_get(self, _req, resp):
+        '''A method that will answer with the prometheus metrics'''
+        resp.content_type = falcon.MEDIA_TEXT
+        resp.body = self.api.core.stats.get_metrics().decode('utf-8')
+        resp.status = falcon.HTTP_OK
 
 class RedirectRoute:
     '''A falcon route for managing the default redirection'''
     authentication = False
 
-    def on_get(self, req, resp):
+    def on_get(self, _req, _resp):
+        '''Redirect to the default route'''
         raise falcon.HTTPMovedPermanently('/web/')
 
 class LoginRoute(BasicRoute):
     '''A falcon route for users to login'''
     authentication = False
 
-    def on_get(self, req, resp):
-        log.debug("Listing authentication backends")
-        if self.core.config.core.no_login:
-            resp.content_type = falcon.MEDIA_JSON
-            resp.status = falcon.HTTP_200
-            resp.media = {
-                'token': self.api.get_root_token(),
-            }
-            return
-        try:
-            backends = [
-                {'name':self.api.auth_routes[backend].name, 'endpoint': backend}
-                for backend in self.api.auth_routes.keys()
-                if self.api.auth_routes[backend].enabled
-            ]
-            resp.content_type = falcon.MEDIA_JSON
-            resp.status = falcon.HTTP_200
-            default_auth_backend = self.api.core.config.general.default_auth_backend
-            default_backends = [x for x in backends if x['endpoint'] == default_auth_backend]
-            if len(default_backends) > 0:
-                backends.remove(default_backends[0])
-                backends.insert(0, default_backends[0])
-            resp.media = {
-                'data': {'backends': backends},
-            }
-        except Exception as err:
-            log.exception(err)
-            resp.status = falcon.HTTP_503
+    def on_get(self, _req, resp):
+        '''Return a list of authentication backends'''
+        backends = [
+            {'name':self.api.auth_routes[backend].name, 'endpoint': backend}
+            for backend in self.api.auth_routes.keys()
+            if self.api.auth_routes[backend].enabled
+        ]
+        resp.content_type = falcon.MEDIA_JSON
+        resp.status = falcon.HTTP_OK
+        default_auth_backend = self.core.config.general.default_auth_backend
+        default_backends = [x for x in backends if x['endpoint'] == default_auth_backend]
+        if len(default_backends) > 0:
+            backends.remove(default_backends[0])
+            backends.insert(0, default_backends[0])
+        resp.media = {
+            'data': {'backends': backends},
+        }
 
 class ClusterRoute(BasicRoute):
+    '''A route to fetch the status of the cluster member'''
     authentication = False
 
     def on_get(self, req, resp):
+        '''Return the status of every cluster member'''
         cluster = self.core.threads['cluster']
-        if req.params.get('self', False):
+        one = (req.params.get('one') is not None)
+        if one:
             members = [cluster.status()]
         else:
             members = cluster.members_status()
         resp.content_type = falcon.MEDIA_JSON
-        resp.status = falcon.HTTP_200
+        resp.status = falcon.HTTP_OK
         resp.media = {
             'data': [m.dict() for m in members],
         }
@@ -234,6 +224,7 @@ class ReloadPluginRoute(BasicRoute):
     '''A route to trigger the reload of a given plugin'''
 
     def on_post(self, req, resp, plugin_name: str):
+        '''Trigger the reload of a plugin'''
         propagate = (req.params.get('propagate') is not None) # Key existence
         plugin = self.core.get_core_plugin(plugin_name)
         if plugin is None:
@@ -256,7 +247,8 @@ class StaticRoute:
         self.indexes = indexes
         self.root = root
 
-    def on_get(self, req, res):
+    def on_get(self, req, resp):
+        '''Serve a static file'''
         file = req.path[len(self.prefix):]
 
         if len(file) > 0 and file.startswith('/'):
@@ -267,27 +259,27 @@ class StaticRoute:
 
         # Prevent top level access
         if not path.startswith(self.root):
-            res.stats = falcon.HTTP_403
-            return
+            raise falcon.HTTPForbidden(description='User attempted unauthorized access')
 
         # Search for index if directory
         if os.path.isdir(path):
             path = self.search_index(path)
             if not path:
-                res.stats = falcon.HTTP_404
-                return
+                raise falcon.HTTPNotFound(description=f"Requested path {path} not found")
 
         # Type and encoding
         content_type, _encoding = mimetypes.guess_type(path)
         if content_type is not None:
-            res.content_type = content_type
+            resp.content_type = content_type
 
         try:
             with open(path, 'rb') as static_file:
-                res.cache_control = [f"max-age={MAX_AGE}"]
-                res.text = static_file.read()
+                resp.cache_control = [f"max-age={MAX_AGE}"]
+                resp.text = static_file.read(encoding='utf-8')
         except FileNotFoundError as err:
-            res.status = falcon.HTTP_404
+            raise falcon.HTTPNotFound(message=f"Could not access {path}: {err}") from err
+        except OSError as err:
+            raise falcon.HTTPInternalServerError(description=f"Error while accessing {path}: {err}") from err
 
     def search_index(self, path):
         '''Return the index file when requesting a directory'''
@@ -298,6 +290,7 @@ class StaticRoute:
         return None
 
 class AuthRoute(BasicRoute):
+    '''Base route for all authentication methods'''
     authentication = False
 
     def __init__(self, *args, **kwargs):
@@ -307,36 +300,33 @@ class AuthRoute(BasicRoute):
         self.enabled = True
 
     def on_post(self, req, resp):
-        if self.enabled:
-            payload = self.authenticate(req)
-            payload.roles = self.get_roles(payload)
-            payload.permissions = self.get_permissions(payload.roles)
-            preferences = None
-            if self.userplugin:
-                _, preferences = self.userplugin.manage_db(user)
-            log.debug("Context user: %s", user)
-            token = self.api.jwt_auth.get_auth_token(user)
-            log.debug("Generated token: %s", token)
-            resp.content_type = falcon.MEDIA_JSON
-            resp.status = falcon.HTTP_200
-            resp.media = {
-                'token': token,
-            }
-            if preferences:
-                resp.media['default_page'] = preferences.get('default_page')
+        '''Answer with a token if the `authenticate` method is successful'''
+
+        if not self.enabled:
+            raise falcon.HTTPConflict(description=f'Auth backend {self.__class__.__name__} disabled')
+
+        auth = self.authenticate(req)
+        auth.roles = self.get_roles(auth)
+        auth.permissions = self.get_permissions(auth.roles)
+        if self.userplugin:
+            self.userplugin.update_user(auth)
+            profile, preferences = self.userplugin.get_profile(auth)
         else:
-            resp.content_type = falcon.MEDIA_JSON
-            resp.status = falcon.HTTP_409
-            resp.media = {
-                'response': 'Backend disabled',
-            }
+            profile = None
+            preferences = None
+        token = self.core.token_engine.sign(auth)
+        resp.content_type = falcon.MEDIA_JSON
+        resp.status = falcon.HTTP_200
+        resp.media = {
+            'token': token,
+        }
+        if preferences:
+            resp.media['default_page'] = preferences.default_page
 
     @abstractmethod
     def authenticate(self, req) -> AuthPayload:
         '''Abstract method called to authenticate the user.
-        Is expected to set req.context['user'], and to raise
-        falcon.HTTPUnauthorized when unauthorized.
-        '''
+        Is expected to return the authentication payload.'''
 
     @abstractmethod
     def reload(self):
@@ -344,38 +334,37 @@ class AuthRoute(BasicRoute):
         use of snooze.utils.config to do so.'''
 
 class PermissionsRoute(BasicRoute):
+    '''A route for listing available permissions'''
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = 'role'
 
     @authorize
-    def on_get(self, req, resp):
-        log.debug("Listing permissions")
-        try:
-            permissions = ['rw_all', 'ro_all']
-            for plugin in self.api.core.plugins:
-                permissions.append('rw_' + plugin.name)
-                permissions.append('ro_' + plugin.name)
-                for additional_permission in plugin.permissions:
-                    permissions.append(additional_permission)
-            log.debug("List of permissions: {}".format(permissions))
-            resp.content_type = falcon.MEDIA_JSON
-            resp.status = falcon.HTTP_200
-            resp.media = {
-                'data': permissions,
-            }
-        except Exception as e:
-            log.exception(e)
-            resp.status = falcon.HTTP_503
+    def on_get(self, _req, resp):
+        '''List all available permissions'''
+        permissions = ['rw_all', 'ro_all']
+        for plugin in self.core.plugins:
+            permissions.append('rw_' + plugin.name)
+            permissions.append('ro_' + plugin.name)
+            for additional_permission in plugin.meta.provides:
+                permissions.append(additional_permission)
+        resp.content_type = falcon.MEDIA_JSON
+        resp.status = falcon.HTTP_OK
+        resp.media = {
+            'data': permissions,
+        }
 
 class WebhookRoute(FalconRoute):
+    '''A base class for webhooks'''
     authentication = False
 
     @abstractmethod
-    def parse_webhook(self, req, media):
-        pass
+    def parse_webhook(self, req, media) -> List[dict]:
+        '''A class to override that parse the request and media,
+        and return a list of parsed alerts'''
 
     def on_post(self, req, resp):
+        '''Will receive a webhook from a system, and process the alerts in snooze'''
         log.debug("Received webhook log %s", req.media)
         media = req.media.copy()
         rec_list = [{'data': {}}]
@@ -392,8 +381,8 @@ class WebhookRoute(FalconRoute):
                             alert = ensure_kv(alert, val, *key.split('.'))
                         rec = self.core.process_record(alert)
                         rec_list.append(rec)
-            except Exception as e:
-                log.exception(e)
+            except Exception as err:
+                log.warning('Error parsing alert in webhook', exc_info=err)
                 rec_list.append({'data': {'rejected': [req_media]}})
                 continue
         resp.content_type = falcon.MEDIA_JSON
@@ -445,19 +434,16 @@ class LocalAuthRoute(AuthRoute):
                     db_password = db_password_search['data'][0]['password']
                 except Exception as _err:
                     raise falcon.HTTPUnauthorized(
-                        description='Password not found')
+                        description=f"Password not found for user {username}")
                 if db_password == password_hash:
                     log.debug('Password was correct for user %s', username)
-                    req.context['user'] = username
                     return AuthPayload(username=username, method='local')
                 else:
-                    log.debug('Password was incorrect for user %s', username)
                     raise falcon.HTTPUnauthorized(
-                        description='Invalid Username/Password')
+                        description=f"Invalid username/password for user {username}")
             else:
-                log.debug('User %s does not exist', username)
                 raise falcon.HTTPUnauthorized(
-                    description='User does not exist')
+                    description=f"User {username} does not exist")
         except Exception as e:
             log.exception('Exception while trying to compare passwords')
             raise falcon.HTTPUnauthorized(

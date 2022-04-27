@@ -79,3 +79,27 @@ class TestTokenAuthMiddleware:
         headers = {'Authorization': f"JWT {token}"}
         resp = client.simulate_get('/test', headers=headers)
         assert resp.status == '401 Unauthorized'
+
+    def test_broken_credentials(self, client):
+        headers = {'Authorization': "completely-wrong"}
+        resp = client.simulate_get('/test', headers=headers)
+        assert resp.status == '400 Bad Request'
+
+    def test_wrong_scheme(self, client):
+        headers = {'Authorization': "Basic dGVzdDpwYXNzd29yZA=="}
+        resp = client.simulate_get('/test', headers=headers)
+        assert resp.status == '401 Unauthorized'
+
+    def test_wrong_payload(self, client):
+        secret = 'secret123'
+        now = datetime.now()
+        payload = { # Wrong Payload
+            'username123': 'test',
+            'method456': 'local',
+            'exp': (now + timedelta(hours=1)).timestamp(),
+            'nbf': now.timestamp(),
+        }
+        token = jwt.encode(payload, secret, algorithm='HS256')
+        headers = {'Authorization': f"JWT {token}"}
+        resp = client.simulate_get('/test', headers=headers)
+        assert resp.status == '401 Unauthorized'

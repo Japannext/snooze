@@ -45,18 +45,12 @@ class CommentType(str, Enum):
 class Comment(BaseModel, extra=Extra.allow):
     '''A data model representing a comment'''
     date: str = Field(default_factory=lambda: datetime.now().astimezone().isoformat())
-    type: CommentType = CommentType.COMMENT
+    type: CommentType = Field(default=CommentType.COMMENT)
     record_uid: str
     name: str = 'unknown'
     message: str = ''
     edited: bool = False
     modifications: List[Any] = Field(default_factory=list)
-
-    def __init__(self, data: dict, context=None):
-        '''Making sure we get a `name` from the context if not present'''
-        if context and 'user' in context and 'name' not in data:
-            data['name'] = context['user']['user']['name']
-        BaseModel.__init__(self, **data)
 
 class CommentRoute(Route):
     '''A route for handling comments'''
@@ -68,7 +62,9 @@ class CommentRoute(Route):
     def on_post(self, req, resp):
         for data in req.media:
             try:
-                comment = Comment(data, req.context)
+                data.setdefault('name', req.context.auth.username)
+                comment = Comment(**data)
+                log.debug(comment.dict())
             except ValidationError as err:
                 raise falcon.HTTPBadRequest(description=f"Invalid comment: {err}") from err
             self.upon_added(comment)
@@ -78,8 +74,10 @@ class CommentRoute(Route):
     def on_put(self, req, resp):
         for data in req.media:
             try:
-                comment = Comment(data, req.context)
+                data.setdefault('name', req.context.auth.username)
+                comment = Comment(**data)
                 comment.edited = True
+                log.debug(comment.dict())
             except ValidationError as err:
                 raise falcon.HTTPBadRequest(description=f"Invalid comment: {err}") from err
             self.upon_edited(comment)
@@ -90,8 +88,11 @@ class CommentRoute(Route):
         if 'uid' in req.params:
             cond_or_uid = ['=', 'uid', req.params['uid']]
         else:
-            data = req.params.get('s') or search
-            cond_or_uid = bson.json_util.loads(data)
+            string = req.params.get('s') or search
+            try:
+                cond_or_uid = bson.json_util.loads(string)
+            except Exception:
+                cond_or_uid = string
         for data in self.search('comment', cond_or_uid)['data']:
             try:
                 comment = Comment(**data)
@@ -156,11 +157,11 @@ class CommentRoute(Route):
         comments = []
         for data in self.search('comment', ['=', 'record_uid', comment.record_uid])['data']:
             try:
-                comments.append(Comment(data))
+                comments.append(Comment(**data))
             except ValidationError as err:
                 log.warning("Invalid comment at uid='%s'", data.get('uid'), exc_info=err)
                 continue
-        relevant_comments = [x for x in comments if x.is_active()]
+        relevant_comments = [x for x in comments if x.type.is_active()]
         if len(relevant_comments) > 0:
             record['state'] = relevant_comments[0].type
         else:

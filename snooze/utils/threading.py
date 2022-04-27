@@ -25,8 +25,9 @@ class SurvivingThread(Thread):
         while True:
             try:
                 self.start_thread()
+                break
             except Exception as err:
-                log.error(err)
+                log.exception(err)
                 self.stop_thread()
                 if self.restart:
                     continue
@@ -42,3 +43,4 @@ class SurvivingThread(Thread):
 
     def stop_thread(self):
         '''A wrapper to stop the thread and cleanup'''
+        self.exit.set()

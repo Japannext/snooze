@@ -17,20 +17,12 @@ import pytest
 from snooze.api.tcp import TcpThread
 from snooze.utils.config import SslConfig
 
-def get_open_port():
-    s = socket(AF_INET, SOCK_STREAM)
-    s.bind(('', 0))
-    port = s.getsockname()[1]
-    s.close()
-    return port
-
 class TestRoute:
     def on_get(self, req, resp):
         resp.media = {'result': 'Hello, world!'}
 
 @pytest.fixture(scope='function')
-def wsgiserver():
-    port = get_open_port()
+def wsgiserver(port):
     api = falcon.App()
     tcp_config = ['0.0.0.0', port, SslConfig(enabled=False)]
     api.add_route('/test', TestRoute())

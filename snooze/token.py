@@ -27,7 +27,7 @@ class TokenEngine:
         data = payload.dict()
         now = datetime.now().astimezone()
         data['exp'] = (now + lease).timestamp()
-        data['nbt'] = now.timestamp()
+        data['nbf'] = now.timestamp()
         token = jwt.encode(data, self.secret, algorithm=self.algorithm)
         return token
 
@@ -53,7 +53,7 @@ class TokenAuthMiddleware:
             scheme, credentials = authorization.split(' ', 1)
         except ValueError as err:
             raise falcon.HTTPInvalidHeader(header_name='Authorization',
-                description=f"Must be in the form `{self.scheme} <credentials>`") from err
+                msg=f"Must be in the form `{self.scheme} <credentials>`") from err
         if scheme != self.scheme:
             raise falcon.HTTPUnauthorized(description=f"Invalid authorization scheme: {scheme}."
                 f" Must be {self.scheme}")

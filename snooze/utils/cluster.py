@@ -14,17 +14,16 @@ from queue import Queue
 from threading import Event
 from typing import List, Tuple
 
-import falcon
 import requests
 import pkg_resources
 from netifaces import interfaces, ifaddresses, AF_INET
-from requests import Request
+from requests import Request, Response
 from requests.adapters import HTTPAdapter, Retry
 from requests.exceptions import RequestException
 
 from snooze.utils.threading import SurvivingThread
-from snooze.utils.config import CoreConfig, ClusterConfig
 from snooze.utils.typing import HostPort, PeerStatus
+from snooze.utils.config import CoreConfig
 from snooze.utils.exceptions import NonResolvableHost, SelfNotInCluster, SelfTooMuchInCluster
 
 log = getLogger('snooze.cluster')
@@ -48,24 +47,28 @@ class Cluster(SurvivingThread):
         self.queue = Queue()
         SurvivingThread.__init__(self, exit_event)
 
-    def handle_query(self, req: Request) -> dict:
+    def handle_query(self, req: Request) -> Response:
         '''Handle a request to other members of the cluster. We will not catch exceptions here
         because we want to fail if the retry doesn't work.'''
         session = requests.Session()
         session.mount(f"{self.schema}", ADAPTER)
         resp = session.send(req.prepare(), timeout=10)
-        return resp.json()
+        return resp
 
     def start_thread(self):
         while True:
             req: Request = self.queue.get()
-            if req is None:
+            if req is ...:
+                self.queue.task_done()
                 break
             self.handle_query(req)
+            self.queue.task_done()
 
     def stop_thread(self):
-        self.queue.put(None)
+        log.debug("Stopping cluster...")
+        self.queue.put(...)
         self.queue.join()
+        log.debug("Stopped cluster")
 
     def status(self) -> PeerStatus:
         '''Return the status, health and info of the current node'''
@@ -84,10 +87,12 @@ class Cluster(SurvivingThread):
         statuses.append(self.status())
         for member in self.others:
             try:
-                url = f"{self.schema}://{member.host}:{member.port}/api/cluster"
+                url = f"{self.schema}://{member.host}:{member.port}/api/cluster?one"
                 params = {}
                 resp = requests.get(url, params=params, timeout=10)
-                status = PeerStatus(**resp.json())
+                resp.raise_for_status()
+                data = resp.json()['data'][0]
+                status = PeerStatus(**data)
             except RequestException:
                 status = PeerStatus(
                     host=member.host,
@@ -113,9 +118,8 @@ class Cluster(SurvivingThread):
 class RequestReloadPlugin(Request):
     '''Request another member to reload a given plugin'''
     def __init__(self, site: str, plugin_name: str):
-        url = f"{site}/api/reload"
-        payload = {'reload': plugin_name}
-        Request.__init__('POST', url, json=payload)
+        url = f"{site}/api/reload/{plugin_name}"
+        Request.__init__(self, 'POST', url)
 
 class RequestSettingUpdate(Request):
     '''Request another member to rewrite a config'''
@@ -123,7 +127,7 @@ class RequestSettingUpdate(Request):
         url = f"{site}/api/settings/{section}"
         # Forwarding the authentication to the next peer
         headers = {'Authorization': auth}
-        Request.__init__('PUT', url, headers=headers, json=data)
+        Request.__init__(self, 'PUT', url, headers=headers, json=data)
 
 def who_am_i(members: List[HostPort]) -> Tuple[HostPort, List[HostPort]]:
     '''Return which member of the cluster the running program is.

@@ -48,6 +48,7 @@ class Core:
         self.config = Config(basedir)
         core_config = self.config.core
         self.db = Database(core_config.database)
+        log.debug('init db')
 
         self.stats = Stats(self.db, self.config.general)
         self.stats.init('process_alert_duration', 'summary', 'snooze_process_alert_duration',
@@ -94,6 +95,20 @@ class Core:
         if 'tcp' in allowed_threads:
             tcp_config = core_config.listen_addr, core_config.port, core_config.ssl
             self.threads['tcp'] = TcpThread(tcp_config, self.api.handler, self.exit_event)
+
+    def start(self):
+        '''Start the threads of the core'''
+        for name, thread in self.threads.items():
+            log.info("Starting thread '%s'", name)
+            thread.start()
+
+    def stop(self):
+        '''Stop all running threads of the core'''
+        for name, thread in self.threads.items():
+            if thread.is_alive():
+                log.info("Stopping thread '%s'", name)
+                thread.stop_thread()
+                thread.join(1)
 
     def load_plugins(self):
         '''Load the plugins from the configuration'''

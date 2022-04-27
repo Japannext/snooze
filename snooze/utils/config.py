@@ -12,7 +12,7 @@ from contextlib import contextmanager
 from logging import getLogger
 from pathlib import Path
 from datetime import timedelta
-from typing import Optional, List, Any, Dict, Literal, ClassVar
+from typing import Optional, List, Any, Dict, Literal, ClassVar, Union
 
 import yaml
 from filelock import FileLock

@@ -18,39 +18,16 @@ from typing import Optional, List
 
 import bson.json_util
 import falcon
-from falcon.errors import HTTPInternalServerError
 from pydantic import BaseModel, ValidationError
 
 from snooze.api.routes import *
 from snooze.utils.config import WebConfig
 from snooze.health import HealthRoute
 from snooze.token import TokenAuthMiddleware
-from snooze.utils.typing import DuplicatePolicy, AuthorizationPolicy, RouteArgs, Pagination
+from snooze.utils.typing import DuplicatePolicy, AuthorizationPolicy, RouteArgs, Pagination, USER_ERRORS
+from snooze.utils.functions import log_error_handler, log_warning_handler, log_uncaught_handler
 
 log = getLogger('snooze.api')
-
-# We're listing only the ones we might raise.
-# It will not affect performance to list many, since falcon keep a dictionary of exception => handler.
-USER_ERRORS = (
-    # HTTP 400
-    falcon.HTTPBadRequest, falcon.HTTPInvalidHeader, falcon.HTTPInvalidParam, falcon.HTTPMissingParam,
-    # HTTP 401
-    falcon.HTTPUnauthorized,
-    # HTTP 403
-    falcon.HTTPForbidden,
-    # HTTP 404
-    falcon.HTTPNotFound, falcon.HTTPRouteNotFound,
-)
-
-def log_warning_handler(err, _req, _resp, _params):
-    '''Log caught exceptions as a warning'''
-    log.warning(str(err), exc_info=err)
-    raise err
-
-def log_error_handler(err, _req, _resp, _params):
-    '''Log caught exceptions as an error'''
-    log.exception(err)
-    raise err
 
 class LoggerMiddleware:
     '''Middleware for logging'''
@@ -122,7 +99,8 @@ class Api:
         self.handler.req_options.media_handlers.update({'application/json': json_handler})
         self.handler.resp_options.media_handlers.update({'application/json': json_handler})
         self.handler.add_error_handler(USER_ERRORS, log_warning_handler)
-        self.handler.add_error_handler(Exception, log_error_handler)
+        self.handler.add_error_handler(falcon.HTTPError, log_error_handler)
+        self.handler.add_error_handler(Exception, log_uncaught_handler)
         self.auth_routes = {}
         # Alert route
         self.add_route('/alert', AlertRoute(self))

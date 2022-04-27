@@ -103,9 +103,10 @@ class Route(FalconRoute):
         validated = []
         for req_media in media:
             queries = req_media.get('qls', [])
+            auth = req.context['auth']
             req_media['snooze_user'] = {
-                'name': req.context['user']['user']['name'],
-                'method': req.context['user']['user']['method'],
+                'name': auth.username,
+                'method': auth.method,
             }
 
             # Validation

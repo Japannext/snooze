@@ -10,6 +10,7 @@
 from datetime import datetime
 from typing import NewType, List, Literal, Optional, TypedDict, Union
 
+import falcon
 from pydantic import BaseModel, Field
 
 RecordUid = NewType('RecordUid', str)
@@ -24,10 +25,23 @@ ConditionOrUid = Optional[Union[str, list]]
 
 DuplicatePolicy = Literal['insert', 'reject', 'replace', 'update']
 
+# We're listing only the ones we might raise.
+# It will not affect performance to list many, since falcon keep a dictionary of exception => handler.
+USER_ERRORS = (
+    # HTTP 400
+    falcon.HTTPBadRequest, falcon.HTTPInvalidHeader, falcon.HTTPInvalidParam, falcon.HTTPMissingParam,
+    # HTTP 401
+    falcon.HTTPUnauthorized,
+    # HTTP 403
+    falcon.HTTPForbidden,
+    # HTTP 404
+    falcon.HTTPNotFound, falcon.HTTPRouteNotFound,
+)
+
 class AuthorizationPolicy(BaseModel):
     '''A list of authorized policy for read and write'''
-    read: Optional[List[str]]
-    write: Optional[List[str]]
+    read: List[str] = Field(default_factory=list)
+    write: List[str] = Field(default_factory=list)
 
 class RouteArgs(BaseModel):
     '''Description of the arguments passed to a route'''
@@ -86,9 +100,16 @@ class AuthPayload(BaseModel):
     permissions: List[str] = Field(default_factory=list)
     groups: List[str] = Field(default_factory=list)
 
-class Profile(BaseModel):
-    '''Represent a user and its preferences in the database'''
-    username: str
+class ProfileGeneral(BaseModel):
+    '''Represent a user profile in the database'''
+    name: str
     method: str
     display_name: Optional[str] = None
     email: Optional[str] = None
+
+class ProfilePreferences(BaseModel):
+    '''Represent the preference page of a user'''
+    name: str
+    method: str
+    default_page: str = '/record'
+    theme: str = 'default'

@@ -30,3 +30,10 @@ class TestCore:
         core.process_record(record)
         data = core.db.search('record')['data'][0]
         assert data['state'] == 'close'
+
+class TestCoreThread:
+
+    def test_start_stop(started_core):
+        '''The fixture will start the core, and stop all threads upon closure.
+        If pytest hangs, then consider this test a failure'''
+        assert started_core
