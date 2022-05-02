@@ -8,10 +8,13 @@
 '''Typing utils for snooze'''
 
 from datetime import datetime
-from typing import NewType, List, Literal, Optional, TypedDict, Union
+from typing import NewType, List, Literal, Optional, TypedDict, Union, Generic, TypeVar
 
 import falcon
-from pydantic import BaseModel, Field
+import jinja2
+from pydantic import BaseModel, Field, ValidationError
+from pydantic.fields import ModelField
+from pydantic.generics import GenericModel
 
 RecordUid = NewType('RecordUid', str)
 Record = NewType('Record', dict)
@@ -92,10 +95,21 @@ class Query(BaseModel):
     ql: str
     field: str
 
+class SnoozeUser(BaseModel):
+    '''Represent the minimum information to uniquely identify a user in the system'''
+    name: str = Field(
+        title='User name',
+        description='Name of the user in the system. Depends on the method.',
+    )
+    method: str = Field(
+        title='Authentication method',
+        description='Authentication method used by the user',
+    )
+
 class AuthPayload(BaseModel):
     '''An object representing the authentication payload that will
     be contained in the JWT token'''
-    username: str
+    name: str
     method: str
     roles: List[str] = Field(default_factory=list)
     permissions: List[str] = Field(default_factory=list)
@@ -114,3 +128,48 @@ class ProfilePreferences(BaseModel):
     method: str
     default_page: str = '/record'
     theme: str = 'default'
+
+T = TypeVar('T')
+
+class JinjaTemplate(Generic[T]):
+    '''A Jinja template type for pydantic (support for validation/deserialization)'''
+    raw: T
+    template: Optional[jinja2.Template]
+
+    def __init__(self, raw: T):
+        self.raw = raw
+        if isinstance(raw, str) and '{' in raw:
+            self.template = jinja2.Template(raw)
+        else:
+            self.template = None
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def __modify_schema__(cls, field_schema):
+        pass
+
+    @classmethod
+    def validate(cls, value, field: ModelField):
+        '''Validate the jinja template'''
+        if isinstance(value, str):
+            value = cls(value)
+        if not field.sub_fields:
+            return value
+        inner_type = field.sub_fields[0]
+        _, error = inner_type.validate(value.raw, {}, loc='raw')
+        if error:
+            raise ValidationError([error], cls)
+        return value
+
+    def resolve(self, env: dict) -> T:
+        '''Render the template if it's a jinja template'''
+        if self.template:
+            return self.template.render(env)
+        else:
+            return self.raw
+
+    def __repr__(self):
+        return f"JinjaTemplate({repr(self.raw)})"

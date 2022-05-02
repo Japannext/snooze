@@ -10,14 +10,14 @@ Modifications are used by the rule core plugin to modify records
 automatically based on a rule.
 '''
 
-import re
 from abc import abstractmethod
 from logging import getLogger
-from typing import Optional
+from typing import Literal, Union, List, Any, Pattern
 
-from jinja2 import Template
+import jinja2
+from pydantic import BaseModel, Field
 
-from snooze.utils.typing import Record
+from snooze.utils.typing import Record, JinjaTemplate
 
 log = getLogger('snooze.utils.modification')
 
@@ -33,77 +33,120 @@ class ModificationInvalid(RuntimeError):
         message = f"Error in modification '{name}' ({args}): {err}"
         super().__init__(message)
 
-def resolve(record: Record, args: list):
-    '''Return the arguments evaluated if it's a template'''
-    return [
-        Template(arg).render(record)
-        if isinstance(arg, str) else arg
-        for arg in args
-    ]
+OperationType = Literal[
+    # Field operations
+    'SET', 'DELETE',
+    # Array operations
+    'ARRAY_APPEND',
+    'ARRAY_DELETE',
+    # Regex operations
+    'REGEX_PARSE', 'REGEX_SUB',
+    # Others
+    'KV_SET',
+]
 
-class Modification:
+class ModificationBase(BaseModel):
     '''A class to represent a modification'''
-
-    def __init__(self, args: list, core: 'Optional[Core]' = None):
-        self.core = core
-        self.args = args
+    type: OperationType = Field(...)
+    core: 'Optional[Core]' = None
 
     @abstractmethod
     def modify(self, record: Record) -> bool:
         '''Called when the modification should be applied to a record'''
 
-    def pprint(self) -> str:
-        '''Pretty print of the modification object'''
-        return f"{self.__class__.__name__}({self.args})"
+    def resolve(self, record: Record, fields: List[str]):
+        '''Resolve jinja templates for all fields using the record as a dict'''
+        return [
+            jinja2.Template(self[field]).render(record)
+            for field in fields
+        ]
 
-class SetOperation(Modification):
+    def __str__(self):
+        return ''
+
+class SetOperation(ModificationBase):
     '''Set a key to a given value'''
+    type: Literal['SET'] = 'SET'
+    field: JinjaTemplate[str]
+    value: JinjaTemplate[Any]
+
     def modify(self, record: Record) -> bool:
-        key, value = resolve(record, self.args)
+        field = self.field.resolve(record)
+        value = self.value.resolve(record)
         try:
-            return_code = bool(value and record.get(key) != value)
-            record[key] = value
+            return_code = bool(value and record.get(field) != value)
+            record[field] = value
             return return_code
         except Exception:
             return False
 
-class DeleteOperation(Modification):
+    def __str__(self):
+        return f"record[{self.field}] = {repr(self.value)}"
+
+class DeleteOperation(ModificationBase):
     '''Delete a given key'''
+    type: Literal['SET'] = 'SET'
+    field: JinjaTemplate[str]
+
     def modify(self, record: Record) -> bool:
-        key, *_ = resolve(record, self.args)
+        field = self.field.resolve(record)
         try:
-            del record[key]
+            del record[field]
             return True
         except KeyError:
             return False
 
-class ArrayAppendOperation(Modification):
-    '''Append an element to a key, if this key is an array/list'''
-    def modify(self, record: Record) -> bool:
-        key, value = resolve(record, self.args)
-        array = record.get(key)
-        if isinstance(array, list):
-            record[key] += value
-            return True
-        return False
+    def __str__(self):
+        return f"del record[{self.field}]"
 
-class ArrayDeleteOperation(Modification):
-    '''Delete an element from an array/list, by value'''
+class ArrayAppendOperation(ModificationBase):
+    '''Append an element to a key, if this key is an array/list'''
+    type: Literal['ARRAY_APPEND'] = 'ARRAY_APPEND'
+    field: JinjaTemplate[str]
+    value: JinjaTemplate[Any]
+
     def modify(self, record: Record) -> bool:
-        key, value = resolve(record, self.args)
+        field = self.field.resolve(record)
+        value = self.value.resolve(record)
+        array = record.get(field)
+        if isinstance(array, list):
+            array += value
+            return True
+        else:
+            return False
+
+    def __str__(self):
+        return f"record[{self.field}].append({repr(self.value)})"
+
+class ArrayDeleteOperation(ModificationBase):
+    '''Delete an element from an array/list, by value'''
+    type: Literal['ARRAY_APPEND'] = 'ARRAY_APPEND'
+    field: JinjaTemplate[str]
+    value: JinjaTemplate[Any]
+
+    def modify(self, record: Record) -> bool:
+        field = self.field.resolve(record)
+        value = self.value.resolve(record)
         try:
-            record[key].remove(value)
+            record[field].remove(value)
             return True
         except (ValueError, KeyError):
             return False
 
-class RegexParse(Modification):
+    def __str__(self):
+        return f"record[{self.field}].remove({repr(self.value)})"
+
+class RegexParse(ModificationBase):
     '''Given a key and a regex with named capture groups, parse the
     key's value, and merge the captured elements with the record'''
+    type: Literal['REGEX_PARSE'] = 'REGEX_PARSE'
+    field: JinjaTemplate[str]
+    regex: Pattern
+
     def modify(self, record: Record) -> bool:
         try:
-            key, regex = resolve(record, self.args)
-            results = re.search(regex, record[key])
+            field = self.field.resolve(record)
+            results = self.regex.search(record[field])
             if results:
                 for name, value in results.groupdict({}).items():
                     record[name] = value
@@ -111,70 +154,52 @@ class RegexParse(Modification):
             return False
         except KeyError:
             return False
-        except re.error as err:
-            log.warning("Syntax error in REGEX_PARSE: regex `%s` has error: %s", regex, err)
-            return False
 
-class RegexSub(Modification):
+class RegexSub(ModificationBase):
     '''Apply a regex search and replace expression to a key's value'''
+    type: Literal['REGEX_SUB'] = 'REGEX_SUB'
+    field: JinjaTemplate[str]
+    regex: Pattern
+    sub: JinjaTemplate[str]
+    out_field: str
+
     def modify(self, record: Record) -> bool:
-        key, out_key, regex, sub = resolve(record, self.args)
+        field = self.field.resolve(record)
+        sub = self.sub.resolve(record)
         try:
-            value = record[key]
-            new_value = re.sub(regex, sub, value)
-            record[out_key] = new_value
+            new_value = self.regex.sub(sub, record[field])
+            record[self.out_field] = new_value
             return True
         except (KeyError, TypeError):
             return False
-        except re.error as err:
-            log.warning("Syntax error in REGEX_SUB: regex `%s` has error: %s", regex, err)
-            return False
 
-class KvSet(Modification):
+class KvSet(ModificationBase):
     '''Match the key's value with the corresponding value from the kv core plugin'''
-    def __init__(self, args: list, core: 'Optional[Core]'):
-        super().__init__(args, core)
-        self.dict, self.key, self.out_field = args
-        self.kv_plugin = core.get_core_plugin('kv')
-        if not self.kv_plugin:
-            raise Exception('KV plugin not present. Could not load Modification')
+    dictionary: JinjaTemplate[str]
+    field: JinjaTemplate[str]
+    out_field: JinjaTemplate[str]
+
     def modify(self, record: Record) -> bool:
         try:
-            record_key = record[self.key]
-            log.debug("Check if Record has key: %s=%s", self.key, record_key)
-            out_value = self.kv_plugin.get(self.dict, record_key)
-            log.debug("Found key-value: %s[%s] = %s", self.dict, record_key, out_value)
-            record[self.out_field] = out_value
+            field = self.field.resolve(record)
+            dictionary = self.dictionary.resolve(record)
+            out_field = self.out_field.resolve(record)
+            out_value = self.core.get_core_plugin('kv').get(dictionary, record.get(field))
+            log.debug("Found key-value: %s[%s] = %s", dictionary, record.get(field), out_value)
+            record[out_field] = out_value
             return True
         except (KeyError, IndexError):
             return False
 
+Modification = Union[
+    SetOperation,
+    DeleteOperation,
+    ArrayAppendOperation,
+    ArrayDeleteOperation,
+    RegexParse,
+    RegexSub,
+    KvSet,
+]
 
-OPERATIONS = {
-    'SET': SetOperation,
-    'DELETE': DeleteOperation,
-    'ARRAY_APPEND': ArrayAppendOperation,
-    'ARRAY_DELETE': ArrayDeleteOperation,
-    'REGEX_PARSE': RegexParse,
-    'REGEX_SUB': RegexSub,
-    'KV_SET': KvSet,
-}
-
-def validate_modification(obj: list, core: 'Optional[Core]' = None):
-    '''Raise an exception if the object contains an invalid modification'''
-    modifications = obj.get('modifications', [])
-    for modification in modifications:
-        get_modification(modification, core=core)
-
-def get_modification(args: list, core: 'Optional[Core]' = None) -> Modification:
-    '''Return the modification class to run'''
-    try:
-        operation = args[0]
-        modification = args[1:]
-        return OPERATIONS[operation](modification, core=core)
-    except IndexError as err:
-        raise Exception(f"Error with modification `{args}`") from err
-    except KeyError as err:
-        raise OperationNotSupported(operation) from err
-    except TypeError as err:
-        raise ModificationInvalid(operation, args, err) from err
+def guess_modification(data: dict) -> Modification:
+    ...

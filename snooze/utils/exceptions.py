@@ -62,3 +62,9 @@ class DatabaseError(RuntimeError):
         self.operation = operation
         self.details = details
         super().__init__(self, f"Database error during {operation} ({details}): {err}")
+
+class ImmutableFieldError(RuntimeError):
+    '''Raised when an immutable field is being updated'''
+    def __init__(self, collection: str, field: str):
+        super().__init__(self, f"Field '{field}' in collection '{collection}' is immutable and cannot be updated")
+

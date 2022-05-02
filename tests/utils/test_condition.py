@@ -9,206 +9,218 @@ Tests for conditions. Each condition is tested in its own class.
 '''
 
 import pytest
+from pydantic import ValidationError
+
 from snooze.utils.condition import *
 
 class TestEquals:
-    def test_get_condition(self):
-        condition = get_condition(['=', 'a', '0'])
+    def test_guess(self):
+        condition = guess_condition({'type': '=', 'field': 'a', 'value': '0'})
         assert isinstance(condition, Equals)
+        assert condition.type == '='
     def test_init(self):
-        condition = Equals(['=', 'a', '0'])
-        assert isinstance(condition, Condition)
+        condition = Equals(field='a', value='0')
+        assert isinstance(condition, ConditionBase)
     def test_match_simple(self):
         record = {'a': '1', 'b': '2'}
-        condition = Equals(['=', 'a', '1'])
+        condition = Equals(field='a', value='1')
         assert condition.match(record) == True
     def test_match_nested_dict(self):
         record = {'a': '1', 'b': {'c': '1'}}
-        condition = Equals(['=', 'b.c', '1'])
+        condition = Equals(field='b.c', value='1')
         assert condition.match(record) == True
     def test_miss_nested_dict(self):
         record = {'a': '1', 'b': {'c': 1}}
-        condition = Equals(['=', 'a.c', '2'])
+        condition = Equals(field='a.c', value='2')
         assert condition.match(record) == False
     def test_match_nested_list(self):
         record = {'a': ['1', '2']}
-        condition = Equals(['=', 'a.1', '2'])
+        condition = Equals(field='a.1', value='2')
         assert condition.match(record) == True
     def test_str(self):
-        condition = Equals(['=', 'a.1', '2'])
-        assert str(condition) == "(a.1 = '2')"
+        condition = Equals(field='a.1', value='2')
+        assert str(condition) == "a.1 = '2'"
     def test_edge_no_field(self):
         record = {'a': '1'}
-        with pytest.raises(ConditionInvalid):
-            condition = Equals(['=', None, '1'])
+        with pytest.raises(ValidationError):
+            condition = Equals(field=None, value='1')
     def test_edge_no_value(self):
         record = {'a': '1'}
-        condition = Equals(['=', 'a', None])
+        condition = Equals(field='a', value=None)
         assert condition.match(record) == False
 
 class TestNotEquals:
-    def test_get_condition(self):
-        condition = get_condition(['!=', 'a', '0'])
+    def test_guess_condition(self):
+        condition = guess_condition({'type': '!=', 'field': 'a', 'value': '0'})
         assert isinstance(condition, NotEquals)
+        assert condition.type == '!='
     def test_init(self):
-        condition = NotEquals(['!=', 'a', '1'])
-        assert isinstance(condition, Condition)
+        condition = NotEquals(field='a', value='1')
+        assert isinstance(condition, ConditionBase)
     def test_miss(self):
         record = {'a': '1', 'b': '2'}
-        condition = NotEquals(['!=', 'a', '1'])
+        condition = NotEquals(field='a', value='1')
         assert condition.match(record) == False
     def test_str(self):
-        condition = NotEquals(['!=', 'a', 1])
-        assert str(condition) == "(a != 1)"
+        condition = NotEquals(field='a', value=1)
+        assert str(condition) == "a != 1"
 
 class TestGreaterThan:
-    def test_get_condition(self):
-        condition = get_condition(['>', 'a', '0'])
+    def test_guess_condition(self):
+        condition = guess_condition({'type': '>', 'field': 'a', 'value': '0'})
         assert isinstance(condition, GreaterThan)
     def test_init(self):
-        condition = GreaterThan(['>', 'b', '1'])
-        assert isinstance(condition, Condition)
+        condition = GreaterThan(field='b', value='1')
+        assert isinstance(condition, ConditionBase)
     def test_match_two_float(self):
         record = {'a': 1.0, 'b': 2.0}
-        condition = GreaterThan(['>', 'b', 1.0])
+        condition = GreaterThan(field='b', value=1.0)
         assert condition.match(record) == True
     def test_match_string_and_integer(self):
         record = {'a': 1, 'b': 2}
-        condition = GreaterThan(['>', 'b', '1'])
+        condition = GreaterThan(field='b', value='1')
         assert condition.match(record) == False
     def test_str(self):
-        condition = GreaterThan(['>', 'x', 100])
-        assert str(condition) == "(x > 100)"
+        condition = GreaterThan(field='x', value=100)
+        assert str(condition) == "x > 100"
 
 class TestLowerThan:
-    def test_get_condition(self):
-        condition = get_condition(['<', 'a', '0'])
+    def test_guess_condition(self):
+        condition = guess_condition({'type': '<', 'field': 'a', 'value': '0'})
         assert isinstance(condition, LowerThan)
     def test_init(self):
-        condition = LowerThan(['<', 'var', 'ab'])
-        assert isinstance(condition, Condition)
+        condition = LowerThan(field='var', value='ab')
+        assert isinstance(condition, ConditionBase)
     def test_match_two_string(self):
         record = {'var': 'aa'}
-        condition = LowerThan(['<', 'var', 'ab'])
+        condition = LowerThan(field='var', value='ab')
         assert condition.match(record) == True
     def test_str(self):
-        condition = LowerThan(['<', 'x', 100])
-        assert str(condition) == "(x < 100)"
+        condition = LowerThan(field='x', value=100)
+        assert str(condition) == "x < 100"
 
 class TestAnd:
-    def test_get_condition(self):
-        condition = get_condition(['AND', ['=', 'a', 1], ['=', 'b', 2]])
+    def test_guess_condition(self):
+        condition = guess_condition({'type': 'AND', 'conditions': [
+            {'type': '=', 'field': 'a', 'value': 1},
+            {'type': '=', 'field': 'b', 'value': 2},
+        ]})
         assert isinstance(condition, And)
     def test_init(self):
-        condition = And(['AND', ['=', 'a', 1], ['=', 'b', 2]])
-        assert isinstance(condition, Condition)
+        condition = And(conditions=[Equals(field='a', value=1), Equals(field='b', value=2)])
+        assert isinstance(condition, ConditionBase)
     def test_operation(self):
-        condition = Equals(['=', 'a', 1]) & Equals(['=', 'b', 2])
+        condition = Equals(field='a', value=1) & Equals(field='b', value=2)
         assert isinstance(condition, And)
     def test_matches(self):
         record = {'a': 1, 'b': 2}
         conditions = [
-            And(['AND', ['=', 'a', 1], ['=', 'b', 2]])
+            Equals(field='a', value=1) & Equals(field='b', value=2)
         ]
         for condition in conditions:
             assert condition.match(record) == True
     def test_misses(self):
         record = {'a': 1, 'b': 2}
         conditions = [
-            And(['AND', ['=', 'a', 1], ['=', 'b', 3]])
+            Equals(field='a', value=1) & Equals(field='b', value=3)
         ]
         for condition in conditions:
-            assert condition.match(record) == False
+            assert condition.match(record) is False
     def test_multiple(self):
         record = {'a': 1, 'b': 2, 'c': 3}
-        condition = And(['AND', ['=', 'a', 1], ['=', 'b', 2], ['=', 'c', 3]])
-        assert condition.match(record) == True
+        condition = And(conditions=[
+            Equals(field='a', value=1),
+            Equals(field='b', value=2),
+            Equals(field='c', value=3),
+        ])
+        assert condition.match(record) is True
     def test_nested(self):
         record = {'a': 1, 'b': 2, 'c': 3}
-        condition = And(['AND', ['=', 'a', 1], ['AND', ['=', 'b', 2], ['=', 'c', 3]]])
-        assert condition.match(record) == True
+        condition = Equals(field='a', value=1) & (Equals(field='b', value=2) & Equals(field='c', value=3))
+        assert condition.match(record) is True
     def test_nested_miss(self):
         record = {'a': 1, 'b': 2, 'c': 3}
-        condition = And(['AND', ['=', 'a', 1], ['AND', ['=', 'b', 2], ['=', 'c', 4]]])
-        assert condition.match(record) == False
+        condition = Equals(field='a', value=1) & (Equals(field='b', value=2) & Equals(field='c', value=4))
+        assert condition.match(record) is False
     def test_str(self):
-        condition = Equals(['=', 'a', 1]) & Equals(['=', 'b', 2])
-        assert str(condition) == "((a = 1) & (b = 2))"
+        condition = Equals(field='a', value=1) & Equals(field='b', value=2)
+        assert str(condition) == "(a = 1 & b = 2)"
 
 class TestOr:
-    def test_get_condition(self):
-        condition = get_condition(['OR', ['=', 'a', 1], ['=', 'b', 2]])
+    def test_guess_condition(self):
+        condition = guess_condition({'type': 'OR', 'conditions': [Equals(field='a', value=1), Equals(field='b', value=2)]})
         assert isinstance(condition, Or)
     def test_init(self):
-        condition = Or(['OR', ['=', 'a', 1], ['=', 'b', 2]])
-        assert isinstance(condition, Condition)
+        condition = Or(conditions=[Equals(field='a', value=1), Equals(field='b', value=2)])
+        assert isinstance(condition, ConditionBase)
     def test_match(self):
         record = {'a': 1, 'b': 3}
-        condition = Or(['OR', ['=', 'a', 1], ['=', 'b', 2]])
-        assert condition.match(record) == True
+        condition = Or(conditions=[Equals(field='a', value=1), Equals(field='b', value=2)])
+        assert condition.match(record) is True
     def test_multiple(self):
         record = {'a': 1, 'b': 2, 'c': 3}
-        condition = Or(['OR', ['=', 'a', 6], ['=', 'b', 4], ['=', 'c', 3]])
-        assert condition.match(record) == True
+        condition = Or(conditions=[Equals(field='a', value=6), Equals(field='b', value=4), Equals(field='c', value=3)])
+        assert condition.match(record) is True
     def test_str(self):
-        condition = Equals(['=', 'a', 1]) | Equals(['=', 'b', 2])
-        assert str(condition) == "((a = 1) | (b = 2))"
+        condition = Equals(field='a', value=1) | Equals(field='b', value=2)
+        assert str(condition) == "(a = 1 | b = 2)"
 
 class TestNot:
-    def test_get_condition(self):
-        condition = get_condition(['NOT', ['=', 'a', 1]])
+    def test_guess_condition(self):
+        condition = guess_condition({'type': 'NOT', 'condition': Equals(field='a', value=1)})
         assert isinstance(condition, Not)
     def test_init(self):
-        condition = Not(['NOT', ['=', 'a', 1]])
-        assert isinstance(condition, Condition)
+        condition = Not(condition=Equals(field='a', value=1))
+        assert isinstance(condition, ConditionBase)
     def test_match(self):
         record = {'a': 1, 'b': 3}
-        condition = Not(['NOT', ['=', 'a', 2]])
-        assert condition.match(record) == True
+        condition = Not(condition=Equals(field='a', value=2))
+        assert condition.match(record) is True
     def test_miss(self):
         record = {'a': 1, 'b': 3}
-        condition = Not(['NOT', ['=', 'a', 1]])
-        assert condition.match(record) == False
+        condition = Not(condition=Equals(field='a', value=1))
+        assert condition.match(record) is False
     def test_str(self):
-        condition = ~Equals(['=', 'b', 2])
+        condition = ~Equals(field='b', value=2)
         assert str(condition) == "!(b = 2)"
 
 class TestMatches:
-    def test_get_condition(self):
-        condition = get_condition(['MATCHES', 'a', 'string'])
+    def test_guess_condition(self):
+        condition = guess_condition({'type': 'MATCHES', 'field': 'a', 'value': 'string'})
         assert isinstance(condition, Matches)
     def test_match(self):
         record = {'a': '__pattern__'}
-        condition = Matches(['MATCHES', 'a', 'pattern'])
-        assert condition.match(record) == True
+        condition = Matches(field='a', value='pattern')
+        assert condition.match(record) is True
     def test_match_sugar(self):
         record = {'a': '__pattern__'}
-        condition = Matches(['MATCHES', 'a', '/pattern/'])
-        assert condition.match(record) == True
+        condition = Matches(field='a', value='/pattern/')
+        assert condition.match(record) is True
     def test_str(self):
-        condition = Matches(['MATCHES', 'a', '/string/'])
-        assert str(condition) == "(a ~ '/string/')"
+        condition = Matches(field='a', value='/string/')
+        assert str(condition) == "a ~ /string/"
 
 class TestExists:
-    def test_get_condition(self):
-        condition = get_condition(['EXISTS', 'a'])
+    def test_guess_condition(self):
+        condition = guess_condition({'type': 'EXISTS', 'field': 'a'})
         assert isinstance(condition, Exists)
     def test_match(self):
         record = {'a': '1'}
-        condition = Exists(['EXISTS', 'a'])
+        condition = Exists(field='a')
         assert condition.match(record) == True
     def test_miss(self):
         record = {'a': '1'}
-        condition = Exists(['EXISTS', 'b'])
+        condition = Exists(field='b')
         assert condition.match(record) == False
     def test_str(self):
-        condition = Exists(['EXISTS', 'a'])
+        condition = Exists(field='a')
         assert str(condition) == "a?"
 
 class TestContains:
-    def test_get_condition(self):
-        condition = get_condition(['CONTAINS', 'a', 'substring'])
-        assert isinstance(condition, Contains)
+    def test_guess_condition(self):
+        condition = guess_condition({'type': 'CONTAINS', 'field': 'a', 'value': 'element'})
+        assert isinstance(condition, ArrayContains)
+    """
     def test_match_search_in_string(self):
         record = {'a': ['0', ['11', '2', 9], '3']}
         condition1 = Contains(['CONTAINS', 'a', '1'])
@@ -221,13 +233,15 @@ class TestContains:
         condition2 = Contains(['CONTAINS', 'b', ['0', 9]])
         assert condition1.match(record) == True
         assert condition2.match(record) == True
+    """
     def test_str(self):
-        condition = Contains(['CONTAINS', 'a', 'substring'])
-        assert str(condition) == "(a contains 'substring')"
+        condition = ArrayContains(field='a', value='element')
+        assert str(condition) == "a contains 'element'"
 
+"""
 class TestIn:
-    def test_get_condition(self):
-        condition = get_condition(['IN', ['1', '2', '3'], 'a'])
+    def test_guess_condition(self):
+        condition = guess_condition(['IN', ['1', '2', '3'], 'a'])
         assert isinstance(condition, In)
     def test_match_list(self):
         record = {'a': '1', 'b': 1}
@@ -254,33 +268,41 @@ class TestIn:
     def test_str(self):
         condition = In(['IN', 'element', 'a'])
         assert str(condition) == "('element' in a)"
+"""
 
 class TestSearch:
-    def test_get_condition(self):
-        condition = get_condition(['SEARCH', 'string'])
+    def test_guess_condition(self):
+        condition = guess_condition({'type': 'SEARCH', 'value': 'string'})
         assert isinstance(condition, Search)
     def test_match_incomplete_field(self):
         record = {'myfield': [{'b':'mystring'}, {'mysearch': '0'}]}
-        condition = Search(['SEARCH', 'field'])
-        assert condition.match(record) == True
+        condition = Search(value='field')
+        assert condition.match(record) is True
     def test_match_nested_value(self):
         record = {'myfield': [{'b':'mystring'}, {'mysearch': '0'}]}
-        condition = Search(['SEARCH', 'string'])
-        assert condition.match(record) == True
+        condition = Search(value='string')
+        assert condition.match(record) is True
     def test_match_incomplete_nested_field(self):
         record = {'myfield': [{'b':'mystring'}, {'mysearch': '0'}]}
-        condition = Search(['SEARCH', 'search'])
-        assert condition.match(record) == True
+        condition = Search(value='search')
+        assert condition.match(record) is True
     def test_miss(self):
         record = {'myfield': [{'b':'mystring'}, {'mysearch': '0'}]}
-        condition = Search(['SEARCH', 'value'])
-        assert condition.match(record) == False
+        condition = Search(value='value')
+        assert condition.match(record) is False
     def test_str(self):
-        condition = Search(['SEARCH', 'mystring'])
+        condition = Search(value='mystring')
         assert str(condition) == "(SEARCH 'mystring')"
 
 class TestAlwaysTrue:
-    def test_get_condition(self):
+    def test_guess_condition(self):
+        condition = guess_condition({'type': 'ALWAYS_TRUE'})
+        assert isinstance(condition, AlwaysTrue)
+        assert condition.type == 'ALWAYS_TRUE'
+
+"""
+class TestAlwaysTrue:
+    def test_guess_condition(self):
         conditions = [
             [],
             [''],
@@ -288,7 +310,7 @@ class TestAlwaysTrue:
             None,
         ]
         for condition_str in conditions:
-            condition = get_condition(condition_str)
+            condition = guess_condition(condition_str)
             assert isinstance(condition, AlwaysTrue)
 
     def test_match(self):
@@ -300,3 +322,4 @@ class TestAlwaysTrue:
         condition = AlwaysTrue()
         for record in records:
             assert condition.match(record) == True
+"""

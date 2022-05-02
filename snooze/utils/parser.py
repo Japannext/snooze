@@ -10,16 +10,23 @@
 import pyparsing as pp
 from pyparsing import pyparsing_common as ppc
 
+from pydantic import BaseModel, Field
+
+from snooze.utils.condition import Condition, And, Or, Not, guess_condition
+
 pp.ParserElement.enablePackrat()
 
 EQUAL = pp.Literal('=')
 NOT_EQUAL = pp.Literal('!=')
 GT = pp.Literal('>')
 LT = pp.Literal('<')
+GTE = pp.Literal('>=')
+LTE = pp.Literal('<=')
 MATCHES = (pp.CaselessKeyword('MATCHES') | pp.Literal('~')).setParseAction(lambda: 'MATCHES')
 EXISTS = (pp.CaselessKeyword('EXISTS') | pp.Literal('?')).setParseAction(lambda: 'EXISTS')
 CONTAINS = (pp.CaselessKeyword('CONTAINS')).setParseAction(lambda: 'CONTAINS')
 IN = (pp.CaselessKeyword('IN')).setParseAction(lambda: 'IN')
+SEARCH = pp.CaselessKeyword('SEARCH')
 
 LPAR, RPAR, LBRACK, RBRACK, LBRACE, RBRACE, COLON = map(pp.Suppress, '()[]{}:')
 
@@ -53,91 +60,35 @@ hashmap.setParseAction(lambda t: t.asDict())
 term = pp.Forward()
 expression = pp.Forward()
 
-operation = EQUAL | NOT_EQUAL | MATCHES | GT | LT | CONTAINS
+binary_operation = EQUAL | NOT_EQUAL | MATCHES | GT | LT | GTE | LTE | CONTAINS | IN
 field_operation = EXISTS
-reverse_op = IN
+unary_operation = SEARCH
 
 term << (
-    (fieldname('field') + operation('operation') + literal('value'))
-    | (fieldname('field') + field_operation('operation'))
-    | literal('field') + reverse_op('operation') + fieldname('value')
+    (fieldname('field') + binary_operation('type') + literal('value'))
+    | (fieldname('field') + field_operation('type'))
+    | (unary_operation('type') + fieldname('value'))
     | literal('value')
 )
 
-class Term:
-    '''Parser action for terms'''
-    def __init__(self, tokens):
-        if 'field' in tokens:
-            self.field = tokens['field']
-            self.operation = tokens['operation']
-        else:
-            self.field = None
-            self.operation = None
-        if 'value' in tokens:
-            self.value = tokens['value']
-        else:
-            self.value = None
-    def __repr__(self):
-        if self.field and self.value:
-            key_value = [self.field, self.value]
-            return f"Term({self.operation}, {key_value})"
-        else:
-            return f"Term({self.value})"
-    def asList(self):
-        '''Return the parsed result'''
-        if self.field is not None and self.value is not None:
-            return [self.operation, self.field, self.value]
-        elif self.field is not None:
-            return [self.operation, self.field]
-        elif self.value is not None:
-            return ['SEARCH', self.value]
+def term_parser(tokens):
+    '''Parse an expression'''
+    if 'type' not in tokens:
+        tokens['type'] = 'SEARCH'
+    return guess_condition(tokens)
 
-class Operation:
-    '''Parser action for operations'''
-    def __init__(self, tokens):
-        tokens = tokens[0]
-        if len(tokens) > 1:
-            if tokens[0] == 'NOT':
-                self.oper = 'NOT'
-                if tokens[1] == 'NOT':
-                    self.args = [Operation([tokens[1:]])]
-                else:
-                    self.args = [tokens[1]]
-            elif tokens[1] in ['AND', 'OR']:
-                self.oper = tokens[1]
-                if len(tokens) > 3:
-                    self.args = [tokens[0], Operation([tokens[2:]])]
-                else:
-                    self.args = [tokens[0], tokens[2]]
-        else:
-            raise Exception(f"Unexpected operation: {tokens}")
-    def __repr__(self):
-        return f"Operation({self.oper}, {self.args})"
-    def asList(self):
-        '''Return the parsed result'''
-        args = []
-        for arg in self.args:
-            if isinstance(arg, Operation):
-                args.append(arg.asList())
-            elif isinstance(arg, Term):
-                args.append(arg.asList())
-            else:
-                args.append(arg)
-        return [self.oper, *args]
-
-term.setParseAction(Term)
+term.setParseAction(term_parser)
 
 # Parse expressions that have an order of priority in operations
-expression << pp.infixNotation(
-    term,
-    [
-        (NOT, 1, pp.opAssoc.RIGHT, Operation),
-        (OR, 2, pp.opAssoc.LEFT, Operation),
-        (AND, 2, pp.opAssoc.LEFT, Operation),
-    ],
-)
+logic_operations = [
+    (NOT, 1, pp.opAssoc.RIGHT, lambda tokens: Not(condition=tokens[0][1])),
+    (OR, 2, pp.opAssoc.LEFT, lambda tokens: Or(conditions=tokens[0][::2])),
+    (AND, 2, pp.opAssoc.LEFT, lambda tokens: And(conditions=tokens[0][::2])),
+]
 
-def parser(data):
+expression << pp.infixNotation(term, logic_operations)
+
+def parser(data: str) -> Condition:
     '''Parse a query string'''
-    result = expression.parseString(data).asList()[0].asList()
+    result = expression.parseString(data)[0]
     return result
