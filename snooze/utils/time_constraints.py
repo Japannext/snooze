@@ -8,98 +8,127 @@
 '''A module for managing time constraint objects, mainly used by the
 snooze and notification core plugins'''
 
-import sys
-from abc import ABC, abstractmethod
-from collections import defaultdict
-from datetime import datetime, timedelta
-from logging import getLogger
-from typing import List, Optional, NewType, Tuple
+from __future__ import annotations
 
-from dateutil import parser
+from abc import ABC, abstractmethod
+from datetime import datetime, timedelta, time
+from enum import Enum
+from logging import getLogger
+from typing import List, Optional, Tuple, Literal, Dict, Union, ForwardRef
+
+import dateutil.parser
+from pydantic import BaseModel, Field, validator
 
 from snooze.utils.typing import Record
 
-TimeRange = Tuple[datetime, datetime]
+DatetimeRange = Tuple[datetime, datetime]
 
 log = getLogger('snooze.time_constraints')
 
 def get_record_date(record: Record) -> datetime:
     '''Extract the date of the record and return a `datetime` object'''
     if record.get('timestamp'):
-        record_date = parser.parse(record['timestamp']).astimezone()
+        record_date = dateutil.parser.parse(record['timestamp']).astimezone()
     elif record.get('date_epoch'):
         record_date = datetime.fromtimestamp(record['date_epoch']).astimezone()
     else:
         record_date = datetime.now().astimezone()
     return record_date
 
-class Constraint(ABC):
+OperatorType = Literal['datetime', 'time', 'weekdays', 'AND', 'OR', 'NOT']
+
+# ForwardRefs
+# https://pydantic-docs.helpmanual.io/usage/postponed_annotations/
+And = ForwardRef('And')
+Or = ForwardRef('Or')
+Not = ForwardRef('Not')
+
+class TemporalConstraintBase(BaseModel, ABC):
     '''A base class for time constraints'''
+    type: OperatorType = Field(...)
+
+    class Config:
+        allow_population_by_field_name = True
+
     @abstractmethod
     def match(self, record_date: datetime) -> bool:
-        '''Method to fill when inheriting this class'''
+        '''Return if the temporal constraint match the provided record date'''
+
+    def __and__(self, other: TemporalConstraint) -> And:
+        return And(constraints=[self, other])
+
+    def __or__(self, other: TemporalConstraint) -> Or:
+        return Or(constraints=[self, other])
+
+    def __invert__(self) -> Not:
+        return Not(constraint=self)
+
     def __str__(self):
-        return "AbstractTimeConstraint"
+        return "TemporalConstraint"
 
-def init_time_constraints(time_constraints) -> Constraint:
-    '''Return a time constraint object from a list of time constraints'''
-    constraints = []
-    log.debug("Init Time Constraints with %s", time_constraints)
-    for constraint_type in time_constraints:
-        ctype = constraint_type
-        try:
-            if constraint_type == 'datetime':
-                ctype = 'DateTimeConstraint'
-            elif constraint_type == 'time':
-                ctype = 'TimeConstraint'
-            elif constraint_type == 'weekdays':
-                ctype = 'WeekdaysConstraint'
-            class_obj = getattr(sys.modules[__name__], ctype)
-            if issubclass(class_obj, Constraint):
-                for constraint_data in time_constraints.get(constraint_type, []):
-                    constraints.append(class_obj(constraint_data))
-            else:
-                log.error("Constraint type %s does not inherit from Contraint", ctype)
-                raise Exception(f"Constraint type {ctype} does not inherit from Contraint")
-        except Exception as err:
-            log.exception(err)
-    return MultiConstraint(*constraints)
+# Logic
+class Not(TemporalConstraintBase):
+    '''Match the opposite of a given condition'''
+    type: Literal['NOT'] = 'NOT'
+    constraint: TemporalConstraint = Field(..., discriminator='type')
 
-class MultiConstraint(Constraint):
-    '''An object representing the union of several time constraints'''
-    def __init__(self, *constraints: List[Constraint]):
-        self.constraints_by_type = defaultdict(list)
-        for constraint in constraints:
-            class_name = constraint.__class__.__name__
-            self.constraints_by_type[class_name].append(constraint)
+    def match(self, record_date: datetime):
+        return not self.constraint.match(record_date)
 
-    def match(self, record_date: datetime) -> bool:
-        '''Match all constraints, but make sure constraints of the same
-        type are merged with `OR`'''
-        return all(
-            any(constraint.match(record_date) for constraint in constraints)
-            for _, constraints in self.constraints_by_type.items()
-        )
     def __str__(self):
-        return ' and '.join([
-            '(' + ' or '.join([str(constraint) for constraint in constraints]) + ')'
-            for _, constraints in self.constraints_by_type.items()
-        ])
+        return '!' + str(self.constraint)
 
-class DateTimeConstraint(Constraint):
+    def mongo_search(self):
+        return {'$nor': self.constraint.mongo_search()}
+
+class And(TemporalConstraintBase):
+    '''Match only if all constraints given in arguments match'''
+    type: Literal['AND'] = 'AND'
+    constraints: List[TemporalConstraint]
+
+    def match(self, record_date: datetime):
+        return all(constraint.match(record_date) for constraint in self.constraints)
+    def __str__(self):
+        return '(' + ' & '.join(map(str, self.constraints)) + ')'
+    def mongo_search(self):
+        return {'$and': [constraint.mongo_search() for constraint in self.constraints]}
+
+class Or(TemporalConstraintBase):
+    '''Match only if one of the constraint given in arguments match'''
+    type: Literal['OR'] = 'OR'
+    constraints: List[TemporalConstraint]
+
+    def match(self, record_date: datetime):
+        return any(constraint.match(record_date) for constraint in self.constraints)
+    def __str__(self):
+        return '(' + ' | '.join(map(str, self.constraints)) + ')'
+    def mongo_search(self):
+        return {'$or': [constraint.mongo_search() for constraint in self.constraints]}
+
+class DatetimeConstraint(TemporalConstraintBase):
     '''A time constraint using fixed dates.
     Features:
         * Before a fixed date
         * After a fixed date
         * Between two fixed dates
     '''
-    def __init__(self, content: Optional[dict] = None):
-        if content is None:
-            content = {}
-        date_from = content.get('from')
-        date_until = content.get('until')
-        self.date_from = parser.parse(date_from).astimezone() if date_from else None
-        self.date_until = parser.parse(date_until).astimezone() if date_until else None
+    type: Literal['datetime'] = 'datetime'
+    date_from: Optional[datetime] = Field(
+        alias='from',
+        default=None,
+    )
+    date_until: Optional[datetime] = Field(
+        alias='until',
+        default=None,
+    )
+
+    @validator('date_from', 'date_until', check_fields=False)
+    def dateutil_parser(cls, value):
+        '''Parse strings with dateutil.parser if a string is provided'''
+        if isinstance(value, str):
+            value = dateutil.parser.parse(value).astimezone()
+        return value
+
     def match(self, record_date: datetime) -> bool:
         '''Perform a fixed date matching'''
         date_from = self.date_from
@@ -112,39 +141,59 @@ class DateTimeConstraint(Constraint):
             return date_from <= record_date
         else:
             return False
-    def __str__(self):
-        return f"DateTimeConstraint<{self.date_from} to {self.date_until}>"
 
-class WeekdaysConstraint(Constraint):
+    def __str__(self):
+        return f"({self.date_from} -> {self.date_until})"
+
+class WeekdayEnum(Enum):
+    '''An enum for numeric weekdays'''
+    SUNDAY    = 0
+    MONDAY    = 1
+    TUESDAY   = 2
+    WEDNESDAY = 3
+    THURSDAY  = 4
+    FRIDAY    = 5
+    SATURDAY  = 6
+
+class WeekdaysConstraint(TemporalConstraintBase):
     '''A constraint on the days of the week
     Features:
         * Match certain days of the week
     '''
-    def __init__(self, content: Optional[dict] = None):
-        if content is None:
-            content = {}
-        self.weekdays = content.get('weekdays', [])
-    def match(self, record_date: datetime) -> bool:
-        weekday_number = int(record_date.strftime('%w'))
-        return weekday_number in self.weekdays
-    def __str__(self):
-        return f"WeekdaysConstraint<{self.weekdays}>"
+    type: Literal['weekdays'] = 'weekdays'
+    week: Dict[WeekdayEnum, bool] = Field(default_factory=dict)
 
-class TimeConstraint(Constraint):
+    def match(self, record_date: datetime) -> bool:
+        weekday = WeekdayEnum(int(record_date.strftime('%w')))
+        return self.week.get(weekday, False)
+    def __str__(self):
+        weekdays = [weekday.name for weekday, enabled in self.week.items() if enabled]
+        return f"({' '.join(weekdays)})"
+
+class TimeConstraint(TemporalConstraintBase):
     '''A time constraint that has a daily period.
     Features:
         * Match before/after/between fixed hours
         * Support hours over midnight (`from` lower than `until`)
     '''
-    def __init__(self, content: Optional[dict] = None):
-        if content is None:
-            content = {}
-        time1 = content.get('from')
-        time2 = content.get('until')
-        self.time1 = parser.parse(time1).astimezone().timetz() if time1 else None
-        self.time2 = parser.parse(time2).astimezone().timetz() if time2 else None
+    type: Literal['time'] = 'time'
+    time1: Optional[time] = Field(
+        alias='from',
+        default=None,
+    )
+    time2: Optional[time] = Field(
+        alias='until',
+        default=None,
+    )
 
-    def get_intervals(self, record_date: datetime) -> List[TimeRange]:
+    @validator('time1', 'time2', check_fields=False)
+    def dateutil_parser(cls, value):
+        '''Parse string times using dateutil.parser. Return the time with the timezone'''
+        if isinstance(value, str):
+            value = dateutil.parser.parse(value).astimezone().timetz()
+        return value
+
+    def get_intervals(self, record_date: datetime) -> List[DatetimeRange]:
         '''Return the an array of datetime intervals depending on the `from`
         and `until` time, and the date of the record. The intervals will all be
         ordered.'''
@@ -155,11 +204,9 @@ class TimeConstraint(Constraint):
             return [(date1 - day, date2), (date1, date2 + day)]
         return [(date1, date2)]
 
-    def match(self, rd: datetime) -> bool:
-        '''Match a daily periodic time constraint.
-        rd = record datetime
-        '''
-        rd = rd.astimezone()
+    def match(self, record_date: datetime) -> bool:
+        '''Match a daily periodic time constraint'''
+        rd = record_date.astimezone()
         if self.time1 and self.time2:
             intervals = self.get_intervals(rd.date())
             return any(date1 <= rd <= date2 for date1, date2 in intervals)
@@ -173,4 +220,29 @@ class TimeConstraint(Constraint):
             return True
 
     def __str__(self):
-        return f"TimeConstraint<{self.time1} to {self.time2}>"
+        return f"({self.time1} -> {self.time2})"
+
+TemporalConstraint = Union[
+    # Logic
+    And, Or, Not,
+    # Constraints
+    DatetimeConstraint,
+    WeekdaysConstraint,
+    TimeConstraint,
+]
+
+# ForwardRefs
+# https://pydantic-docs.helpmanual.io/usage/postponed_annotations/
+And.update_forward_refs()
+Or.update_forward_refs()
+Not.update_forward_refs()
+
+class ConstraintWrapper(BaseModel):
+    '''A wrapper to be able to use pydantic defined constraints
+    with the discriminator'''
+    constraint: TemporalConstraint = Field(..., discriminator='type')
+
+def guess_constraint(data: dict) -> TemporalConstraint:
+    '''Return a constraint given a dict representing the temporal constraint.
+    Useful for testing.'''
+    return ConstraintWrapper(constraint=data).constraint

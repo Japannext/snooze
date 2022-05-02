@@ -8,12 +8,16 @@
 Objects and utils for representing conditions.
 '''
 
+from __future__ import annotations
+
 import re
 from abc import abstractmethod, ABC
 from logging import getLogger
-from typing import Any
+from typing import Any, Optional, List, ClassVar, Literal, Union, ForwardRef, Pattern
 
-from snooze.utils.functions import dig, flatten
+from pydantic import BaseModel, Field
+
+from snooze.utils.functions import dig
 
 log = getLogger('snooze.condition')
 
@@ -51,123 +55,127 @@ class ConditionInvalid(RuntimeError):
         message = f"Error in condition '{name}' ({args}): {err}"
         super().__init__(message)
 
-# Classes
-class Condition(ABC):
-    '''An abstract class for all conditions'''
-    operator: str
+OperatorType = Literal[
+    'AND', 'OR', 'NOT', # Logic
+    '=', '!=', '>', '=>', '<', '<=', # Basic operators
+    'ALWAYS_TRUE', 'EXISTS', 'SEARCH',
+    'IN', 'CONTAINS', # Array based operators
+]
 
-    def __init__(self, args):
-        self._args = args
-        try:
-            self.operator = args[0]
-        except IndexError as err:
-            raise ConditionInvalid('UNKNOWN', args, err) from err
+# ForwardRefs
+# https://pydantic-docs.helpmanual.io/usage/postponed_annotations/
+And = ForwardRef('And')
+Or = ForwardRef('Or')
+Not = ForwardRef('Not')
+
+# Classes
+class ConditionBase(BaseModel, ABC):
+    '''An abstract class for all conditions'''
+    type: OperatorType = Field(..., include=True)
 
     @abstractmethod
     def match(self, record):
         '''Return true if the record match the condition'''
 
-    def to_list(self):
-        '''Return the list representation of a condition'''
-        return self._args
+    #@abstractmethod
+    def mongo_search(self) -> dict:
+        '''Return the corresponding mongodb search'''
+        raise NotImplementedError(f"Mongodb search is not implemented for {self.type}")
 
-    def __and__(self, other):
-        return And(['AND', self.to_list(), other.to_list()])
+    def __and__(self, other: Condition) -> And:
+        return And(conditions=[self, other])
 
-    def __or__(self, other):
-        return Or(['OR', self.to_list(), other.to_list()])
+    def __or__(self, other: Condition) -> Or:
+        return Or(conditions=[self, other])
 
-    def __invert__(self):
-        return Not(['NOT', self.to_list()])
+    def __invert__(self) -> Not:
+        return Not(condition=self)
 
-class BinaryOperator(Condition):
+class BinaryOperator(ConditionBase, ABC):
     '''An abstract class to wrap binary operators'''
-    display_name = None
-    def __init__(self, args):
-        super().__init__(args)
-        try:
-            self.field = args[1]
-            self.value = args[2]
-            if not (isinstance(self.field, str) and len(self.field) > 0):
-                raise ConditionInvalid(args[0], args, "Field is not a valid non-null string")
-        except IndexError as err:
-            raise ConditionInvalid(args[0], args, err) from err
+    display_name: ClassVar[Optional[str]] = None
+    field: str
+    value: Any
 
     def __str__(self):
-        op_name = self.display_name or self.operator.lower()
-        return f"({self.field} {op_name} {repr(self.value)})"
+        op_name = self.display_name or self.type.lower()
+        return f"{self.field} {op_name} {repr(self.value)}"
 
-class AlwaysTrue(Condition):
+class AlwaysTrue(ConditionBase):
     '''A condition that always return True for matching'''
-    def __init__(self, *_args):
-        super().__init__([''])
-        self._args = []
+    type: Literal['ALWAYS_TRUE'] = 'ALWAYS_TRUE'
+
     def match(self, record):
         return True
     def __str__(self):
         return '()'
+    def mongo_search(self):
+        return {}
 
 # Logic
-class Not(Condition):
+class Not(ConditionBase):
     '''Match the opposite of a given condition'''
-    condition: Condition
-
-    def __init__(self, args):
-        super().__init__(args)
-        self.condition = get_condition(args[1])
+    type: Literal['NOT'] = 'NOT'
+    condition: Condition = Field(..., discriminator='type')
 
     def match(self, record):
         return not self.condition.match(record)
 
     def __str__(self):
-        return '!' + str(self.condition)
+        return f"!({self.condition})"
 
-class And(Condition):
+    def mongo_search(self):
+        return {'$nor': self.condition.mongo_search()}
+
+class And(ConditionBase):
     '''Match only if all conditions given in arguments match'''
-    def __init__(self, args):
-        super().__init__(args)
-        self.conditions = [get_condition(arg) for arg in args[1:]]
+    type: Literal['AND'] = 'AND'
+    conditions: List[Condition]
+
     def match(self, record):
-        try:
-            return all(condition.match(record) for condition in self.conditions)
-        except Exception as err:
-            log.exception(err)
-            return False
+        return all(condition.match(record) for condition in self.conditions)
     def __str__(self):
         return '(' + ' & '.join(map(str, self.conditions)) + ')'
+    def mongo_search(self):
+        return {'$and': [condition.mongo_search() for condition in self.conditions]}
 
-class Or(Condition):
+class Or(ConditionBase):
     '''Match only if one of the condition given in arguments match'''
-    def __init__(self, args):
-        super().__init__(args)
-        self.conditions = [get_condition(arg) for arg in args[1:]]
+    type: Literal['OR'] = 'OR'
+    conditions: List[Condition]
+
     def match(self, record):
-        try:
-            return any(condition.match(record) for condition in self.conditions)
-        except Exception as err:
-            log.exception(err)
-            return False
+        return any(condition.match(record) for condition in self.conditions)
     def __str__(self):
         return '(' + ' | '.join(map(str, self.conditions)) + ')'
+    def mongo_search(self):
+        return {'$or': [condition.mongo_search() for condition in self.conditions]}
 
 # Basic operations
 class Equals(BinaryOperator):
     '''Match if the field of a record is exactly equal to a given value'''
-    display_name = '='
+    type: Literal['='] = '='
+
     def match(self, record):
         record_value = search(record, self.field)
         return record_value == self.value
+    def mongo_search(self):
+        return {self.field: self.value}
 
 class NotEquals(BinaryOperator):
     '''Match if a field of a record is not equal to a given value'''
-    display_name = '!='
+    type: Literal['!='] = '!='
+
     def match(self, record):
         record_value = search(record, self.field)
         return record_value != self.value
+    def mongo_search(self):
+        return {self.field: {'$ne', self.value}}
 
 class GreaterThan(BinaryOperator):
     '''Match if the field of a record is strictly greater than a value.'''
-    display_name = '>'
+    type: Literal['>'] = '>'
+
     def match(self, record):
         try:
             record_value = search(record, self.field)
@@ -175,10 +183,13 @@ class GreaterThan(BinaryOperator):
         except TypeError as err: # Cannot be compared
             log.warning("%s > %s", repr(record_value), repr(self.value), exc_info=err)
             return False
+    def mongo_search(self):
+        return {self.field: {'$gt': self.value}}
 
 class LowerThan(BinaryOperator):
     '''Match if the field of a record is strictly lower than a value.'''
-    display_name = '<'
+    type: Literal['<'] = '<'
+
     def match(self, record):
         try:
             record_value = search(record, self.field)
@@ -186,10 +197,13 @@ class LowerThan(BinaryOperator):
         except TypeError as err: # Cannot be compared
             log.warning("%s < %s", repr(record_value), repr(self.value), exc_info=err)
             return False
+    def mongo_search(self):
+        return {self.field: {'$lt': self.value}}
 
 class GreaterOrEquals(BinaryOperator):
     '''Match if the field of a record is greater than or equal to a value.'''
-    display_name = '>='
+    type: Literal['>='] = '>='
+
     def match(self, record):
         try:
             record_value = search(record, self.field)
@@ -197,10 +211,13 @@ class GreaterOrEquals(BinaryOperator):
         except TypeError as err: # Cannot be compared
             log.warning("%s >= %s", repr(record_value), repr(self.value), exc_info=err)
             return False
+    def mongo_search(self):
+        return {self.field: {'$gte': self.value}}
 
 class LowerOrEquals(BinaryOperator):
     '''Match if the field of a record is lower than or equal a value.'''
-    display_name = '<='
+    type: Literal['<='] = '<='
+
     def match(self, record):
         record_value = search(record, self.field)
         try:
@@ -208,73 +225,92 @@ class LowerOrEquals(BinaryOperator):
         except TypeError as err: # Cannot be compared
             log.warning("%s <= %s", repr(record_value), repr(self.value), exc_info=err)
             return False
+    def mongo_search(self):
+        return {self.field: {'$lte': self.value}}
 
 # Complex operations
-class Matches(BinaryOperator):
+class Matches(ConditionBase):
     '''Match if the field of a record match a given regex. The regex can optionally
     start and end with `/`, to make it easier to spot in configuration. The regex method
     used is a search (`re.search`), so for strict matches, the `^` and `$` need to be used.
     '''
-    display_name = '~'
-    def __init__(self, args):
-        super().__init__(args)
-        self.field = args[1]
-        value = unsugar_regex(str(args[2]))
-        self.regex = re.compile(value, flags=re.IGNORECASE)
+    type: Literal['MATCHES'] = 'MATCHES'
+    field: str
+    value: Pattern
+
+    def __init__(self, **data):
+        data['value'] = unsugar_regex(data['value'])
+        ConditionBase.__init__(self, **data)
+
     def match(self, record):
         record_value = search(record, self.field)
         if record_value is None:
             return False
         try:
-            return self.regex.search(record_value) is not None
+            return self.value.search(record_value) is not None
         except TypeError as err:
             log.warning("`record[%s] = %s` is not a string", self.field, repr(record_value), exc_info=err)
             return False
+    def __str__(self):
+        return f"{self.field} ~ /{self.value.pattern}/"
 
-class Exists(Condition):
+    def dict(self, **kwargs):
+        '''Overriding for serializing the Pattern value'''
+        data = ConditionBase.dict(self, **kwargs)
+        if 'value' in data:
+            data['value'] = data['value'].pattern
+        return data
+    def mongo_search(self):
+        return {self.field: {'$regex': self.value.pattern, '$options': '-i'}}
+
+class Exists(ConditionBase):
     '''Match if a given field exist and is not null in the record'''
-    def __init__(self, args):
-        super().__init__(args)
-        self.field = args[1]
+    type: Literal['EXISTS'] = 'EXISTS'
+    field: str
+
     def match(self, record):
         return search(record, self.field) is not None
     def __str__(self):
         return self.field + '?'
+    def mongo_search(self):
+        return {self.field: {'$exists': True}}
 
-class Search(Condition):
+class Search(ConditionBase):
     '''Search a given string in the key/values of a record (stringify the record and
     search in the string)'''
-    def __init__(self, args):
-        super().__init__(args)
-        self.value = str(args[1])
+    type: Literal['SEARCH'] = 'SEARCH'
+    value: str
+
     def match(self, record):
-        try:
-            return self.value in str(record)
-        except Exception as err:
-            log.exception(err)
-            return False
+        return self.value in str(record)
     def __str__(self):
         return f"(SEARCH {repr(self.value)})"
 
-class Contains(BinaryOperator):
+class ArrayContains(BinaryOperator):
     '''Match if it finds a given word/regex in a flatten list of object, or in a string'''
-    display_name = 'contains'
+    type: Literal['CONTAINS'] = 'CONTAINS'
+
     def match(self, record):
         record_value = search(record, self.field)
-        try:
-            return any(
-                lazy_search(value, rec)
-                for value in flatten([self.value])
-                for rec in flatten([record_value])
-            )
-        except TypeError as err:
-            log.exception(err)
-            return False
+        if isinstance(record_value, list):
+            return self.value in record_value
+        else:
+            raise TypeError("") # TODO: Raise when record doesn't contain an array
+            # we need to raise a warning
 
-class In(Condition):
+class InArray(ConditionBase):
     '''Match if a record field is in a given list of objects, or if
     the record field has any item matching a given condition.
     '''
+    type: Literal['IN'] = 'IN'
+    field: str
+    value: List[Any]
+
+    def match(self, record):
+        record_value = search(record, self.field)
+        return record_value in self.value
+
+    """
     def __init__(self, args):
         super().__init__(args)
         self.field = args[2]
@@ -319,43 +355,38 @@ class In(Condition):
         if self.mode == 'list':
             return f"({repr(self.value)} in {self.field})"
         return "???"
+    """
 
-CONDITIONS = {
-    'AND': And,
-    'OR': Or,
-    'NOT': Not,
-    'EXISTS': Exists,
-    'CONTAINS': Contains,
-    'IN': In,
-    '=': Equals,
-    '!=': NotEquals,
-    'MATCHES': Matches,
-    '>=': GreaterOrEquals,
-    '<=': LowerOrEquals,
-    '>': GreaterThan,
-    '<': LowerThan,
-    'SEARCH': Search,
-    '': AlwaysTrue,
-    None: AlwaysTrue,
-}
+Condition = Union[
+    And,
+    Or,
+    Not,
+    Exists,
+    ArrayContains,
+    InArray,
+    Equals,
+    NotEquals,
+    Matches,
+    GreaterOrEquals,
+    LowerOrEquals,
+    GreaterThan,
+    LowerThan,
+    Search,
+    AlwaysTrue,
+]
 
-def validate_condition(obj):
-    '''Validate the condition of an object'''
-    condition = obj.get('condition')
-    if condition:
-        get_condition(condition)
+# ForwardRefs
+# https://pydantic-docs.helpmanual.io/usage/postponed_annotations/
+And.update_forward_refs()
+Or.update_forward_refs()
+Not.update_forward_refs()
 
-def get_condition(args) -> Condition:
-    '''Return an instance of a condition given a condition array representation'''
-    if args is None:
-        return AlwaysTrue()
-    try:
-        name = args[0]
-        condition_class = CONDITIONS[name]
-        return condition_class(args)
-    except IndexError:
-        return AlwaysTrue()
-    except KeyError as err:
-        raise OperationNotSupported(name) from err
-    except TypeError as err:
-        raise ConditionInvalid(name, args, err) from err
+class ConditionWrapper(BaseModel):
+    '''A wrapper to be able to use pydantic defined constraints
+    with the discriminator'''
+    condition: Condition = Field(..., discriminator='type')
+
+def guess_condition(data: dict) -> Condition:
+    '''Return a condition given a dict representing the condition.
+    Useful for testing.'''
+    return ConditionWrapper(condition=data).condition
