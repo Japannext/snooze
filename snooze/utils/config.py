@@ -8,6 +8,7 @@
 '''Module for managing loading and writing the configuration files'''
 
 import os
+import logging
 from contextlib import contextmanager
 from logging import getLogger
 from pathlib import Path
@@ -339,6 +340,7 @@ class CoreConfig(ReadOnlyConfig, title='Core configuration'):
     )
     debug: bool = Field(
         default=False,
+        env='SNOOZE_DEBUG',
         description='Activate debug log output',
     )
     bootstrap_db: bool = Field(
@@ -510,6 +512,21 @@ class HousekeeperConfig(WritableConfig):
             # timedelta should be serialized into seconds (int)
             timedelta: lambda dt: int(dt.total_seconds()),
         }
+
+def setup_logging(basedir: Path = SNOOZE_CONFIG):
+    '''Initialize the python logger'''
+    logging_file = basedir / 'logging.yaml'
+    logging_dict = yaml.safe_load(logging_file.read_text(encoding='utf-8'))
+
+    debug = CoreConfig(basedir).debug
+    if debug:
+        for _, handler in logging_dict.get('handlers', {}).items():
+            handler['level'] = 'DEBUG'
+
+    logging.config.dictConfig(logging_dict)
+    log = getLogger('snooze')
+    log.debug("Log system ON")
+    return log
 
 class Config(BaseModel):
     '''An object representing the complete snooze configuration'''
