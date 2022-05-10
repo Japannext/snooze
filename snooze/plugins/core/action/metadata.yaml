@@ -7,7 +7,7 @@ route_defaults:
     primary: [name]
     duplicate_policy: 'reject'
 routes:
-  '/action/plugin':
-    class: ActionPluginRoute
-  '/action/plugin/{action}':
-    class: ActionPluginRoute
+    '/action/plugin':
+        class: ActionPluginRoute
+    '/action/plugin/{action}':
+        class: ActionPluginRoute
