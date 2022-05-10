@@ -82,7 +82,7 @@ class ActionObject:
         self.content = action.get('action', {}).get('subcontent', {})
         self.content['action_name'] = self.name
         self.action_plugin = self.core.get_core_plugin(self.selected)
-        batch = self.action_plugin.get_options('batch')
+        batch = self.action_plugin.meta.options.get('batch')
         self.batch = self.content.get('batch', batch.get('default', False))
         self.content['batch'] = self.batch
         self.batch_timer = self.content.get('batch_timer', batch.get('timer', 10))
@@ -115,7 +115,7 @@ class ActionObject:
                     'default_value': batch.get('maxsize', 100),
                 },
             }
-            self.action_plugin.get_metadata().get('action_form', {}).update(batch_form)
+            self.action_plugin.meta.action_form.update(batch_form)
 
     def send(self, action_obj):
         record = action_obj['record']

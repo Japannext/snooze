@@ -1,8 +1,9 @@
 ---
 name: 'Settings'
 desc: 'An endpoint to store config files'
-class: ''
-check_permissions: True
+route_defaults:
+    class: ~
+    check_permissions: true
 routes:
   '/settings/{conf}':
     desc: ''

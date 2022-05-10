@@ -1,10 +1,9 @@
 ---
 name: 'Profile'
 desc: 'An endpoint to store user profile'
-primary:
-  - name
-  - method
-class: ''
+route_defaults:
+    class: ~
+    primary: [name, method]
 routes:
   '/profile/{category}':
     desc: ''
