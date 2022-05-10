@@ -88,7 +88,7 @@ class Plugin:
 
     def sync_neighbors(self):
         '''Trigger the reload of the module to neighbors (async)'''
-        self.core.threads['cluster'].reload_plugin(self.name)
+        self.core.sync_reload_plugin(self.name)
 
     def process(self, record: Record) -> Record:
         '''Process a record if it's a process plugin'''
