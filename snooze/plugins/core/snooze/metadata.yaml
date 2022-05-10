@@ -8,5 +8,5 @@ route_defaults:
     primary: [name]
     duplicate_policy: 'reject'
 routes:
-  '/snooze_apply':
-    class: SnoozeApplyRoute
+    '/snooze_apply':
+        class: SnoozeApplyRoute
