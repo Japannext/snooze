@@ -2,7 +2,8 @@
 name: 'Call a webhook'
 desc: 'HTTP POST to a specific URL'
 icon: 'link'
-class: ''
+route_defaults:
+    class: ~
 options:
     batch:
         default: False

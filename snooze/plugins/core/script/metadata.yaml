@@ -2,7 +2,8 @@
 name: 'Run a script'
 desc: ''
 icon: 'terminal'
-class: ''
+route_defaults:
+    class: ~
 options:
     batch:
         default: False

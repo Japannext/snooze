@@ -2,7 +2,8 @@
 name: 'Send email'
 desc: ''
 icon: 'envelope'
-class: ''
+default_route:
+    class: ~
 options:
     batch:
         default: False
