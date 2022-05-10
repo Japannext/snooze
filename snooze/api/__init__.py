@@ -76,7 +76,8 @@ SNOOZE_GLOBAL_RUNDIR = '/var/run/snooze'
 uid = os.getuid()
 SNOOZE_LOCAL_RUNDIR = f"/var/run/user/{uid}"
 
-class Api:
+class Api(falcon.App):
+    '''The WSGI class that handle all routes'''
     def __init__(self, core: 'Core'):
         # Authentication
         self.core = core
@@ -89,56 +90,52 @@ class Api:
         ]
         if not self.core.config.core.no_login:
             middlewares.append(TokenAuthMiddleware(self.core.token_engine))
-        self.handler = falcon.App(middleware=middlewares)
-        self.handler.req_options.auto_parse_qs_csv = False
+        falcon.App.__init__(self, middleware=middlewares)
+        self.req_options.auto_parse_qs_csv = False
 
         json_handler = falcon.media.JSONHandler(
             dumps=bson.json_util.dumps,
             loads=bson.json_util.loads,
         )
-        self.handler.req_options.media_handlers.update({'application/json': json_handler})
-        self.handler.resp_options.media_handlers.update({'application/json': json_handler})
-        self.handler.add_error_handler(USER_ERRORS, log_warning_handler)
-        self.handler.add_error_handler(falcon.HTTPError, log_error_handler)
-        self.handler.add_error_handler(Exception, log_uncaught_handler)
+        self.req_options.media_handlers.update({'application/json': json_handler})
+        self.resp_options.media_handlers.update({'application/json': json_handler})
+        self.add_error_handler(USER_ERRORS, log_warning_handler)
+        self.add_error_handler(falcon.HTTPError, log_error_handler)
+        self.add_error_handler(Exception, log_uncaught_handler)
         self.auth_routes = {}
         # Alert route
-        self.add_route('/alert', AlertRoute(self))
+        self.add_route('/api/alert', AlertRoute(self))
         # List route
-        self.add_route('/login', LoginRoute(self))
+        self.add_route('/api/login', LoginRoute(self))
         # Cluster route
-        self.add_route('/cluster', ClusterRoute(self))
+        self.add_route('/api/cluster', ClusterRoute(self))
         # Plugin reload route
-        self.add_route('/reload/{plugin_name}', ReloadPluginRoute(self))
+        self.add_route('/api/reload/{plugin_name}', ReloadPluginRoute(self))
         # Health route
-        self.add_route('/health', HealthRoute(self))
+        self.add_route('/api/health', HealthRoute(self))
         # Permissions route
-        self.add_route('/permissions', PermissionsRoute(self))
+        self.add_route('/api/permissions', PermissionsRoute(self))
         # Basic auth setup
         self.auth_routes['local'] = LocalAuthRoute(self)
-        self.add_route('/login/local', self.auth_routes['local'])
+        self.add_route('/api/login/local', self.auth_routes['local'])
         # Anonymous auth
         if self.core.config.general.anonymous_enabled:
             self.auth_routes['anonymous'] = AnonymousAuthRoute(self)
-            self.add_route('/login/anonymous', self.auth_routes['anonymous'])
+            self.add_route('/api/login/anonymous', self.auth_routes['anonymous'])
         if self.core.config.ldap:
             self.auth_routes['ldap'] = LdapAuthRoute(self)
-            self.add_route('/login/ldap', self.auth_routes['ldap'])
+            self.add_route('/api/login/ldap', self.auth_routes['ldap'])
         # Optional metrics
         if self.core.stats.enabled:
-            self.add_route('/metrics', MetricsRoute(self), '')
+            self.add_route('/metrics', MetricsRoute(self))
 
         web = self.core.config.core.web
         if web.enabled:
             prefix = '/web'
-            self.add_route('/', RedirectRoute(), '')
-            self.add_route(prefix, RedirectRoute(), '')
+            self.add_route('/', RedirectRoute())
+            self.add_route(prefix, RedirectRoute())
             sink_handler = StaticRoute(web.path, prefix).on_get
-            self.handler.add_sink(sink_handler, prefix)
-
-    def add_route(self, route, action, prefix='/api'):
-        '''Map a falcon route class to a given path'''
-        self.handler.add_route(prefix + route, action)
+            self.add_sink(sink_handler, prefix)
 
     def get_root_token(self):
         '''Return a root token for the root user. Used only when requesting it from the internal unix socket'''

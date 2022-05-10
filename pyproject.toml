@@ -27,7 +27,7 @@ MarkupSafe = "^2.0.1"
 pathlib = "^1.0.1"
 prometheus-client = "^0.13.1"
 PyJWT = "^2.3.0"
-pymongo = "3.12.1"
+pymongo = "^3.12.3"
 pyparsing = "^2.4.7"
 python-dateutil = "^2.8.2"
 PyYAML = "5.4.1"
@@ -59,6 +59,7 @@ pytest-sugar = "^0.9.4"
 pytest-timeout = "^1.4.2"
 freezegun = "^1.1.0"
 responses = "^0.20.0"
+mongomock = "^4.0.0"
 
 [tool.poetry.group.build.dependencies]
 virtualenv = "^20.8.1"
@@ -70,7 +71,7 @@ load-plugins = ['pylint_pytest', 'pylint_pydantic']
 extension-pkg-whitelist = ['falcon', 'netifaces', 'pydantic']
 
 [tool.pylint."MESSAGE CONTROL"]
-disable = ['no-else-return']
+disable = ['no-else-return', 'too-few-public-methods']
 
 [tool.pylint.FORMAT]
 max-line-length = 120

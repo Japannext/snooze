@@ -8,7 +8,7 @@
 #!/usr/bin/python3.6
 
 from snooze.plugins.core.aggregaterule.plugin import Aggregaterule, AggregateruleObject
-from snooze.plugins.core import AbortAndUpdate
+from snooze.plugins.core.basic.plugin import AbortAndUpdate
 
 from logging import getLogger
 log = getLogger('snooze.tests')

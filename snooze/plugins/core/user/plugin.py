@@ -11,12 +11,12 @@ from datetime import datetime
 from logging import getLogger
 from typing import Tuple
 
-from snooze.plugins.core import Plugin
+from snooze.plugins.core.basic.plugin import Plugin
 from snooze.utils.typing import AuthPayload, ProfileGeneral, ProfilePreferences
 
 log = getLogger('snooze.user')
 
-class User(Plugin):
+class UserPlugin(Plugin):
     '''A plugin for managing user information in the database'''
 
     def update_user(self, auth: AuthPayload):

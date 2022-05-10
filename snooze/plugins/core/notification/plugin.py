@@ -12,14 +12,14 @@ based on a rule (time constraint, condition)'''
 from logging import getLogger
 from typing import List
 
-from snooze.plugins.core import Plugin
+from snooze.plugins.core.basic.plugin import Plugin
 from snooze.utils.condition import get_condition, validate_condition
 from snooze.utils.time_constraints import get_record_date, init_time_constraints
 from snooze.utils.typing import Record
 
 log = getLogger('snooze.notification')
 
-class Notification(Plugin):
+class NotificationPlugin(Plugin):
     '''Core plugin for notifications'''
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

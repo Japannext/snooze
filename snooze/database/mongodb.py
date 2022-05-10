@@ -1,7 +1,7 @@
 '''Mongodb wrapper for Pydantic models'''
 
 from uuid import UUID
-from typing import TypeVar, Type, List, Set, Generic, Generator, Literal, Dict, Any
+from typing import *
 from logging import getLogger
 from contextlib import contextmanager
 from functools import wraps
@@ -16,8 +16,9 @@ from pydantic import BaseModel, Field, ValidationError
 from bson.codec_options import CodecOptions, TypeCodec, TypeRegistry
 
 from snooze.utils.condition import Condition, AlwaysTrue
-from snooze.utils.model import DatabaseEntry, UserEntry, MongodbMetadata, Partial
+from snooze.utils.model import DatabaseEntry, ApiModel, MongodbMetadata, Partial
 from snooze.utils.exceptions import DatabaseError, ImmutableFieldError
+from snooze.utils.config import MongodbConfig
 
 log = getLogger('snooze.database.mongodb')
 
@@ -90,12 +91,45 @@ def get_collection(database: Database, collection_name: str):
     with all codec options.'''
     return database.get_collection(collection_name, codec_options=CODEC_OPTIONS)
 
-class Endpoint(Generic[Model]):
-    '''A generic wrapper over a collection and a pydantic model'''
+DictSearch = Dict[str, Any]
+DatabaseFilter = Union[Condition, DictSearch, List[UUID]]
 
+# TODO: Unused. Here just in case. Planned to remove
+def get_mongo_search(search: DatabaseFilter) -> dict:
+    '''Return a mongodb search from a different inputs'''
+    if isinstance(search, Condition):
+        return search.mongo_search()
+    elif isinstance(search, dict):
+        return search
+    elif isinstance(search, List[UUID]):
+        return {'uid': {'$in': search}}
+    else:
+        raise NotImplementedError(f"Unsupported search type: {type(search)}")
+
+class MongodbDatabase:
+    '''Object wrapping the mongodb database'''
+    client: MongoClient
+    database: Database
+    endpoints: Dict[Type[BaseModel], 'MongodbEndpoint']
+
+    def __init__(self, config: MongodbConfig):
+        self.client = MongoClient(**config.dict(exclude={'type'}))
+        self.database = self.client['snooze']
+        self.endpoints = {}
+
+    def __getitem__(self, model: Type[BaseModel]) -> Type['MongodbEndpoint']:
+        '''Return the endpoint corresponding to a model'''
+        if model in self.endpoints:
+            return self.endpoints[model]
+        else:
+            endpoint = MongodbEndpoint(self.database, model)
+            self.endpoints[model] = endpoint
+            return endpoint
+
+class MongodbEndpoint(Generic[Model]):
+    '''A generic wrapper over a collection and a pydantic model'''
     collection: Collection
     config: MongodbMetadata
-    immutables: Set[str]
 
     def __init__(self, database: Database, model: Type[Model]):
         self.model = model
@@ -106,8 +140,6 @@ class Endpoint(Generic[Model]):
         # Indexes
         indexes = self._prepare_indexes(self.config.primaries)
         self._ensure_indexes(indexes)
-        # Immutable fields
-        self.immutables = self.config.immutables
 
     def _prepare_indexes(self, primaries: Set[str]) -> List[IndexModel]:
         '''Generate the objects representing the indexes to ensure'''
@@ -149,6 +181,9 @@ class Endpoint(Generic[Model]):
         pagination: Pagination = Pagination(),
     ) -> List[Model]:
         '''Search the collection with a condition'''
+        # Order-by default override by the model configuration
+        if self.config.order_by and 'order_by' not in pagination.__fields_set__:
+            pagination.order_by = self.config.order_by
         mongo_search = condition.mongo_search()
         cursor = self.collection \
             .find(mongo_search) \
@@ -171,10 +206,10 @@ class Endpoint(Generic[Model]):
         return self.model(**result) if result else None
 
     @wrap_exception
-    def get_by_index(self, index_dict: Dict[str, Any]) -> Model:
+    def get_by(self, **search: Dict[str, Any]) -> Model:
         '''Return an object by its indexed fields. Basically a search, but from a dict of indexes'''
-        self._warn_foreign_indexes(index_dict.keys())
-        result = self.collection.find_one(index_dict)
+        #self._warn_foreign_indexes(search.keys())
+        result = self.collection.find_one(search)
         return self.model(**result)
 
     def _warn_foreign_indexes(self, indexes: List[str]):
@@ -194,6 +229,20 @@ class Endpoint(Generic[Model]):
         return result
 
     @wrap_exception
+    def ensure(self, search: Dict[str, Any], patch: Callable[[], Dict[str, Any]]) -> Model:
+        '''Search a value with a condition, and insert the result of the callback if not present.
+        Useful to bootstrap values'''
+        self._warn_foreign_indexes(search.keys())
+        with transaction(self.client) as session:
+            result = self.collection.find_one(search, session=session)
+            if result is None:
+                data = {**search, **patch()}
+                self.model(**data) # For validation purpose, will raise a ValidationError
+                self.collection.insert_one(data, session=session)
+                result = data
+            return self.model(**result)
+
+    @wrap_exception
     def replace(self, uid: UUID, document: Model):
         '''Replace a document at a given UID with the given model'''
         document.uid = uid
@@ -203,7 +252,7 @@ class Endpoint(Generic[Model]):
     @wrap_exception
     def patch_one(self, uid: UUID, document: Partial[Model]):
         '''Apply a partial update to a serie of document'''
-        for immutable in self.immutables:
+        for immutable in self.config.immutables:
             if document[immutable] is not None:
                 raise ImmutableFieldError(self.collection.name, immutable)
         result = self.collection.update_one({'uid': uid}, {'$set': document.dict(exclude_none=True)})
@@ -212,10 +261,16 @@ class Endpoint(Generic[Model]):
     @wrap_exception
     def patch_many(self, uids: List[UUID], document: Partial[Model]):
         '''Apply a partial update to a serie of document'''
-        for immutable in self.immutables:
+        for immutable in self.config.immutables:
             if document[immutable] is not None:
                 raise ImmutableFieldError(self.collection.name, immutable)
         result = self.collection.update_many({'uid': {'$in': uids}}, {'$set': document.dict(exclude_none=True)})
+        return result
+
+    @wrap_exception
+    def increment(self, search: dict, fields: Set[str], value: int = 1):
+        '''Given a search on primary indexes, increment a set of fields by a value'''
+        result = self.collection.update_one(search, {'$inc': {field: value for field in fields}})
         return result
 
     @wrap_exception
@@ -229,6 +284,20 @@ class Endpoint(Generic[Model]):
         '''Delete documents by uid'''
         result = self.collection.delete_many({'uid': {'$in': uids}})
         return result
+
+    @wrap_exception
+    def delete_by(self, **search: Dict[str, Any]):
+        '''Delete by a list of primaries'''
+        if not search:
+            raise Exception("There was an attempt to delete the whole collection")
+        result = self.collection.delete_many(search)
+
+    @wrap_exception
+    def delete_search(self, condition: Condition):
+        '''Delete elements matching a search'''
+        if condition.type == 'ALWAYS_TRUE':
+            raise Exception("There was an attempt to delete the whole collection")
+        result = self.collection.delete_many(condition.mongo_search())
 
     def _fit_model(self, cursor) -> Generator[Model, None, None]:
         '''A generator that take a cursor, and return a '''
@@ -244,11 +313,11 @@ class Endpoint(Generic[Model]):
     def _check_immutables(self, new_docs: List[Model]):
         '''Check a list of documents try to update an immutable field'''
         uids = [str(doc.uid) for doc in new_docs]
-        cursor = self.collection.find({'uid': {'$in': uids}}, projection=list(self.immutables))
+        cursor = self.collection.find({'uid': {'$in': uids}}, projection=list(self.config.immutables))
         old_docs = self._fit_model(cursor)
         docdict = {doc.uid: doc for doc in new_docs}
         for old_doc in old_docs:
             new_doc = docdict[old_doc.uid]
-            for immutable in self.immutables:
+            for immutable in self.config.immutables:
                 if old_doc[immutable] != new_doc[immutable]:
                     raise ImmutableFieldError(self.collection.name, immutable)

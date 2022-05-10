@@ -14,7 +14,7 @@ from subprocess import run, PIPE
 import bson.json_util
 from jinja2 import Template
 
-from snooze.plugins.core import Plugin
+from snooze.plugins.core.basic.plugin import Plugin
 
 log = getLogger('snooze.action.script')
 

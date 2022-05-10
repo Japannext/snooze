@@ -104,4 +104,4 @@ def fixture_started_client(started_core):
     token = started_core.api.get_root_token()
     log.debug("Token obtained from get_root_token: %s", token)
     headers = {'Authorization': f"JWT {token}"}
-    return TestClient(started_core.api.handler, headers=headers)
+    return TestClient(started_core.api, headers=headers)

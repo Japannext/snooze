@@ -13,7 +13,7 @@ import requests
 import bson.json_util
 from jinja2 import Template, Environment, BaseLoader
 
-from snooze.plugins.core import Plugin
+from snooze.plugins.core.basic.plugin import Plugin
 from snooze.utils.functions import ca_bundle
 
 log = getLogger('snooze.action.script')

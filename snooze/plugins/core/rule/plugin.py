@@ -8,45 +8,57 @@
 '''A plugin for defining rules to apply modifications on records matching the
 rule's condition'''
 
+from __future__ import annotations
+
 from logging import getLogger
-from typing import List
+from typing import List, Dict, Optional
+from uuid import UUID
 
-from snooze.plugins.core import Plugin
-from snooze.utils.condition import get_condition, validate_condition
-from snooze.utils.modification import get_modification, validate_modification
-from snooze.utils.typing import Record, Rule as RuleType
+from pydantic import Field
 
-LOG = getLogger('snooze.process')
+from snooze.database import Pagination
+from snooze.plugins.core import ApiPlugin, ProcessPlugin
+from snooze.utils.condition import Condition, AlwaysTrue, InArray, Exists
+from snooze.utils.model import ApiModel, MongodbMetadata, Record
+from snooze.utils.modification import Modification
 
-class RuleObject:
-    '''An object representing the rule object in the database'''
-    def __init__(self, rule: RuleType, core: 'Core' = None):
-        self.enabled = rule.get('enabled', True)
-        self.name = rule['name']
-        LOG.debug("Creating rule: %s", self.name)
-        self.condition = get_condition(rule.get('condition'))
-        LOG.debug("-> condition: %s", self.condition)
-        self.modifications = []
-        for modification in (rule.get('modifications') or []):
-            LOG.debug("-> modification: %s", modification)
-            self.modifications.append(get_modification(modification, core=core))
-        LOG.debug("Searching children of rule %s", self.name)
-        self.children = []
-        if core and core.db:
-            db = core.db
-            children = db.search('rule', ['=', 'parent', rule['uid']], orderby='name')['data']
-            for child_rule in children:
-                LOG.debug("Found child %s of rule %s", child_rule['name'], self.name)
-                self.children.append(RuleObject(child_rule, core))
+log = getLogger('snooze.process')
+
+class Rule(ApiModel):
+    '''Apply modification to records based on conditions'''
+    _mongodb = MongodbMetadata(collection='rule')
+
+    enabled: bool = Field(
+        default=True,
+        description='If set to false, disable the rule and ignore it during record processing',
+    )
+    name: str = Field(
+        default='',
+        description='The name of the rule',
+    )
+    condition: Condition = Field(
+        discriminator='type',
+        default_factory=AlwaysTrue,
+        description='Apply the rule modifications and childrens to all records matching the condition',
+    )
+    modifications: List[Modification] = Field(
+        default_factory=list,
+        description='A list of modifications to apply to the record matching the rule',
+    )
+    comment: str = Field(
+        default='',
+        description='Description of what the rule is doing',
+    )
+    parent: Optional[UUID] = Field(
+        default=None,
+        description='UUID of the parent if the rule is nested. If absent, this will be a top-level rule',
+    )
 
     def match(self, record: Record) -> bool:
         '''Check if a record matched this rule's condition'''
         match = self.condition.match(record)
         if match:
-            if not 'rules' in record:
-                record['rules'] = []
-            if self.name not in record['rules']:
-                record['rules'].append(self.name)
+            record.core.rules.append(self.name)
         return match
 
     def modify(self, record: Record) -> bool:
@@ -58,39 +70,46 @@ class RuleObject:
                 modified = True
                 modifs.append(modification)
         if modified:
-            LOG.debug("Record %s has been modified: %s", record.get('hash', ''), [m.pprint() for m in modifs])
+            log.debug("Record %s has been modified: %s", record.get('hash', ''), [m.pprint() for m in modifs])
         else:
-            LOG.debug("Record %s has not been modified", record.get('hash', ''))
+            log.debug("Record %s has not been modified", record.get('hash', ''))
         return modified
 
-    def __repr__(self):
-        return self.name
-
-class Rule(Plugin):
+class RulePlugin(ApiPlugin, ProcessPlugin, model=Rule):
     '''The rule plugin main class'''
+    rules: List[Rule]
+    childrens: Dict[UUID, List[Rule]]
+
+    def __init__(self, *args, **kwargs):
+        ApiPlugin.__init__(self, *args, **kwargs)
+        ProcessPlugin.__init__(self)
+        self.reload()
+
+    def reload(self):
+        log.debug("Reloading data for plugin %s", self.name)
+        self.rules = self.database[Rule].search(~Exists(field='parent'), Pagination(order_by='name'))
+        self.build_childrens(self.rules)
+
+    def build_childrens(self, uids: List[UUID]):
+        '''Build a dictionary mapping rule uids to their childrens'''
+        children_uids: List[UUID] = []
+        for children in self.database[Rule].search(InArray(field='parent', value=uids)):
+            uid = children.parent_uid
+            self.childrens.setdefault(uid, [])
+            self.childrens[uid].append(children)
+            children_uids.append(children.uid)
+        self.build_childrens(children_uids)
+
     def process(self, record):
         '''Process the record against a list of rules'''
         self.process_rules(record, self.rules)
         return record
 
-    def validate(self, obj):
-        '''Validate a rule object'''
-        validate_condition(obj)
-        validate_modification(obj, self.core)
-
     def process_rules(self, record, rules):
         '''Process a list of rules'''
-        LOG.debug("Processing record %s against rules", record.get('hash', ''))
+        log.debug("Processing record %s against rules", record.get('hash', ''))
         for rule in rules:
             if rule.enabled and rule.match(record):
-                LOG.debug("Rule %s matched record: %s", rule.name, record.get('hash', ''))
+                log.debug("Rule %s matched record: %s", rule.name, record.get('hash', ''))
                 rule.modify(record)
-                self.process_rules(record, rule.children)
-
-    def reload_data(self):
-        LOG.debug("Reloading data for plugin %s", self.name)
-        self.data = self.db.search('rule', ['NOT', ['EXISTS', 'parent']], orderby='name')['data']
-        rules = []
-        for rule in (self.data or []):
-            rules.append(RuleObject(rule, self.core))
-        self.rules = rules
+                self.process_rules(record, self.childrens.get(rule.uid, []))

@@ -17,7 +17,7 @@ from logging import getLogger
 from typing import List, Optional, Tuple, Literal, Dict, Union, ForwardRef
 
 import dateutil.parser
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, validator, root_validator
 
 from snooze.utils.typing import Record
 
@@ -35,7 +35,7 @@ def get_record_date(record: Record) -> datetime:
         record_date = datetime.now().astimezone()
     return record_date
 
-OperatorType = Literal['datetime', 'time', 'weekdays', 'AND', 'OR', 'NOT']
+OperatorType = Literal['datetime', 'time', 'weekdays', 'AND', 'OR', 'NOT', 'ANYTIME']
 
 # ForwardRefs
 # https://pydantic-docs.helpmanual.io/usage/postponed_annotations/
@@ -46,9 +46,19 @@ Not = ForwardRef('Not')
 class TemporalConstraintBase(BaseModel, ABC):
     '''A base class for time constraints'''
     type: OperatorType = Field(...)
+    sort: str = Field(
+        default='',
+        description='An auto-generated field used for sorting the conditions '
+        'in the web interface',
+    )
 
     class Config:
         allow_population_by_field_name = True
+
+    @classmethod
+    @abstractmethod
+    def compute_sort(cls, values: dict) -> str:
+        '''A forced root_validator to compute the sort field of the constraint'''
 
     @abstractmethod
     def match(self, record_date: datetime) -> bool:
@@ -66,6 +76,17 @@ class TemporalConstraintBase(BaseModel, ABC):
     def __str__(self):
         return "TemporalConstraint"
 
+class Anytime(TemporalConstraintBase):
+    '''A temporal constraint that always match. Equivalent to AlwaysTrue for conditions'''
+    type: Literal['ANYTIME'] = 'ANYTIME'
+
+    def match(self, record_date: datetime) -> bool:
+        return True
+
+    @root_validator
+    def compute_sort(cls, values):
+        return 'd'
+
 # Logic
 class Not(TemporalConstraintBase):
     '''Match the opposite of a given condition'''
@@ -81,6 +102,10 @@ class Not(TemporalConstraintBase):
     def mongo_search(self):
         return {'$nor': self.constraint.mongo_search()}
 
+    @root_validator
+    def compute_sort(cls, values):
+        return values['constraint'].sort
+
 class And(TemporalConstraintBase):
     '''Match only if all constraints given in arguments match'''
     type: Literal['AND'] = 'AND'
@@ -92,6 +117,9 @@ class And(TemporalConstraintBase):
         return '(' + ' & '.join(map(str, self.constraints)) + ')'
     def mongo_search(self):
         return {'$and': [constraint.mongo_search() for constraint in self.constraints]}
+    @root_validator
+    def compute_sort(cls, values):
+        return max(constraint.sort for constraint in values['constraints'])
 
 class Or(TemporalConstraintBase):
     '''Match only if one of the constraint given in arguments match'''
@@ -104,6 +132,9 @@ class Or(TemporalConstraintBase):
         return '(' + ' | '.join(map(str, self.constraints)) + ')'
     def mongo_search(self):
         return {'$or': [constraint.mongo_search() for constraint in self.constraints]}
+    @root_validator
+    def compute_sort(cls, values):
+        return max(constraint.sort for constraint in values['constraints'])
 
 class DatetimeConstraint(TemporalConstraintBase):
     '''A time constraint using fixed dates.
@@ -121,6 +152,10 @@ class DatetimeConstraint(TemporalConstraintBase):
         alias='until',
         default=None,
     )
+
+    @root_validator
+    def compute_sort(cls, values):
+        return f"a_{values['date_until']}"
 
     @validator('date_from', 'date_until', check_fields=False)
     def dateutil_parser(cls, value):
@@ -163,6 +198,10 @@ class WeekdaysConstraint(TemporalConstraintBase):
     type: Literal['weekdays'] = 'weekdays'
     week: Dict[WeekdayEnum, bool] = Field(default_factory=dict)
 
+    @root_validator
+    def compute_sort(cls, _values):
+        return 'c'
+
     def match(self, record_date: datetime) -> bool:
         weekday = WeekdayEnum(int(record_date.strftime('%w')))
         return self.week.get(weekday, False)
@@ -185,6 +224,10 @@ class TimeConstraint(TemporalConstraintBase):
         alias='until',
         default=None,
     )
+
+    @root_validator
+    def compute_sort(cls, values):
+        return f"b_{values['time2']}"
 
     @validator('time1', 'time2', check_fields=False)
     def dateutil_parser(cls, value):
@@ -226,6 +269,7 @@ TemporalConstraint = Union[
     # Logic
     And, Or, Not,
     # Constraints
+    Anytime,
     DatetimeConstraint,
     WeekdaysConstraint,
     TimeConstraint,

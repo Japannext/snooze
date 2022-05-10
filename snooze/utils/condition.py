@@ -384,7 +384,7 @@ Not.update_forward_refs()
 class ConditionWrapper(BaseModel):
     '''A wrapper to be able to use pydantic defined constraints
     with the discriminator'''
-    condition: Condition = Field(..., discriminator='type')
+    condition: Condition = Field(default_factory=AlwaysTrue, discriminator='type')
 
 def guess_condition(data: dict) -> Condition:
     '''Return a condition given a dict representing the condition.

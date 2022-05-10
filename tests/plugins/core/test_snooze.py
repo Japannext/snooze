@@ -6,7 +6,7 @@
 #
 
 from snooze.plugins.core.snooze.plugin import *
-from snooze.plugins.core import Abort, AbortAndWrite
+from snooze.plugins.core.basic.plugin import Abort, AbortAndWrite
 
 import pytest
 

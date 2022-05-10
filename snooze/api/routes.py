@@ -21,6 +21,7 @@ from ldap3.core.exceptions import LDAPOperationResult, LDAPExceptionError
 from snooze.utils.functions import unique, ensure_kv, authorize, extract_basic_auth
 from snooze.utils.typing import RouteArgs, ConditionOrUid, Pagination, AuthPayload
 from snooze.utils.config import GeneralConfig, LdapConfig
+from snooze.utils.model import Record
 
 log = getLogger('snooze.api.routes')
 
@@ -140,27 +141,32 @@ class FalconRoute(BasicRoute):
 
 
 class AlertRoute(BasicRoute):
-    '''Alerta compatibility route'''
+    '''Route for record processing'''
     authentication = False
 
     def on_post(self, req, resp):
-        '''Expect an alerta-style input, and will process it like a snooze alert'''
+        '''Will process an alert'''
         log.debug("Received log %s", req.media)
-        media = req.media.copy()
-        rec_list = [{'data': {}}]
-        if not isinstance(media, list):
-            media = [media]
-        for req_media in media:
+
+        medias = req.media
+        if not isinstance(medias, list):
+            medias = [medias]
+
+        success = []
+        rejected = []
+
+        for media in medias:
             try:
-                rec = self.core.process_record(req_media)
-                rec_list.append(rec)
+                record = Record(**media)
+                record = self.core.process_record(record)
+                success.append(record.dict())
             except Exception as err:
-                log.warning('Error while processing Alerta alert', exc_info=err)
-                rec_list.append({'data': {'rejected': [req_media]}})
+                log.warning('Error while processing alert', exc_info=err)
+                rejected.append(media)
                 continue
         resp.content_type = falcon.MEDIA_JSON
         resp.status = falcon.HTTP_OK
-        resp.media = merge_batch_results(rec_list)
+        resp.media = {'success': success, 'rejected': rejected}
 
 class MetricsRoute(BasicRoute):
     '''A falcon route to serve prometheus metrics'''

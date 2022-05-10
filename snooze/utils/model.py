@@ -46,8 +46,13 @@ class MongodbMetadata(BaseModel):
         description='A set of fields which should be considered immutables. If a user try to update on of'
         ' the given fields, an exception will be raised',
     )
+    order_by: str = Field(
+        title='Order by',
+        default='$natural',
+        description='A field name to order the documents by during a search',
+    )
 
-class DatabaseEntry(BaseModel):
+class DatabaseEntry(BaseModel, extra=Extra.allow):
     '''Represent a document in the database'''
     uid: UUID = Field(default_factory=uuid4)
     date_epoch: float = Field(default_factory=lambda: datetime.now().timestamp())
@@ -57,13 +62,33 @@ class DatabaseEntry(BaseModel):
         description='Used by each new object to describe how it should be stored in mongodb',
     )
 
-class UserEntry(DatabaseEntry):
+class ApiModel(DatabaseEntry):
     '''Represent a document created by a human or API user, as opposed to
     snooze internals and input plugins'''
-    snooze_user: SnoozeUser = Field(
-        title='Snooze user',
-        description='User that last modified the object',
-    )
+    #snooze_user: SnoozeUser = Field(
+    #    title='Snooze user',
+    #    description='User that created the object',
+    #)
+
+class CoreProcess(BaseModel, extra=Extra.allow):
+    '''Fields added and used by the record processing'''
+    plugins: List[str] = Field(default_factory=list)
+    rules: List[str] = Field(default_factory=list)
+    aggregate: Optional[str] = Field(default=None)
+    duplicates: int = Field(default=0)
+    snooze: Optional[str] = Field(default=None)
+    notifications: List[str] = Field(default_factory=list)
+
+class ProcessException(BaseModel, extra=Extra.allow):
+    '''When an error happened during processing of a record,
+    these information written in the record will describe the error'''
+    plugin: str
+    message: str
+    traceback: List[str] = Field(default_factory=list)
+
+    def __init__(self, plugin: str, err: Exception):
+        traceback = []
+        BaseModel.__init__(plugin=plugin, message=str(err), traceback=traceback)
 
 class Record(DatabaseEntry, extra=Extra.allow):
     '''An alert entering the system'''
@@ -78,7 +103,13 @@ class Record(DatabaseEntry, extra=Extra.allow):
     environment: str = 'unknown'
     ttl: Optional[int] = None
     state: RecordState = RecordState.EMPTY
+    core: CoreProcess = Field(default_factory=CoreProcess)
+    exception: Optional[ProcessException] = Field(default=None)
 
+    @validator('severity')
+    def casefold(cls, value: str):
+        '''Make sure the severity name is lowercase'''
+        return value.casefold()
 
     @validator('timestamp')
     def dateutil_parser(cls, value):
@@ -91,7 +122,7 @@ class Record(DatabaseEntry, extra=Extra.allow):
                 return datetime.now()
         return value
 
-class Rule(UserEntry):
+class Rule(ApiModel):
     _mongodb = MongodbMetadata(collection='rule')
 
     name: str = ''
@@ -99,8 +130,7 @@ class Rule(UserEntry):
     modifications: List[Modification] = Field(default_factory=list)
     comment: str = ''
 
-
-class AggregateRule(UserEntry):
+class AggregateRule(ApiModel):
     _mongodb = MongodbMetadata(collection='aggregaterule')
 
     name: str = ''
@@ -109,26 +139,6 @@ class AggregateRule(UserEntry):
     throttle: timedelta = timedelta(minutes=15)
     comment: str = ''
     condition: Condition = Field(default_factory=AlwaysTrue, discriminator='type')
-
-
-class SnoozeFilter(UserEntry):
-    _mongodb = MongodbMetadata(collection='snooze')
-
-    enabled: bool = True
-    name: str = ''
-    condition: Condition = Field(default_factory=AlwaysTrue, discriminator='type')
-    #time_constraints: MultiConstraint = Field()
-    comment: str = ''
-    discard: bool = False
-    # Computed
-    sort: str
-
-
-    @root_validator
-    def compute_sort(cls, values: dict) -> Dict: # pylint: disable=no-self-argument,no-self-use
-        '''Computing `sort`'''
-        if 'sort' not in values:
-            values['sort'] = values['time_constraint'].get_sort()
 
 class NotificationFrequency(BaseModel):
     '''Parameters related to the frequency of sending notification in case of error.'''
@@ -148,7 +158,7 @@ class NotificationFrequency(BaseModel):
         description='Interval (in seconds) between retries if the notification fails',
     )
 
-class Notification(UserEntry):
+class Notification(ApiModel):
     _mongodb = MongodbMetadata(collection='notification')
 
     '''A rule that define what should happen when a record is not snoozed (and should be notified)'''
@@ -177,7 +187,7 @@ class Notification(UserEntry):
         description='Comment associated with the notification',
     )
 
-class Action(UserEntry):
+class Action(ApiModel):
     _mongodb = MongodbMetadata(collection='action', primaries={'name'})
 
     name: str = ''
@@ -187,7 +197,7 @@ class Action(UserEntry):
     pprint: str
     icon: str
 
-class Widget(UserEntry):
+class Widget(ApiModel):
     _mongodb = MongodbMetadata(collection='widget')
 
     enabled: bool = True
@@ -199,7 +209,7 @@ class Widget(UserEntry):
     icon: str
     vue_component: str
 
-class User(UserEntry):
+class User(ApiModel):
     '''Represent a user data in the database'''
     _mongodb = MongodbMetadata(collection='user', primaries={'user', 'method'})
 

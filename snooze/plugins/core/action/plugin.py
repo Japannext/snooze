@@ -15,14 +15,14 @@ from typing import Optional
 
 from logging import getLogger
 
-from snooze.plugins.core import Plugin
+from snooze.plugins.core.basic.plugin import Plugin
 from snooze.utils.functions import ensure_hash
 from snooze.utils.mq import Worker
 from snooze.utils.threading import SurvivingThread
 
 log = getLogger('snooze.action')
 
-class Action(Plugin):
+class ActionPlugin(Plugin):
     '''The action plugin. Spawn a background thread that will manage delayed and batched actions'''
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

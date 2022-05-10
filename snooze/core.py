@@ -28,18 +28,26 @@ from snooze import __file__ as rootdir
 from snooze.api import Api
 from snooze.api.socket import WSGISocketServer, admin_api
 from snooze.api.tcp import TcpThread
-from snooze.db.database import Database
-from snooze.plugins.core import Abort, AbortAndWrite, AbortAndUpdate
+from snooze.database import Database
+from snooze.db.database import Database as OldDatabase
+from snooze.plugins.core.basic.plugin import Abort, AbortAndWrite, AbortAndUpdate
 from snooze.token import TokenEngine
 from snooze.utils import Housekeeper, Stats, MQManager
 from snooze.utils.cluster import Cluster
 from snooze.utils.config import Config, SNOOZE_CONFIG
 from snooze.utils.threading import SurvivingThread
-from snooze.utils.typing import Record
+from snooze.utils.model import Record, ProcessException, ApiModel, MongodbMetadata
 
 log = getLogger('snooze')
 
 MAIN_THREADS = ('housekeeper', 'cluster', 'tcp', 'socket')
+
+class Secret(ApiModel):
+    '''A secret stored in the database'''
+    _mongodb = MongodbMetadata(collection='secrets')
+
+    name: str
+    value: str
 
 class Core:
     '''The main class of snooze, passed to all plugins'''
@@ -47,10 +55,11 @@ class Core:
         self.basedir = basedir
         self.config = Config(basedir)
         core_config = self.config.core
-        self.db = Database(core_config.database)
+        self.database = Database(core_config.database)
+        self.db = OldDatabase(core_config.database)
         log.debug('init db')
 
-        self.stats = Stats(self.db, self.config.general)
+        self.stats = Stats(self.database, self.config.general)
         self.stats.init('process_alert_duration', 'summary', 'snooze_process_alert_duration',
             'Average time spend processing a alert', ['source', 'environment', 'severity'])
         self.stats.init('alert_hit', 'counter', 'snooze_alert_hit',
@@ -94,7 +103,7 @@ class Core:
 
         if 'tcp' in allowed_threads:
             tcp_config = core_config.listen_addr, core_config.port, core_config.ssl
-            self.threads['tcp'] = TcpThread(tcp_config, self.api.handler, self.exit_event)
+            self.threads['tcp'] = TcpThread(tcp_config, self.api, self.exit_event)
 
     def start(self):
         '''Start the threads of the core'''
@@ -127,7 +136,7 @@ class Core:
             try:
                 log.debug("Attempting to load core plugin %s", plugin_name)
                 plugin_module = import_module(f"snooze.plugins.core.{plugin_name}.plugin")
-                plugin_class = getattr(plugin_module, plugin_name.capitalize())
+                plugin_class = getattr(plugin_module, f"{plugin_name.capitalize()}Plugin")
             except ModuleNotFoundError:
                 log.debug("Module for plugin `%s` not found. Using Basic instead", plugin_name)
                 plugin_module = import_module("snooze.plugins.core.basic.plugin")
@@ -154,7 +163,7 @@ class Core:
         log.debug("List of loaded core plugins: %s", [plugin.name for plugin in self.plugins])
         log.debug("List of loaded process plugins: %s", [plugin.name for plugin in self.process_plugins])
 
-    def process_record(self, record: Record):
+    def process_record(self, record: Record) -> Record:
         '''Method called when a given record enters the system.
         The method will run the record through all configured plugin,
         except when it receive a specific exception.
@@ -167,57 +176,40 @@ class Core:
             update the timestamp of the record. This is used mainly by aggregaterule plugin
             for throttling.
         '''
-        data = {}
-        source = record.get('source', 'unknown')
-        environment = record.get('environment', 'unknown')
-        severity = record.get('severity', 'unknown')
-        record['ttl'] = int(self.config.housekeeper.record_ttl.total_seconds())
+        if not record.ttl:
+            record.ttl = int(self.config.housekeeper.record_ttl.total_seconds())
         log.debug("OK severities: %s", self.config.general.ok_severities)
-        if severity.casefold() in self.config.general.ok_severities:
-            record['state'] = 'close'
-        else:
-            record['state'] = ''
-        record['plugins'] = []
+        if record.severity in self.config.general.ok_severities:
+            record.state = 'close'
 
-        try:
-            timestamp = dateutil.parser.parse(record['timestamp'])
-        except KeyError:
-            timestamp = datetime.now()
-        except dateutil.parser.ParserError as err:
-            log.warning(err)
-            timestamp = datetime.now()
-        record['timestamp'] = timestamp.astimezone().strftime("%Y-%m-%dT%H:%M:%S%z")
-
-        with self.stats.time('process_alert_duration', {'source': source, 'environment': environment, 'severity': severity}):
+        with self.stats.time('process_alert_duration', record.dict(include={'source', 'environment', 'severity'})):
             for plugin in self.process_plugins:
                 try:
                     log.debug("Executing plugin %s on record %s", plugin.name, record.get('hash', ''))
-                    record['plugins'].append(plugin.name)
+                    record.core.plugins.append(plugin.name)
                     record = plugin.process(record)
                 except Abort:
-                    data = {'data': {'processed': [record]}}
+                    #data = {'data': {'processed': [record]}}
                     break
                 except AbortAndWrite as abort:
-                    data = self.db.write('record', abort.record or record, duplicate_policy='replace')
+                    record = abort.record or record
+                    self.database[Record].create(record)
                     break
                 except AbortAndUpdate as abort:
-                    data = self.db.write('record', abort.record or record, update_time=False, duplicate_policy='replace')
+                    self.database[Record].replace(abort.record.uid, abort.record)
+                    #data = self.db.write('record', abort.record or record, update_time=False, duplicate_policy='replace')
                     break
                 except Exception as err:
                     log.exception(err)
-                    record['exception'] = {
-                        'core_plugin': plugin.name,
-                        'message': str(err),
-                    }
-                    data = self.db.write('record', record, duplicate_policy='replace')
+                    record.exception = ProcessException(plugin.name, err)
+                    self.database[Record].replace(record.uid, record)
+                    #data = self.db.write('record', record, duplicate_policy='replace')
                     break
             else:
                 log.debug("Writing record %s", record)
-                data = self.db.write('record', record, duplicate_policy='replace')
-        environment = record.get('environment', 'unknown')
-        severity = record.get('severity', 'unknown')
-        self.stats.inc('alert_hit', {'source': source, 'environment': environment, 'severity': severity})
-        return data
+                self.database[Record].replace(record.uid, record)
+        self.stats.inc('alert_hit', record.dict(include={'source', 'environment', 'severity'}))
+        return record
 
     def sync_reload_plugin(self, plugin_name: str):
         '''Trigger a plugin reload to other cluster peers'''
@@ -237,38 +229,17 @@ class Core:
 
     def get_secrets(self) -> dict:
         '''Return a dict of secrets stored in the database'''
-        results = self.db.search('secrets', ['=', 'type', 'secret'])
-        if results.get('count') > 0:
-            secrets = {}
-            for data in results['data']:
-                name = data.get('name')
-                value = data.get('value')
-                if name:
-                    secrets[name] = value
-            return secrets
-        else:
-            return {}
+        return {
+            s.name: s.value
+            for s in self.database[Secret].search()
+        }
 
     def ensure_secrets(self):
         '''Bootstrap the secrets if not present and store them in the database'''
-        should = {
-            'jwt_private_key': lambda: token_urlsafe(128),
-            'reload_token': lambda: token_urlsafe(32),
-        }
-        actual = self.get_secrets()
-        towrite = []
-        for name, method in should.items():
-            if name not in actual:
-                sleep(random() * self.config.core.init_sleep)
-                actual = self.get_secrets()
-                break
-        for name, method in should.items():
-            if name not in actual:
-                secret = method()
-                towrite.append({'type': 'secret', 'name': name, 'value': secret})
-        if towrite:
-            self.db.write('secrets', towrite)
-        return self.get_secrets()
+        secrets = {}
+        secrets['jwt_private_key'] = self.database[Secret].ensure({'name': 'jwt_private_key'}, lambda: {'value': token_urlsafe(128)})
+        secrets['reload_token'] = self.database[Secret].ensure({'name': 'reload_token'}, lambda: {'value': token_urlsafe(32)})
+        return secrets
 
     def reload_conf(self, config_file):
         '''Reload the configuration file'''

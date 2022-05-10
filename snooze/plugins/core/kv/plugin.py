@@ -9,11 +9,11 @@
 
 from logging import getLogger
 
-from snooze.plugins.core import Plugin
+from snooze.plugins.core.basic.plugin import Plugin
 
 log = getLogger('snooze.kv')
 
-class Kv(Plugin):
+class KvPlugin(Plugin):
     '''Plugin for managing a user/script defined key-value in the database'''
     def reload_data(self):
         super().reload_data()
