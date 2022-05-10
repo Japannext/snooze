@@ -4,12 +4,9 @@ desc: 'An endpoint to store user comments'
 audit: false
 provides:
     - can_comment
-routes:
-  '/comment_self':
-    desc: ''
 route_defaults:
     class: CommentRoute
-    inject_payload: True
+    inject_payload: true
     authorization_policy:
         read: [any]
         write: [can_comment]
@@ -17,3 +14,6 @@ route_defaults:
         - name
         - method
     check_permissions: true
+routes:
+    '/comment_self':
+        desc: ''
