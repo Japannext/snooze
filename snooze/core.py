@@ -26,7 +26,7 @@ from dateutil import parser
 
 from snooze import __file__ as rootdir
 from snooze.db.database import Database
-from snooze.plugins.core import Abort, Abort_and_write, Abort_and_update
+from snooze.plugins.core import Abort, AbortAndWrite, AbortAndUpdate
 from snooze.token import TokenEngine
 from snooze.utils.functions import flatten
 from snooze.api.socket import WSGISocketServer, admin_api
@@ -146,9 +146,9 @@ class Core:
         except when it receive a specific exception.
         Abort:
             Will abort the processing for a record.
-        Abort_and_write:
+        AbortAndWrite:
             Will abort processing, and write the record in the database.
-        Abort_and_update:
+        AbortAndUpdate:
             Will abort processing, and write the record in the database, but will not
             update the timestamp of the record. This is used mainly by aggregaterule plugin
             for throttling.
@@ -178,10 +178,10 @@ class Core:
                 except Abort:
                     data = {'data': {'processed': [record]}}
                     break
-                except Abort_and_write as abort:
+                except AbortAndWrite as abort:
                     data = self.db.write('record', abort.record or record, duplicate_policy='replace')
                     break
-                except Abort_and_update as abort:
+                except AbortAndUpdate as abort:
                     data = self.db.write('record', abort.record or record, update_time=False, duplicate_policy='replace')
                     break
                 except Exception as err:
