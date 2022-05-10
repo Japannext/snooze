@@ -40,6 +40,13 @@ class RouteArgs(BaseModel):
     inject_payload: bool = False
     prefix: str = '/api'
 
+class PeerStatus(BaseModel):
+    '''A dataclass containing the status of one peer'''
+    host: str
+    port: int
+    version: str
+    healthy: bool
+
 class HostPort(BaseModel):
     '''An object to represent a host-port pair'''
     host: str = Field(
