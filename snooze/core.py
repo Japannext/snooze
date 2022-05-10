@@ -73,7 +73,7 @@ class Core:
             self.threads['housekeeper'] = Housekeeper(self.config.housekeeper,
                 self.config.core.backup, self.db, self.exit_event)
         if 'cluster' in allowed_threads:
-            self.threads['cluster'] = Cluster(self.config.core, self.secrets['reload_token'], self.exit_event)
+            self.threads['cluster'] = Cluster(self.config.core, self.exit_event)
 
         self.mq = MQManager(self)
 
@@ -199,6 +199,18 @@ class Core:
         severity = record.get('severity', 'unknown')
         self.stats.inc('alert_hit', {'source': source, 'environment': environment, 'severity': severity})
         return data
+
+    def sync_reload_plugin(self, plugin_name: str):
+        '''Trigger a plugin reload to other cluster peers'''
+        cluster = self.threads.get('cluster')
+        if cluster:
+            cluster.sync_reload_plugin(plugin_name)
+
+    def sync_setting_update(self, section, data, auth):
+        '''Trigger a setting update to other cluster peers'''
+        cluster = self.threads.get('cluster')
+        if cluster:
+            cluster.sync_setting_update(section, data, auth)
 
     def get_core_plugin(self, plugin_name: str) -> Optional['Plugin']:
         '''Return a core plugin object by name'''
