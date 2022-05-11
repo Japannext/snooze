@@ -21,6 +21,21 @@ log = getLogger('snooze.utils.functions')
 
 T = TypeVar('T')
 
+def log_warning_handler(err, _req, _resp, _params):
+    '''Log caught exceptions as a warning'''
+    log.warning(str(err), exc_info=err)
+    raise err
+
+def log_error_handler(err, _req, _resp, _params):
+    '''Log caught exceptions as an error'''
+    log.exception(err)
+    raise err
+
+def log_uncaught_handler(err, _req, _resp, _params):
+    '''Log uncaught exceptions and return a clean 5xx'''
+    log.exception(err)
+    raise falcon.HTTPInternalServerError(description=str(err)) from err
+
 def unique(lst: list) -> list:
     '''Return a list with only unique elements'''
     return list(set(lst))
