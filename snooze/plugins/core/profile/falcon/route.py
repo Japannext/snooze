@@ -52,10 +52,9 @@ class ProfileRoute(FalconRoute):
             self.inject_payload_media(req, resp)
         resp.content_type = falcon.MEDIA_JSON
         try:
-            media = req.media.copy()
             if section == 'general':
                 self.update_password(req.media)
-            result_dict = self.update(f"profile.{section}", media)
+            result_dict = self.update(f"profile.{section}", req.media)
             resp.media = result_dict
             resp.status = falcon.HTTP_201
         except Exception as err:
