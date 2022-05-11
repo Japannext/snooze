@@ -19,10 +19,10 @@ from typing import Optional, List
 import bson.json_util
 import falcon
 from pydantic import BaseModel, ValidationError
-from falcon_auth import FalconAuthMiddleware, JWTAuthBackend
 
 from snooze.api.routes import *
 from snooze.health import HealthRoute
+from snooze.token import TokenAuthMiddleware
 from snooze.utils.config import WebConfig
 from snooze.utils.functions import log_error_handler, log_warning_handler, log_uncaught_handler
 from snooze.utils.typing import HTTPUserErrors
@@ -79,19 +79,13 @@ class Api:
         self.core = core
         self.cluster = core.threads['cluster']
 
-        # JWT setup
-        self.secret = '' if self.core.config.core.no_login else self.core.secrets['jwt_private_key']
-        def auth(payload):
-            log.debug("Payload received: %s", payload.get('user', {}).get('name', payload))
-            return payload
-        self.jwt_auth = JWTAuthBackend(auth, self.secret)
-
         # Handler
         middlewares = [
             CORS(),
             LoggerMiddleware(self.core.config.core.audit_excluded_paths),
-            FalconAuthMiddleware(self.jwt_auth),
         ]
+        if not self.core.config.core.no_login:
+            middlewares.append(TokenAuthMiddleware(self.core.token_engine))
         self.handler = falcon.API(middleware=middlewares)
         self.handler.req_options.auto_parse_qs_csv = False
 
