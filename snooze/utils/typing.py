@@ -7,6 +7,8 @@
 
 '''Typing utils for snooze'''
 
+from json import JSONEncoder
+from datetime import datetime, timedelta
 from typing import NewType, List, Literal, Optional, TypedDict, Union, Set
 
 import falcon
@@ -80,6 +82,13 @@ class AuthPayload(BaseModel):
     roles: List[str] = Field(default_factory=list)
     permissions: Set[str] = Field(default_factory=set)
     groups: List[str] = Field(default_factory=list)
+
+    def dict(self, **kwargs):
+        data = BaseModel.dict(self, **kwargs)
+        for key, value in data.items():
+            if isinstance(value, set):
+                data[key] = list(value)
+        return data
 
 class Widget(BaseModel):
     '''A widget representation in the config'''

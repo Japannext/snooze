@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Optional, List, Union, Any, TypeVar, Set
 
 import falcon
+import orjson
 from falcon import Request, Response
 
 from snooze.utils.typing import Record, AuthPayload
@@ -21,6 +22,17 @@ from snooze.utils.typing import Record, AuthPayload
 log = getLogger('snooze.utils.functions')
 
 T = TypeVar('T')
+
+def custom_json_fallback(obj: Any) -> Any:
+    '''A fallback for the json encoder when it doesn't
+    know how to encode the type. All the custom types are
+    defined here. Should return a serializable object or TypeError.'''
+    if isinstance(obj, set):
+        return list(obj)
+    raise TypeError
+
+def custom_json_dumps(obj: Any) -> str:
+    return orjson.dumps(obj, default=custom_json_fallback)
 
 def log_warning_handler(err, _req, _resp, _params):
     '''Log caught exceptions as a warning'''
