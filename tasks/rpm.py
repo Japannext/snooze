@@ -1,5 +1,6 @@
 '''Build the rpm'''
 
+import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -8,6 +9,7 @@ from invoke import task, Collection
 import tasks.pip
 import tasks.web
 from tasks.utils import print_github_kv, get_paths, get_versions
+from tasks.docker import docker_images
 from snooze.utils.config import *
 
 def compute_type(prop: dict) -> str:
@@ -113,6 +115,47 @@ def build(ctx, force=False, github_output=False):
         print_github_kv('PATH', target)
         print_github_kv('ASSET_NAME', target.name)
 
+@task(tasks.pip.build, tasks.web.build)
+def docker_build(ctx, force=False, github_output=False, dockerfile="packaging/rpm/Dockerfile", cacert=None):
+    '''Build a rpm based on the code inside a docker container.
+    Use this job if your environment doesn't have the proper libraries and python
+    version.'''
+    artifacts = get_paths()
+    target = artifacts['rpm']
+    if (not force) and target.exists():
+        print(f"Target {target} already exists")
+        return
+    print("Building rpm")
+    with TemporaryDirectory(prefix='snooze-rpm-build') as tmpdir:
+        basedir = Path(tmpdir)
+        for name in ['BUILD', 'SOURCES', 'SRPMS', 'RPMS']:
+            (basedir / name).mkdir()
+        ctx.run(f"cp -r dist/* {tmpdir}/SOURCES/")
+        ctx.run(f"cp packaging/files/* {tmpdir}/SOURCES/")
+        if not docker_images(ctx, 'snooze-server-rpm-dev'):
+            cmd = [
+                'docker build',
+                '-t snooze-server-rpm-dev',
+                f"{Path(dockerfile).parent}",
+            ]
+            if cacert:
+                cmd.append(f"-v {cacert}:/etc/pki/tls/cert.pem")
+            ctx.run(' '.join(cmd))
+        run_cmd = [
+            'docker run',
+            f"-v {tmpdir}:/build:rw",
+            f'-v "{os.getcwd()}:/code:rw"',
+            'snooze-server-rpm-dev',
+            'rpmbuild',
+            "--define '_topdir /mnt'",
+            '--ba /code/packaging/rpm/snooze-server.spec -vv --debug',
+        ]
+        ctx.run(' '.join(run_cmd))
+        ctx.run(f"cp -r {tmpdir}/RPMS/ dist/")
+    if github_output:
+        print_github_kv('PATH', target)
+        print_github_kv('ASSET_NAME', target.name)
+
 @task
 def version(_ctx):
     '''Return the rpm version'''
@@ -127,6 +170,7 @@ def release(_ctx):
 
 ns = Collection('rpm')
 ns.add_task(build)
+ns.add_task(docker_build)
 ns.add_task(version)
 ns.add_task(release)
 ns.add_task(defaults)
