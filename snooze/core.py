@@ -146,9 +146,12 @@ class Core:
             for throttling.
         '''
         data = {}
-        source = record.get('source', 'unknown')
-        environment = record.get('environment', 'unknown')
         severity = record.get('severity', 'unknown')
+        labels = {
+            'source': record.get('source', 'unknown'),
+            'environment': record.get('environment', 'unknown'),
+            'severity': severity,
+        }
         record['ttl'] = int(self.config.housekeeper.record_ttl.total_seconds())
         log.debug("OK severities: %s", self.config.general.ok_severities)
         if severity.casefold() in self.config.general.ok_severities:
@@ -163,7 +166,7 @@ class Core:
         except parser.ParserError as err:
             log.warning(err)
             record['timestamp'] = datetime.now().astimezone().strftime("%Y-%m-%dT%H:%M:%S%z")
-        with self.stats.time('process_alert_duration', {'source': source, 'environment': environment, 'severity': severity}):
+        with self.stats.time('process_alert_duration', labels):
             for plugin in self.process_plugins:
                 try:
                     log.debug("Executing plugin %s on record %s", plugin.name, record.get('hash', ''))
@@ -191,7 +194,7 @@ class Core:
                 data = self.db.write('record', record, duplicate_policy='replace')
         environment = record.get('environment', 'unknown')
         severity = record.get('severity', 'unknown')
-        self.stats.inc('alert_hit', {'source': source, 'environment': environment, 'severity': severity})
+        self.stats.inc('alert_hit', labels)
         return data
 
     def sync_reload_plugin(self, plugin_name: str):
