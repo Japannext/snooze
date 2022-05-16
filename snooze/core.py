@@ -158,7 +158,9 @@ class Core:
         record['plugins'] = []
         try:
             record['timestamp'] = parser.parse(record['timestamp']).astimezone().strftime("%Y-%m-%dT%H:%M:%S%z")
-        except Exception as err:
+        except KeyError:
+            record['timestamp'] = datetime.now().astimezone().strftime("%Y-%m-%dT%H:%M:%S%z")
+        except parser.ParserError as err:
             log.warning(err)
             record['timestamp'] = datetime.now().astimezone().strftime("%Y-%m-%dT%H:%M:%S%z")
         with self.stats.time('process_alert_duration', {'source': source, 'environment': environment, 'severity': severity}):
