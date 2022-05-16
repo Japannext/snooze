@@ -21,6 +21,7 @@ from typing import Dict, Optional
 from pkg_resources import iter_entry_points
 from pathlib import Path
 from typing import List
+from uuid import uuid4
 
 from dateutil import parser
 
@@ -176,10 +177,12 @@ class Core:
                     data = {'data': {'processed': [record]}}
                     break
                 except AbortAndWrite as abort:
-                    self.db.replace_one('record', abort.record or record)
+                    uid = record.get('uid', str(uuid4()))
+                    self.db.replace_one('record', uid, abort.record or record)
                     break
                 except AbortAndUpdate as abort:
-                    self.db.replace_one('record', abort.record or record, update_time=False)
+                    uid = record.get('uid', str(uuid4()))
+                    self.db.replace_one('record', uid, abort.record or record, update_time=False)
                     break
                 except Exception as err:
                     log.exception(err)
@@ -187,11 +190,13 @@ class Core:
                         'core_plugin': plugin.name,
                         'message': str(err),
                     }
+                    uid = record.get('uid', str(uuid4()))
                     self.db.replace_one('record', record)
                     break
             else:
                 log.debug("Writing record %s", record)
-                data = self.db.write('record', record, duplicate_policy='replace')
+                uid = record.get('uid', str(uuid4()))
+                self.db.replace_one('record', uid, record)
         environment = record.get('environment', 'unknown')
         severity = record.get('severity', 'unknown')
         self.stats.inc('alert_hit', labels)
