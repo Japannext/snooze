@@ -171,10 +171,10 @@ class Core:
                     data = {'data': {'processed': [record]}}
                     break
                 except AbortAndWrite as abort:
-                    data = self.db.write('record', abort.record or record, duplicate_policy='replace')
+                    self.db.replace_one('record', abort.record or record)
                     break
                 except AbortAndUpdate as abort:
-                    data = self.db.write('record', abort.record or record, update_time=False, duplicate_policy='replace')
+                    self.db.replace_one('record', abort.record or record, update_time=False)
                     break
                 except Exception as err:
                     log.exception(err)
@@ -182,7 +182,7 @@ class Core:
                         'core_plugin': plugin.name,
                         'message': str(err),
                     }
-                    data = self.db.write('record', record, duplicate_policy='replace')
+                    self.db.replace_one('record', record)
                     break
             else:
                 log.debug("Writing record %s", record)

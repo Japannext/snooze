@@ -222,6 +222,20 @@ class BackendDB(Database):
         return {'data': {'added': added, 'updated': updated, 'replaced': replaced, 'rejected': rejected}}
 
     @wrap_exception
+    def update_one(self, collection: str, uid: str, obj: dict, update_time: bool = True):
+        new_obj = dict(obj)
+        if update_time:
+            new_obj['date_epoch'] = datetime.datetime.now().timestamp()
+        self.db[collection].update_one({'uid': uid}, new_obj, upsert=True)
+
+    @wrap_exception
+    def replace_one(self, collection: str, uid: str, obj: dict, update_time: bool = True):
+        new_obj = dict(obj)
+        if update_time:
+            new_obj['date_epoch'] = datetime.datetime.now().timestamp()
+        self.db[collection].replace_one({'uid': uid}, new_obj, upsert=True)
+
+    @wrap_exception
     def inc(self, collection: str, field: str, labels: dict = {}):
         now = datetime.datetime.utcnow()
         now = now.replace(minute=0, second=0, microsecond=0)
