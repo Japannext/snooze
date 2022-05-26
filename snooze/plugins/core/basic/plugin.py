@@ -46,6 +46,36 @@ class Plugin:
         default_prefix = self.metadata_file.get('prefix', '/api')
         if self.metadata_file.get('action_form'):
             self.metadata_file['action_name'] = self.name
+            batch = self.get_options('batch')
+            if batch and not batch.get('hidden', False):
+                batch_form = {
+                    'batch': {
+                        'display_name': 'Batch',
+                        'component': 'Switch',
+                        'default': batch.get('default', False),
+                        'description': 'Batch alerts',
+                    },
+                    'batch_timer': {
+                        'display_name': 'Batch Timer',
+                        'component': 'Duration',
+                        'description': 'Number of seconds to wait before sending a batch',
+                        'options': {
+                            'zero_label': 'Immediate',
+                            'negative_label': 'Immediate',
+                        },
+                        'default_value': batch.get('timer', 10),
+                    },
+                    'batch_maxsize': {
+                        'display_name': 'Batch Maxsize',
+                        'component': 'Number',
+                        'description': 'Maximum batch size to send',
+                        'options': {
+                            'min': 1,
+                        },
+                        'default_value': batch.get('maxsize', 100),
+                    },
+                }
+                self.metadata_file['action_form'].update(batch_form)
         if default_routeclass:
             routes = {
                 '/'+self.name: {
