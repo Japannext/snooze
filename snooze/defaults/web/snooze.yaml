@@ -9,7 +9,7 @@ fields:
         thStyle: {width: '15%'}
     -
         key: name
-        sortable: true,
+        sortable: true
         tdClass: ['align-middle', 'text-break']
         thStyle: {width: '20%'}
     -

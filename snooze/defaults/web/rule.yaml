@@ -2,23 +2,22 @@
 tabs:
     -
         title: 'Rules'
-        filter: ['NOT', ['EXISTS', 'parent']]
 fields:
     -
         key: name
         sortable: true
-        thStyle: {width: '20%'}
+        tdStyle: {width: '20%'}
         tdClass: ['align-middle']
     -
         key: condition
         sortable: false
-        thStyle: {width: '50%'}
+        tdStyle: {width: '50%'}
         tdClass: ['align-middle']
         type: array
     -
         key: modifications
         sortable: false
-        thStyle: {width: '30%'}
+        tdStyle: {width: '30%'}
         tdClass: ['align-middle']
         type: array
     -
