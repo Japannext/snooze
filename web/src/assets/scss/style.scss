@@ -18,6 +18,16 @@ $enable-rtl: true;
   @include transition(padding .15s);
 }
 
+.card-header {
+  border: 1px solid var(--cui-card-border-color, rgba(0, 0, 21, 0.125));
+}
+
+.card-header-border {
+  border-left: none;
+  border-right: none;
+  border-top: none;
+}
+
 .card-header:not(.content-center) > .c-icon:first-child {
   margin-right: 0.1rem;
   margin-top: 0.1rem;

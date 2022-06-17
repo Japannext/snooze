@@ -7,7 +7,7 @@
       no_search
       no_history
       no_selection
-      no_contextmenu
+      short_contextmenu
       default_tab="Preview"
       @update="on_update"
     >
