@@ -168,7 +168,7 @@
               </td>
             </tr>
           </template>
-          <tr v-if="!currentItems.length && !loading">
+          <tr v-if="!currentItems.length">
             <td :colspan="colspan">
               <slot name="no-items-view">
                 <div class="text-center my-0">
@@ -248,21 +248,21 @@
     </v-contextmenu-item>
     <v-contextmenu-submenu title="To Clipboard">
       <template v-slot:title><i class="la la-clipboard la-lg"></i> To Clipboard</template>
-      <v-contextmenu-item @click="copy_clipboard" method="yaml">
+      <v-contextmenu-item @click="copy_clipboard(itemCopy, fields, $event)" method="yaml">
         As YAML
       </v-contextmenu-item>
-      <v-contextmenu-item @click="copy_clipboard" method="yaml" full="true">
+      <v-contextmenu-item @click="copy_clipboard(itemCopy, fields, $event)" method="yaml" full="true">
         As YAML (Full)
       </v-contextmenu-item>
       <v-contextmenu-divider />
-      <v-contextmenu-item @click="copy_clipboard" method="json">
+      <v-contextmenu-item @click="copy_clipboard(itemCopy, fields, $event)" method="json">
         As JSON
       </v-contextmenu-item>
-      <v-contextmenu-item @click="copy_clipboard" method="json" full="true">
+      <v-contextmenu-item @click="copy_clipboard(itemCopy, fields, $event)" method="json" full="true">
         As JSON (Full)
       </v-contextmenu-item>
       <v-contextmenu-divider />
-      <v-contextmenu-item v-for="field in fields.filter(field => field.key != 'button' && field.key != 'select')" :key="field.key" @click="copy_clipboard" method="simple" :field="field.key">
+      <v-contextmenu-item v-for="field in fields.filter(field => field.key != 'button' && field.key != 'select')" :key="field.key" @click="copy_clipboard(itemCopy, fields, $event)" method="simple" :field="field.key">
         {{ capitalizeFirstLetter(field.key) }}
       </v-contextmenu-item>
     </v-contextmenu-submenu>
@@ -275,8 +275,7 @@
 
 import dig from 'object-dig'
 import SElementCover from '@/components/SElementCover.vue'
-const yaml = require('js-yaml')
-import { capitalizeFirstLetter, to_clipboard } from '@/utils/api'
+import { capitalizeFirstLetter, to_clipboard, copy_clipboard } from '@/utils/api'
 
 export default {
   name: 'SDataTable',
@@ -356,6 +355,7 @@ export default {
       selectedText: '',
       itemCopy: {},
       to_clipboard: to_clipboard,
+      copy_clipboard: copy_clipboard,
       capitalizeFirstLetter: capitalizeFirstLetter,
     }
   },
@@ -727,45 +727,6 @@ export default {
       this.tableFilterState = ""
       this.columnFilterState = {}
       this.sorterState = { column: "", asc: true }
-    },
-    get_fields(row, selected_fields = {}) {
-      var return_obj = Object.keys(row).filter(key => key[0] != '_' && key != 'button')
-      if (Object.keys(selected_fields).length > 0) {
-        var filtered_fields = selected_fields.reduce((obj, key) => {
-          obj.push(key.key)
-          return obj
-        }, [])
-        return_obj = return_obj.filter(key => filtered_fields.includes(key))
-      }
-      return return_obj.reduce((obj, key) => {
-        obj.push({name: key, value: row[key]})
-        return obj
-      }, [])
-    },
-    add_clipboard(row, parse_fun, selected_fields = {}) {
-      if (row) {
-        var output = {}
-        this.get_fields(row, selected_fields).forEach(field => {
-          output[field.name] = field.value
-        })
-      	this.to_clipboard(parse_fun(output))
-      }
-    },
-    copy_clipboard(event) {
-      var method
-      var fields = this.fields
-      if (event.target.attributes.method.value == 'yaml') {
-        method = yaml.dump
-      } else if (event.target.attributes.method.value == 'json') {
-        method = JSON.stringify
-      } else {
-        this.to_clipboard(yaml.dump(this.itemCopy[event.target.attributes.field.value], { flowLevel: 0 }).slice(0, -1))
-        return
-      }
-      if (event.target.attributes.full) {
-        fields = {}
-      }
-      this.add_clipboard(this.itemCopy, method, fields)
     },
     store_selection() {
       this.selectedText = window.getSelection().toString()
