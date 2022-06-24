@@ -408,7 +408,6 @@ export default {
       nb_rows: 0,
       current_page: 1,
       items: [],
-      item_copy: {},
       adding_data: {},
       selected_text: '',
       selected_data: {},

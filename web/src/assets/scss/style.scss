@@ -36,3 +36,7 @@ $enable-rtl: true;
   height: 1.2rem;
   font-size: 1.2rem;
 }
+
+.striped-bg {
+  background-color: var(--cui-table-striped-bg, rgba(0,0,21,0.05));
+}
