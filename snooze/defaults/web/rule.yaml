@@ -20,7 +20,7 @@ fields:
         tdStyle: {width: '35%'}
         tdClass: ['align-middle']
         type: array
-orderby: name
+orderby: tree_order
 isascending: true
 form:
     enabled:

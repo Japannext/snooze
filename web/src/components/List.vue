@@ -195,7 +195,8 @@
       <div class="d-flex align-items-center pt-2" v-if="!no_paging && nb_rows > per_page">
         <div class="me-2">
           <SPagination
-            v-model:activePage="current_page"
+            :activePage="current_page"
+            @update:activePage="change_currentpage"
             :pages="Math.ceil(nb_rows / per_page)"
             ulClass="m-0"
           />
@@ -208,6 +209,7 @@
             <CCol xs="auto px-1">
               <CFormSelect
                 v-model="per_page"
+                @change="change_perpage"
                 :value="per_page"
                 id="perPageSelect"
                 size="sm"
@@ -827,14 +829,22 @@ export default {
         this.search(text)
       }
     },
+    change_perpage (e) {
+      var new_value = parseInt(e.target.value)
+      this.current_page = Math.ceil((this.current_page * this.per_page) / new_value)
+      if (new_value != this.per_page) {
+        this.per_page = new_value
+        this.add_history()
+      }
+    },
+    change_currentpage (page_number) {
+      if (page_number != this.current_page) {
+        this.current_page = page_number
+        this.add_history()
+      }
+    },
   },
   watch: {
-    current_page: function() {
-      this.add_history()
-    },
-    per_page: function() {
-      this.add_history()
-    },
     $route() {
       if (this.loaded && this.$route.path == `/${this.endpoint}`) {
         this.$nextTick(this.reload);

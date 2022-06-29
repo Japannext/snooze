@@ -17,7 +17,7 @@
           >
             <CTableBody>
               <CTableRow v-for="(item, i) in infos" :key="i">
-                <CTableDataCell scope="row" v-for="(field, k) in fields" :key="`${field.key}_${k}`">{{ item[field.key] || '' }}</CTableDataCell>
+                <CTableDataCell scope="row" v-for="(field, k) in fields" :key="`${field.key}_${k}`">{{ item[field.key] }}</CTableDataCell>
               </CTableRow>
             </CTableBody>
           </CTable>

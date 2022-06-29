@@ -1,5 +1,5 @@
 <template>
-  <div class="animated fadeIn">
+  <div class="animated fadeIn" >
     <CForm @submit.prevent="" class="pt-0 px-0 pb-0">
       <Search @search="search" v-model="search_value" @clear="search_clear" ref='search'>
         <template #search_buttons>
@@ -8,8 +8,8 @@
             <slot name="selected_buttons"></slot>
             <CButton
               color="danger"
-              @click="modal_show('delete', selected)"
-            >Delete selection {{selected.map(i => i.item['name'])}}</CButton>
+              @click="modal_show('delete', selected.map(x => x.item))"
+            >Delete selection</CButton>
           </template>
           <slot name="head_buttons"></slot>
           <CButton color="success" @click="modal_show('new')">New</CButton>
@@ -20,7 +20,7 @@
     <div class="border" style='font-weight:bold'>
       <div class="d-flex">
         <div style="width: auto" class="align-middle p-1 singleline">
-          <i class="la la-bars la-lg pe-1" style="visibility:hidden"></i>
+          <i v-if="!$route.query.s" class="la la-bars la-lg pe-1" style="visibility:hidden"></i>
           <input type="checkbox" class="pointer mx-1 me-1" :checked="selected.length == items.length" @change="toggle_check_all">
         </div>
         <div v-for="field in fields" :class="field.tdClass" :style="field.tdStyle">
@@ -44,12 +44,13 @@
         </div>
       </slot>
     </div>
-    <Draggable ref="draggable" :flatData="items" idKey="nid" parentIdKey="pid" @drop-change="drag_end" triggerClass="can-drag">
+    <Draggable ref="draggable" :flatData="items" idKey="nid" parentIdKey="pid" @drop-change="drag_end" triggerClass="can-drag" @mouseover="can_drop = true" @mouseleave="can_drop = false" :afterPlaceholderCreated="store_placeholder">
       <template v-slot="{ node, tree }">
-        <div :class="['border', {'striped-bg':node.striped}]" @mouseover="node.hover = true" @mouseleave="node.hover = false" @contextmenu="contextMenu(node.item, $event)" v-contextmenu:contextmenu>
+        <div v-if="node.item.date_epoch">
+        <div :class="rowClass(node)" @mouseover="node.hover = true" @mouseleave="node.hover = false" @contextmenu="contextMenu(node.item, $event)" v-contextmenu:contextmenu>
           <div class="d-flex">
             <div style="width: auto" class="align-middle p-1 singleline m-auto">
-              <i :class="['la la-bars la-lg can-drag pe-1', tree.dragging ? 'grabbing' : 'grab']"></i>
+              <i v-if="!$route.query.s" :class="['la la-bars la-lg can-drag pe-1', tree.dragging ? '' : 'grab']"></i>
               <input type="checkbox" class="pointer ms-1 me-1" :checked="dig(node, '_checked')" @change="check(node)">
             </div>
             <div v-for="field in fields" :class="field.tdClass" :style="field.tdStyle">
@@ -82,12 +83,15 @@
           </CRow>
           <CButton size="sm" @click="toggleDetails(node.item, $event)"><i class="la la-angle-up la-lg"></i></CButton>
         </CCard>
+        </div>
+        <div v-else></div>
       </template>
     </Draggable>
     <div class="d-flex align-items-center pt-2" v-if="!no_paging && nb_rows > per_page">
       <div class="me-2">
         <SPagination
-          v-model:activePage="current_page"
+          :activePage="current_page"
+          @update:activePage="change_currentpage"
           :pages="Math.ceil(nb_rows / per_page)"
           ulClass="m-0"
         />
@@ -100,6 +104,7 @@
           <CCol xs="auto px-1">
             <CFormSelect
               v-model="per_page"
+              @change="change_perpage"
               :value="per_page"
               id="perPageSelect"
               size="sm"
@@ -210,7 +215,8 @@ export default {
     return {
       busy_interval: null,
       is_busy: false,
-      settings: {},
+      schema: {},
+      checksum: null,
       loaded: false,
       endpoint: this.endpoint_prop,
       search_value: '',
@@ -219,6 +225,8 @@ export default {
       form_footer: {},
       default_fields: this.fields_prop,
       fields: this.fields_prop,
+      orderby: 'tree_order',
+      isacending: false,
       default_search: this.default_search_prop,
       per_page: this.page_options_prop[0],
       page_options: this.page_options_prop,
@@ -228,6 +236,8 @@ export default {
       show_modal: false,
       selectedText: '',
       itemCopy: {},
+      can_drop: false,
+      placeholder: null,
       modal_title: '',
       modal_message: null,
       modal_type: '',
@@ -244,30 +254,64 @@ export default {
     }
   },
   mounted () {
-    this.settings = JSON.parse(localStorage.getItem(this.endpoint+'_json') || '{}')
-    get_data('settings/?c='+encodeURIComponent(`web/${this.endpoint}`)+'&checksum='+(this.settings.checksum || ""), null, {}, this.load_table)
+    this.schema = JSON.parse(localStorage.getItem(this.endpoint+'_json') || '{}')
+    var options = {}
+    if (this.checksum) {
+      options.checksum = this.checksum
+    }
+    get_data(`schema/${this.endpoint}`, null, options, this.load_table)
   },
   methods: {
     stripe () {
       var nodes = this.items
       nodes.forEach( (node, index) => {
-        node.striped = index%2 == 0
+        node._striped = index%2 == 0
       })
     },
+    rowClass (row) {
+      var classes = ['border']
+      if (row._checked) {
+        classes.push('table-info')
+      } else if (row.item.enabled == false) {
+        classes.push('table-dark')
+      }
+      if (row._striped) {
+        classes.push('striped-bg')
+      } else {
+        classes.push('nonstriped-bg')
+      }
+      return classes
+    },
+    rowStyle (row) {
+      if (row.pid == undefined && Array.isArray(row.item.parents) && row.item.parents.length) {
+        return {'margin-left': `${row.item.parents.length*20}px`}
+      } else {
+        return {}
+      }
+    },
+    should_indent (row) {
+      return row.pid == undefined && Array.isArray(row.item.parents)
+    },
     load_table (response) {
-      if (response.data) {
-        if (response.data.count > 0) {
-          this.settings = response.data
-          localStorage.setItem(this.endpoint+'_json', JSON.stringify(response.data))
-        }
-        var data = this.settings.data[0]
+      if (response.status == 200) {
+        this.schema = response.data
+        this.checksum = response.headers['CHECKSUM']
+        localStorage.setItem(`${this.endpoint}_json`, JSON.stringify(response.data))
+      // Cache not modified
+      } else if (response.stats == 304) {
+        // Do nothing
+      }
+      var data = this.schema
+      if (data) {
         this.form = dig(data, 'form')
         this.form_footer = dig(data, 'form_footer')
         this.endpoint = dig(data, 'endpoint') || this.endpoint
         this.fields = dig(data, 'fields')
+        this.isascending = dig(data, 'isascending') || false
+        this.orderby = dig(data, 'orderby') || this.orderby
         this.fields.forEach(field => {
-          field.tdClass = (field.tdClass || []).concat(['p-1', 'border-start', 'd-flex', 'align-items-center'])
-          //field.tdStyle = Object.assign(field.tdStyle || {}, {'border-left': '1px solid'})
+          field.tdClass = (field.tdClass || []).concat(['p-1', 'd-flex', 'border-color', 'align-items-center'])
+          field.tdStyle = Object.assign(field.tdStyle || {}, {'border-left': '1px solid'})
         })
         this.default_fields = this.fields
         this.reload()
@@ -277,9 +321,13 @@ export default {
       var search = this.default_search
       if (this.$route.query.perpage !== undefined) {
         this.per_page = this.$route.query.perpage
+      } else {
+        this.per_page = this.page_options_prop[0]
       }
       if (this.$route.query.pagenb !== undefined) {
         this.current_page = parseInt(this.$route.query.pagenb)
+      } else {
+        this.current_page = 1
       }
       if (this.$route.query.s !== undefined) {
         search = decodeURIComponent(this.$route.query.s)
@@ -309,7 +357,8 @@ export default {
           options["ql"] = this.search_value
         }
       }
-      options["orderby"] = 'name'
+      options["orderby"] = this.orderby
+      options["asc"] = this.isascending
       get_data(this.endpoint, query, options, feedback == true ? this.feedback_then_update : this.update_table, null)
     },
     feedback_then_update(response) {
@@ -322,19 +371,32 @@ export default {
         this.items = []
         this.nb_rows = response.data.count
         var rows = response.data.data || []
-        var parent
-        var item
-        rows.forEach((row, index) => {
+        var item, tmp_item
+        var index = 0
+        rows.forEach(row => {
           if ( this.items.every(x => x['uid'] != row['uid']) ) {
             item = {'item': row}
-            this.items.push(item)
-            item.nid = index
-            if (index > 0 && row.parent == rows[index-1].uid) {
-              row.pid = parent
-            } else {
-              parent = row.nid
+            if (Array.isArray(row.parents) && row.parents.length > 0) {
+              if (index == 0) {
+                for (let i = 0; i < row.parents.length; i++) {
+                  tmp_item = {'item': {'uid': row.parents[i], 'parents': i > 0 ? row.parents.slice(0, i) : []}, 'nid': index + 1, 'pid': index}
+                  this.items.push(tmp_item)
+                  index++
+                }
+              }
+              if (this.items.length > 0) {
+                for(let prev_index = 0; prev_index < index; prev_index++) {
+                  if(row.parents[row.parents.length-1] == this.items[prev_index].item.uid) {
+                    item.pid = prev_index + 1
+                    break
+                  }
+                }
+              }
             }
+            item.nid = index + 1
+            this.items.push(item)
           }
+          index++
         })
         this.stripe()
       }
@@ -483,16 +545,59 @@ export default {
         this.search(this.selectedText)
       }
     },
-    drag_end () {
-      this.stripe()
+    drag_end (e) {
+      if (this.can_drop) {
+        this.set_busy(true)
+        var draggingNode = this.$refs.draggable.draggingNode
+        var parent = this.$refs.draggable.nodes.find(node => node.$id == draggingNode.$pid)
+        var nodeIndex = this.$refs.draggable.nodes.findIndex(node => node.$id == draggingNode.$id)
+        if (parent != undefined) {
+          draggingNode.item.parent = parent.item.uid
+        }
+        if (nodeIndex == 0) {
+          draggingNode.item.insert_before = this.$refs.draggable.visibleNodes[1].item.uid
+        } else {
+          draggingNode.item.insert_after = this.$refs.draggable.nodes[nodeIndex - 1].item.uid
+        }
+        this.update_items(this.endpoint, [draggingNode.item], this.submit_callback)
+        delete draggingNode.item.parent
+        delete draggingNode.item.insert_before
+        delete draggingNode.item.insert_after
+      } else {
+        this.reload()
+      }
+    },
+    change_perpage (e) {
+      var new_value = parseInt(e.target.value)
+      this.current_page = Math.ceil((this.current_page * this.per_page) / new_value)
+      if (new_value != this.per_page) {
+        this.per_page = new_value
+        this.add_history()
+      }
+    },
+    change_currentpage (page_number) {
+      if (page_number != this.current_page) {
+        this.current_page = page_number
+        this.add_history()
+      }
+    },
+    store_placeholder(p) {
+      this.placeholder = p
     },
   },
   watch: {
-    current_page: function() {
-      this.add_history()
-    },
-    per_page: function() {
-      this.add_history()
+    can_drop: function() {
+      if (this.placeholder && this.placeholder.children.length > 0) {
+        if (!this.can_drop) {
+          this.placeholder.children[0].className = 'bg-danger'
+          this.placeholder.children[0].style.opacity = '0.5'
+          this.placeholder.children[0].style.border = '1px dashed #fff'
+        } else {
+          this.placeholder.children[0].className = 'tree-placeholder tree-node'
+          this.placeholder.children[0].style.opacity = ''
+          this.placeholder.children[0].style.border = ''
+        }
+      }
     },
     $route() {
       if (this.loaded && this.$route.path == `/${this.endpoint}`) {
@@ -502,3 +607,7 @@ export default {
   },
 }
 </script>
+
+<style>
+
+</style>

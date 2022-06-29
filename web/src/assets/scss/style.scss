@@ -39,4 +39,14 @@ $enable-rtl: true;
 
 .striped-bg {
   background-color: var(--cui-table-striped-bg, rgba(0,0,21,0.05));
+  border-color: var(--cui-table-border-color, #d8dbe0) !important;
+}
+
+.nonstriped-bg {
+  background-color: var(--cui-table-bg, transparent);
+  border-color: var(--cui-table-border-color, #d8dbe0) !important;
+}
+
+.border-color {
+  border-color: var(--cui-table-border-color, #d8dbe0) !important;
 }
