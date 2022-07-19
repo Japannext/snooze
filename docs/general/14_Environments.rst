@@ -27,3 +27,5 @@ Web interface
 :Comment: Description.
 
 .. |filter| replace:: :ref:`Condition <conditions>`
+
+**Note**: Use drag&drop to change the display order.
