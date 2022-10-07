@@ -45,6 +45,13 @@ class SnoozeRoute(Route):
             return 'b_'+date_obj.get('until', '')
         return 'c'
 
+class SnoozeInMemoryRoute(Route):
+    '''Debug route to display in-memory information of snooze filters'''
+    @authorize
+    def on_get(self, req, resp):
+        resp.status = falcon.HTTP_OK
+        resp.media = [f.raw for f in self.plugin.filters]
+
 class SnoozeApplyRoute(Route):
     '''Route used for executing the snooze retro-appy functionality'''
     @authorize

@@ -10,3 +10,5 @@ route_defaults:
 routes:
     '/snooze_apply':
         class_name: SnoozeApplyRoute
+    '/snooze_inmem':
+        class_name: SnoozeInMemoryRoute
