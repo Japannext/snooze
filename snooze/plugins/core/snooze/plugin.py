@@ -15,7 +15,8 @@ from snooze.utils.condition import get_condition, validate_condition
 from snooze.utils.time_constraints import get_record_date, init_time_constraints
 from snooze.utils.typing import Record, SnoozeFilter
 
-log = getLogger('snooze.plugins.snooze')
+proclog = getLogger('snooze.process')
+apilog = getLogger('snooze.api')
 
 class Snooze(Plugin):
     '''The snooze process plugin'''
@@ -26,17 +27,20 @@ class Snooze(Plugin):
         self.core.threads['asyncdb'].new_increment(self.hits)
 
     def process(self, record: Record) -> Record:
-        log.debug("Processing record %s against snooze filters", record.get('hash', ''))
+        context = dict(plugin=self.name, rid=record.get('uid'))
+        proclog.debug('Start', extra=context)
         for filt in self.filters:
             if filt.enabled and filt.match(record):
-                log.debug("Snooze filter %s matched record: %s", filt.name, record.get('hash', ''))
+                proclog.info("Matched '%s' (%s)", filt.name, filt.condition, extra=context)
                 record['snoozed'] = filt.name
                 self.hits.increment({'name': filt.name})
                 self.core.stats.inc('alert_snoozed', {'name': filt.name})
                 if filt.discard:
+                    proclog.info("Record discarded by '%s'", filt.name)
                     raise Abort()
                 else:
                     raise AbortAndWrite(record)
+        proclog.debug('Done', extra=context)
         return record
 
     def validate(self, obj: dict):
@@ -44,6 +48,8 @@ class Snooze(Plugin):
         validate_condition(obj)
 
     def reload_data(self, sync: bool = False):
+        context = dict(plugin=self.name)
+        apilog.info("Reloading...", extra=context)
         super().reload_data()
         filters = []
         for filt in (self.data or []):
@@ -51,21 +57,24 @@ class Snooze(Plugin):
         self.filters = filters
         if sync:
             self.sync_neighbors()
+        apilog.info("Reloaded", extra=context)
 
     def retro_apply(self, filter_names):
         '''Retro applying a list of snooze filters'''
-        log.debug("Attempting to retro apply snooze filters %s", filter_names)
+        context = dict(plugin=self.name)
+        apilog.debug("Retro-applying snooze filters: %s", filter_names)
         filters = [f for f in self.filters if f.name in filter_names]
         count = 0
         for filt in filters:
             if filt.enabled:
                 if filt.discard:
-                    log.debug("Retro apply discard snooze filter %s", filt.name)
+                    apilog.debug("Retro apply discard snooze filter %s", filt.name, extra=context)
                     results = self.db.delete('record', filt.condition_raw)
                     count += results.get('count', 0)
                 else:
-                    log.debug("Retro apply snooze filter %s", filt.name)
+                    apilog.debug("Retro apply snooze filter: %s", filt.name, extra=context)
                     count += self.db.set_fields('record', {'snoozed': filt.name}, filt.condition_raw)
+        apilog.info("Snoozed %d alerts with retro-apply of: %s", count, filter_names, extra=context)
         return count
 
 class SnoozeObject:
@@ -80,7 +89,7 @@ class SnoozeObject:
         self.raw = snooze
 
         # Initializing the time constraints
-        log.debug("Init Snooze filter %s Time Constraints", self.name)
+        apilog.debug("Init Snooze filter %s Time Constraints", self.name)
         self.time_constraint = init_time_constraints(snooze.get('time_constraints', {}))
 
     def match(self, record: Record) -> bool:

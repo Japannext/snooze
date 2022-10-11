@@ -23,7 +23,7 @@ from snooze.utils.typing import Condition
 from snooze.utils.exceptions import DatabaseError
 from snooze.utils.threading import SurvivingThread
 
-log = getLogger('snooze.db')
+log = getLogger('snooze.api.db')
 
 class Pagination(TypedDict, total=False):
     '''A type hint for pagination options'''

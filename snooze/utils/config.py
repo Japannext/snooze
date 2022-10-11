@@ -687,6 +687,9 @@ def setup_logging(basedir: Path = SNOOZE_CONFIG):
                 'simple': {
                     'format': '%(asctime)s %(name)-20s %(levelname)-8s %(message)s',
                 },
+                'process': {
+                    'format': '%(asctime)s %(name)-20s %(levelname)-8s %(plugin)s[%(hash)s] %(message)s',
+                },
             },
             'handlers': {
                 'console': {
@@ -695,9 +698,20 @@ def setup_logging(basedir: Path = SNOOZE_CONFIG):
                     'formatter': 'simple',
                     'stream': 'ext://sys.stdout',
                 },
+                'process': {
+                    'class': 'logging.StreamHandler',
+                    'level': 'INFO',
+                    'formatter': 'process',
+                    'stream': 'ext://sys.stdout',
+                },
             },
             'loggers': {
                 'snooze': {
+                    'level': 'INFO',
+                    'handlers': ['console'],
+                    'propagate': False,
+                },
+                'snooze.process': {
                     'level': 'INFO',
                     'handlers': ['console'],
                     'propagate': False,

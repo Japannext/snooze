@@ -1,25 +1,55 @@
 ---
 version: 1
 disable_existing_loggers: false
-#propagate: true
 formatters:
     simple:
-        format: '%(asctime)s %(name)-20s %(levelname)-8s %(message)s'
+        format: '%(asctime)s %(levelname)-6s %(name)s %(message)s'
+    api:
+        format: '%(asctime)s %(levelname)-6s %(name)s %(message)s'
+    process:
+        format: '%(asctime)s %(name)-20s %(levelname)s %(plugin)s[%(rid)s] %(message)s'
+filters:
+    process: {(): 'snooze.logger.ProcessFilter'}
+    api: {(): 'snooze.logger.ApiFilter'}
 handlers:
     error:
         class: logging.StreamHandler
         level: ERROR
         formatter: simple
         stream: ext://sys.stderr
-    file:
+    audit:
         level: INFO
-        class : logging.handlers.RotatingFileHandler
+        class: logging.handlers.TimedRotatingFileHandler
         formatter: simple
-        filename: /var/log/snooze/snooze-server.log
+        filename: /var/log/snooze/snooze-audit.log
+        when: 'midnight'
+        backupCount: 10
+    api:
+        level: INFO
+        class: logging.handlers.TimedRotatingFileHandler
+        filename: /var/log/snooze/snooze-api.log
+        when: 'midnight'
+        backupCount: 10
+        formatter: api
+        filters: [api]
+    process:
+        level: INFO
+        class: logging.handlers.RotatingFileHandler
+        filename: /var/log/snooze/snooze-process.log
         maxBytes: 102400000
         backupCount: 5
+        formatter: process
+        filters: [process]
 loggers:
-    snooze:
+    snooze.audit:
         level: INFO
-        handlers: [error, file]
+        handlers: [error, audit]
+        propagate: false
+    snooze.api:
+        level: INFO
+        handlers: [error, api]
+        propagate: true
+    snooze.process:
+        level: INFO
+        handlers: [error, process]
         propagate: false

@@ -47,7 +47,8 @@ class ActionPluginRoute(BasicRoute):
     '''A route to list the action plugin types (script, webhook, mail, etc)'''
     @authorize
     def on_get(self, req, resp, action=None):
-        log.debug("Listing actions")
+        context = dict(plugin='action')
+        log.debug("Listing actions", extra=context)
         plugin_name = req.params.get('action') or action
         try:
             plugins = []
@@ -55,17 +56,17 @@ class ActionPluginRoute(BasicRoute):
             if plugin_name:
                 loaded_plugins = [self.api.core.get_core_plugin(plugin_name)]
             else:
-                log.error("Could not find action plugin for request %s", req.params)
+                log.error("Could not find action plugin for request %s", req.params, extra=context)
             for plugin in loaded_plugins:
                 if plugin.meta.action_form:
-                    log.debug("Retrieving action %s metadata", plugin.name)
+                    log.debug("Retrieving action %s metadata", plugin.name, extra=context)
                     plugins.append(plugin.meta.dict())
-            log.debug("List of actions: %d elements", len(plugins))
+            log.debug("List of actions: %d elements", len(plugins), extra=context)
             resp.content_type = falcon.MEDIA_JSON
             resp.status = falcon.HTTP_200
             resp.media = {
                 'data': plugins,
             }
         except Exception as err:
-            log.exception(err)
+            log.exception(err, extra=context)
             resp.status = falcon.HTTP_503

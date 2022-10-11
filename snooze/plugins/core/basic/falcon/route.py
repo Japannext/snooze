@@ -82,7 +82,7 @@ class Route(FalconRoute):
                 cond_or_uid = ['AND', ql, cond_or_uid]
             else:
                 cond_or_uid = ql
-        log.debug("Trying search %s", cond_or_uid)
+        log.debug("Trying search %s", cond_or_uid, extra=dict(plugin=self.plugin.name))
         result_dict = self.search(self.plugin.name, cond_or_uid, **pagination)
         resp.content_type = falcon.MEDIA_JSON
         if result_dict:
@@ -94,10 +94,11 @@ class Route(FalconRoute):
 
     @authorize
     def on_post(self, req, resp):
+        context = dict(plugin=getattr(self.plugin, 'name'))
         if self.options.inject_payload:
             self.inject_payload_media(req, resp)
         resp.content_type = falcon.MEDIA_JSON
-        log.debug("Trying to insert %s", req.media)
+        log.debug("Trying to insert %s", req.media, extra=context)
         media = req.media.copy()
         if not isinstance(media, list):
             media = [media]
@@ -126,7 +127,7 @@ class Route(FalconRoute):
                             req_media['parents'] = parent.get('parents', []) + [req_media['parent']]
                             order_query = ['OR', ['=', 'uid', req_media['parent']], ['IN', req_media['parent'], 'parents']]
                         else:
-                            log.warning('Parent %s does not exist anymore, appending the node to the top level', req_media['parent'])
+                            log.warning('Parent %s does not exist anymore, appending the node to the top level', req_media['parent'], extra=context)
                             req_media['parents'] = []
                         req_media.pop('parent', None)
                     last_item = self.core.db.search(self.plugin.name, order_query, orderby = self.plugin.meta.force_order, asc = False, only_one = True)
@@ -141,17 +142,17 @@ class Route(FalconRoute):
                     else:
                         req_media[self.plugin.meta.force_order] = idx
                 except Exception as err:
-                    log.exception(err)
+                    log.exception(err, extra=context)
                     rejected.append(req_media)
                     continue
 
             for query in queries:
                 try:
                     parsed_query = parser(query['ql'])
-                    log.debug("Parsed query: %s -> %s", query['ql'], parsed_query)
+                    log.debug("Parsed query: %s -> %s", query['ql'], parsed_query, extra=context)
                     req_media[query['field']] = parsed_query
                 except Exception as err:
-                    log.exception(err)
+                    log.exception(err, extra=context)
                     rejected.append(req_media)
                     continue
             validated.append(req_media)
@@ -163,16 +164,17 @@ class Route(FalconRoute):
             resp.status = falcon.HTTP_201
             self._audit(result, req)
         except Exception as err:
-            log.exception(err)
+            log.exception(err, extra=context)
             resp.media = []
             resp.status = falcon.HTTP_503
 
     @authorize
     def on_put(self, req, resp):
+        context = dict(plugin=getattr(self.plugin, 'name'))
         if self.options.inject_payload:
             self.inject_payload_media(req, resp)
         resp.content_type = falcon.MEDIA_JSON
-        log.debug("Trying to update %s", req.media)
+        log.debug("Trying to update %s", req.media, extra=context)
         media = req.media.copy()
         if not isinstance(media, list):
             media = [media]
@@ -197,27 +199,29 @@ class Route(FalconRoute):
                         pivot =  self.core.db.get_one(self.plugin.name, {'uid': req_media['insert_after']})
                         modifier = 0
                     elif self.plugin.meta.tree and 'parent' in req_media:
-                        log.error('Parent for %s has been set up while insert_before or insert_after was not. Please set either one of them', req_media)
+                        log.error('Parent for %s has been set up while insert_before or insert_after was not. Please set either one of them',
+                            req_media, extra=context)
                         rejected.append(req_media)
                         continue
                     if modifier is not None:
-                        log.debug("Initiated drag using pivot pivot %s", pivot)
+                        log.debug("Initiated drag using pivot pivot %s", pivot, extra=context)
                         req_media.pop('insert_before', None)
                         req_media.pop('insert_after', None)
                         if not pivot:
-                            log.error('Cannot find pivot uid %s. Aborting on_put', req_media.get('insert_before', req_media.get('insert_after')))
+                            log.error('Cannot find pivot uid %s. Aborting on_put',
+                                req_media.get('insert_before', req_media.get('insert_after')), extra=context)
                             rejected.append(req_media)
                             continue
                         old_req_media = self.core.db.get_one(self.plugin.name, {'uid': req_media['uid']})
                         if not old_req_media:
-                            log.error('Cannot find uid %s. Aborting on_put', req_media.get('uid'))
+                            log.error('Cannot find uid %s. Aborting on_put', req_media.get('uid'), extra=context)
                             rejected.append(req_media)
                             continue
                         familly_query = ['=', 'uid', req_media['uid']]
                         if self.plugin.meta.tree:
                             familly_query = ['OR', ['=', 'uid', req_media['uid']], ['IN', req_media['uid'], 'parents']]
                             if old_req_media.get('parents'):
-                                log.debug("Removing nodes %s from node parents matching %s", old_req_media['parents'], familly_query)
+                                log.debug("Removing nodes %s from node parents matching %s", old_req_media['parents'], familly_query, extra=context)
                                 self.core.db.remove_list(self.plugin.name, {'parents': old_req_media['parents']}, familly_query)
                             if 'parent' in req_media:
                                 parent = self.core.db.get_one(self.plugin.name, {'uid': req_media['parent']})
@@ -225,23 +229,23 @@ class Route(FalconRoute):
                                 if parent:
                                     req_media['parents'] = parent.get('parents', []) + req_media['parents']
                                 if req_media.get('parents'):
-                                    log.debug("Prepending nodes %s to node parents matching %s", req_media['parents'], familly_query)
+                                    log.debug("Prepending nodes %s to node parents matching %s", req_media['parents'], familly_query, extra=context)
                                     self.core.db.prepend_list(self.plugin.name, {'parents': req_media['parents']}, familly_query)
                                 req_media.pop('parent', None)
                         last_item = self.core.db.search(self.plugin.name, familly_query, orderby = self.plugin.meta.force_order, asc = False, only_one = True)['data'][0]
                         last_item_order = last_item.get(self.plugin.meta.force_order, 0)
                         pivot_order = pivot.get(self.plugin.meta.force_order, 0)
                         if last_item_order > pivot_order:
-                            log.debug("Pivoting dragging nodes backward")
+                            log.debug("Pivoting dragging nodes backward", extra=context)
                             self.core.db.inc_many(self.plugin.name, self.plugin.meta.force_order, ['AND', ['>', self.plugin.meta.force_order, pivot_order + modifier], ['NOT', familly_query]], last_item_order - pivot_order - modifier)
                         else:
-                            log.debug("Pivoting dragging nodes forward")
+                            log.debug("Pivoting dragging nodes forward", extra=context)
                             self.core.db.inc_many(self.plugin.name, self.plugin.meta.force_order, ['OR', ['>', self.plugin.meta.force_order, pivot_order + modifier], familly_query], pivot_order - old_req_media.get(self.plugin.meta.force_order, 0) + modifier + 1)
                             req_media[self.plugin.meta.force_order] += pivot_order - old_req_media.get(self.plugin.meta.force_order, 0) + modifier + 1
                         dragged.append(req_media)
                         continue
                 except Exception as err:
-                    log.exception(err)
+                    log.exception(err, extra=context)
                     rejected.append(req_media)
                     continue
 
@@ -257,12 +261,13 @@ class Route(FalconRoute):
             resp.status = falcon.HTTP_201
             self._audit(result, req)
         except Exception as err:
-            log.exception(err)
+            log.exception(err, extra=context)
             resp.media = []
             resp.status = falcon.HTTP_503
 
     @authorize
     def on_delete(self, req, resp, search='[]'):
+        context = dict(plugin=getattr(self.plugin, 'name'))
         if 'uid' in req.params:
             cond_or_uid = ['=', 'uid', req.params['uid']]
         else:
@@ -277,7 +282,7 @@ class Route(FalconRoute):
         deleted_objects = [{'_old': data} for data in to_delete['data']]
         if self.plugin.meta.tree and to_delete['count'] > 0:
             self.core.db.delete(self.plugin.name, ['IN', list(set(list(map(lambda x: x['uid'], to_delete['data'])))), 'parents'])
-        log.debug("Trying delete %s" % cond_or_uid)
+        log.debug("Trying delete %s", cond_or_uid, extra=context)
         result_dict = self.delete(self.plugin.name, cond_or_uid)
         resp.content_type = falcon.MEDIA_JSON
         self._audit({'data': {'deleted': deleted_objects}}, req)
@@ -292,6 +297,7 @@ class Route(FalconRoute):
 
     def _validate(self, obj, req, resp):
         '''Validate an object and handle the response in case of exception'''
+        context = dict(plugin=getattr(self.plugin, 'name'))
         try:
             self.plugin.validate(obj)
         except Exception as err:
@@ -299,7 +305,7 @@ class Route(FalconRoute):
             rejected['error'] = f"Error during validation: {err}"
             rejected['traceback'] = traceback.format_exception(*sys.exc_info())
             results = {'data': {'rejected': [rejected]}}
-            log.exception(err)
+            log.exception(err, extra=context)
             raise ValidationError("Invalid object")
 
     def _audit(self, results, req):
@@ -338,7 +344,8 @@ class Route(FalconRoute):
                         }
                         messages.append(message)
                     except Exception as err:
-                        log.exception(err)
+                        context = dict(plugin=getattr(self.plugin, 'name'))
+                        log.exception(err, extra=context)
                         continue
                     if error:
                         message['error'] = error

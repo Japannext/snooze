@@ -40,7 +40,8 @@ from snooze.utils.config import Config, SNOOZE_CONFIG
 from snooze.utils.threading import SurvivingThread
 from snooze.utils.typing import Record, AuthPayload
 
-log = getLogger('snooze')
+log = getLogger('snooze.api.core')
+proclog = getLogger('snooze.process')
 
 MAIN_THREADS = ('housekeeper', 'cluster', 'tcp', 'socket')
 
@@ -157,6 +158,8 @@ class Core:
         }
         record['ttl'] = int(self.config.housekeeping.record_ttl.total_seconds())
         record['uid'] = str(uuid4())
+        context = dict(plugin='core', rid=record['uid'])
+        proclog.info('New alert received', extra=context)
         if severity.casefold() in self.config.general.ok_severities:
             record['state'] = 'close'
             log.debug("Detected OK severities: %s, closing alert", severity.casefold())
@@ -175,7 +178,6 @@ class Core:
                 plugin_labels = {'environment': labels['environment'], 'plugin': plugin.name}
                 with self.stats.time('process_alert_duration_by_plugin', plugin_labels):
                     try:
-                        log.debug("Executing plugin %s on record %s", plugin.name, record.get('hash', ''))
                         record['plugins'].append(plugin.name)
                         record = plugin.process(record)
                     except Abort:
@@ -212,6 +214,7 @@ class Core:
             'severity': record.get('severity', 'unknown'),
         }
         self.stats.inc('alert_hit', labels)
+        proclog.info('Alert processed', extra=context)
         return data
 
     def sync_reload_plugin(self, plugin_name: str):
