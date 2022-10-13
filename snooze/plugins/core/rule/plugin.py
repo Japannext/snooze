@@ -46,7 +46,7 @@ class Rule(Plugin):
     def reload_data(self, sync = False):
         context = dict(plugin=self.name)
         apilog.info("Reloading...", extra=context)
-        self.data = self.db.search('rule', ['NOT', ['EXISTS', 'parent']], orderby=self.meta.force_order)['data']
+        self.data = self.db.search('rule', ['NOT', ['EXISTS', 'parents']], orderby=self.meta.force_order)['data']
         rules = []
         for rule in (self.data or []):
             rules.append(RuleObject(rule, self))
@@ -79,7 +79,7 @@ class RuleObject:
         self.children = []
         if core and core.db:
             db = core.db
-            children = db.search('rule', ['=', 'parent', uid], orderby=order)['data']
+            children = db.search('rule', ['IN', uid, 'parents'], orderby=order)['data']
             for child_rule in children:
                 apilog.debug("Found child '%s'", child_rule['name'], extra=context)
                 self.children.append(RuleObject(child_rule, rule_plugin))
