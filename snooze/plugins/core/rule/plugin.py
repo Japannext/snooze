@@ -98,14 +98,11 @@ class RuleObject:
         '''Modify the record based of this rule's modifications'''
         context = dict(plugin='rule', rid=record.get('uid'))
         modified = False
-        modifs = []
         for modification in self.modifications:
             if modification.modify(record):
                 modified = True
-                modifs.append(modification)
-        if modified:
-            proclog.info("Record modified by rule '%s': %s", self.name, [m.pprint() for m in modifs], extra=context)
-        else:
+                proclog.info("Record modified by rule '%s': %s", self.name, modification.pprint(), extra=context)
+        if not modified:
             proclog.debug("Record not modified by rule '%s'", self.name, extra=context)
         return modified
 
