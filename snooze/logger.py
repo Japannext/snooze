@@ -13,5 +13,5 @@ class ProcessFilter(Filter):
     '''Inject the processing context to the log record'''
     def filter(self, record):
         record.plugin = getattr(record, 'plugin', '')
-        record.rid = getattr(record, 'rid', '')
+        record.rid = getattr(record, 'rid', '').split('-')[0]
         return True

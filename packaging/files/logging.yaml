@@ -3,11 +3,11 @@ version: 1
 disable_existing_loggers: false
 formatters:
     simple:
-        format: '%(asctime)s %(levelname)-6s %(name)s %(message)s'
+        format: '%(asctime)s %(name)s %(levelname)-6s %(message)s'
     api:
-        format: '%(asctime)s %(levelname)-6s %(name)s %(message)s'
+        format: '%(asctime)s %(name)s %(levelname)-6s %(message)s'
     process:
-        format: '%(asctime)s %(name)-20s %(levelname)s %(plugin)s[%(rid)s] %(message)s'
+        format: '%(asctime)s %(name)s %(levelname)-6s %(rid)s %(plugin)s %(message)s'
 filters:
     process: {(): 'snooze.logger.ProcessFilter'}
     api: {(): 'snooze.logger.ApiFilter'}
