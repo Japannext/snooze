@@ -9,6 +9,7 @@
 
 import mimetypes
 import functools
+from collections import defaultdict
 from logging import getLogger
 from hashlib import sha256
 from hashlib import md5
@@ -284,39 +285,34 @@ class LoginRoute(BasicRoute):
             log.exception(err)
             resp.status = falcon.HTTP_503
 
-class ReloadPluginRoute(BasicRoute):
-    '''A route to trigger the reload of a given plugin'''
+class SyncerRoute(BasicRoute):
+    '''A route to return the sync status of the nodes'''
 
-    def on_post(self, req, resp, plugin_name: str):
-        '''Trigger the reload of a plugin'''
-        propagate = (req.params.get('propagate') is not None) # Key existence
-        plugin = self.core.get_core_plugin(plugin_name)
-        if plugin is None:
-            raise falcon.HTTPNotFound(f"Plugin '{plugin_name}' not loaded in core")
-        plugin.reload_data()
-        if propagate:
-            self.core.sync_reload_plugin(plugin_name)
-            resp.status = falcon.HTTP_ACCEPTED
-        else:
-            resp.status = falcon.HTTP_OK
-
-class ClusterRoute(BasicRoute):
-    '''A route to fetch the status of the cluster member'''
-    authentication = False
-
-    def on_get(self, req, resp):
-        '''Return the status of every cluster member'''
-        cluster = self.core.threads['cluster']
-        one = (req.params.get('one') is not None)
-        if one:
-            members = [cluster.status()]
-        else:
-            members = cluster.members_status()
-        resp.content_type = falcon.MEDIA_JSON
-        resp.status = falcon.HTTP_OK
-        resp.media = {
-            'data': [m.dict() for m in members],
+    def on_get(self, _req: Request, resp: Response):
+        '''Return the status of nodes'''
+        data = {
+            'plugin': defaultdict(dict),
+            'config': defaultdict(dict),
         }
+
+        for e in self.core.db.search('syncer_latest')['data']:
+            if e['type'] not in data:
+                continue # Ignore unknown type
+            if 'timestamp' in data[e['type']][e['name']]:
+                data[e['type']][e['name']]['timestamp'] = e['timestamp']
+            if 'node' in data[e['type']][e['name']]:
+                data[e['type']][e['name']]['node'] = e['node']
+        for e in self.core.db.search('syncer_node')['data']:
+            if e['type'] not in data:
+                continue # Ignore unknown type
+            data[e['type']][e['name']].setdefault('total', 0)
+            data[e['type']][e['name']]['total'] += 1
+            data[e['type']][e['name']].setdefault('synced', 0)
+            if e['timestamp'] >= data[e['type']][e['name']].get('timestamp', 0):
+                data[e['type']][e['name']]['synced'] += 1
+
+        resp.media = data
+        resp.status = falcon.HTTP_OK
 
 class SchemaRoute(BasicRoute):
     '''A route to return the form schema of each endpoint'''

@@ -43,7 +43,7 @@ class Rule(Plugin):
                 rule.modify(record)
                 self.process_rules(record, rule.children)
 
-    def reload_data(self, sync = False):
+    def reload_data(self):
         context = dict(plugin=self.name)
         apilog.info("Reloading...", extra=context)
         self.data = self.db.search('rule', ['NOT', ['EXISTS', 'parents']], orderby=self.meta.force_order)['data']
@@ -51,8 +51,6 @@ class Rule(Plugin):
         for rule in (self.data or []):
             rules.append(RuleObject(rule, self))
         self.rules = rules
-        if sync:
-            self.sync_neighbors()
         apilog.info("Reload successful", extra=context)
 
 class RuleObject:

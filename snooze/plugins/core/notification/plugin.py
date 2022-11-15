@@ -43,7 +43,7 @@ class Notification(Plugin):
     def post_init(self):
         pass
 
-    def reload_data(self, sync = False):
+    def reload_data(self):
         context = dict(plugin=self.name)
         apilog.info("Reloading...", extra=context)
         super().reload_data()
@@ -53,8 +53,6 @@ class Notification(Plugin):
         for notification in (self.data or []):
             notifications.append(NotificationObject(notification, self))
         self.notifications = notifications
-        if sync:
-            self.sync_neighbors()
         apilog.info("Reloaded successfully", extra=context)
 
 class NotificationObject:
