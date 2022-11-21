@@ -43,17 +43,13 @@ class Notification(Plugin):
     def post_init(self):
         pass
 
-    def reload_data(self):
-        context = dict(plugin=self.name)
-        apilog.info("Reloading...", extra=context)
-        super().reload_data()
+    def _post_reload(self):
         if not self.action:
             self.action = self.core.get_core_plugin('action')
         notifications = []
         for notification in (self.data or []):
             notifications.append(NotificationObject(notification, self))
         self.notifications = notifications
-        apilog.info("Reloaded successfully", extra=context)
 
 class NotificationObject:
     '''An object representing a single notification in the database'''

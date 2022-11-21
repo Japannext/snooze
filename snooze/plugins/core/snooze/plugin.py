@@ -47,15 +47,11 @@ class Snooze(Plugin):
         '''Validate a snooze object'''
         validate_condition(obj)
 
-    def reload_data(self):
-        context = dict(plugin=self.name)
-        apilog.info("Reloading...", extra=context)
-        super().reload_data()
+    def _post_reload(self):
         filters = []
         for filt in (self.data or []):
             filters.append(SnoozeObject(filt))
         self.filters = filters
-        apilog.info("Reloaded", extra=context)
 
     def retro_apply(self, filter_names):
         '''Retro applying a list of snooze filters'''

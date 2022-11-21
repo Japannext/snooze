@@ -53,10 +53,7 @@ class Action(Plugin):
                     self.core.db.delete('action.delay', ['=', 'uid', action_uid])
             apilog.debug("Restored delayed actions %s", self.delayed_actions.delayed)
 
-    def reload_data(self):
-        context = dict(plugin=self.name)
-        apilog.info('Reloading...', extra=context)
-        super().reload_data()
+    def _post_reload(self):
         actions = []
         for action in self.data or []:
             action_object = ActionObject(action, self)
@@ -64,13 +61,12 @@ class Action(Plugin):
             if action_object.batch:
                 self.core.mq.update_queue(f"action_{action_object.uid}",
                     action_object.batch_timer, action_object.batch_maxsize, ActionWorker, action_object)
-            apilog.debug("Init action %s", action_object.name, extra=context)
+            apilog.debug("Init action %s", action_object.name, extra=dict(plugin=self.name))
         self.core.mq.keep_queues([f"action_{action.uid}" for action in actions], "action_")
         self.actions = actions
         notification_plugin = self.core.get_core_plugin('notification')
         if notification_plugin:
             notification_plugin.reload_data()
-        apilog.info('Reloaded successfully', extra=context)
 
 class UnknownPlugin(RuntimeError):
     '''A runtime error raised when the action plugin is not found. Useful when
