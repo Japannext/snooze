@@ -1,0 +1,24 @@
+# vim: ts=2:sts=2:sw=2
+---
+env:
+  browser: true
+  es2021: true
+  vue/setup-compiler-macros: true
+parser: 'vue-eslint-parser'
+parserOptions:
+  parser: '@typescript-eslint/parser'
+  sourceType: module
+plugins:
+  - vue
+extends:
+  - eslint:recommended
+  - plugin:vue/vue3-recommended
+rules:
+  no-unused-vars: warn
+  vue/max-attributes-per-line:
+    - error
+    - singleline:
+        max: 3
+      multiline:
+        max: 20
+  vue/singleline-html-element-content-newline: 'off'

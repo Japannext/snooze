@@ -1,3 +1,5 @@
 .helmfile.yaml
 .charts
 .ca-bundle
+charts/snooze/charts/
+.env.local

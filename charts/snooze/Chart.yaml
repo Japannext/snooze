@@ -3,6 +3,3 @@ apiVersion: v2
 name: snooze
 version: 2.0.0
 appVersion: 2.0.0
-description: |
-  An alerting system for opentelemetry logs
-  and prometheus alerts.

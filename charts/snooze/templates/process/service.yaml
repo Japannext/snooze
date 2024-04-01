@@ -1,0 +1,27 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Release.Name }}-process"
+  namespace: "{{ .Release.Namespace }}"
+  labels:
+    app.kubernetes.io/name: snooze
+    app.kubernetes.io/instance: "{{ .Release.Name }}"
+    app.kubernetes.io/component: process
+spec:
+  type: ClusterIP
+  ports:
+  - name: otlp-grpc
+    port: 4317
+    targetPort: otlp-grpc
+    protocol: TCP
+    appProtocol: opentelemetry
+  - name: rest-api
+    port: 8080
+    targetPort: rest-api
+    protocol: TCP
+    appProtocol: http
+  selector:
+    app.kubernetes.io/name: snooze
+    app.kubernetes.io/instance: "{{ .Release.Name }}"
+    app.kubernetes.io/component: process

@@ -1,1 +1,60 @@
 ---
+
+image:
+  repo: ghcr.io/japannext/snooze
+  tag: ""
+  pullPolicy: IfNotPresent
+
+process:
+  replicaCount: 2
+
+api:
+  replicaCount: 2
+
+opensearch:
+  enabled: true
+  replicas: 3
+  maxUnavailable: 1
+  opensearchJavaOpts: '-Xmx2g -Xms2g'
+  extraEnvs:
+  - name: POD_NAME
+    valueFrom: {fieldRef: {fieldPath: metadata.name}}
+  - name: node.name
+    value: ${POD_NAME}.opensearch-headless
+  config:
+    opensearch.yml: |-
+      cluster.name: opensearch-cluster
+      network.host: 0.0.0.0
+      node.processors: 8
+      plugins:
+        security:
+          ssl:
+            transport:
+              pemcert_filepath: tls/tls.crt
+              pemkey_filepath: tls/tls.key
+              pemtrustedcas_filepath: tls/ca.crt
+              enforce_hostname_verification: false
+              resolve_hostname: false
+            http:
+              enabled: true
+              pemcert_filepath: tls/tls.crt
+              pemkey_filepath: tls/tls.key
+              pemtrustedcas_filepath: tls/ca.crt
+          allow_unsafe_democertificates: true
+          allow_default_init_securityindex: true
+  sysctl:
+    image:
+      repo: busybox
+      tag: latest
+      pullPolicy: IfNotPresent
+
+
+
+ingress:
+  enabled: false
+  className: nginx
+  domain: ""
+  certmanager:
+    enabled: false
+    issuerKind: Issuer
+    issuerName: default
