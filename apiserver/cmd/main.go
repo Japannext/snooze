@@ -1,6 +1,9 @@
-package cmd
+package main
 
 import (
+  "fmt"
+  "os"
+
   "github.com/spf13/cobra"
 
   "github.com/japannext/snooze/apiserver"

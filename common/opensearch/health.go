@@ -15,9 +15,9 @@ type ClusterHealth struct {
 }
 
 // Check if the session is up
-func (db *Database) CheckHealth() error {
+func (client *OpensearchClient) CheckHealth() error {
   ctx := context.Background()
-  resp, err := api.ClusterHealthRequest{}.Do(ctx, db.Client)
+  resp, err := api.ClusterHealthRequest{}.Do(ctx, client.Client)
   if err != nil {
     return err
   }

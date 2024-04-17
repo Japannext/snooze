@@ -1,6 +1,6 @@
-package types
+package v2
 
-type AlertStateV2 struct {
+type AlertState struct {
   Kind string                   `json:"kind"`
   Name string                   `json:"name"`
   State string                  `json:"state"`
@@ -8,6 +8,7 @@ type AlertStateV2 struct {
   Timestamp uint64              `json:"timestamp"`
   GroupHash []byte              `json:"group_hash,omitempty"`
   GroupKv KeyValue              `json:"group_kv,omitempty"`
+  NotificationChannels []string `json:"notification_channels"`
   SeverityText string           `json:"severity_text,omitempty"`
   SeverityNumber SeverityNumber `json:"severity_number,omitempty"`
   Resource KeyValue             `json:"resource,omitempty"`

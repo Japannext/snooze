@@ -13,18 +13,7 @@ import (
   healthv1 "google.golang.org/grpc/health/grpc_health_v1"
 )
 
-type server struct {
-  collectorv1.UnimplementedLogsServiceServer
-}
-
 var err error
-
-func (s *server) Export(ctx context.Context, in *collectorv1.ExportLogsServiceRequest) (*collectorv1.ExportLogsServiceResponse, error) {
-
-  // ...
-
-  return &collectorv1.ExportLogsServiceResponse{}, nil
-}
 
 type OtelGrpcServer struct {
   grpc *grpc.Server
@@ -57,3 +46,4 @@ func (s *OtelGrpcServer) Start() error {
 func (s *OtelGrpcServer) Stop() {
   s.grpc.GracefulStop()
 }
+

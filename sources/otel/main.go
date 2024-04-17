@@ -49,11 +49,14 @@ func handleSignal(ctx context.Context) error {
 }
 
 var db *opensearch.Database
+var pq *queue.ProcessQueue
 
 func Run() {
 
   ctx := context.Background()
   errs, ctx := errgroup.WithContext(ctx)
+
+  pq = queue.InitProcessQueue()
 
   if err := config.init(); err != nil {
     log.Fatal(err)
@@ -61,12 +64,10 @@ func Run() {
   if err := logging.Init(); err != nil {
     log.Fatal(err)
   }
-  db, err := opensearch.Init()
-  if err != nil {
+  if err := opensearch.Init(); err != nil {
     log.Fatal(err)
   }
-
-  if err = db.CheckHealth(); err != nil {
+  if err = opensearch.DB.CheckHealth(); err != nil {
     log.Fatal(err)
   }
 

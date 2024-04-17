@@ -1,10 +1,6 @@
-package types
+package v2
 
-import (
-  "github.com/scylladb/gocqlx/v2/table"
-)
-
-type GroupV2 struct {
+type Group struct {
   // Hash value of the key-value
   Hash []byte `json:"hash"`
   // Human readable information about the group
@@ -18,11 +14,4 @@ type GroupV2 struct {
   // Time of the first "hit". Used to give feedback to the user
   // about when the "hits" counter is counting.
   FirstHit uint64 `json:"firstHit,omitEmpty"`
-}
-
-var GroupV2Metadata = table.Metadata{
-  Name: "group",
-  Columns: []string{"lastHit", "hash", "kv", "lastMessage", "hits", "firstHit"},
-  PartKey: []string{"hash"},
-  SortKey: []string{"lastHit"},
 }

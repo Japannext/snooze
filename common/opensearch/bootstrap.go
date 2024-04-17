@@ -116,12 +116,12 @@ func (i *IndexTemplate) ensure(ctx context.Context, client *v2.Client) error {
 }
 
 
-func (db *Database) Bootstrap() error {
+func (client *OpensearchClient) Bootstrap() error {
   ctx := context.Background()
 
   // Ensure all indexes exist
   for _, idx := range indices() {
-    err := idx.ensure(ctx, db.Client)
+    err := idx.ensure(ctx, client.Client)
     if err != nil {
       return err
     }

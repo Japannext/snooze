@@ -1,0 +1,52 @@
+---
+name: default
+
+transform_rules:
+- name: jnx-naming-convention
+  description: |
+    Extract the different elements from the Japannext naming convention
+  if: 'source[kind] = "otlp" and labels[host.name] =~ "[a-z]{3}[0-9][a-z]+[0-9]+"'
+  childs:
+  - regex:
+      source: 'labels[host.name]'
+      pattern: '(?P<prefix>[a-z]{3}[0-9])(?P<server_role>[a-z]+)(?P<nodenum>[0-9]+)'
+      targets:
+        prefix: 'labels[jnx.prefix]'
+        server_role: 'labels[jnx.server_role]'
+        nodenum: 'labels[jnx.nodenum]'
+  - group_by:
+      fields:
+      - 'labels[jnx.prefix]'
+      - 'labels[jnx.server_role]'
+      - 'labels[process.name]'
+
+silence_rules:
+- if: 'labels[process.name] = "icingaweb" and body[message] =~ "connection reset"'
+- if: 'labels[host.name] =~ "^mmi1"'
+  weekly_schedule:
+    from: {day: friday, time: '17:30'}
+    to: {day: monday, time: '07:00'}
+- if: 'labels[process.name] =~ "myapp"'
+  daily_schedule:
+    from: {time: '10:00'}
+    to: {time: '17:00'}
+
+grouping_rules:
+- if: 'has labels[jnx.service]'
+  group_by: ['labels[jnx.service]', 'labels[jnx.env]']
+- if: 'has labels[jnx.role]'
+  group_by: ['labels[jnx.role]', 'labels[jnx.prefix]']
+
+ratelimit:
+  burst: 50
+  period: 1m
+  cooldown: 5m
+
+notificaton_rules:
+- if: 'attributes[owner] == "unix"'
+  channels: ['googlechat:unix']
+
+default_notification_channels:
+- 'googlechat:unix'
+- 'googlechat:monitoring'
+- 'patlite:purple'

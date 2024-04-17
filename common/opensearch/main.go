@@ -1,30 +1,38 @@
 package opensearch
 
 import (
+  log "github.com/sirupsen/logrus"
   v2 "github.com/opensearch-project/opensearch-go/v2"
 )
 
-type Database struct {
-  Client *v2.Client
+var (
+  Client *OpensearchClient
+)
+
+type OpensearchClient struct {
+  *v2.Client
 }
 
-func Init() (*Database, error) {
+func Init(check bool) {
 
   cfg, err := initConfig()
   if err != nil {
-    return &Database{}, err
+    log.Fatal(err)
   }
 
-  client, err := v2.NewClient(cfg.v2Config())
+  client, err := v2.NewClient(*cfg)
   if err != nil {
-    return &Database{}, err
+    log.Fatal(err)
   }
 
-  db := &Database{client}
+  Client = &OpensearchClient{client}
 
-  if err := db.Bootstrap(); err != nil {
-    return db, err
+  // Fail immediately if the database is unreachable
+  if err := Client.CheckHealth(); err != nil {
+    log.Fatal(err)
   }
 
-  return db, nil
+  if err := Client.Bootstrap(); err != nil {
+    log.Fatal(err)
+  }
 }

@@ -26,7 +26,7 @@ COPY version version
 RUN CGO_ENABLED=0 GOOS=linux go build \
   -o /build/snooze-apiserver \
   -ldflags "-X ${PROJECT}/server.Version=${VERSION} -X ${PROJECT}/server.Commit=${COMMIT} -w -s" \
-  sources/apiserver/cmd
+  apiserver/cmd
 FROM scratch AS snooze-apiserver
 USER 1000
 COPY --from=build-apiserver --chown=1000 --chmod=755 /build/snooze-apiserver /

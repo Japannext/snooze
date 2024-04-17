@@ -1,20 +1,29 @@
-package api
+package apiserver
 
 import (
   "net/http"
 
   "github.com/gin-gonic/gin"
+
+  "github.com/japannext/snooze/common/opensearch"
 )
 
-func searchLogV2(c *gin.Context) {
+type Controller struct {
+  database *opensearch.Database
+}
 
+func registerRoutes(r *gin.Engine) {
+  r.GET("/api/alert-events/v2", searchAlertEvents)
+}
+
+func searchAlertEvents(c *gin.Context) {
   // Extract parameters
   search := c.Param("search")
   sortBy := c.Param("sort_by")
   pp, err := extractPerPage(c); if err != nil { return }
   page, err := extractPage(c); if err != nil { return }
 
-  ll, err := database.LogV2Search(c, search, sortBy, page, pp)
+  ll, err := opensearch.DB.SearchAlertEvent(c, search, sortBy, page, pp)
   if err != nil {
     c.String(http.StatusInternalServerError, "Error fetching logs from database: %w", err)
   }

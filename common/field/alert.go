@@ -1,0 +1,99 @@
+package field
+
+import (
+  "fmt"
+  "strconv"
+
+  api "github.com/japannext/snooze/common/api/v2"
+)
+
+// An object representing an alert's field (or a nested
+// sub-field in case of maps).
+// Useful for interacting with Alerts programmatically
+// from a Pipeline (conditions/transforms/snooze),
+// while considering the values to be only strings.
+type AlertField struct {
+  Name string
+  SubKey string
+}
+
+func (field *AlertField) Get(alert *api.Alert) (string, bool) {
+  var (
+    v string
+    found bool
+  )
+  switch field.Name {
+    case "severity_number":
+      v = strconv.Itoa(alert.SeverityNumber)
+      found = (alert.SeverityNumber != 0)
+    case "severity_text":
+      v = alert.SeverityText
+      found = (alert.SeverityText != "")
+    case "labels":
+      v, found = alert.Labels[field.SubKey]
+    case "attributes":
+      v, found = alert.Attributes[field.SubKey]
+    case "group_kv":
+      v, found = alert.GroupKv[field.SubKey]
+    case "body":
+      v, found = alert.Body[field.SubKey]
+    default:
+      v, found = "", false
+  }
+  return v, found
+}
+
+func (field *AlertField) Set(alert *api.Alert, v string) error {
+  switch field.Name {
+    case "severity_number":
+      i, err := strconv.Atoi(v)
+      if err != nil {
+        return err
+      }
+      alert.SeverityNumber = i
+    case "severity_text":
+      alert.SeverityText = v
+    case "labels":
+      alert.Labels[field.SubKey] = v
+    case "attributes":
+      alert.Attributes[field.SubKey] = v
+    case "group_kv":
+      alert.GroupKv[field.SubKey] = v
+    case "body":
+      alert.Body[field.SubKey] = v
+    default:
+      return fmt.Errorf("field '%s' not found", field.Name)
+      v, found = "", false
+  }
+  return nil
+}
+
+func (field *AlertField) Reset(alert *api.Alert) {
+  switch field.Name {
+    case "severity_number":
+      alert.SeverityNumber = 0
+    case "severity_text":
+      alert.SeverityText = ""
+    case "labels":
+      delete(alert.Labels, field.SubKey)
+    case "attributes":
+      delete(alert.Attributes, field.SubKey)
+    case "group_kv":
+      delete(alert.GroupKv, field.SubKey)
+    case "body":
+      delete(alert.Body, field.SubKey)
+    default:
+      // do nothing
+  }
+}
+
+func (field *AlertField) String() string {
+  var s strings.Builder
+  s.WriteString(field.Name)
+  if field.SubKey != "" {
+    s.WriteString("[")
+    s.WriteString(field.SubKey)
+    s.WriteString("]")
+  }
+  return s.String()
+}

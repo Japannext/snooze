@@ -13,70 +13,64 @@ import (
 )
 
 type Daemon interface {
-  Start() error
-  Stop()
+  Run() error
+  HandleStop()
 }
 
-type DaemonRunner struct {
-  Errs *errgroup.Group
-  Context context.Context
+type DaemonManager struct {
+  errs *errgroup.Group
+  context context.Context
+  daemons map[string]Daemon
 }
 
-func New() *DaemonRunner {
+func NewDaemonManager() *DaemonManager {
   ctx := context.Background()
   errs, ctx := errgroup.WithContext(ctx)
-  return &DaemonRunner{errs, ctx}
+  return &DaemonManager{errs, ctx, map[string]Daemon{}}
 }
 
-// An utility to run daemons (process that have a start and a stop)
-// gracefully, while handling graceful shutdown.
-// Behavior:
-// * If one daemon exit, everything should exit gracefully
-// * If a SIGTERM is received, everything should exit gracefully
-func (dr *DaemonRunner) Main(fn func(context.Context, *DaemonRunner) error) {
+func (dm *DaemonManager) Add(name string, d Daemon) {
+  dm.daemons[name] = d
+}
+
+func (dm *DaemonManager) Run() {
   var err error
 
   // Catch SIGTERM signals and exit everything
-  dr.Errs.Go(func() error {
-    ch := make(chan os.Signal, 1)
-    signal.Notify(ch,
+  dm.errs.Go(func() error {
+    exit := make(chan os.Signal, 1)
+    signal.Notify(exit,
       os.Interrupt,
       syscall.SIGQUIT,
       syscall.SIGTERM,
     )
     select {
-      case sig := <-ch:
+      case sig := <-exit:
         log.Errorf("Received signal: %s", sig)
         return fmt.Errorf("Exited due to signal: %s", sig)
-      case <-dr.Context.Done():
+      case <-dm.context.Done():
         return nil
     }
   })
 
-  err = fn(dr.Context, dr)
-  if err != nil {
-    log.Fatal(err)
+  for name, _ := range dm.daemons {
+    n := name
+    d := dm.daemons[name]
+    dm.errs.Go(d.Run)
+    dm.errs.Go(func() error {
+      <-dm.context.Done()
+      log.Debug(fmt.Sprintf("Stopping '%s' daemon...", n))
+      d.HandleStop()
+      log.Info(fmt.Sprintf("Stopped '%s' daemon", n))
+      return nil
+    })
   }
 
   // Waiting for daemons. Will return if one daemon fails
-  err = dr.Errs.Wait()
-
+  err = dm.errs.Wait()
   if err == context.Canceled || err == nil {
     log.Info("Gracefully exited server")
   } else if err != nil {
     log.Error(err)
   }
-}
-
-func (dr *DaemonRunner) Run(name string, d Daemon) {
-  // Starting the daemon
-  dr.Errs.Go(d.Start)
-  // Gracefully stopping the server upon context termination
-  dr.Errs.Go(func() error {
-    <-dr.Context.Done()
-    log.Debug(fmt.Sprintf("Stopping %s server...", name))
-    d.Stop()
-    log.Info(fmt.Sprintf("Stopped %s server", name))
-    return nil
-  })
 }

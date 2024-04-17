@@ -1,41 +1,32 @@
 ---
 version: '3'
 
-includes:
-  chart:
-    taskfile: ./charts/snooze/Taskfile.yaml
-    dir: ./charts/snooze
-
 dotenv: ['.env.local']
 
 vars:
   VERSION: 2.0.0
   COMMIT:
     sh: git rev-parse --short HEAD
-  COMPONENTS: >
-    apiserver
-    otel
-    googlechat
+
+includes:
+  image:
+    taskfile: ./tasks/image.yaml
+  chart:
+    taskfile: ./charts/snooze/Taskfile.yaml
+    dir: ./charts/snooze
 
 tasks:
-  image:develop:
-    cmds:
-    - for: []
-      cmd: docker build . -t ${LOCAL_REPO}/snooze-{{ .ITEM }} --build-arg VERSION={{ .VERSION }}-develop --build-arg COMMIT={{ .COMMIT }}
-    - for: 
-    - docker build . -t ${LOCAL_REPO}/snooze:develop --build-arg VERSION={{ .VERSION }}-develop --build-arg COMMIT={{ .COMMIT }}
-    - docker push ${LOCAL_REPO}/snooze:develop
-    preconditions:
-    - sh: '[[ -n "${LOCAL_REPO}" ]]'
-      msg: "LOCAL_REPO environment variable need to be defined in `.env.local"
-    - sh: docker login $LOCAL_REPO --get-login
-      msg: "You need to login to docker with `docker login ${LOCAL_REPO}`"
-
-  helmfile:develop:
-    cmds:
-    - helmfile -f .helmfile.yaml sync
-
   develop:
-    - task: image:develop
+    cmds:
+    - task: images:develop
     - task: chart:develop
-    - task: helmfile:develop
+  images:develop:
+    cmds:
+    - task: image:develop
+      vars: {NAME: snooze-apiserver}
+    - task: image:develop
+      vars: {NAME: snooze-otel}
+
+  test:
+    cmds:
+    - go test ./...
