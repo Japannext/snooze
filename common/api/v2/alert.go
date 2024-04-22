@@ -9,15 +9,15 @@ type Alert struct {
   } `json:"source"`
 
   Timestamp uint64              `json:"timestamp"`
-  ObservedTimestamp uint64      `json:"observed_timestamp,omitempty"`
+  ObservedTimestamp uint64      `json:"observedTimestamp,omitempty"`
 
-  GroupHash []byte              `json:"group_hash,omitempty"`
-  GroupKv map[string]string     `json:"group_kv,omitempty"`
+  GroupHash []byte              `json:"groupHash,omitempty"`
+  GroupLabels map[string]string     `json:"groupLabels,omitempty"`
 
   // Text representing the severity
-  SeverityText string           `json:"severity_text,omitempty"`
+  SeverityText string           `json:"severityText,omitempty"`
   // Number representing the severity. Useful for filters (severity higher than a given value)
-  SeverityNumber int32          `json:"severity_number,omitempty"`
+  SeverityNumber int32          `json:"severityNumber,omitempty"`
 
   // Key-value representing the main resource identifiers.
   // Examples: host, pod, disk name, IP address
@@ -44,5 +44,5 @@ type Alert struct {
 
   // Set when the alert was snooze. Correspond to the name of the rule
   // that snoozed the alert.
-  SnoozeRuleName string `json:"snooze_rule_name"`
+  SnoozeRuleName string `json:"snoozeRuleName"`
 }

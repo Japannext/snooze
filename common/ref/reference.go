@@ -11,7 +11,7 @@ type KvKind string
 const (
   LABELS KvKind = "labels"
   ATTRIBUTES    = "attributes"
-  GROUP         = "group_kv"
+  GROUP         = "group_labels"
 )
 
 type Reference struct {
@@ -30,7 +30,7 @@ func (r *Reference) Get(a *api.Alert) (string, bool) {
     case ATTRIBUTES:
       v, found = a.Attributes[r.Key]
     case GROUP:
-      v, found = a.GroupKv[r.Key]
+      v, found = a.GroupLabels[r.Key]
     default:
       v, found = "", false
   }
@@ -44,7 +44,7 @@ func (r *Reference) Set(a *api.Alert, v string) {
     case ATTRIBUTES:
       a.Attributes[r.Key] = v
     case GROUP:
-      a.GroupKv[r.Key] = v
+      a.GroupLabels[r.Key] = v
   }
 }
 

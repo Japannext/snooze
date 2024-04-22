@@ -1,8 +1,8 @@
 package schedule
 
 import (
+  "fmt"
   "time"
-  "strconv"
 )
 
 // Like golang's time.Weekday
@@ -29,17 +29,17 @@ func parseTime(s string) (int, int, error) {
 }
 
 type WeeklyRepr struct {
-  From WeekTimeRepr `yaml:"from" json:"from"`
-  To WeekTimeRepr `yaml:"to" json:"to"`
+  From *WeekTimeRepr `yaml:"from" json:"from"`
+  To *WeekTimeRepr `yaml:"to" json:"to"`
+  TimeZone string `yaml:"timezone" json:"timezone"`
 }
 
 type WeekTimeRepr struct {
   Weekday string `yaml:"weekday" json:"weekday"`
   Time string `yaml:"time" json:"time"`
-  TimeZone string `yaml:"timezone" json:"timezone"`
 }
 
-type WeekTime struct {
+type weektime struct {
   weekday int
   hour int
   minute int
@@ -55,68 +55,128 @@ func compareInt(a, b int) int {
   return +1
 }
 
-// Compare 2 weekdays
-func (w1 *WeekTime) Compare(w2 *WeekTime) int {
-  w := compareInt(w1.weekday, w2.weekday)
-  if w == 0 {
-    h := compareInt(w1.hour, w2.hour)
-    if h == 0 {
-      m := compareInt(w1.minute, w2.minute)
-      return m
+func isWeekdayInBetween(x, a, b int) bool {
+  if (a > b) {
+    return (x <= b) || (a <= x)
+  }
+  return (a <= x) && (x <= b)
+}
+
+// Check if a weektime is between 2 weektimes
+func (w *weektime) InBetween(a, b *weektime) bool  {
+  // Simple case
+  if (a.weekday == b.weekday) {
+    if (a.hour < w.hour) && (w.hour < b.hour) {
+      return true
     }
-    return h
+    if (a.hour == w.hour) && (a.minute < w.minute) {
+      return true
+    }
+    if (w.hour == b.hour) && (w.minute < b.minute) {
+      return true
+    }
+    return false
   }
-  return w
+
+  // Reverse case a > b
+  if (a.weekday > b.weekday) {
+    if (w.weekday < b.weekday) || (a.weekday < w.weekday) {
+      return true
+    }
+    if (a.weekday == w.weekday) {
+      if (a.hour < w.hour) {
+        return true
+      }
+      if (w.hour == a.hour) && (a.minute < w.minute) {
+        return true
+      }
+      return false
+    }
+    if (w.weekday == b.weekday) {
+      if (w.hour < b.hour) {
+        return true
+      }
+      if (w.hour == b.hour) && (w.minute < b.minute) {
+        return true
+      }
+      return false
+    }
+  }
+
+  // Natural order a < b
+  if (a.weekday < w.weekday) && (w.weekday < b.weekday) {
+    return true
+  }
+  if (a.weekday == w.weekday) {
+    if (a.hour < w.hour) {
+      return true
+    }
+    if (a.hour == w.hour) && (a.minute <= w.minute) {
+      return true
+    }
+    return false
+  }
+  if (w.weekday == b.weekday) {
+    if (w.hour < b.hour) {
+      return true
+    }
+    if (w.hour == b.hour) && (w.minute <= b.minute) {
+      return true
+    }
+    return false
+  }
+
+  return false
 }
 
-func (w1 *WeekTime) Before(w2 *WeekTime) bool {
-  
-}
-
-func getWeekTime(cfg *WeekTimeRepr) (*WeekTime, error) {
-  hour, minute, err := parseTime(cfg.Time)
+func (wtr *WeekTimeRepr) toWeekTime() (*weektime, error) {
+  hour, minute, err := parseTime(wtr.Time)
   if err != nil {
     return nil, err
   }
-  weekday, err := parseWeekday(cfg.Weekday)
+  weekday, err := parseWeekday(wtr.Weekday)
   if err != nil {
     return nil, err
   }
-  return &WeekTime{weekday, hour, minute}, nil
+  return &weektime{weekday, hour, minute}, nil
 }
 
 type Weekly struct {
-  From WeekTime
-  To WeekTime
+  from *weektime
+  to *weektime
+  tz *time.Location
 }
 
-func getWeekly(w *WeeklyRepr) (*Weekly, error) {
-  from, err := getWeekTime(w.From)
+func (w *WeeklyRepr) ToWeekly() (*Weekly, error) {
+  from, err := w.From.toWeekTime()
   if err != nil {
     return nil, err
   }
-  to := getWeekTime(w.To)
+  to, err := w.To.toWeekTime()
   if err != nil {
     return nil, err
   }
-  return &Weekly{from, to}, nil
-}
 
-func (s *Weekly) MatchNow() bool {
-  return s.Match(time.Now())
+  // Edge-cases
+  if from.weekday == to.weekday {
+    if to.hour < from.hour {
+      return nil, fmt.Errorf("same day, but hours backwards!")
+    }
+    if from.hour == to.hour && to.minute < from.minute {
+      return nil, fmt.Errorf("same day, same hour, but minutes backwards!")
+    }
+  }
+
+  tz, err := time.LoadLocation(w.TimeZone)
+  if err != nil {
+    return nil, err
+  }
+
+  return &Weekly{from, to, tz}, nil
 }
 
 func (s *Weekly) Match(t *time.Time) bool {
-  wt := &WeekTime{t.Weekday(), t.Hour(), t.Minute()}
-
-  if wt.Compare(s.From) >= 0 {
-  }
-
-  if w < s.From.Weekday {
-    return false
-  }
-  if w > s.To.Weekday {
-    return false
-  }
-  if w == s.From.Weekday && 
+  tt := t.In(s.tz)
+  w := &weektime{int(tt.Weekday()), tt.Hour(), tt.Minute()}
+  return w.InBetween(s.from, s.to)
 }

@@ -3,6 +3,7 @@ package field
 import (
   "fmt"
   "strconv"
+  "strings"
 
   api "github.com/japannext/snooze/common/api/v2"
 )
@@ -24,7 +25,7 @@ func (field *AlertField) Get(alert *api.Alert) (string, bool) {
   )
   switch field.Name {
     case "severity_number":
-      v = strconv.Itoa(alert.SeverityNumber)
+      v = strconv.Itoa(int(alert.SeverityNumber))
       found = (alert.SeverityNumber != 0)
     case "severity_text":
       v = alert.SeverityText
@@ -33,8 +34,8 @@ func (field *AlertField) Get(alert *api.Alert) (string, bool) {
       v, found = alert.Labels[field.SubKey]
     case "attributes":
       v, found = alert.Attributes[field.SubKey]
-    case "group_kv":
-      v, found = alert.GroupKv[field.SubKey]
+    case "group_labels":
+      v, found = alert.GroupLabels[field.SubKey]
     case "body":
       v, found = alert.Body[field.SubKey]
     default:
@@ -50,20 +51,19 @@ func (field *AlertField) Set(alert *api.Alert, v string) error {
       if err != nil {
         return err
       }
-      alert.SeverityNumber = i
+      alert.SeverityNumber = int32(i)
     case "severity_text":
       alert.SeverityText = v
     case "labels":
       alert.Labels[field.SubKey] = v
     case "attributes":
       alert.Attributes[field.SubKey] = v
-    case "group_kv":
-      alert.GroupKv[field.SubKey] = v
+    case "group_labels":
+      alert.GroupLabels[field.SubKey] = v
     case "body":
       alert.Body[field.SubKey] = v
     default:
       return fmt.Errorf("field '%s' not found", field.Name)
-      v, found = "", false
   }
   return nil
 }
@@ -78,8 +78,8 @@ func (field *AlertField) Reset(alert *api.Alert) {
       delete(alert.Labels, field.SubKey)
     case "attributes":
       delete(alert.Attributes, field.SubKey)
-    case "group_kv":
-      delete(alert.GroupKv, field.SubKey)
+    case "group_labels":
+      delete(alert.GroupLabels, field.SubKey)
     case "body":
       delete(alert.Body, field.SubKey)
     default:
