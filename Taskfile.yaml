@@ -16,6 +16,11 @@ includes:
     dir: ./charts/snooze
 
 tasks:
+  build:
+    cmds:
+    - go fmt ./...
+    - go vet ./...
+    - go build ./...
   develop:
     cmds:
     - task: images:develop
@@ -24,6 +29,8 @@ tasks:
     cmds:
     - task: image:develop
       vars: {NAME: snooze-apiserver}
+    - task: image:develop
+      vars: {NAME: snooze-processor}
     - task: image:develop
       vars: {NAME: snooze-otel}
 

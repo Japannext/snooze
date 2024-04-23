@@ -1,31 +1,31 @@
 package transform
 
 import (
-  log "github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 
-  "github.com/japannext/snooze/common/field"
-  api "github.com/japannext/snooze/common/api/v2"
+	api "github.com/japannext/snooze/common/api/v2"
+	"github.com/japannext/snooze/common/field"
 )
 
 type SetRule struct {
-  Target string `yaml:"target" json:"target"`
-  Value string `yaml:"value" json:"value"`
+	Target string `yaml:"target" json:"target"`
+	Value  string `yaml:"value" json:"value"`
 }
 
 func (rule *SetRule) Compute() Interface {
-  f, err := field.Parse(rule.Target)
-  if err != nil {
-    log.Fatal(err)
-  }
-  return &computedSet{*f, rule.Value}
+	f, err := field.Parse(rule.Target)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return &computedSet{*f, rule.Value}
 }
 
 type computedSet struct {
-  TargetField field.AlertField
-  Value string
+	TargetField field.AlertField
+	Value       string
 }
 
 func (s *computedSet) Process(alert *api.Alert) error {
-  s.TargetField.Set(alert, s.Value)
-  return nil
+	s.TargetField.Set(alert, s.Value)
+	return nil
 }

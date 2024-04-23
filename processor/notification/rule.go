@@ -1,42 +1,42 @@
 package notification
 
 import (
-  log "github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 
-  "github.com/japannext/snooze/common/condition"
-  "github.com/japannext/snooze/common/rabbitmq"
+	"github.com/japannext/snooze/common/condition"
+	"github.com/japannext/snooze/common/rabbitmq"
 )
 
 type Rule struct {
-  If string `yaml:"if"`
-  Channels []string `yaml:"channels"`
+	If       string   `yaml:"if"`
+	Channels []string `yaml:"channels"`
 }
 
 type computedRule struct {
-  Condition condition.Interface
-  Queues []*rabbitmq.NotificationQueue
+	Condition condition.Interface
+	Queues    []*rabbitmq.NotificationQueue
 }
 
 func compute(rule *Rule) *computedRule {
-  c, err := condition.Parse(rule.If)
-  if err != nil {
-    log.Fatal(err)
-  }
+	c, err := condition.Parse(rule.If)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-  var qq []*rabbitmq.NotificationQueue
+	var qq []*rabbitmq.NotificationQueue
 
-  for _, name := range rule.Channels {
-    q, found := queues[name]
-    if !found {
-      q = ch.NewQueue(name)
-      queues[name] = q
-    }
-    qq = append(qq, q)
-  }
-  return &computedRule{
-    Condition: c.Resolve(),
-    Queues: qq,
-  }
+	for _, name := range rule.Channels {
+		q, found := queues[name]
+		if !found {
+			q = ch.NewQueue(name)
+			queues[name] = q
+		}
+		qq = append(qq, q)
+	}
+	return &computedRule{
+		Condition: c.Resolve(),
+		Queues:    qq,
+	}
 }
 
 var ch *rabbitmq.NotificationChannel
@@ -45,10 +45,10 @@ var queues map[string]*rabbitmq.NotificationQueue
 var computedRules []*computedRule
 
 func InitRules(rules []*Rule, defaults []string) {
-  ch = rabbitmq.InitNotificationChannel()
+	ch = rabbitmq.InitNotificationChannel()
 
-  for _, rule := range rules {
-    computedRules = append(computedRules, compute(rule))
-  }
-  computedRules = append(computedRules, compute(&Rule{Channels: defaults}))
+	for _, rule := range rules {
+		computedRules = append(computedRules, compute(rule))
+	}
+	computedRules = append(computedRules, compute(&Rule{Channels: defaults}))
 }

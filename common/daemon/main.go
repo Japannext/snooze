@@ -1,76 +1,76 @@
 package daemon
 
 import (
-  "context"
-  "fmt"
-  "os"
-  "os/signal"
-  "syscall"
+	"context"
+	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 
-  log "github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 
-  "golang.org/x/sync/errgroup"
+	"golang.org/x/sync/errgroup"
 )
 
 type Daemon interface {
-  Run() error
-  HandleStop()
+	Run() error
+	HandleStop()
 }
 
 type DaemonManager struct {
-  errs *errgroup.Group
-  context context.Context
-  daemons map[string]Daemon
+	errs    *errgroup.Group
+	context context.Context
+	daemons map[string]Daemon
 }
 
 func NewDaemonManager() *DaemonManager {
-  ctx := context.Background()
-  errs, ctx := errgroup.WithContext(ctx)
-  return &DaemonManager{errs, ctx, map[string]Daemon{}}
+	ctx := context.Background()
+	errs, ctx := errgroup.WithContext(ctx)
+	return &DaemonManager{errs, ctx, map[string]Daemon{}}
 }
 
 func (dm *DaemonManager) Add(name string, d Daemon) {
-  dm.daemons[name] = d
+	dm.daemons[name] = d
 }
 
 func (dm *DaemonManager) Run() {
-  var err error
+	var err error
 
-  // Catch SIGTERM signals and exit everything
-  dm.errs.Go(func() error {
-    exit := make(chan os.Signal, 1)
-    signal.Notify(exit,
-      os.Interrupt,
-      syscall.SIGQUIT,
-      syscall.SIGTERM,
-    )
-    select {
-      case sig := <-exit:
-        log.Errorf("Received signal: %s", sig)
-        return fmt.Errorf("Exited due to signal: %s", sig)
-      case <-dm.context.Done():
-        return nil
-    }
-  })
+	// Catch SIGTERM signals and exit everything
+	dm.errs.Go(func() error {
+		exit := make(chan os.Signal, 1)
+		signal.Notify(exit,
+			os.Interrupt,
+			syscall.SIGQUIT,
+			syscall.SIGTERM,
+		)
+		select {
+		case sig := <-exit:
+			log.Errorf("Received signal: %s", sig)
+			return fmt.Errorf("Exited due to signal: %s", sig)
+		case <-dm.context.Done():
+			return nil
+		}
+	})
 
-  for name, _ := range dm.daemons {
-    n := name
-    d := dm.daemons[name]
-    dm.errs.Go(d.Run)
-    dm.errs.Go(func() error {
-      <-dm.context.Done()
-      log.Debug(fmt.Sprintf("Stopping '%s' daemon...", n))
-      d.HandleStop()
-      log.Info(fmt.Sprintf("Stopped '%s' daemon", n))
-      return nil
-    })
-  }
+	for name, _ := range dm.daemons {
+		n := name
+		d := dm.daemons[name]
+		dm.errs.Go(d.Run)
+		dm.errs.Go(func() error {
+			<-dm.context.Done()
+			log.Debug(fmt.Sprintf("Stopping '%s' daemon...", n))
+			d.HandleStop()
+			log.Info(fmt.Sprintf("Stopped '%s' daemon", n))
+			return nil
+		})
+	}
 
-  // Waiting for daemons. Will return if one daemon fails
-  err = dm.errs.Wait()
-  if err == context.Canceled || err == nil {
-    log.Info("Gracefully exited server")
-  } else if err != nil {
-    log.Error(err)
-  }
+	// Waiting for daemons. Will return if one daemon fails
+	err = dm.errs.Wait()
+	if err == context.Canceled || err == nil {
+		log.Info("Gracefully exited server")
+	} else if err != nil {
+		log.Error(err)
+	}
 }

@@ -5,5 +5,5 @@ type StopPipeline struct {
 }
 
 func (err *StopPipeline) Error() string {
-  return ""
+	return ""
 }

@@ -1,14 +1,14 @@
 package version
 
 import (
-  "fmt"
+	"fmt"
 )
 
 var (
-  Version string
-  Commit string
+	Version string
+	Commit  string
 )
 
 func Print() {
-  fmt.Printf("%s-%s", Version, Commit)
+	fmt.Printf("%s-%s", Version, Commit)
 }

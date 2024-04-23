@@ -29,7 +29,7 @@ spec:
       {{- end }}
     spec:
       containers:
-      - name: snooze-api
+      - name: snooze-apiserver
         image: "{{ .Values.image.repo }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: "{{ .Values.image.pullPolicy }}"
         command: ['/snooze', 'api']
