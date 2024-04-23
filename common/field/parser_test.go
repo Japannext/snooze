@@ -1,28 +1,28 @@
-package ref
+package field
 
 import (
   "testing"
   "github.com/stretchr/testify/assert"
 )
 
-func TestParseLabelReference(t *testing.T) {
+func TestParseLabelAlertField(t *testing.T) {
   r, err := Parse("labels[host.name]")
   if assert.NoError(t, err) {
-    assert.Equal(t, &Reference{Kv: KvKind("labels"), Key: "host.name"}, r)
+    assert.Equal(t, &AlertField{"labels", "host.name"}, r)
   }
 }
 
-func TestParserAttributeReference(t *testing.T) {
+func TestParserAttributeAlertField(t *testing.T) {
   r, err := Parse("attributes[host.arch]")
   if assert.NoError(t, err) {
-    assert.Equal(t, &Reference{Kv: KvKind("attributes"), Key: "host.arch"}, r)
+    assert.Equal(t, &AlertField{"attributes", "host.arch"}, r)
   }
 }
 
-func TestParserGroupReference(t *testing.T) {
+func TestParserGroupAlertField(t *testing.T) {
   r, err := Parse("group[k8s.namespace]")
   if assert.NoError(t, err) {
-    assert.Equal(t, &Reference{Kv: KvKind("group"), Key: "k8s.namespace"}, r)
+    assert.Equal(t, &AlertField{"group", "k8s.namespace"}, r)
   }
 }
 
@@ -32,7 +32,7 @@ var notParsable = []string{
   "labels[a][b]",
 }
 
-func TestReferenceNotParsable(t *testing.T) {
+func TestAlertFieldNotParsable(t *testing.T) {
   var err error
   for _, data := range notParsable {
     _, err = Parse(data)

@@ -6,12 +6,12 @@ import (
 )
 
 var conn *amqp.Connection
-var channels map[string]ChannelInterface
+var channelsToClose map[string]ChannelInterface
 
 func Init() {
   var err error
 
-  cfg := initConfig()
+  config := initConfig()
 
   conn, err = amqp.Dial(config.Address)
   if err != nil {
@@ -20,12 +20,14 @@ func Init() {
 }
 
 type ChannelInterface interface {
-  Close()
+  Close() error
 }
 
-func Close() {
-  for _, channel := range channels {
-    channel.Close()
+func Close() error {
+  for _, channel := range channelsToClose {
+    if err := channel.Close(); err != nil {
+      return err
+    }
   }
-  conn.Close()
+  return conn.Close()
 }

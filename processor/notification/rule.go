@@ -1,7 +1,10 @@
 package notification
 
 import (
+  log "github.com/sirupsen/logrus"
+
   "github.com/japannext/snooze/common/condition"
+  "github.com/japannext/snooze/common/rabbitmq"
 )
 
 type Rule struct {
@@ -10,31 +13,42 @@ type Rule struct {
 }
 
 type computedRule struct {
-  Condition *condition.Condition
+  Condition condition.Interface
   Queues []*rabbitmq.NotificationQueue
 }
-
-var computedRules []computedRule
 
 func compute(rule *Rule) *computedRule {
   c, err := condition.Parse(rule.If)
   if err != nil {
     log.Fatal(err)
   }
-  var queues []*rabbitmq.NotificationQueue
-  for _, ch := range rule.Channels {
-    q := InitNotificationQueue(ch)
-    queues = append(queues, q)
+
+  var qq []*rabbitmq.NotificationQueue
+
+  for _, name := range rule.Channels {
+    q, found := queues[name]
+    if !found {
+      q = ch.NewQueue(name)
+      queues[name] = q
+    }
+    qq = append(qq, q)
   }
   return &computedRule{
-    Condition: c,
-    Queues: queues,
+    Condition: c.Resolve(),
+    Queues: qq,
   }
 }
 
-func InitRules(rules []Rule, defaults []string) {
+var ch *rabbitmq.NotificationChannel
+var queues map[string]*rabbitmq.NotificationQueue
+
+var computedRules []*computedRule
+
+func InitRules(rules []*Rule, defaults []string) {
+  ch = rabbitmq.InitNotificationChannel()
+
   for _, rule := range rules {
     computedRules = append(computedRules, compute(rule))
   }
-  computedRules = append(computedRules, &computedRule{Channels: defaults})
+  computedRules = append(computedRules, compute(&Rule{Channels: defaults}))
 }

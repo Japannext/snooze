@@ -1,6 +1,7 @@
 package otel
 
 import (
+  log "github.com/sirupsen/logrus"
   "github.com/spf13/viper"
 )
 
@@ -16,7 +17,9 @@ type Config struct {
   PrometheusPort int `mapstructure:"OTEL_PROMETHEUS_PORT"`
 }
 
-func (cfg *Config) init() error {
+var config *Config
+
+func initConfig() {
   // Defaults
   viper.SetDefault("OTEL_GRPC_LISTENING_ADDRESS", "0.0.0.0")
   viper.SetDefault("OTEL_GRPC_LISTENING_PORT", 4317)
@@ -24,7 +27,9 @@ func (cfg *Config) init() error {
   viper.SetDefault("OTEL_PROMETHEUS_PORT", 9317)
 
   viper.AutomaticEnv()
-  return viper.Unmarshal(&config)
+  err := viper.Unmarshal(&config)
+  if err != nil {
+    log.Fatal(err)
+  }
 }
 
-var config *Config

@@ -1,10 +1,17 @@
 package processor
 
 import (
-  amqp "github.com/rabbitmq/amqp091-go"
+  "fmt"
 
-  "github.com/japannext/snooze/common/rabbitmq"
-  "github.com/japannext/snooze/common/api/v2"
+  log "github.com/sirupsen/logrus"
+
+  "github.com/japannext/snooze/processor/transform"
+  "github.com/japannext/snooze/processor/silence"
+  "github.com/japannext/snooze/processor/grouping"
+  "github.com/japannext/snooze/processor/ratelimit"
+  "github.com/japannext/snooze/processor/notification"
+  "github.com/japannext/snooze/processor/store"
+  api "github.com/japannext/snooze/common/api/v2"
 )
 
 type Processor struct {}
@@ -12,41 +19,34 @@ type Processor struct {}
 // For alert that will not be requeued, because their
 // format is invalid, or they are poison messages.
 type RejectedAlert struct {
-  alert *v2.Alert
+  alert *api.Alert
   reason string
 }
 func (r *RejectedAlert) Error() string {
-  return fmt.Sprintf("Rejected alert id=%s/%s reason=%s", r.alert.TraceID, r.alert.SpanID, r.reason)
+  // return fmt.Sprintf("Rejected alert id=%s/%s reason=%s", r.alert.TraceID, r.alert.SpanID, r.reason)
+  return fmt.Sprintf("Rejected alert: %s", r.reason)
 }
 
 func (p *Processor) Run() error {
-  dd, err := pq.Consume()
+  msgs, err := ch.Consume()
   if err != nil {
     return err
   }
-  for _, d := range dd {
-    var alert *v2.Alert
-    if err := json.UnMarshal(d.Body, &alert); err != nil {
-      log.Warn("Rejected malformed alert body:\n%.20s\n[...]", d.Body)
-      d.Reject(false)
-    }
-    pipeline := pipelines[pname]
-    newItem, err := pipeline.Process(item)
-    if errors.As(err, &RejectedAlert{}) {
+  for msg := range msgs {
+    alert := msg.Alert
+    d := msg.Delivery
+    err = Process(alert)
+    if err != nil {
       log.Error(err)
       d.Reject(false)
     }
-    if err != nil {
-      log.Warn("Failed to process alert id=%s/%s, err=%s", alert.TraceID, alert.SpanID, err)
-      d.Reject(true)
-    }
-    d.Ack()
+    d.Ack(false)
   }
   return nil
 }
 
 func (p *Processor) HandleStop() {
-  pq.Cancel()
+  ch.Cancel()
 }
 
 func Process(alert *api.Alert) error {
@@ -65,7 +65,8 @@ func Process(alert *api.Alert) error {
   if err := notification.Process(alert); err != nil {
     return err
   }
-  if err := save.Process(alert); err != nil {
+  if err := store.Process(alert); err != nil {
     return err
   }
+  return nil
 }

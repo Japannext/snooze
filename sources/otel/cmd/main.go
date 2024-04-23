@@ -1,6 +1,9 @@
 package cmd
 
 import (
+  "fmt"
+  "os"
+
   "github.com/spf13/cobra"
 
   "github.com/japannext/snooze/sources/otel"
@@ -18,7 +21,7 @@ var cmd = &cobra.Command{
   Short: "Run the snooze-otel server",
   Long: "Run the snooze-otel server",
   Run: func(c *cobra.Command, args []string) {
-    apiserver.Run()
+    otel.Run()
   },
 }
 

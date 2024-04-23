@@ -5,7 +5,6 @@ go 1.20
 require (
 	github.com/deckarep/golang-set/v2 v2.6.0
 	github.com/gin-gonic/gin v1.9.1
-	github.com/kataras/go-errors v0.0.3
 	github.com/mottaquikarim/esquerydsl v0.0.0-20230908215636-2a15c9ace5b9
 	github.com/opensearch-project/opensearch-go/v2 v2.3.0
 	github.com/rabbitmq/amqp091-go v1.9.0

@@ -11,7 +11,7 @@ import (
   log "github.com/sirupsen/logrus"
 
   "github.com/japannext/snooze/common/logging"
-  "github.com/japannext/snooze/common/opensearch"
+  "github.com/japannext/snooze/common/rabbitmq"
 )
 
 type Daemon interface {
@@ -48,28 +48,17 @@ func handleSignal(ctx context.Context) error {
   }
 }
 
-var db *opensearch.Database
-var pq *queue.ProcessQueue
+var pq *rabbitmq.ProcessChannel
 
 func Run() {
 
   ctx := context.Background()
   errs, ctx := errgroup.WithContext(ctx)
 
-  pq = queue.InitProcessQueue()
-
-  if err := config.init(); err != nil {
-    log.Fatal(err)
-  }
-  if err := logging.Init(); err != nil {
-    log.Fatal(err)
-  }
-  if err := opensearch.Init(); err != nil {
-    log.Fatal(err)
-  }
-  if err = opensearch.DB.CheckHealth(); err != nil {
-    log.Fatal(err)
-  }
+  logging.Init()
+  initConfig()
+  rabbitmq.Init()
+  pq = rabbitmq.InitProcessChannel()
 
   // Running daemons
   handleServer("otel-grpc", errs, ctx, NewOtelGrpcServer())

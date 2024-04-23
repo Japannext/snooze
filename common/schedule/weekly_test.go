@@ -7,19 +7,6 @@ import (
   "github.com/stretchr/testify/assert"
 )
 
-func TestToWeekly(t *testing.T) {
-
-  wr := &WeeklyRepr{
-    From: &WeekTimeRepr{Weekday: "Friday", Time: "17:30"},
-    To: &WeekTimeRepr{Weekday: "Monday", Time: "08:30"},
-    TimeZone: "Asia/Tokyo",
-  }
-
-  w, err := wr.ToWeekly()
-  assert.NoError(t, err)
-  assert.NotNil(t, w)
-}
-
 type weeklyTest struct {
   Name string
   FromWeekday string
@@ -86,7 +73,7 @@ func TestWeeklyMatch(t *testing.T) {
         To: &WeekTimeRepr{td.ToWeekday, td.ToTime},
         TimeZone: tzName,
       }
-      w, err := wr.ToWeekly()
+      w, err := wr.Resolve()
       assert.NoError(t, err)
 
       tt, err := time.Parse(time.RFC3339, td.Time)

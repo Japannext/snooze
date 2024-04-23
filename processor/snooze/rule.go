@@ -1,0 +1,4 @@
+package snooze
+
+func Init() {
+}

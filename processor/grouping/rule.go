@@ -1,13 +1,9 @@
 package grouping
 
 import (
-  "crypto/md5"
-  "sort"
-
-  api "github.com/japannext/snooze/common/api/v2"
+  log "github.com/sirupsen/logrus"
   "github.com/japannext/snooze/common/condition"
   "github.com/japannext/snooze/common/field"
-  "github.com/japannext/snooze/common/utils"
 )
 
 type Rule struct {
@@ -16,31 +12,32 @@ type Rule struct {
 }
 
 type computedRule struct {
-  Condition *condition.Condition
-  Fields []field.AlertField
+  Condition condition.Interface
+  Fields []*field.AlertField
 }
 
-var computedRules []ComputedRule
+var computedRules []*computedRule
 
-func compute(r *Rule) *computedRule {
+func compute(rule *Rule) *computedRule {
   c, err := condition.Parse(rule.If)
   if err != nil {
     log.Fatal(err)
   }
-  var fields []field.AlertField
+  var fields []*field.AlertField
   for _, f := range rule.GroupBy {
     fi, err := field.Parse(f)
     if err != nil {
       log.Fatal(err)
     }
+    fields = append(fields, fi)
   }
-  return &ComputedRule{
-    Condition: c,
+  return &computedRule{
+    Condition: c.Resolve(),
     Fields: fields,
   }
 }
 
-func InitRules(rules []Rule) {
+func InitRules(rules []*Rule) {
   for _, rule := range rules {
     computedRules = append(computedRules, compute(rule))
   }

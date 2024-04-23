@@ -30,7 +30,7 @@ func TestMatch(t *testing.T) {
   for _, td := range dailyTests {
     t.Run(td.Name, func(t *testing.T) {
       dr := &DailyRepr{td.FromTime, td.ToTime, tzName}
-      d, err := dr.ToDaily()
+      d, err := dr.Resolve()
       assert.NoError(t, err)
 
       tt, err := time.Parse(time.RFC3339, td.Time)

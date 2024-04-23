@@ -9,8 +9,10 @@ var (
   Client *RedisClient
 )
 
+var Nil = redisv9.Nil
+
 type RedisClient struct {
-  Client *redisv9.Client
+  *redisv9.Client
 }
 
 func Init() {

@@ -1,4 +1,4 @@
-package v1
+package condition
 
 import (
   "fmt"
@@ -6,7 +6,7 @@ import (
   "regexp"
 
   api "github.com/japannext/snooze/common/api/v2"
-  "github.com/japannext/snooze/common/ref"
+  "github.com/japannext/snooze/common/field"
 )
 
 type ConditionKind string
@@ -19,6 +19,7 @@ const (
   NOT_EQUAL         = "not_equal"
   MATCH             = "match"
   NOT_MATCH         = "not_match"
+  HAS               = "has"
 )
 
 type Condition struct {
@@ -30,9 +31,10 @@ type Condition struct {
   NotEqual *NotEqualCondition `json:"notEqual,omitempty"`
   Match *MatchCondition `json:"match,omitempty"`
   NotMatch *NotMatchCondition `json:"not_match,omitempty"`
+  Has *HasCondition `json:"has,omitempty"`
 }
 
-func (c *Condition) Get() ConditionInterface {
+func (c *Condition) Resolve() Interface {
   switch c.Kind {
     case AND:
       return c.And
@@ -44,6 +46,8 @@ func (c *Condition) Get() ConditionInterface {
       return c.Equal
     case NOT_EQUAL:
       return c.NotEqual
+    case HAS:
+      return c.Has
   }
   // Should never be reached
   return nil
@@ -52,13 +56,13 @@ func (c *Condition) Get() ConditionInterface {
 func (c *Condition) Validate() error {
   switch c.Kind {
     case AND, OR, EQUAL, NOT, NOT_EQUAL:
-      return c.Get().Validate()
+      return c.Resolve().Validate()
     default:
       return fmt.Errorf("unsupported condition kind '%s'", c.Kind)
   }
 }
 
-type ConditionInterface interface {
+type Interface interface {
   Test(*api.Alert) bool
   Validate() error
   String() string
@@ -70,7 +74,7 @@ type AndCondition struct {
 
 func (c *AndCondition) Validate() error {
   for _, cc := range c.Conditions {
-    err := cc.Get().Validate()
+    err := cc.Resolve().Validate()
     if err != nil {
       return err
     }
@@ -80,7 +84,7 @@ func (c *AndCondition) Validate() error {
 
 func (c *AndCondition) Test(a *api.Alert) bool {
   for _, cc := range c.Conditions {
-    if !cc.Get().Test(a) {
+    if !cc.Resolve().Test(a) {
       return false
     }
   }
@@ -94,7 +98,7 @@ func (c *AndCondition) String() string {
       b.WriteString(" and ")
     }
     b.WriteString("(")
-    b.WriteString(cc.Get().String())
+    b.WriteString(cc.Resolve().String())
     b.WriteString(")")
   }
   b.WriteString("")
@@ -107,7 +111,7 @@ type OrCondition struct {
 
 func (c *OrCondition) Validate() error {
   for _, cc := range c.Conditions {
-    err := cc.Get().Validate()
+    err := cc.Resolve().Validate()
     if err != nil {
       return err
     }
@@ -117,7 +121,7 @@ func (c *OrCondition) Validate() error {
 
 func (c *OrCondition) Test(a *api.Alert) bool {
   for _, cc := range c.Conditions {
-    if cc.Get().Test(a) {
+    if cc.Resolve().Test(a) {
       return true
     }
   }
@@ -131,7 +135,7 @@ func (c *OrCondition) String() string {
       b.WriteString(" or ")
     }
     b.WriteString("(")
-    b.WriteString(cc.Get().String())
+    b.WriteString(cc.Resolve().String())
     b.WriteString(")")
   }
   b.WriteString("")
@@ -143,11 +147,11 @@ type NotCondition struct {
 }
 
 func (c *NotCondition) Validate() error {
-  return c.Condition.Get().Validate()
+  return c.Condition.Resolve().Validate()
 }
 
 func (c *NotCondition) Test(a *api.Alert) bool {
-  return c.Condition.Get().Test(a)
+  return c.Condition.Resolve().Test(a)
 }
 
 func (c *NotCondition) String() string {
@@ -155,16 +159,16 @@ func (c *NotCondition) String() string {
 }
 
 type EqualCondition struct {
-  Ref ref.Reference `json:"reference"`
+  Field field.AlertField `json:"field"`
   Value string `json:"value"`
 }
 
 func (c *EqualCondition) Validate() error {
-  return c.Ref.Validate()
+  return c.Field.Validate()
 }
 
 func (c *EqualCondition) Test(a *api.Alert) bool {
-  v, found := c.Ref.Fetch(a)
+  v, found := c.Field.Get(a)
   if found && v == c.Value {
     return true
   }
@@ -172,20 +176,20 @@ func (c *EqualCondition) Test(a *api.Alert) bool {
 }
 
 func (c *EqualCondition) String() string {
-  return fmt.Sprintf("%s == '%s'", c.Ref.String(), c.Value)
+  return fmt.Sprintf("%s == '%s'", c.Field, c.Value)
 }
 
 type NotEqualCondition struct {
-  Ref ref.Reference `json:"reference"`
+  Field field.AlertField `json:"field"`
   Value string `json:"value"`
 }
 
 func (c *NotEqualCondition) Validate() error {
-  return c.Ref.Validate()
+  return c.Field.Validate()
 }
 
 func (c *NotEqualCondition) Test(a *api.Alert) bool {
-  v, found := c.Ref.Fetch(a)
+  v, found := c.Field.Get(a)
   if found && v == c.Value {
     return false
   }
@@ -193,17 +197,17 @@ func (c *NotEqualCondition) Test(a *api.Alert) bool {
 }
 
 func (c *NotEqualCondition) String() string {
-  return fmt.Sprintf("%s != '%s'", c.Ref.String(), c.Value)
+  return fmt.Sprintf("%s != '%s'", c.Field.String(), c.Value)
 }
 
 type MatchCondition struct {
-  Ref ref.Reference
-  Value string
+  Field field.AlertField `json:"field"`
+  Value string `json:"value"`
   regexp *regexp.Regexp
 }
 
 func (c *MatchCondition) Validate() error {
-  if err := c.Ref.Validate(); err != nil {
+  if err := c.Field.Validate(); err != nil {
     return err
   }
   re, err := regexp.Compile(c.Value)
@@ -215,7 +219,7 @@ func (c *MatchCondition) Validate() error {
 }
 
 func (c *MatchCondition) Test(a *api.Alert) bool {
-  v, found := c.Ref.Fetch(a)
+  v, found := c.Field.Get(a)
   if found && c.regexp.Match([]byte(v)) {
     return true
   }
@@ -223,17 +227,17 @@ func (c *MatchCondition) Test(a *api.Alert) bool {
 }
 
 func (c *MatchCondition) String() string {
-  return fmt.Sprintf("%s =~ /%s/", c.Ref.String(), c.Value)
+  return fmt.Sprintf("%s =~ /%s/", c.Field, c.Value)
 }
 
 type NotMatchCondition struct {
-  Ref ref.Reference
-  Value string
+  Field field.AlertField `json:"field"`
+  Value string `json:"value"`
   regexp *regexp.Regexp
 }
 
 func (c *NotMatchCondition) Validate() error {
-  if err := c.Ref.Validate(); err != nil {
+  if err := c.Field.Validate(); err != nil {
     return err
   }
   re, err := regexp.Compile(c.Value)
@@ -245,7 +249,7 @@ func (c *NotMatchCondition) Validate() error {
 }
 
 func (c *NotMatchCondition) Test(a *api.Alert) bool {
-  v, found := c.Ref.Fetch(a)
+  v, found := c.Field.Get(a)
   if found && c.regexp.Match([]byte(v)) {
     return false
   }
@@ -253,5 +257,25 @@ func (c *NotMatchCondition) Test(a *api.Alert) bool {
 }
 
 func (c *NotMatchCondition) String() string {
-  return fmt.Sprintf("%s !~ /%s/", c.Ref.String(), c.Value)
+  return fmt.Sprintf("%s !~ /%s/", c.Field, c.Value)
+}
+
+type HasCondition struct {
+  Field field.AlertField `json:"field"`
+}
+
+func (c *HasCondition) Validate() error {
+ if err := c.Field.Validate(); err != nil {
+  return err
+ }
+ return nil
+}
+
+func (c *HasCondition) Test(a *api.Alert) bool {
+  _, found := c.Field.Get(a)
+  return found
+}
+
+func (c *HasCondition) String() string {
+  return fmt.Sprintf("has %s", c.Field)
 }

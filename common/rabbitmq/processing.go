@@ -1,10 +1,13 @@
 package rabbitmq
 
 import (
+  "context"
   "encoding/json"
 
   log "github.com/sirupsen/logrus"
   amqp "github.com/rabbitmq/amqp091-go"
+
+  api "github.com/japannext/snooze/common/api/v2"
 )
 
 const (
@@ -16,75 +19,64 @@ type ProcessChannel struct {
   *amqp.Channel
 }
 
-func InitProcessChannel() {
+func InitProcessChannel() *ProcessChannel {
   ch, err := conn.Channel()
   if err != nil {
     log.Fatal(err)
   }
-  err = ch.ExchangeDeclare(nq.exName,
-    "direct",
-    true, // durable
-    false, // auto-deleted
-    false, // internal
-    false, // no-wait
-    nil, // args
-  )
+  err = exchange(ch, pexName, "direct", &exOpts{Durable: true})
+  if err != nil {
+    log.Fatal(err)
+  }
+  _, err = queue(ch, pqName, &qOpts{Durable: true})
+  if err != nil {
+    log.Fatal(err)
+  }
+  err = ch.QueueBind(pqName, "", pexName, false, nil)
   if err != nil {
     log.Fatal(err)
   }
 
-  _, err = ch.QueueDeclare(nq.qName,
-    true, // durable
-    false, // delete when unused
-    false, // exclusive
-    false, // no-wait
-    nil, // args
-  )
-  if err != nil {
-    log.Fatal(err)
-  }
-  err = ch.QueueBind(nq.qName, "", nq.exName, false, nil)
-  if err != nil {
-    log.Fatal(err)
-  }
-
-  channels["process"] = &ProcessChannel{ch}
+  pch := &ProcessChannel{ch}
+  channelsToClose["process"] = pch
+  return pch
 }
 
-func (pc *ProcessChannel) Cancel() {
-  pc.Cancel(pqName, false)
+func (ch *ProcessChannel) Cancel() error {
+  return ch.Channel.Cancel(pqName, false)
 }
 
 type AlertMessage struct {
   Delivery *amqp.Delivery
-  Alert *v2.Alert
+  Alert *api.Alert
 }
 
-func (nq *ProcessChannel) Consume() (<-chan AlertMessage, error) {
+func (ch *ProcessChannel) Consume() (<-chan AlertMessage, error) {
   out := make(chan AlertMessage)
-  dd, err := pc.Consume(pqName, "", true, false, false, false, nil)
+  dd, err := consume(ch.Channel, pqName, "", &chOpts{AutoAck: true})
   if err != nil {
     return out, err
   }
-  for _, d := range dd {
-    var alert *v2.Alert
-    if err := json.UnMarshal(d.Body, &alert); err != nil {
-      log.Warn("Rejecting message (%s): %s", err, d.Body)
+  for d := range dd {
+    var alert *api.Alert
+    if err := json.Unmarshal(d.Body, &alert); err != nil {
+      log.Warnf("Rejecting message (%s): %s", err, d.Body)
       d.Reject(false)
     }
-    out <- AlertMessage{d, alert}
+    out <- AlertMessage{&d, alert}
   }
+  return out, nil
 }
 
-func (pc *ProcessChannel) Publish(ctx context.Context, alert *v2.Alert) error {
+func (ch *ProcessChannel) Publish(ctx context.Context, alert *api.Alert) error {
   body, err := json.Marshal(alert)
   if err != nil {
     return err
   }
   msg := amqp.Publishing{
     DeliveryMode: amqp.Persistent,
-    ContextType: "application/vnd.snooze.alert.v2+json",
+    ContentType: "application/vnd.snooze.alert.v2+json",
     Body: body,
   }
-  return pc.Publish(pqName, "", false, false, msg)
+  return ch.Channel.Publish(pqName, "", false, false, msg)
 }

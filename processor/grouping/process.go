@@ -9,16 +9,17 @@ func Process(alert *api.Alert) error {
   var m map[string]string
 
   for _, rule := range computedRules {
-    if rule.Condition.Match(alert) {
-      fields := rule.GroupBy
-      for _, fi := range fields {
+    if rule.Condition.Test(alert) {
+      for _, fi := range rule.Fields {
         v, found := fi.Get(alert)
-        m[fi.String()] = v
+        if found {
+          m[fi.String()] = v
+        }
       }
       break
     }
   }
 
-  alert.GroupHash = ComputeHash(m)
+  alert.GroupHash = utils.ComputeHash(m)
   return nil
 }

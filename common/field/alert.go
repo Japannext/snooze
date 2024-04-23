@@ -4,6 +4,7 @@ import (
   "fmt"
   "strconv"
   "strings"
+  "golang.org/x/exp/slices"
 
   api "github.com/japannext/snooze/common/api/v2"
 )
@@ -16,6 +17,25 @@ import (
 type AlertField struct {
   Name string
   SubKey string
+}
+
+var allowedFields = []string{"severity_number", "severity_text"}
+var allowedSubFields = []string{"group_labels", "labels", "attributes", "body"}
+
+func (field *AlertField) Validate() error {
+  if slices.Contains(allowedFields, field.Name) {
+    if field.SubKey == "" {
+      return nil
+    }
+    return fmt.Errorf("subkey not authorized with field '%s'", field.Name)
+  }
+  if slices.Contains(allowedSubFields, field.Name) {
+    if field.SubKey == "" {
+      return fmt.Errorf("subkey required with field '%s'", field.Name)
+    }
+    return nil
+  }
+  return fmt.Errorf("unknown/unauthorized field '%s'", field.Name)
 }
 
 func (field *AlertField) Get(alert *api.Alert) (string, bool) {

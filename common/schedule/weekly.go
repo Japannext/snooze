@@ -28,7 +28,7 @@ func parseTime(s string) (int, int, error) {
   return t.Hour(), t.Minute(), nil
 }
 
-type WeeklyRepr struct {
+type WeeklySchedule struct {
   From *WeekTimeRepr `yaml:"from" json:"from"`
   To *WeekTimeRepr `yaml:"to" json:"to"`
   TimeZone string `yaml:"timezone" json:"timezone"`
@@ -147,7 +147,7 @@ type Weekly struct {
   tz *time.Location
 }
 
-func (w *WeeklyRepr) ToWeekly() (*Weekly, error) {
+func (w *WeeklySchedule) Resolve() (*Weekly, error) {
   from, err := w.From.toWeekTime()
   if err != nil {
     return nil, err

@@ -1,48 +1,49 @@
-package grouping
+package silence
 
 import (
-  "crypto/md5"
-  "sort"
-
-  api "github.com/japannext/snooze/common/api/v2"
+  log "github.com/sirupsen/logrus"
   "github.com/japannext/snooze/common/condition"
   "github.com/japannext/snooze/common/schedule"
-  "github.com/japannext/snooze/common/field"
-  "github.com/japannext/snooze/common/utils"
 )
 
 type Rule struct {
+  Name string `yaml:"name"`
   If string `yaml:"if"`
-  WeeklySchedule *schedule.Weekly `yaml:"weekly_schedule"`
-  DailySchedule *schedule.Daily `yaml:"daily_schedule"`
+  Schedule *schedule.Schedule `yaml:",inline"`
 }
 
 type computedRule struct {
-  Condition *condition.Condition
-  Fields []field.AlertField
+  Name string
+  Condition condition.Interface
+  Schedule schedule.Interface
 }
 
-var computedRules []ComputedRule
+func (r *computedRule) String() string {
+  if r.Name != "" {
+    return r.Name
+  }
+  return r.Condition.String()
+}
 
-func compute(r *Rule) *computedRule {
+var computedRules []*computedRule
+
+func compute(rule *Rule) *computedRule {
   c, err := condition.Parse(rule.If)
   if err != nil {
     log.Fatal(err)
   }
-  var fields []field.AlertField
-  for _, f := range rule.GroupBy {
-    fi, err := field.Parse(f)
-    if err != nil {
-      log.Fatal(err)
-    }
+  s, err := rule.Schedule.Resolve()
+  if err != nil {
+    log.Fatal(err)
   }
-  return &ComputedRule{
-    Condition: c,
-    Fields: fields,
+  return &computedRule{
+    Name: rule.Name,
+    Condition: c.Resolve(),
+    Schedule: s,
   }
 }
 
-func InitRules(rules []Rule) {
+func InitRules(rules []*Rule) {
   for _, rule := range rules {
     computedRules = append(computedRules, compute(rule))
   }

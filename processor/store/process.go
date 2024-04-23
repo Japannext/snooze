@@ -1,4 +1,4 @@
-package save
+package store
 
 import (
   api "github.com/japannext/snooze/common/api/v2"

@@ -1,20 +1,18 @@
 package otel
 
 import (
-  "fmt"
-
   commonv1 "go.opentelemetry.io/proto/otlp/common/v1"
   logv1 "go.opentelemetry.io/proto/otlp/logs/v1"
   resv1 "go.opentelemetry.io/proto/otlp/resource/v1"
 
-  "github.com/japannext/snooze/common/api/v2"
+  api "github.com/japannext/snooze/common/api/v2"
 )
 
 // Convert an opentelemetry format to the snooze native format
-func convertLog(resource *resv1.Resource, scope *commonv1.InstrumentationScope, lr *logv1.LogRecord) *v2.AlertEvent {
-  var alert *v2.AlertEvent
+func convertLog(resource *resv1.Resource, scope *commonv1.InstrumentationScope, lr *logv1.LogRecord) *api.Alert {
+  var alert *api.Alert
 
-  alert.Kind = "opentelemetry.io/logv1"
+  alert.Source = api.Source{"opentelemetry.io/logv1", "main"}
 
   // Timestamps
   alert.Timestamp = lr.TimeUnixNano
@@ -27,10 +25,11 @@ func convertLog(resource *resv1.Resource, scope *commonv1.InstrumentationScope, 
   alert.SeverityText = lr.SeverityText
   alert.SeverityNumber = int32(lr.SeverityNumber)
 
-  alert.Resource = kvToMap(resource.Attributes)
+  alert.Labels = kvToMap(resource.Attributes)
   alert.Attributes = kvToMap(lr.Attributes)
 
-  alert.Body = lr.Body.GetStringValue()
+  anyvalue := &AnyValue{lr.Body}
+  alert.Body = anyvalue.ToMap()
 
   return alert
 }

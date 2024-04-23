@@ -1,8 +1,19 @@
 package processor
 
 import (
+  "os"
+
   log "github.com/sirupsen/logrus"
+  "gopkg.in/yaml.v3"
   "github.com/spf13/viper"
+
+  // Sub-Processors
+  "github.com/japannext/snooze/processor/grouping"
+  "github.com/japannext/snooze/processor/notification"
+  "github.com/japannext/snooze/processor/ratelimit"
+  "github.com/japannext/snooze/processor/silence"
+  // "github.com/japannext/snooze/processor/snooze"
+  "github.com/japannext/snooze/processor/transform"
 )
 
 type Config struct {
@@ -23,11 +34,11 @@ var pipeline *Pipeline
 
 type Pipeline struct {
   Name string `yaml:"name"`
-  TransformRules []transform.Rule `yaml:"transform_rules"`
-  GroupingRules []silence.Rule `yaml:"grouping_rules"`
-  SilenceRules []silence.Rule `yaml:"silence_rules"`
-  RateLimit ratelimit.RateLimit `yaml:"ratelimit"`
-  NotificationRules []notification.Rule `yaml:"notification_rules"`
+  TransformRules []*transform.Rule `yaml:"transform_rules"`
+  GroupingRules []*grouping.Rule `yaml:"grouping_rules"`
+  SilenceRules []*silence.Rule `yaml:"silence_rules"`
+  RateLimit *ratelimit.Rule `yaml:"ratelimit"`
+  NotificationRules []*notification.Rule `yaml:"notification_rules"`
   DefaultNotificationChannels []string `yaml:"default_notification_channels"`
 }
 
@@ -50,7 +61,7 @@ func initConfig() {
   if err != nil {
     log.Fatal(err)
   }
-  if err := yaml.UnMarshal(data, &pipeline); err != nil {
+  if err := yaml.Unmarshal(data, &pipeline); err != nil {
     log.Fatal(err)
   }
 }

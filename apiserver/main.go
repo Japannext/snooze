@@ -4,10 +4,11 @@ import (
   "fmt"
 
   "github.com/gin-gonic/gin"
-  log "github.com/sirupsen/logrus"
 
   "github.com/japannext/snooze/common/opensearch"
   "github.com/japannext/snooze/common/logging"
+  "github.com/japannext/snooze/common/redis"
+  "github.com/japannext/snooze/common/health"
 )
 
 func Run() {

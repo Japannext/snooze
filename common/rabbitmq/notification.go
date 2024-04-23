@@ -1,10 +1,13 @@
 package rabbitmq
 
 import (
+  "context"
   "encoding/json"
 
   log "github.com/sirupsen/logrus"
   amqp "github.com/rabbitmq/amqp091-go"
+
+  api "github.com/japannext/snooze/common/api/v2"
 )
 
 const (
@@ -15,7 +18,7 @@ type NotificationChannel struct {
   *amqp.Channel
 }
 
-func InitNotificationChannel() {
+func InitNotificationChannel() *NotificationChannel {
   var err error
 
   ch, err := conn.Channel()
@@ -23,18 +26,14 @@ func InitNotificationChannel() {
     log.Fatal(err)
   }
 
-  err = ch.ExchangeDeclare(
-    nexName,
-    "topic",
-    true,
-    false,
-  )
+  err = exchange(ch, nexName, "topic", &exOpts{Durable: true})
   if err != nil {
     log.Fatal(err)
   }
 
-  channels["notification"] = NotificationChannel{ch}
-
+  not := &NotificationChannel{ch}
+  channelsToClose["notification"] = not
+  return not
 }
 
 /*
@@ -50,61 +49,74 @@ type NotificationQueue struct {
 
 var notificationQueues map[string]*NotificationQueue
 
-func InitNotificationQueue(name string) *NotificationQueue {
+/*
+Example usage for consumer:
+var nc *rabbitmq.NotificationChannel
+var nq *rabbitmq.NotificationQueue
+func init() {
+  nc = InitNotificationChannel()
+  nq = nc.NewQueue("myplugin")
+}
+func run() {
+  notifs, err := nc.Consume()
+  if err != nil {
+    log.Error(err)
+  }
+  for notif := range notif {
+    // handle notification...
+  }
+}
+*/
+func (nc *NotificationChannel) NewQueue(name string) *NotificationQueue {
   // Do not duplicate queues
   if nq, found := notificationQueues[name]; found {
     return nq
   }
 
-  nq := &NotificationQueue{name, channels["notification"]}
-  _, err = nq.ch.QueueDeclare(nq.Name,
-    true, // durable
-    false, // delete when unused
-    false, // exclusive
-    false, // no-wait
-    nil, // args
-  )
+  ch := nc.Channel
+  nq := &NotificationQueue{name, nc}
+  _, err := queue(ch, nq.name, &qOpts{Durable: true})
   if err != nil {
     log.Fatal(err)
   }
-  err = nq.ch.QueueBind(nq.Name, "", nexName, false, nil)
+  err = ch.QueueBind(nq.name, "", nexName, false, nil)
   if err != nil {
     log.Fatal(err)
   }
-  NotificationQueues[name] = nq
   return nq
 }
 
 type NotificationMessage struct {
   Delivery *amqp.Delivery
-  Notification *v2.Notification
+  Notification *api.Notification
 }
 
 func (nq *NotificationQueue) Consume() (<-chan NotificationMessage, error) {
   out := make(chan NotificationMessage)
-  dd, err := nq.ch.Consume(nq.Name, "", true, false, false, false, nil)
+  dd, err := nq.ch.Consume(nq.name, "", true, false, false, false, nil)
   if err != nil {
     return out, err
   }
-  for _, d := range dd {
-    var notif *v2.Notification
-    if err := json.UnMarshal(d.Body, &notif); err != nil {
-      log.Warn("Rejecting message (%s): %s", err, d.Body)
+  for d := range dd {
+    var notif *api.Notification
+    if err := json.Unmarshal(d.Body, &notif); err != nil {
+      log.Warnf("Rejecting message (%s): %s", err, d.Body)
       d.Reject(false)
     }
-    out <- NotificationMessage{d, notif}
+    out <- NotificationMessage{&d, notif}
   }
+  return out, nil
 }
 
-func (nq *NotificationQueue) Publish(ctx context.Context, notif *v2.Notification) error {
-  body, err := json.Marshal(alert)
+func (nq *NotificationQueue) Publish(ctx context.Context, notif *api.Notification) error {
+  body, err := json.Marshal(notif)
   if err != nil {
     return err
   }
   msg := amqp.Publishing{
     DeliveryMode: amqp.Persistent,
-    ContextType: "application/vnd.snooze.notif.v2+json",
+    ContentType: "application/vnd.snooze.notif.v2+json",
     Body: body,
   }
-  return nq.ch.Publish(nexName, nq.Name, false, false, msg)
+  return nq.ch.Publish(nexName, nq.name, false, false, msg)
 }

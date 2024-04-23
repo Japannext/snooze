@@ -7,6 +7,9 @@ transform_rules:
     Extract the different elements from the Japannext naming convention
   if: 'source[kind] = "otlp" and labels[host.name] =~ "[a-z]{3}[0-9][a-z]+[0-9]+"'
   childs:
+  - set:
+      target: 'labels[snooze.server]'
+      value: 'dev'
   - regex:
       source: 'labels[host.name]'
       pattern: '(?P<prefix>[a-z]{3}[0-9])(?P<server_role>[a-z]+)(?P<nodenum>[0-9]+)'

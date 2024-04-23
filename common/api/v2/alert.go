@@ -1,12 +1,7 @@
 package v2
 
 type Alert struct {
-  Source struct {
-    // Source kind/protocol (e.g. syslog, OTEL, prometheus, etc)
-    Kind string `json:"kind"`
-    // The source instance name (e.g. "prod-relay", "host01", "tenant-A")
-    Name string `json:"name"`
-  } `json:"source"`
+  Source Source `json:"source"`
 
   Timestamp uint64              `json:"timestamp"`
   ObservedTimestamp uint64      `json:"observedTimestamp,omitempty"`
@@ -31,6 +26,28 @@ type Alert struct {
   // Examples: log message, prometheus alert summary/details/value
   Body map[string]string        `json:"body"`
 
+  // Mute the alert. This may skip notifications, or skip even display
+  Mute Mute `json:"mute"`
+}
+
+type Source struct {
+  // Source kind/protocol (e.g. syslog, OTEL, prometheus, etc)
+  Kind string `json:"kind"`
+  // The source instance name (e.g. "prod-relay", "host01", "tenant-A")
+  Name string `json:"name"`
+}
+
+type Mute struct {
+  // Enable the muting
+  Enabled bool `json:"enabled"`
+  // The reason it was muted. `snooze`/`silence`/`test`
+  Component string `json:"component"`
+  // Name of the silence rule / snooze rule that muted the alert
+  Rule string `json:"rule"`
+  // Skip the notification step. Usually on.
+  SkipNotification bool `json:"skipNotification"`
+  // Skip storing into the database (opensearch). Usually used for testing
+  SkipStorage bool `json:"skipStorage"`
   // A test alert, which will not trigger anything. Mainly used for internal metrics
   // and active monitoring of the snooze pipelines.
   SilentTest bool
@@ -38,11 +55,4 @@ type Alert struct {
   // A test manually performed by a human. Will trigger everything
   // normally (patlite, etc), but will be marked as such in the web interface.
   HumanTest bool
-
-  // Set when the alert was snoozed
-  Snoozed bool `json:"snoozed"`
-
-  // Set when the alert was snooze. Correspond to the name of the rule
-  // that snoozed the alert.
-  SnoozeRuleName string `json:"snoozeRuleName"`
 }

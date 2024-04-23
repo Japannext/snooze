@@ -13,7 +13,7 @@ type OpensearchClient struct {
   *v2.Client
 }
 
-func Init(check bool) {
+func Init() {
 
   cfg, err := initConfig()
   if err != nil {

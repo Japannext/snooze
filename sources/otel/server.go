@@ -2,7 +2,6 @@ package otel
 
 import (
   "fmt"
-  "context"
   "net"
 
   log "github.com/sirupsen/logrus"

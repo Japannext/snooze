@@ -6,6 +6,7 @@ import (
   "github.com/japannext/snooze/common/redis"
   "github.com/japannext/snooze/common/health"
   "github.com/japannext/snooze/common/rabbitmq"
+  "github.com/japannext/snooze/common/logging"
 
   // Sub-Processors
   "github.com/japannext/snooze/processor/grouping"
@@ -16,6 +17,8 @@ import (
   "github.com/japannext/snooze/processor/transform"
 )
 
+var ch *rabbitmq.ProcessChannel
+
 func Run() {
 
   logging.Init()
@@ -23,20 +26,22 @@ func Run() {
   opensearch.Init()
   redis.Init()
   rabbitmq.Init()
+  ch = rabbitmq.InitProcessChannel()
 
-  transform.InitRules(config.TransformRules)
-  silence.InitRules(config.SilenceRules)
-  grouping.InitRules(config.GroupingRules)
+  transform.InitRules(pipeline.TransformRules)
+  silence.InitRules(pipeline.SilenceRules)
+  grouping.InitRules(pipeline.GroupingRules)
   snooze.Init()
-  ratelimit.Init(config.RateLimit)
-  notification.InitRules(config.NotificationRules, config.DefaultNotificationChannels)
+  ratelimit.Init(pipeline.RateLimit)
+  notification.InitRules(pipeline.NotificationRules, pipeline.DefaultNotificationChannels)
 
   dm := daemon.NewDaemonManager()
-  dm.Add("consumer", newConsumer())
-  h := health.Health{}
+  p := &Processor{}
+  dm.Add("processor", p)
+  h := health.HealthStatus{}
   srv := daemon.NewHttpDaemon()
-  srv.Engine.GET("/livez", h.LiveRoute())
-  srv.Engine.GET("/readyz", h.ReadyRoute())
+  srv.Engine.GET("/livez", h.LiveRoute)
+  srv.Engine.GET("/readyz", h.ReadyRoute)
   dm.Add("health", srv)
 
   h.Live()

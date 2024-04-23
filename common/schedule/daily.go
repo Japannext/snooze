@@ -4,7 +4,7 @@ import (
   "time"
 )
 
-type DailyRepr struct {
+type DailySchedule struct {
   From string `yaml:"from" json:"from"`
   To string `yaml:"to" json:"to"`
   TimeZone string `yaml:"timezone" json:"timezone"`
@@ -21,7 +21,7 @@ type Daily struct {
   TimeZone *time.Location
 }
 
-func (dr *DailyRepr) ToDaily() (*Daily, error) {
+func (dr *DailySchedule) Resolve() (*Daily, error) {
   h1, m1, err := parseTime(dr.From)
   if err != nil {
     return nil, err

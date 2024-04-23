@@ -9,7 +9,6 @@ import (
 )
 
 type Controller struct {
-  database *opensearch.Database
 }
 
 func registerRoutes(r *gin.Engine) {
@@ -23,7 +22,7 @@ func searchAlertEvents(c *gin.Context) {
   pp, err := extractPerPage(c); if err != nil { return }
   page, err := extractPage(c); if err != nil { return }
 
-  ll, err := opensearch.DB.SearchAlertEvent(c, search, sortBy, page, pp)
+  ll, err := opensearch.Client.SearchAlertEvent(c, search, sortBy, page, pp)
   if err != nil {
     c.String(http.StatusInternalServerError, "Error fetching logs from database: %w", err)
   }
