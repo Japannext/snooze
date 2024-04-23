@@ -1,0 +1,16 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ .Release.Name }}-common"
+  namespace: "{{ .Release.Namespace }}"
+data:
+  # logging
+  LOG_LEVEL: debug
+  # opensearch
+  OPENSEARCH_ADDRESSES: "https://{{ .Release.Name }}-opensearch:9200"
+  OPENSEARCH_INSECURE_SKIP_VERIFY: 'true'
+  # redis
+  REDIS_ADDRESS: "{{ .Release.Name }}-redis:6379"
+  # rabbitmq
+  AMQP_ADDRESS: "amqp://{{ .Release.Name }}-rabbitmq:5672/"

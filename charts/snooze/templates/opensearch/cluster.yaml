@@ -2,16 +2,20 @@
 apiVersion: opensearch.opster.io/v1
 kind: OpenSearchCluster
 metadata:
-  name: "{{ .Release.Name }}-os"
+  name: "{{ .Release.Name }}-opensearch"
   namespace: "{{ .Release.Namespace }}"
 spec:
   general:
     version: 2.3.0
     httpPort: 9200
     vendor: opensearch
-    serviceName: "{{ .Release.Name }}-os"
+    serviceName: "{{ .Release.Name }}-opensearch"
     monitoring:
       enable: false  # plugin fetched by http get
+  dashboards:
+    enable: true
+    version: 2.3.0
+    replicas: 1
   nodePools:
   - component: masters
     replicas: 3

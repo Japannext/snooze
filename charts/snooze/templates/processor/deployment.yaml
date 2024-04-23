@@ -24,15 +24,17 @@ spec:
         app.kubernetes.io/instance: "{{ .Release.Name }}"
         app.kubernetes.io/component: process
         app.kubernetes.io/part-of: "{{ .Values.partOf }}"
-      {{- if .Values.podAnnotations }}
-      annotations: {{- toYaml .Values.podAnnotations | nindent 8 }}
-      {{- end }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
+        {{- if .Values.podAnnotations }}
+        {{- toYaml .Values.podAnnotations | nindent 8 }}
+        {{- end }}
     spec:
       containers:
       - name: snooze-process
-        image: "{{ .Values.image.repo }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        image: "{{ .Values.image.repo }}/snooze-processor:{{ .Values.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: "{{ .Values.image.pullPolicy }}"
-        command: ['/snooze', 'process']
+        command: ['/snooze-processor', 'server']
         ports:
         - name: otlp-grpc
           containerPort: 4317
@@ -44,7 +46,8 @@ spec:
           requests:
             cpu: 100m
             memory: 100Mi
-        env: []
+        env:
+        {{- include "snooze.env" . | nindent 8 }}
         envFrom:
         - configMapRef:
             name: "{{ .Release.Name }}-common"

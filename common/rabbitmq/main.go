@@ -2,14 +2,18 @@ package rabbitmq
 
 import (
 	amqp "github.com/rabbitmq/amqp091-go"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 var conn *amqp.Connection
 var channelsToClose map[string]ChannelInterface
 
+var log *logrus.Entry
+
 func Init() {
 	var err error
+
+	log = logrus.WithFields(logrus.Fields{"module": "rabbitmq"})
 
 	config := initConfig()
 

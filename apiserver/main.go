@@ -13,8 +13,8 @@ import (
 
 func Run() {
 	// Init components
-	health.Init()
 	logging.Init()
+	health.Init()
 	initConfig()
 	opensearch.Init()
 	redis.Init()

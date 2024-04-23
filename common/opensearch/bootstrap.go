@@ -36,57 +36,13 @@ type IndexTemplate struct {
 	Template     Indice   `json:"template"`
 }
 
+var settings IndexSettings
+
 func indices() []IndexTemplate {
 	numberOfShards := 3
 	numberOfReplicas := 3
-	settings := IndexSettings{numberOfShards, numberOfReplicas}
-	return []IndexTemplate{
-		{
-			Name:         "snooze-log-v2",
-			IndexPattern: []string{"snooze-log-v2-*"},
-			Template: Indice{
-				Settings: settings,
-				Mappings: []IndexMapping{
-					{
-						Properties: map[string]MappingProps{
-							"kind":       {Type: "keyword"},
-							"timestamp":  {Type: "unsigned_long"},
-							"group.hash": {Type: "byte"},
-							"group.kv":   {Type: "object"},
-							"resource":   {Type: "object"},
-							"attributes": {Type: "object"},
-							"body":       {Type: "object"},
-							"snooze": {
-								Type: "object",
-								Fields: map[string]MappingProps{
-									"snoozed": {Type: "boolean"},
-									"name":    {Type: "keyword"},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			Name:         "snooze-group-v2",
-			IndexPattern: []string{"snooze-group-v2-*"},
-			Template: Indice{
-				Settings: settings,
-				Mappings: []IndexMapping{
-					{
-						Properties: map[string]MappingProps{
-							"first_ts":  {Type: "unsigned_long"},
-							"last_ts":   {Type: "unsigned_long"},
-							"kv":        {Type: "object"},
-							"last_body": {Type: "object"},
-							"hits":      {Type: "integer"},
-						},
-					},
-				},
-			},
-		},
-	}
+	settings = IndexSettings{numberOfShards, numberOfReplicas}
+	return []IndexTemplate{alertIndex, groupIndex}
 }
 
 func (i *IndexTemplate) ensure(ctx context.Context, client *v2.Client) error {

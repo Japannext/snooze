@@ -1,11 +1,14 @@
 ---
 version: '3'
 
+env:
+  BUILDAH_FORMAT: docker
+
 tasks:
   develop:
     cmds:
     - docker build . --target={{ .NAME }}
-      -t ${LOCAL_REPO}/{{ .NAME }}
+      -t ${LOCAL_REPO}/{{ .NAME }}:develop
       --build-arg VERSION={{ .VERSION }}-develop
       --build-arg COMMIT={{ .COMMIT }}
     - docker push ${LOCAL_REPO}/{{ .NAME }}:develop

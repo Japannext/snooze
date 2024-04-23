@@ -10,6 +10,4 @@ spec:
   persistence:
     storageClassName: "{{ .Values.rabbitmq.storageClassName }}"
     storage: "{{ .Values.rabbitmq.storageSize }}"
-
-
 {{- end }}

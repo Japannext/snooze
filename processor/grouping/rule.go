@@ -3,7 +3,7 @@ package grouping
 import (
 	"github.com/japannext/snooze/common/condition"
 	"github.com/japannext/snooze/common/field"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 type Rule struct {
@@ -37,7 +37,10 @@ func compute(rule *Rule) *computedRule {
 	}
 }
 
+var log *logrus.Entry
+
 func InitRules(rules []*Rule) {
+	log = logrus.WithFields(logrus.Fields{"module": "grouping"})
 	for _, rule := range rules {
 		computedRules = append(computedRules, compute(rule))
 	}

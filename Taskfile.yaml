@@ -16,15 +16,20 @@ includes:
     dir: ./charts/snooze
 
 tasks:
+
   build:
     cmds:
     - go fmt ./...
     - go vet ./...
     - go build ./...
+
   develop:
     cmds:
+    - task: build
     - task: images:develop
     - task: chart:develop
+    - task: sync
+
   images:develop:
     cmds:
     - task: image:develop
@@ -33,6 +38,10 @@ tasks:
       vars: {NAME: snooze-processor}
     - task: image:develop
       vars: {NAME: snooze-otel}
+
+  sync:
+    cmds:
+    - helmfile -f .helmfile.yaml sync
 
   test:
     cmds:

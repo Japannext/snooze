@@ -2,7 +2,7 @@ package opensearch
 
 import (
 	v2 "github.com/opensearch-project/opensearch-go/v2"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -13,7 +13,11 @@ type OpensearchClient struct {
 	*v2.Client
 }
 
+var log *logrus.Entry
+
 func Init() {
+
+	log = logrus.WithFields(logrus.Fields{"module": "opensearch"})
 
 	cfg, err := initConfig()
 	if err != nil {

@@ -21,13 +21,20 @@ func (client *OpensearchClient) CheckHealth() error {
 	if err != nil {
 		return err
 	}
-	ch := &ClusterHealth{}
 
 	var buf bytes.Buffer
 	buf.ReadFrom(resp.Body)
+	body := buf.Bytes()
+
+	if resp.IsError() {
+		return fmt.Errorf("Unexpected HTTP status: %s. Body: %s", resp.Status(), body)
+	}
+
+	ch := &ClusterHealth{}
+
 	err = json.Unmarshal(buf.Bytes(), &ch)
 	if err != nil {
-		return fmt.Errorf("Can't unmarshal cluster health: %w", err)
+		return fmt.Errorf("Can't unmarshal cluster health: %w. Body: %s", err, body)
 	}
 	if ch.Status == "green" {
 		return nil

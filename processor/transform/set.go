@@ -1,8 +1,6 @@
 package transform
 
 import (
-	log "github.com/sirupsen/logrus"
-
 	api "github.com/japannext/snooze/common/api/v2"
 	"github.com/japannext/snooze/common/field"
 )

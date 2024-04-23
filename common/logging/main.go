@@ -5,14 +5,11 @@ import (
 )
 
 func Init() {
-	cfg, err := initConfig()
-	if err != nil {
-		log.Fatal(err)
-	}
+	cfg := initConfig()
 
 	ll, err := log.ParseLevel(cfg.Level)
 	if err != nil {
-		log.Fatalf("Unsupported log level '%s': %s", cfg.Level, err)
+		log.Fatal(err)
 	}
 	log.SetLevel(ll)
 	log.Debug("Log level set to:", ll)

@@ -1,7 +1,7 @@
 package notification
 
 import (
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 
 	"github.com/japannext/snooze/common/condition"
 	"github.com/japannext/snooze/common/rabbitmq"
@@ -44,7 +44,10 @@ var queues map[string]*rabbitmq.NotificationQueue
 
 var computedRules []*computedRule
 
+var log *logrus.Entry
+
 func InitRules(rules []*Rule, defaults []string) {
+	log = logrus.WithFields(logrus.Fields{"module": "notification"})
 	ch = rabbitmq.InitNotificationChannel()
 
 	for _, rule := range rules {

@@ -1,7 +1,7 @@
 package transform
 
 import (
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 
 	api "github.com/japannext/snooze/common/api/v2"
 	"github.com/japannext/snooze/common/condition"
@@ -52,7 +52,10 @@ func compute(rule *Rule) *computedRule {
 	return nil
 }
 
+var log *logrus.Entry
+
 func InitRules(rules []*Rule) {
+	log = logrus.WithFields(logrus.Fields{"module": "transform"})
 	for _, rule := range rules {
 		computedRules = append(computedRules, compute(rule))
 	}

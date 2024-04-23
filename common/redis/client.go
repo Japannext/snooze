@@ -2,7 +2,7 @@ package redis
 
 import (
 	redisv9 "github.com/redis/go-redis/v9"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -15,7 +15,11 @@ type RedisClient struct {
 	*redisv9.Client
 }
 
+var log *logrus.Entry
+
 func Init() {
+
+	log = logrus.WithFields(logrus.Fields{"module": "redis"})
 
 	options, err := initConfig()
 	if err != nil {

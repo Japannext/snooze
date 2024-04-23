@@ -1,0 +1,17 @@
+---
+apiVersion: dragonflydb.io/v1alpha1
+kind: Dragonfly
+metadata:
+  name: "{{ .Release.Name }}-redis"
+  namespace: "{{ .Release.Namespace }}"
+spec:
+  args:
+  - --version_check=false
+  replicas: 2
+  resources:
+    limits:
+      cpu: 600m
+      memory: 750Mi
+    requests:
+      cpu: 500m
+      memory: 500Mi

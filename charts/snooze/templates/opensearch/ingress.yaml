@@ -1,0 +1,36 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: "{{ .Release.Name }}-opensearch"
+  namespace: "{{ .Release.Namespace }}"
+  labels:
+    app.kubernetes.io/name: opensearch
+    app.kubernetes.io/instance: "{{ .Release.Name }}"
+  annotations:
+    {{- if .Values.ingress.certManager.enabled }}
+    cert-manager.io/common-name: "{{ .Values.ingress.dashboardHost }}"
+    {{- if eq .Values.ingress.certManager.issuerKind "ClusterIssuer" }}
+    cert-manager.io/cluster-issuer: "{{ .Values.ingress.certManager.issuerName }}"
+    {{- else if eq .Values.ingress.certManager.issuerKind "Issuer" }}
+    cert-manager.io/issuer: "{{ .Values.ingress.certManager.issuerName }}"
+    {{- end }}
+    {{- end }}
+spec:
+  ingressClassName: "{{ .Values.ingress.className }}"
+  rules:
+  - host: "{{ .Values.ingress.dashboardHost }}"
+    http:
+      paths:
+      - backend:
+          service:
+            name: "{{ .Release.Name }}-opensearch-dashboards"
+            port:
+              number: 5601
+        path: /
+        pathType: Prefix
+  {{- if .Values.ingress.certManager.enabled }}
+  tls:
+  - hosts: ["{{ .Values.ingress.dashboardHost }}"]
+    secretName: "{{ .Release.Name }}-ingress-tls"
+    {{- end }}
