@@ -1,0 +1,15 @@
+package strings
+
+import (
+	p "github.com/okneniz/parsec/common"
+)
+
+// Trace - writes messages to the log about the state of the buffer before
+// and after using the combinator, the result of the cobinator and its error.
+func Trace[T any](
+	l p.Logged,
+	m string,
+	c p.Combinator[rune, Position, T],
+) p.Combinator[rune, Position, T] {
+	return p.Trace[rune, Position, T](l, m, c)
+}
