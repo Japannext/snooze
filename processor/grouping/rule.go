@@ -3,6 +3,7 @@ package grouping
 import (
 	"github.com/japannext/snooze/common/condition"
 	"github.com/japannext/snooze/common/field"
+	"github.com/japannext/snooze/common/parser"
 	"github.com/sirupsen/logrus"
 )
 
@@ -19,13 +20,13 @@ type computedRule struct {
 var computedRules []*computedRule
 
 func compute(rule *Rule) *computedRule {
-	c, err := condition.Parse(rule.If)
+	c, err := parser.ParseCondition(rule.If)
 	if err != nil {
 		log.Fatal(err)
 	}
 	var fields []*field.AlertField
 	for _, f := range rule.GroupBy {
-		fi, err := field.Parse(f)
+		fi, err := parser.ParseField(f)
 		if err != nil {
 			log.Fatal(err)
 		}

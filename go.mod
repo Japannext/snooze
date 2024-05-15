@@ -6,17 +6,20 @@ require (
 	github.com/deckarep/golang-set/v2 v2.6.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/mottaquikarim/esquerydsl v0.0.0-20230908215636-2a15c9ace5b9
+	github.com/okneniz/parsec v0.0.0-20231001180711-ab2866d0b5d4
 	github.com/opensearch-project/opensearch-go/v2 v2.3.0
+	github.com/prataprc/goparsec v0.0.0-20211219142520-daac0e635e7e
 	github.com/rabbitmq/amqp091-go v1.9.0
 	github.com/redis/go-redis/v9 v9.5.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.17.0
 	github.com/stretchr/testify v1.8.4
-	github.com/vektah/goparsify v0.0.0-20180611020250-3e20a3b9244a
 	go.opentelemetry.io/proto/otlp v1.0.0
+	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 	golang.org/x/sync v0.3.0
 	google.golang.org/grpc v1.58.2
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -60,7 +63,6 @@ require (
 	go.uber.org/multierr v1.9.0 // indirect
 	golang.org/x/arch v0.3.0 // indirect
 	golang.org/x/crypto v0.13.0 // indirect
-	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
 	golang.org/x/net v0.15.0 // indirect
 	golang.org/x/sys v0.12.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
@@ -68,5 +70,4 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230920204549-e6e6cdab5c13 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

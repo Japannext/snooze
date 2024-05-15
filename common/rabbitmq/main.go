@@ -6,7 +6,7 @@ import (
 )
 
 var conn *amqp.Connection
-var channelsToClose map[string]ChannelInterface
+var channelsToClose = make(map[string]ChannelInterface)
 
 var log *logrus.Entry
 
@@ -15,9 +15,9 @@ func Init() {
 
 	log = logrus.WithFields(logrus.Fields{"module": "rabbitmq"})
 
-	config := initConfig()
+	url, config := initConfig()
 
-	conn, err = amqp.Dial(config.Address)
+	conn, err = amqp.DialConfig(url, config)
 	if err != nil {
 		log.Fatal(err)
 	}

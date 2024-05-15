@@ -6,7 +6,7 @@ import (
 )
 
 func Process(alert *api.Alert) error {
-	var m map[string]string
+	var m = make(map[string]string)
 
 	for _, rule := range computedRules {
 		if rule.Condition.Test(alert) {

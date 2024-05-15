@@ -21,6 +21,8 @@ func initConfig() (*v2.Config, error) {
 	// Defaults
 	v.SetDefault("OPENSEARCH_ADDRESSES", "http://127.0.0.1:9200")
 	v.SetDefault("OPENSEARCH_INSECURE_SKIP_VERIFY", false)
+	v.BindEnv("OPENSEARCH_USERNAME", "")
+	v.BindEnv("OPENSEARCH_PASSWORD", "")
 
 	v.AutomaticEnv()
 	cfg := &Config{}
@@ -37,5 +39,8 @@ func initConfig() (*v2.Config, error) {
 			},
 		},
 	}
+	log.Debugf("OPENSEARCH_ADDRESSES: %s", cfg.Addresses)
+	log.Debugf("OPENSEARCH_USERNAME: %s", cfg.Username)
+	log.Debugf("OPENSEARCH_PASSWORD: **** (size=%d)", len(cfg.Password))
 	return config, nil
 }

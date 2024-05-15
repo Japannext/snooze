@@ -23,6 +23,10 @@ tasks:
     - go vet ./...
     - go build ./...
 
+  test:
+    cmds:
+    - go test ./...
+
   develop:
     cmds:
     - task: build
@@ -42,7 +46,3 @@ tasks:
   sync:
     cmds:
     - helmfile -f .helmfile.yaml sync
-
-  test:
-    cmds:
-    - go test ./...

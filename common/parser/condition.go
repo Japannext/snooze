@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	p "github.com/okneniz/parsec/common"
 	. "github.com/okneniz/parsec/strings"
 
@@ -10,9 +11,9 @@ import (
 
 type binopBuilder = func(*field.AlertField, string) *condition.Condition
 type unopBuilder = func(*field.AlertField) *condition.Condition
-type expression = p.Combinator[rune, Position, *condition.Condition]
+type expression = p.Combinator[rune, RecursivePosition, *condition.Condition]
 
-func binop_op() p.Combinator[rune, Position, binopBuilder] {
+func binop_op() p.Combinator[rune, RecursivePosition, binopBuilder] {
 	return Choice(
 		Try(MatchAndReturn(String("=~"), condition.NewMatch)),
 		Try(MatchAndReturn(String("!="), condition.NewNotEqual)),
@@ -21,11 +22,11 @@ func binop_op() p.Combinator[rune, Position, binopBuilder] {
 	)
 }
 
-func quoted(quote rune) p.Combinator[rune, Position, string] {
+func quoted(quote rune) p.Combinator[rune, RecursivePosition, string] {
 	return TextInBetween(Eq(quote), Any(), Eq(quote))
 }
 
-func str() p.Combinator[rune, Position, string] {
+func str() p.Combinator[rune, RecursivePosition, string] {
 	return Choice(
 		Try(quoted('"')),
 		Try(quoted('\'')),
@@ -33,46 +34,48 @@ func str() p.Combinator[rune, Position, string] {
 	)
 }
 
-func SpacePadded[T any](x p.Combinator[rune, Position, T]) p.Combinator[rune, Position, T] {
+func SpacePadded[T any](x p.Combinator[rune, RecursivePosition, T]) p.Combinator[rune, RecursivePosition, T] {
 	return Padded(Eq(' '), x)
 }
 
 func binop() expression {
-	return func(buffer p.Buffer[rune, Position]) (*condition.Condition, error) {
+	return func(buffer p.Buffer[rune, RecursivePosition]) (*condition.Condition, error) {
+		fmt.Printf("[binop:%d] ...\n", buffer.RecursivePosition().Column())
 		f, err := Field()(buffer)
 		if err != nil {
-			return nil, err
+			return new(condition.Condition), err
 		}
 		builder, err := SpacePadded(binop_op())(buffer)
 		if err != nil {
-			return nil, err
+			return new(condition.Condition), err
 		}
 
 		v, err := SpacePadded(str())(buffer)
 		if err != nil {
-			return nil, err
+			return new(condition.Condition), err
 		}
 
 		return builder(f, v), nil
 	}
 }
 
-func unop_op() p.Combinator[rune, Position, unopBuilder] {
+func unop_op() p.Combinator[rune, RecursivePosition, unopBuilder] {
 	return Choice(
 		Try(MatchAndReturn(String("has"), condition.NewHas)),
 	)
 }
 
 func unop() expression {
-	return func(buffer p.Buffer[rune, Position]) (*condition.Condition, error) {
+	return func(buffer p.Buffer[rune, RecursivePosition]) (*condition.Condition, error) {
+		fmt.Printf("[unop:%d] ...\n", buffer.RecursivePosition().Column())
 		builder, err := unop_op()(buffer)
 		if err != nil {
-			return nil, err
+			return new(condition.Condition), err
 		}
-        f, err := Skip(Eq(' '), Field())(buffer)
-        if err != nil {
-            return nil, err
-        }
+		f, err := Skip(Eq(' '), Field())(buffer)
+		if err != nil {
+			return new(condition.Condition), err
+		}
 
 		return builder(f), nil
 	}
@@ -80,83 +83,150 @@ func unop() expression {
 
 func operation() expression {
 	return Choice(
-		Try(binop()),
 		Try(unop()),
+		Try(binop()),
 	)
 }
 
 /*
 func not(e expression) expression {
-	return Cast(Skip(Eq('!'), SpacePadded(e)),
-		func(x *condition.Condition) (*condition.Condition, error) {
-			return condition.NewNot(x), nil
-		})
-}
-*/
-func not(e expression) expression {
-	return func(buffer p.Buffer[rune, Position]) (*condition.Condition, error) {
+	return func(buffer p.Buffer[rune, RecursivePosition]) (*condition.Condition, error) {
+		fmt.Printf("[not:%d] ---\n", buffer.RecursivePosition().Column())
 		_, err := Eq('!')(buffer)
 		if err != nil {
 			return new(condition.Condition), err
 		}
-		c, err := SpacePadded(e)(buffer)
+		x, err := SpacePadded(e)(buffer)
 		if err != nil {
 			return new(condition.Condition), err
 		}
-		return condition.NewNot(c), nil
+		return condition.NewNot(x), nil
 	}
 }
+*/
 
-type andorBuilder = func(...*condition.Condition) *condition.Condition
+type andorBuilder = func(*condition.Condition, *condition.Condition) *condition.Condition
 
-func andorParser() p.Combinator[rune, Position, andorBuilder] {
+func andorParser() p.Combinator[rune, RecursivePosition, andorBuilder] {
 	return MapStrings(map[string]andorBuilder{
 		"and": condition.NewAnd,
-		"or": condition.NewOr,
+		"or":  condition.NewOr,
 	})
 }
 
-func andor(e expression) p.Combinator[rune, Position, *condition.Condition] {
-	return func(buffer p.Buffer[rune, Position]) (*condition.Condition, error) {
-		c1, err := e(buffer)
-		if err != nil {
-			return nil, err
-		}
-		builder, err := SpacePadded(andorParser())(buffer)
-		if err != nil {
-			return nil, err
-		}
-		c2, err := SpacePadded(e)(buffer)
-		if err != nil {
-			return nil, err
-		}
-		return builder(c1, c2), nil
-	}
-}
-
-
-func pexpr(e expression) p.Combinator[rune, Position, *condition.Condition] {
-	return Parens(e)
-}
-
-func ConditionExpr() p.Combinator[rune, Position, *condition.Condition] {
-	var e expression
-	not := not(e)
-	andor := andor(e)
-	pexpr := pexpr(e)
-	e = Choice(
-		Try(operation()),
-		Try(not),
-		Try(andor),
-		Try(pexpr),
+/*
+func andor(e expression) expression {
+	return Recursing(
+		Chainl1(SpacePadded(e), SpacePadded(andorParser())),
 	)
-	return e
+}
+*/
+
+func te() expression {
+	return Choice(
+		Try(operation()),
+		Try(not(expr())),
+		Try(expr()),
+	)
+}
+
+func term() expression {
+	return Choice(
+		Try(Parens(operation())),
+		Try(operation()),
+	)
+}
+
+func andor() expression {
+	return Try(Sequence(andorParser(), term()))
+}
+
+func not() expression {
+	return Case(
+		Sequence(Eq('!'), SpacePadded(term())),
+		func(c *condition.Condition) (*condition.Condition, error) {
+			return condition.NewNot(c)
+		},
+	)
+}
+
+func expr() expression {
+	return Choice(
+		Try(Sequence(operator(), andor())),
+	)
+}
+
+func expr() expression {
+	return Chainl1(
+		SpacePadded(te()),
+		SpacePadded(andorParser()),
+	)
+}
+
+
+func ConditionExpr() p.Combinator[rune, RecursivePosition, *condition.Condition] {
+	var e func() expression
+	// var te expression
+
+	not := func() expression {
+		return func(buffer p.Buffer[rune, RecursivePosition]) (*condition.Condition, error) {
+			fmt.Printf("[not:%d] ...\n", buffer.RecursivePosition().Column())
+			_, err := Eq('!')(buffer)
+			if err != nil {
+				return new(condition.Condition), err
+			}
+			x, err := SpacePadded(e())(buffer)
+			if err != nil {
+				return new(condition.Condition), err
+			}
+			return condition.NewNot(x), nil
+		}
+	}
+	/*
+		andor := func(buffer p.Buffer[rune, RecursivePosition]) (*condition.Condition, error) {
+			fmt.Printf("[andor:%d] ...\n", buffer.RecursivePosition().Column())
+			c1, err := te(buffer)
+			if err != nil {
+				return new(condition.Condition), err
+			}
+			builder, err := SpacePadded(andorParser())(buffer)
+			if err != nil {
+				return new(condition.Condition), err
+			}
+			c2, err := SpacePadded(e)(buffer)
+			if err != nil {
+				return new(condition.Condition), err
+			}
+			return builder(c1, c2), nil
+		}
+	*/
+
+	andor := func() expression {
+		return Chainl1[*condition.Condition](e(), andorParser())
+	}
+
+	e = func() expression {
+		return Choice(
+			Try(not()),
+			Try(andor()),
+		)
+	}
+	// Terminal expression.
+	// Solve loop issues by trying the terminal expression (oeprator) first
+	/*
+	te = Choice(
+		Try(operation()),
+		Try(e),
+	)
+	*/
+
+	return e()
 }
 
 func ParseCondition(text string) (*condition.Condition, error) {
-	res, err := StrictParseString(text, ConditionExpr())
+	res, err := StrictParseString(text, expr())
 	if err != nil {
-		return nil, err
+		return new(condition.Condition), err
 	}
 	return res, nil
 }

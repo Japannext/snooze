@@ -72,6 +72,10 @@ type AndCondition struct {
 	Conditions []*Condition `json:"conditions"`
 }
 
+func NewAnd(c1, c2 *Condition) *Condition {
+	return &Condition{Kind: "and", And: &AndCondition{[]*Condition{c1, c2}}}
+}
+
 func (c *AndCondition) Validate() error {
 	for _, cc := range c.Conditions {
 		err := cc.Resolve().Validate()
@@ -107,6 +111,10 @@ func (c *AndCondition) String() string {
 
 type OrCondition struct {
 	Conditions []*Condition `json:"conditions"`
+}
+
+func NewOr(c1, c2 *Condition) *Condition {
+	return &Condition{Kind: "or", Or: &OrCondition{[]*Condition{c1, c2}}}
 }
 
 func (c *OrCondition) Validate() error {
@@ -146,6 +154,10 @@ type NotCondition struct {
 	Condition *Condition `json:"condition"`
 }
 
+func NewNot(c *Condition) *Condition {
+	return &Condition{Kind: "not", Not: &NotCondition{c}}
+}
+
 func (c *NotCondition) Validate() error {
 	return c.Condition.Resolve().Validate()
 }
@@ -159,8 +171,12 @@ func (c *NotCondition) String() string {
 }
 
 type EqualCondition struct {
-	Field field.AlertField `json:"field"`
-	Value string           `json:"value"`
+	Field *field.AlertField `json:"field"`
+	Value string            `json:"value"`
+}
+
+func NewEqual(f *field.AlertField, v string) *Condition {
+	return &Condition{Kind: "equal", Equal: &EqualCondition{f, v}}
 }
 
 func (c *EqualCondition) Validate() error {
@@ -180,8 +196,12 @@ func (c *EqualCondition) String() string {
 }
 
 type NotEqualCondition struct {
-	Field field.AlertField `json:"field"`
-	Value string           `json:"value"`
+	Field *field.AlertField `json:"field"`
+	Value string            `json:"value"`
+}
+
+func NewNotEqual(f *field.AlertField, v string) *Condition {
+	return &Condition{Kind: "not_equal", NotEqual: &NotEqualCondition{f, v}}
 }
 
 func (c *NotEqualCondition) Validate() error {
@@ -201,9 +221,13 @@ func (c *NotEqualCondition) String() string {
 }
 
 type MatchCondition struct {
-	Field  field.AlertField `json:"field"`
-	Value  string           `json:"value"`
+	Field  *field.AlertField `json:"field"`
+	Value  string            `json:"value"`
 	regexp *regexp.Regexp
+}
+
+func NewMatch(f *field.AlertField, v string) *Condition {
+	return &Condition{Kind: "match", Match: &MatchCondition{f, v, nil}}
 }
 
 func (c *MatchCondition) Validate() error {
@@ -231,9 +255,13 @@ func (c *MatchCondition) String() string {
 }
 
 type NotMatchCondition struct {
-	Field  field.AlertField `json:"field"`
-	Value  string           `json:"value"`
+	Field  *field.AlertField `json:"field"`
+	Value  string            `json:"value"`
 	regexp *regexp.Regexp
+}
+
+func NewNotMatch(f *field.AlertField, v string) *Condition {
+	return &Condition{Kind: "not_match", NotMatch: &NotMatchCondition{f, v, nil}}
 }
 
 func (c *NotMatchCondition) Validate() error {
@@ -261,7 +289,11 @@ func (c *NotMatchCondition) String() string {
 }
 
 type HasCondition struct {
-	Field field.AlertField `json:"field"`
+	Field *field.AlertField `json:"field"`
+}
+
+func NewHas(f *field.AlertField) *Condition {
+	return &Condition{Kind: "has", Has: &HasCondition{f}}
 }
 
 func (c *HasCondition) Validate() error {

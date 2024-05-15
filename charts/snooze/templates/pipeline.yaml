@@ -1,0 +1,10 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ .Release.Name }}-pipeline"
+  namespace: "{{ .Release.Namespace }}"
+data:
+  pipeline.yaml: |
+    # Snooze pipeline
+    {{- .Values.pipeline | toYaml | nindent 4 }}

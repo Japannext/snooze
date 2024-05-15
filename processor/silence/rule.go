@@ -2,6 +2,7 @@ package silence
 
 import (
 	"github.com/japannext/snooze/common/condition"
+	"github.com/japannext/snooze/common/parser"
 	"github.com/japannext/snooze/common/schedule"
 	"github.com/sirupsen/logrus"
 )
@@ -28,7 +29,7 @@ func (r *computedRule) String() string {
 var computedRules []*computedRule
 
 func compute(rule *Rule) *computedRule {
-	c, err := condition.Parse(rule.If)
+	c, err := parser.ParseCondition(rule.If)
 	if err != nil {
 		log.Fatal(err)
 	}

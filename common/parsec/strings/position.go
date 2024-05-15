@@ -9,6 +9,7 @@ type Position struct {
 	line   uint
 	column uint
 	index  int
+	recursion int
 }
 
 // Line - line number.

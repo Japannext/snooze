@@ -3,6 +3,7 @@ package transform
 import (
 	api "github.com/japannext/snooze/common/api/v2"
 	"github.com/japannext/snooze/common/field"
+	"github.com/japannext/snooze/common/parser"
 )
 
 type SetRule struct {
@@ -11,7 +12,7 @@ type SetRule struct {
 }
 
 func (rule *SetRule) Compute() Interface {
-	f, err := field.Parse(rule.Target)
+	f, err := parser.ParseField(rule.Target)
 	if err != nil {
 		log.Fatal(err)
 	}

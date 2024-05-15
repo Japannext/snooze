@@ -1,17 +1,17 @@
 package rabbitmq
 
 import (
-	"github.com/spf13/viper"
 	amqp "github.com/rabbitmq/amqp091-go"
+	"github.com/spf13/viper"
 )
 
 type Config struct {
-	Address string `mapstructure:"AMQP_ADDRESS"`
+	Address  string `mapstructure:"AMQP_ADDRESS"`
 	Username string `mapstructure:"AMQP_USERNAME"`
 	Password string `mapstructure:"AMQP_PASSWORD"`
 }
 
-func initConfig() (string, *amqp.Config) {
+func initConfig() (string, amqp.Config) {
 	v := viper.New()
 
 	// Defaults
@@ -27,8 +27,8 @@ func initConfig() (string, *amqp.Config) {
 	}
 
 	// Creating AMQP config
-	auth := &amqp.PlainAuth{cfg.Username, cfg.Password}
-	config := &amqp.Config{
+	auth := &amqp.PlainAuth{Username: cfg.Username, Password: cfg.Password}
+	config := amqp.Config{
 		SASL: []amqp.Authentication{auth},
 	}
 	return cfg.Address, config

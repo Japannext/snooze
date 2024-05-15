@@ -46,7 +46,7 @@ type NotificationQueue struct {
 	ch   *NotificationChannel
 }
 
-var notificationQueues map[string]*NotificationQueue
+var notificationQueues = make(map[string]*NotificationQueue)
 
 /*
 Example usage for consumer:

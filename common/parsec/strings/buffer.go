@@ -33,6 +33,8 @@ func (b *buffer) Read(greedy bool) (rune, error) {
 		}
 	}
 
+	b.position.recursion = 0
+
 	return x, nil
 }
 
@@ -56,7 +58,7 @@ func (b *buffer) IsEOF() bool {
 func Buffer(data []rune, newLineRunes ...rune) *buffer {
 	b := new(buffer)
 	b.data = data
-	b.position = Position{0, 0, 0}
+	b.position = Position{0, 0, 0, 0}
 
 	if len(newLineRunes) == 0 {
 		b.newLineRunes = defaultNewLineRunes

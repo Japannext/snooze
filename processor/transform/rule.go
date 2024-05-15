@@ -5,6 +5,7 @@ import (
 
 	api "github.com/japannext/snooze/common/api/v2"
 	"github.com/japannext/snooze/common/condition"
+	"github.com/japannext/snooze/common/parser"
 )
 
 type Rule struct {
@@ -40,7 +41,7 @@ func (rule *Rule) Resolve() Computable {
 
 func compute(rule *Rule) *computedRule {
 
-	c, err := condition.Parse(rule.If)
+	c, err := parser.ParseCondition(rule.If)
 	if err != nil {
 		log.Fatal(err)
 	}

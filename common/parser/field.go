@@ -43,7 +43,7 @@ func lonefield() p.Combinator[rune, Position, *field.AlertField] {
 func multifield() p.Combinator[rune, Position, *field.AlertField] {
 	return Cast(
 		Sequence(2, label(), Between(Eq('['), label(), Eq(']'))),
-		func (x []string) (*field.AlertField, error) {
+		func(x []string) (*field.AlertField, error) {
 			return field.NewAlertField(x[0], x[1]), nil
 		},
 	)
@@ -51,8 +51,8 @@ func multifield() p.Combinator[rune, Position, *field.AlertField] {
 
 func Field() p.Combinator[rune, Position, *field.AlertField] {
 	return Choice(
-			Try(multifield()),
-			Try(lonefield()),
+		Try(multifield()),
+		Try(lonefield()),
 	)
 }
 

@@ -4,6 +4,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/japannext/snooze/common/condition"
+	"github.com/japannext/snooze/common/parser"
 	"github.com/japannext/snooze/common/rabbitmq"
 )
 
@@ -18,7 +19,7 @@ type computedRule struct {
 }
 
 func compute(rule *Rule) *computedRule {
-	c, err := condition.Parse(rule.If)
+	c, err := parser.ParseCondition(rule.If)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -40,7 +41,7 @@ func compute(rule *Rule) *computedRule {
 }
 
 var ch *rabbitmq.NotificationChannel
-var queues map[string]*rabbitmq.NotificationQueue
+var queues = make(map[string]*rabbitmq.NotificationQueue)
 
 var computedRules []*computedRule
 

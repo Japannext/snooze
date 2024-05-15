@@ -22,6 +22,10 @@ type AlertField struct {
 var allowedFields = []string{"severity_number", "severity_text"}
 var allowedSubFields = []string{"group_labels", "labels", "attributes", "body"}
 
+func NewAlertField(name, subkey string) *AlertField {
+	return &AlertField{Name: name, SubKey: subkey}
+}
+
 func (field *AlertField) Validate() error {
 	if slices.Contains(allowedFields, field.Name) {
 		if field.SubKey == "" {
