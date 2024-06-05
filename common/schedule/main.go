@@ -5,11 +5,15 @@ import (
 )
 
 type Schedule struct {
+	AlwaysSchedule bool `yaml:"always_schedule" json:"alwaysSchedule"`
 	WeeklySchedule *WeeklySchedule `yaml:"weekly_schedule" json:"weeklySchedule"`
 	DailySchedule  *DailySchedule  `yaml:"daily_schedule" json:"dailySchedule"`
 }
 
 func (s *Schedule) Resolve() (Interface, error) {
+	if s.AlwaysSchedule {
+		return &AlwaysSchedule{}, nil
+	}
 	if s.WeeklySchedule != nil {
 		return s.WeeklySchedule.Resolve()
 	}

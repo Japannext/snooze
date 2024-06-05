@@ -21,7 +21,7 @@ func Process(alert *api.Alert) error {
 	var merr = utils.NewMultiError("Failed to notify alert trace_id=%s.")
 
 	for _, rule := range computedRules {
-		v, err := rule.Matcher.EvalBool(ctx, alert)
+		v, err := rule.Condition.Match(ctx, alert)
 		if err != nil {
 			return err
 		}

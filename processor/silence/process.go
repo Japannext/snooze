@@ -10,7 +10,7 @@ func Process(alert *api.Alert) error {
 	ctx := context.Background()
 
 	for _, rule := range computedRules {
-		v, err := rule.Matcher.EvalBool(ctx, alert)
+		v, err := rule.Condition.Match(ctx, alert)
 		if err != nil {
 			return err
 		}

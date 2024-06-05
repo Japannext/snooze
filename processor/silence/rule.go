@@ -1,9 +1,10 @@
 package silence
 
 import (
-	"github.com/PaesslerAG/gval"
 	"github.com/japannext/snooze/common/schedule"
 	"github.com/sirupsen/logrus"
+
+	"github.com/japannext/snooze/common/lang"
 )
 
 type Rule struct {
@@ -14,7 +15,7 @@ type Rule struct {
 
 type computedRule struct {
 	Name     string
-	Matcher  gval.Evaluable
+	Condition *lang.Condition
 	Schedule schedule.Interface
 }
 
@@ -25,13 +26,18 @@ func (r *computedRule) String() string {
 var computedRules []*computedRule
 
 func compute(rule *Rule) *computedRule {
-	matcher, err := gval.Full().NewEvaluable(rule.If)
+	condition, err := lang.NewCondition(rule.If)
 	if err != nil {
 		log.Fatal(err)
 	}
-	s, err := rule.Schedule.Resolve()
-	if err != nil {
-		log.Fatal(err)
+	var s schedule.Interface
+	if rule.Schedule == nil {
+		s = &schedule.AlwaysSchedule{}
+	} else {
+		s, err = rule.Schedule.Resolve()
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 	name := rule.Name
 	if rule.Name == "" {
@@ -39,8 +45,8 @@ func compute(rule *Rule) *computedRule {
 	}
 
 	return &computedRule{
-		Name:     name,
-		Matcher:  matcher,
+		Name: name,
+		Condition: condition,
 		Schedule: s,
 	}
 }

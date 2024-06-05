@@ -9,20 +9,14 @@ import (
 	"github.com/japannext/snooze/common/opensearch"
 )
 
-const index = "alerts-v2"
-
-var client *opensearch.OpensearchClient
-
-func Init() {
-	client = opensearch.Client
-}
+const ALERTS = "alerts-v2"
 
 func Process(alert *api.Alert) error {
 	data, err := json.Marshal(alert)
 	if err != nil {
 		return err
 	}
-	resp, err := client.Index(index, bytes.NewReader(data))
+	resp, err := opensearch.Client.Index(ALERTS, bytes.NewReader(data))
 	if err != nil {
 		return err
 	}
