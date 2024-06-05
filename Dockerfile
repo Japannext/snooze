@@ -15,73 +15,16 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 # snooze-processor
-FROM deps AS build-processor
+FROM deps AS build
 WORKDIR /code
 # Common
-COPY common common
-# App specific
-COPY processor processor
-# Version last since it changes often
-COPY version version
-RUN CGO_ENABLED=0 GOOS=linux go build \
-  -o /build/snooze-processor \
-  -ldflags "-X ${PROJECT}/server.Version=${VERSION} -X ${PROJECT}/server.Commit=${COMMIT} -w -s" \
-  ./processor/cmd
-FROM scratch AS snooze-processor
-USER 1000
-COPY --from=build-processor --chown=1000 --chmod=755 /build/snooze-processor /
-CMD ["/snooze-processor"]
+COPY . .
 
-# snooze-apiserver
-FROM deps AS build-apiserver
-WORKDIR /code
-# Common
-COPY common common
-# App specific
-COPY apiserver apiserver
-# Version last since it changes often
-COPY version version
 RUN CGO_ENABLED=0 GOOS=linux go build \
-  -o /build/snooze-apiserver \
+  -o /build/snooze \
   -ldflags "-X ${PROJECT}/server.Version=${VERSION} -X ${PROJECT}/server.Commit=${COMMIT} -w -s" \
-  ./apiserver/cmd
-FROM scratch AS snooze-apiserver
-USER 1000
-COPY --from=build-apiserver --chown=1000 --chmod=755 /build/snooze-apiserver /
-CMD ["/snooze-apiserver"]
+  ./cmd
 
-# snooze-otel
-FROM deps AS build-otel
-WORKDIR /code
-# Common
-COPY common common
-# App specific
-COPY sources/otel sources/otel
-# Version last since it changes often
-COPY version version
-RUN CGO_ENABLED=0 GOOS=linux go build \
-  -o /build/snooze-otel \
-  -ldflags "-X ${PROJECT}/version.Version=${VERSION} -X ${PROJECT}/version.Commit=${COMMIT} -w -s" \
-  ./sources/otel/cmd
-FROM scratch AS snooze-otel
+FROM scratch AS snooze
 USER 1000
-COPY --from=build-otel --chown=1000 --chmod=755 /build/snooze-otel /
-CMD ["/snooze-otel"]
-
-# snooze-alertmanager
-FROM deps AS build-alertmanager
-WORKDIR /code
-# Common
-COPY common common
-# App specific
-COPY sources/alertmanager sources/alertmanager
-# Version last since it changes often
-COPY version version
-RUN CGO_ENABLED=0 GOOS=linux go build \
-  -o /build/snooze-alertmanager \
-  -ldflags "-X ${PROJECT}/server.Version=${VERSION} -X ${PROJECT}/server.Commit=${COMMIT} -w -s" \
-  ./sources/alertmanager/cmd
-FROM scratch AS snooze-alertmanager
-USER 1000
-COPY --from=build-alertmanager --chown=1000 --chmod=755 /build/snooze-alertmanager /
-CMD ["/snooze-alertmanager"]
+COPY --from=build --chown=1000 --chmod=755 /build/snooze /

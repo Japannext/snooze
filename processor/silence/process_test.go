@@ -11,15 +11,15 @@ func TestProcess(t *testing.T) {
 	rules := []*Rule{
 		{
 			Name: "syslog",
-			If: `alert.Source.Kind == "syslog"`,
+			If:   `alert.Source.Kind == "syslog"`,
 		},
 	}
 	InitRules(rules)
 
 	tests := []struct {
-		Name           string
-		Alert          *api.Alert
-		ExpectMatch    bool
+		Name        string
+		Alert       *api.Alert
+		ExpectMatch bool
 	}{
 		{
 			"syslog hash",

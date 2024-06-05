@@ -3,8 +3,8 @@ package notification
 import (
 	"github.com/sirupsen/logrus"
 
-	"github.com/japannext/snooze/common/rabbitmq"
 	"github.com/japannext/snooze/common/lang"
+	"github.com/japannext/snooze/common/rabbitmq"
 )
 
 type Rule struct {
@@ -14,7 +14,7 @@ type Rule struct {
 
 type computedRule struct {
 	Condition *lang.Condition
-	Queues  []*rabbitmq.NotificationQueue
+	Queues    []*rabbitmq.NotificationQueue
 }
 
 func compute(rule *Rule) *computedRule {
@@ -35,7 +35,7 @@ func compute(rule *Rule) *computedRule {
 	}
 	return &computedRule{
 		Condition: condition,
-		Queues:  qq,
+		Queues:    qq,
 	}
 }
 

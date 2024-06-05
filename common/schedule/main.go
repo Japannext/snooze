@@ -5,7 +5,7 @@ import (
 )
 
 type Schedule struct {
-	AlwaysSchedule bool `yaml:"always_schedule" json:"alwaysSchedule"`
+	AlwaysSchedule bool            `yaml:"always_schedule" json:"alwaysSchedule"`
 	WeeklySchedule *WeeklySchedule `yaml:"weekly_schedule" json:"weeklySchedule"`
 	DailySchedule  *DailySchedule  `yaml:"daily_schedule" json:"dailySchedule"`
 }

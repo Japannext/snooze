@@ -30,18 +30,9 @@ tasks:
   develop:
     cmds:
     - task: build
-    - task: images:develop
+    - task: image:develop
     - task: chart:develop
     - task: sync
-
-  images:develop:
-    cmds:
-    - task: image:develop
-      vars: {NAME: snooze-apiserver}
-    - task: image:develop
-      vars: {NAME: snooze-processor}
-    - task: image:develop
-      vars: {NAME: snooze-otel}
 
   sync:
     cmds:

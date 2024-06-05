@@ -14,9 +14,9 @@ type Rule struct {
 }
 
 type computedRule struct {
-	Name     string
+	Name      string
 	Condition *lang.Condition
-	Schedule schedule.Interface
+	Schedule  schedule.Interface
 }
 
 func (r *computedRule) String() string {
@@ -45,9 +45,9 @@ func compute(rule *Rule) *computedRule {
 	}
 
 	return &computedRule{
-		Name: name,
+		Name:      name,
 		Condition: condition,
-		Schedule: s,
+		Schedule:  s,
 	}
 }
 

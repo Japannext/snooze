@@ -7,11 +7,11 @@ env:
 tasks:
   develop:
     cmds:
-    - docker build . --target={{ .NAME }}
-      -t ${LOCAL_REPO}/{{ .NAME }}:develop
+    - docker build .
+      -t ${LOCAL_REPO}/snooze:develop
       --build-arg VERSION={{ .VERSION }}-develop
       --build-arg COMMIT={{ .COMMIT }}
-    - docker push ${LOCAL_REPO}/{{ .NAME }}:develop
+    - docker push ${LOCAL_REPO}/snooze:develop
     preconditions:
     - sh: '[[ -n "${LOCAL_REPO}" ]]'
       msg: "You need to set LOCAL_REPO=myrepo.example.com:8080 in '.env.local' to use develop tasks"
