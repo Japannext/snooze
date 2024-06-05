@@ -1,11 +1,9 @@
 package transform
 
 import (
-	"github.com/sirupsen/logrus"
-
+	"github.com/PaesslerAG/gval"
 	api "github.com/japannext/snooze/common/api/v2"
-	"github.com/japannext/snooze/common/condition"
-	"github.com/japannext/snooze/common/parser"
+	"github.com/sirupsen/logrus"
 )
 
 type Rule struct {
@@ -23,8 +21,8 @@ type Computable interface {
 }
 
 type computedRule struct {
-	Condition condition.Interface
-	process   Interface
+	Matcher gval.Evaluable
+	process Interface
 }
 
 var computedRules []*computedRule
@@ -41,14 +39,14 @@ func (rule *Rule) Resolve() Computable {
 
 func compute(rule *Rule) *computedRule {
 
-	c, err := parser.ParseCondition(rule.If)
+	matcher, err := gval.Full().NewEvaluable(rule.If)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	r := rule.Resolve()
 	if r != nil {
-		return &computedRule{c.Resolve(), r.Compute()}
+		return &computedRule{matcher, r.Compute()}
 	}
 	return nil
 }

@@ -1,10 +1,9 @@
 package grouping
 
 import (
-	"github.com/japannext/snooze/common/condition"
-	"github.com/japannext/snooze/common/field"
-	"github.com/japannext/snooze/common/parser"
 	"github.com/sirupsen/logrus"
+
+	"github.com/japannext/snooze/common/lang"
 )
 
 type Rule struct {
@@ -13,27 +12,27 @@ type Rule struct {
 }
 
 type computedRule struct {
-	Condition condition.Interface
-	Fields    []*field.AlertField
+	Condition *lang.Condition
+	Fields    []*lang.Field
 }
 
 var computedRules []*computedRule
 
 func compute(rule *Rule) *computedRule {
-	c, err := parser.ParseCondition(rule.If)
+	condition, err := lang.NewCondition(rule.If)
 	if err != nil {
 		log.Fatal(err)
 	}
-	var fields []*field.AlertField
-	for _, f := range rule.GroupBy {
-		fi, err := parser.ParseField(f)
+	var fields []*lang.Field
+	for _, groupby := range rule.GroupBy {
+		f, err := lang.NewField(groupby)
 		if err != nil {
 			log.Fatal(err)
 		}
-		fields = append(fields, fi)
+		fields = append(fields, f)
 	}
 	return &computedRule{
-		Condition: c.Resolve(),
+		Condition: condition,
 		Fields:    fields,
 	}
 }

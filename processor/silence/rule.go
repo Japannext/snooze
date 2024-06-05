@@ -1,8 +1,7 @@
 package silence
 
 import (
-	"github.com/japannext/snooze/common/condition"
-	"github.com/japannext/snooze/common/parser"
+	"github.com/PaesslerAG/gval"
 	"github.com/japannext/snooze/common/schedule"
 	"github.com/sirupsen/logrus"
 )
@@ -14,22 +13,19 @@ type Rule struct {
 }
 
 type computedRule struct {
-	Name      string
-	Condition condition.Interface
-	Schedule  schedule.Interface
+	Name     string
+	Matcher  gval.Evaluable
+	Schedule schedule.Interface
 }
 
 func (r *computedRule) String() string {
-	if r.Name != "" {
-		return r.Name
-	}
-	return r.Condition.String()
+	return r.Name
 }
 
 var computedRules []*computedRule
 
 func compute(rule *Rule) *computedRule {
-	c, err := parser.ParseCondition(rule.If)
+	matcher, err := gval.Full().NewEvaluable(rule.If)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -37,10 +33,15 @@ func compute(rule *Rule) *computedRule {
 	if err != nil {
 		log.Fatal(err)
 	}
+	name := rule.Name
+	if rule.Name == "" {
+		name = rule.If
+	}
+
 	return &computedRule{
-		Name:      rule.Name,
-		Condition: c.Resolve(),
-		Schedule:  s,
+		Name:     name,
+		Matcher:  matcher,
+		Schedule: s,
 	}
 }
 

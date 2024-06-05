@@ -1,6 +1,7 @@
 package transform
 
 import (
+	"context"
 	api "github.com/japannext/snooze/common/api/v2"
 )
 
@@ -21,8 +22,13 @@ func (rule *ChildrenRule) Compute() Interface {
 }
 
 func (rule *computedChildren) Process(alert *api.Alert) error {
+	ctx := context.Background()
 	for _, child := range rule.children {
-		if child.Condition.Test(alert) {
+		v, err := child.Matcher.EvalBool(ctx, alert)
+		if err != nil {
+			return err
+		}
+		if v {
 			if err := child.process.Process(alert); err != nil {
 				return err
 			}

@@ -56,3 +56,9 @@ type Mute struct {
 	// normally (patlite, etc), but will be marked as such in the web interface.
 	HumanTest bool
 }
+
+// A function that can match an alert
+type AlertMatcher = func(Alert) bool
+
+// A function that can modify an alert in-place
+type AlertModifier = func(Alert)

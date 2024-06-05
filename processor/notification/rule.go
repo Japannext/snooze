@@ -3,8 +3,7 @@ package notification
 import (
 	"github.com/sirupsen/logrus"
 
-	"github.com/japannext/snooze/common/condition"
-	"github.com/japannext/snooze/common/parser"
+	"github.com/PaesslerAG/gval"
 	"github.com/japannext/snooze/common/rabbitmq"
 )
 
@@ -14,12 +13,12 @@ type Rule struct {
 }
 
 type computedRule struct {
-	Condition condition.Interface
-	Queues    []*rabbitmq.NotificationQueue
+	Matcher gval.Evaluable
+	Queues  []*rabbitmq.NotificationQueue
 }
 
 func compute(rule *Rule) *computedRule {
-	c, err := parser.ParseCondition(rule.If)
+	matcher, err := gval.Full().NewEvaluable(rule.If)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -35,8 +34,8 @@ func compute(rule *Rule) *computedRule {
 		qq = append(qq, q)
 	}
 	return &computedRule{
-		Condition: c.Resolve(),
-		Queues:    qq,
+		Matcher: matcher,
+		Queues:  qq,
 	}
 }
 

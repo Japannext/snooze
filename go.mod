@@ -3,12 +3,12 @@ module github.com/japannext/snooze
 go 1.20
 
 require (
+	github.com/PaesslerAG/gval v1.2.2
+	github.com/PaesslerAG/jsonpath v0.1.0
 	github.com/deckarep/golang-set/v2 v2.6.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/mottaquikarim/esquerydsl v0.0.0-20230908215636-2a15c9ace5b9
-	github.com/okneniz/parsec v0.0.0-20231001180711-ab2866d0b5d4
 	github.com/opensearch-project/opensearch-go/v2 v2.3.0
-	github.com/prataprc/goparsec v0.0.0-20211219142520-daac0e635e7e
 	github.com/rabbitmq/amqp091-go v1.9.0
 	github.com/redis/go-redis/v9 v9.5.1
 	github.com/sirupsen/logrus v1.9.3
@@ -52,6 +52,7 @@ require (
 	github.com/rogpeppe/go-internal v1.11.0 // indirect
 	github.com/sagikazarmark/locafero v0.3.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
+	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/afero v1.10.0 // indirect
 	github.com/spf13/cast v1.5.1 // indirect
