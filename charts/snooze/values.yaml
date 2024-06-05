@@ -10,24 +10,57 @@ pipeline:
   silence_rules: []
   grouping_rules:
   - name: by-service
-    if: '(has labels[service.name]) and (has labels[environment])'
-    group_by: ['labels[service.name]', 'labels[environment]']
+    if: >
+      has(
+        alert.Labels["service.name"],
+        alert.Labels["environment"],
+      )
+    group_by:
+    - 'alert.Labels["service.name"]'
+    - 'alert.Labels["environment"]'
   - name: by-k8s-deploy
-    if: '(has labels[k8s.deployment.name]) and (has labels[k8s.namespace.name]) and (has labels[k8s.cluster.name])'
-    group_by: ['labels[k8s.deployment.name]', 'labels[k8s.namespace.name]', 'labels[k8s.cluster.name]']
+    if: >
+      has(
+        alert.Labels["k8s.deployment.name"],
+        alert.Labels["k8s.namespace.name"],
+        alert.Labels["k8s.cluster.name"],
+      )
+    group_by:
+    - alert.Labels["k8s.deployment.name"]
+    - alert.Labels["k8s.namespace.name"]
+    - alert.Labels["k8s.cluster.name"]
   - name: by-k8s-sts
-    if: '(has labels[k8s.statefulset.name]) and (has labels[k8s.namespace.name]) and (has labels[k8s.cluster.name])'
-    group_by: ['labels[k8s.statefulset.name]', 'labels[k8s.namespace.name]', 'labels[k8s.cluster.name]']
+    if: >
+      has(
+        alert.Labels["k8s.statefulset.name"]
+        alert.Labels["k8s.namespace.name"]
+        alert.Labels["k8s.cluster.name"]
+      )
+    group_by:
+    - alert.Labels["k8s.statefulset.name"]
+    - alert.Labels["k8s.namespace.name"]
+    - alert.Labels["k8s.cluster.name"]
   - name: by-syslog-host
-    if: 'has attributes[appname] and attributes[hostname]'
-    group_by: ['attributes[appname]', 'attributes[hostname]']
+    if: >
+      has(
+        alert.Labels["appname"],
+        alert.Labels["host.name"],
+      )
+    group_by:
+    - alert.Labels["appname"]
+    - alert.Labels["host.name"]
+
   ratelimit:
     burst: 50
     period: 1m
     cooldown: 5m
+
   notification_rules:
-  - if: 'attributes[owner] == "unix"'
-    channels: ['googlechat:unix']
+  - if: >
+      alert.Attributes["owner"] == "unix"
+    channels:
+    - 'googlechat:unix'
+
   default_notification_channels:
   - 'googlechat:unix'
   - 'googlechat:monitoring'

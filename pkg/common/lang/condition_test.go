@@ -25,15 +25,27 @@ func TestCondition(t *testing.T) {
 			&api.Alert{Source: api.Source{Kind: "syslog", Name: "prod-syslog"}},
 			false,
 		},
+		{
+			`has(alert.Labels.a, alert.Labels.b)`,
+			&api.Alert{Labels: map[string]string{"a": "1", "b": "2"}},
+			true,
+		},
+		{
+			`has(alert.Labels["c"])`,
+			&api.Alert{Labels: map[string]string{"a": "1", "b": "2"}},
+			false,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.Raw, func(t *testing.T) {
 			c, err := NewCondition(tt.Raw)
-			assert.NoError(t, err)
-			m, err := c.Match(context.Background(), tt.Alert)
-			assert.NoError(t, err)
-			assert.Equal(t, tt.ExpectMatch, m)
+			if assert.NoError(t, err) {
+				m, err := c.Match(context.Background(), tt.Alert)
+				if assert.NoError(t, err) {
+					assert.Equal(t, tt.ExpectMatch, m)
+				}
+			}
 		})
 	}
 }

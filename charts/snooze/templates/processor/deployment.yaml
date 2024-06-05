@@ -33,9 +33,9 @@ spec:
     spec:
       containers:
       - name: snooze-process
-        image: "{{ .Values.image.repo }}/snooze-processor:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        image: "{{ .Values.image.repo }}/snooze:{{ .Values.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: "{{ .Values.image.pullPolicy }}"
-        command: ['/snooze-processor', 'server']
+        command: ['/snooze', 'processor']
         ports:
         - name: otlp-grpc
           containerPort: 4317
