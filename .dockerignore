@@ -1,0 +1,8 @@
+Taskfile.yaml
+tasks/
+*.swp
+.gitignore
+.git/
+*.md
+examples/
+charts/

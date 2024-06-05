@@ -5,23 +5,23 @@ transform_rules:
 - name: jnx-naming-convention
   description: |
     Extract the different elements from the Japannext naming convention
-  if: 'source[kind] = "otlp" and labels[host.name] =~ "[a-z]{3}[0-9][a-z]+[0-9]+"'
+  if: 'alert.Source.Kind == "otlp" && alert.Labels["host.name"] =~ "[a-z]{3}[0-9][a-z]+[0-9]+"'
   childs:
   - set:
-      target: 'labels[jnx.domain]'
+      target: 'alert.Label["jnx.domain"]'
       value: 'japannext.co.jp'
   - regex:
-      source: 'labels[host.name]'
+      source: 'alert.Label["host.name"]'
       pattern: '(?P<prefix>[a-z]{3}[0-9])(?P<server_role>[a-z]+)(?P<nodenum>[0-9]+)'
       targets:
-        prefix: 'labels[jnx.prefix]'
-        server_role: 'labels[jnx.server_role]'
-        nodenum: 'labels[jnx.nodenum]'
+        prefix: 'alert.Labels["jnx.prefix"]'
+        server_role: 'alert.Labels["jnx.server_role"]'
+        nodenum: 'alert.Labels["jnx.nodenum"]'
   - group_by:
       fields:
-      - 'labels[jnx.prefix]'
-      - 'labels[jnx.server_role]'
-      - 'labels[process.name]'
+      - 'alert.Labels["jnx.prefix"]'
+      - 'alert.Labels["jnx.server_role"]'
+      - 'alert.Labels["process.name"]'
 
 silence_rules:
 - if: 'labels[process.name] = "icingaweb" and body[message] =~ "connection reset"'

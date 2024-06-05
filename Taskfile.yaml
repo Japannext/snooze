@@ -19,9 +19,9 @@ tasks:
 
   build:
     cmds:
-    - go fmt ./...
-    - go vet ./...
-    - go build ./...
+    - go fmt .
+    - go vet .
+    - go build .
 
   test:
     cmds:

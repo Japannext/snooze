@@ -1,0 +1,48 @@
+package notification
+
+import (
+	"context"
+	set "github.com/deckarep/golang-set/v2"
+
+	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/common/rabbitmq"
+	"github.com/japannext/snooze/pkg/common/utils"
+)
+
+func Process(alert *api.Alert) error {
+
+	ctx := context.Background()
+
+	if alert.Mute.Enabled {
+		return nil
+	}
+
+	var queues = set.NewSet[*rabbitmq.NotificationQueue]()
+	var merr = utils.NewMultiError("Failed to notify alert trace_id=%s.")
+
+	for _, rule := range computedRules {
+		v, err := rule.Condition.Match(ctx, alert)
+		if err != nil {
+			return err
+		}
+		if v {
+			for _, q := range rule.Queues {
+				queues.Add(q)
+			}
+		}
+	}
+
+	for q := range queues.Iter() {
+		notif := &api.Notification{}
+		if err := q.Publish(ctx, notif); err != nil {
+			merr.AppendErr(err)
+			continue
+		}
+	}
+
+	if merr.HasErrors() {
+		return merr
+	}
+
+	return nil
+}

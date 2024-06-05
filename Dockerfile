@@ -18,12 +18,13 @@ RUN go mod download
 FROM deps AS build
 WORKDIR /code
 # Common
-COPY . .
+COPY pkg pkg
+COPY go.sum go.sum main.go ./
 
 RUN CGO_ENABLED=0 GOOS=linux go build \
   -o /build/snooze \
   -ldflags "-X ${PROJECT}/server.Version=${VERSION} -X ${PROJECT}/server.Commit=${COMMIT} -w -s" \
-  ./cmd
+  .
 
 FROM scratch AS snooze
 USER 1000
