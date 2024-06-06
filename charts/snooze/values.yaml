@@ -13,7 +13,7 @@ pipeline:
     if: >
       has(
         alert.Labels["service.name"],
-        alert.Labels["environment"],
+        alert.Labels["environment"]
       )
     group_by:
     - 'alert.Labels["service.name"]'
@@ -23,7 +23,7 @@ pipeline:
       has(
         alert.Labels["k8s.deployment.name"],
         alert.Labels["k8s.namespace.name"],
-        alert.Labels["k8s.cluster.name"],
+        alert.Labels["k8s.cluster.name"]
       )
     group_by:
     - alert.Labels["k8s.deployment.name"]
@@ -32,8 +32,8 @@ pipeline:
   - name: by-k8s-sts
     if: >
       has(
-        alert.Labels["k8s.statefulset.name"]
-        alert.Labels["k8s.namespace.name"]
+        alert.Labels["k8s.statefulset.name"],
+        alert.Labels["k8s.namespace.name"],
         alert.Labels["k8s.cluster.name"]
       )
     group_by:
@@ -41,14 +41,10 @@ pipeline:
     - alert.Labels["k8s.namespace.name"]
     - alert.Labels["k8s.cluster.name"]
   - name: by-syslog-host
-    if: >
-      has(
-        alert.Labels["appname"],
-        alert.Labels["host.name"],
-      )
+    if: alert.Source.Kind == "syslog"
     group_by:
-    - alert.Labels["appname"]
     - alert.Labels["host.name"]
+    - alert.Labels["process"]
 
   ratelimit:
     burst: 50
@@ -56,8 +52,7 @@ pipeline:
     cooldown: 5m
 
   notification_rules:
-  - if: >
-      alert.Attributes["owner"] == "unix"
+  - if: 'alert.Attributes["owner"] == "unix"'
     channels:
     - 'googlechat:unix'
 

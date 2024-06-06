@@ -1,5 +1,9 @@
 package v2
 
+import (
+	"strings"
+)
+
 type Alert struct {
 	Source Source `json:"source"`
 
@@ -28,6 +32,39 @@ type Alert struct {
 
 	// Mute the alert. This may skip notifications, or skip even display
 	Mute Mute `json:"mute"`
+}
+
+func (a *Alert) String() string {
+	var s strings.Builder
+
+	// Source
+	s.WriteString("[")
+	s.WriteString(a.Source.Kind)
+	if a.Source.Name != "" {
+		s.WriteString("/")
+		s.WriteString(a.Source.Name)
+	}
+	s.WriteString("] ")
+
+	// Labels
+	s.WriteString("[")
+	for k, v := range a.Labels {
+		s.WriteString(k)
+		s.WriteString("=")
+		s.WriteString(v)
+		s.WriteString(", ")
+	}
+	s.WriteString("] ")
+
+	// Body
+	for k, v := range a.Body {
+		s.WriteString(k)
+		s.WriteString(":")
+		s.WriteString(v)
+		s.WriteString("; ")
+	}
+
+	return s.String()
 }
 
 type Source struct {

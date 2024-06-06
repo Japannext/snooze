@@ -42,7 +42,7 @@ func Run() {
 	srv := daemon.NewHttpDaemon()
 	srv.Engine.GET("/livez", h.LiveRoute)
 	srv.Engine.GET("/readyz", h.ReadyRoute)
-	dm.Add("health", srv)
+	dm.Add("http", srv)
 
 	h.Live()
 	h.Ready()

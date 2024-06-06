@@ -13,11 +13,15 @@ type HttpDaemon struct {
 }
 
 func NewHttpDaemon() *HttpDaemon {
-	router := gin.Default()
+	router := gin.New()
+	router.Use(gin.LoggerWithConfig(gin.LoggerConfig{
+		SkipPaths: []string{"/livez", "/readyz"},
+	}))
+	router.Use(gin.Recovery())
 	return &HttpDaemon{
 		Engine: router,
 		srv: &http.Server{
-			Addr:    "",
+			Addr:    "0.0.0.0:8080",
 			Handler: router,
 		},
 	}

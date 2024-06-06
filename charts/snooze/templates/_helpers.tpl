@@ -23,3 +23,11 @@
       name: "{{ .Release.Name }}-rabbitmq-default-user"
       key: password
 {{- end }}
+
+{{- define "snooze.image" }}
+{{- if .Values.image.digest }}
+{{ .Values.image.repo }}/snooze@{{ .Values.image.digest }}
+{{- else }}
+{{ .Values.image.repo }}/snooze:{{ .Values.image.tag | default .Chart.AppVersion }}
+{{- end }}
+{{- end }}

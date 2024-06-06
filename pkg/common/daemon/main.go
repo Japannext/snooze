@@ -55,7 +55,8 @@ func (dm *DaemonManager) Run() {
 
 	for name, _ := range dm.daemons {
 		n := name
-		d := dm.daemons[name]
+		d := dm.daemons[n]
+		log.Debug(fmt.Sprintf("Starting '%s' daemon", n))
 		dm.errs.Go(d.Run)
 		dm.errs.Go(func() error {
 			<-dm.context.Done()

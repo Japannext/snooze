@@ -29,21 +29,7 @@ func (r *RejectedAlert) Error() string {
 }
 
 func (p *Processor) Run() error {
-	msgs, err := ch.Consume()
-	if err != nil {
-		return err
-	}
-	for msg := range msgs {
-		alert := msg.Alert
-		d := msg.Delivery
-		err = Process(alert)
-		if err != nil {
-			log.Error(err)
-			d.Reject(false)
-		}
-		d.Ack(false)
-	}
-	return nil
+	return ch.ConsumeForever(Process)
 }
 
 func (p *Processor) HandleStop() {
@@ -51,6 +37,7 @@ func (p *Processor) HandleStop() {
 }
 
 func Process(alert *api.Alert) error {
+	log.Debugf("Start processing alert: %s", alert)
 	if err := transform.Process(alert); err != nil {
 		return err
 	}
@@ -69,5 +56,6 @@ func Process(alert *api.Alert) error {
 	if err := store.Process(alert); err != nil {
 		return err
 	}
+	log.Debugf("End processing alert: %s", alert)
 	return nil
 }

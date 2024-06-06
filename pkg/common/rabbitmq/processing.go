@@ -50,20 +50,56 @@ type AlertMessage struct {
 	Alert    *api.Alert
 }
 
+type AlertHandler = func(*api.Alert) error
+
+func handleAlerts(handler AlertHandler, deliveries <-chan amqp.Delivery, done chan error) {
+	for d := range deliveries {
+		log.Debugf("Received an AMQP message!")
+		var alert *api.Alert
+		if err := json.Unmarshal(d.Body, &alert); err != nil {
+			log.Warnf("Rejecting message (%s): %s", err, d.Body)
+			d.Reject(false)
+		}
+		log.Debugf("Appending alert to channel")
+		if err := handler(alert); err != nil {
+			log.Errorf("error handling message: %s", err)
+			d.Reject(false)
+		}
+	}
+	log.Warnf("DONE HANDLING ALERTS")
+}
+
+func (ch *ProcessChannel) ConsumeForever(handler AlertHandler) error {
+	deliveries, err := consume(ch.Channel, pqName, "", &chOpts{AutoAck: true})
+	if err != nil {
+		return err
+	}
+
+	var done chan error
+	go handleAlerts(handler, deliveries, done)
+
+	<-done
+	return nil
+}
+
 func (ch *ProcessChannel) Consume() (<-chan AlertMessage, error) {
+	log.Debugf("Consuming!")
 	out := make(chan AlertMessage)
 	dd, err := consume(ch.Channel, pqName, "", &chOpts{AutoAck: true})
 	if err != nil {
 		return out, err
 	}
 	for d := range dd {
+		log.Debugf("Received an AMQP message!")
 		var alert *api.Alert
 		if err := json.Unmarshal(d.Body, &alert); err != nil {
 			log.Warnf("Rejecting message (%s): %s", err, d.Body)
 			d.Reject(false)
 		}
+		log.Debugf("Appending alert to channel")
 		out <- AlertMessage{&d, alert}
 	}
+	log.Warnf("Out of consume loop!")
 	return out, nil
 }
 

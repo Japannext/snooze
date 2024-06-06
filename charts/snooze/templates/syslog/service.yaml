@@ -1,0 +1,27 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Release.Name }}-syslog"
+  namespace: "{{ .Release.Namespace }}"
+  labels:
+    app.kubernetes.io/name: snooze
+    app.kubernetes.io/instance: "{{ .Release.Name }}"
+    app.kubernetes.io/component: syslog
+spec:
+  type: LoadBalancer
+  ports:
+  - name: syslog-udp
+    port: 514
+    protocol: UDP
+    appProtocol: syslog
+    targetPort: syslog-udp
+  - name: syslog-tcp
+    port: 514
+    protocol: TCP
+    appProtocol: syslog
+    targetPort: syslog-tcp
+  selector:
+    app.kubernetes.io/name: snooze
+    app.kubernetes.io/instance: "{{ .Release.Name }}"
+    app.kubernetes.io/component: syslog

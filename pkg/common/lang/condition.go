@@ -126,7 +126,6 @@ func reflectConvertTo(k reflect.Kind, value string) (interface{}, bool) {
 func hasFunction(args ...interface{}) (interface{}, error) {
 	for _, arg := range args {
 		v := reflect.ValueOf(arg)
-		fmt.Printf("[v] %v+\n", v)
 		if !v.IsValid() {
 			return false, nil
 		}

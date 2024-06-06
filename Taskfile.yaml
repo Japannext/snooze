@@ -36,4 +36,6 @@ tasks:
 
   sync:
     cmds:
-    - helmfile -f .helmfile.yaml sync
+    # - docker inspect --format='{{"{{"}}index .RepoDigests 0{{"}}"}}' nexus.dc.japannext.co.jp:8083/unix/kubernetes/snooze:develop | cut -d@ -f2 > .digest
+    - helmfile -f .helmfile.yaml.gotmpl sync
+    - kubectl rollout restart deploy/snooze-{syslog,process}

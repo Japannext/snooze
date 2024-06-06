@@ -18,9 +18,13 @@ type computedRule struct {
 }
 
 func compute(rule *Rule) *computedRule {
-	condition, err := lang.NewCondition(rule.If)
-	if err != nil {
-		log.Fatal(err)
+	var condition *lang.Condition
+	var err error
+	if rule.If != "" {
+		condition, err = lang.NewCondition(rule.If)
+		if err != nil {
+			log.Fatalf("while parsing `%s`: %s", rule.If, err)
+		}
 	}
 
 	var qq []*rabbitmq.NotificationQueue

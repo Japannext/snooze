@@ -33,7 +33,7 @@ spec:
     spec:
       containers:
       - name: snooze-process
-        image: "{{ .Values.image.repo }}/snooze:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        image: "{{- include "snooze.image" . | trim }}"
         imagePullPolicy: "{{ .Values.image.pullPolicy }}"
         command: ['/snooze', 'processor']
         ports:
@@ -64,7 +64,7 @@ spec:
           timeoutSeconds: 1
         livenessProbe:
           httpGet:
-            path: /healthz
+            path: /livez
             port: 8080
             scheme: HTTP
           initialDelaySeconds: 1

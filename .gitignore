@@ -1,4 +1,5 @@
 .helmfile.yaml
+.helmfile.yaml.gotmpl
 .charts
 .ca-bundle
 charts/snooze/charts/
