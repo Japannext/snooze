@@ -65,7 +65,7 @@ Frequency
 
 .. _frequency:
 
-This parameter controls how many times this notification should be triggered and at which interval. It has 3 subparameters:
+This parameter controls how many times this notification should be triggered and at which interval. It has 3 subparameters (in order):
 
 :delay (``0``): Time in seconds to wait before triggering this notification the first time.
 :every (``0``): Time in seconds until the next notification trigger.
