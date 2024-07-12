@@ -127,11 +127,11 @@ class ActionObject:
             succeeded, failed = [], records
         for record in failed:
             hashes[record['hash']]['retry'] -= 1
-            if hashes[record['hash']]['delay'] > 0:
+            if hashes[record['hash']]['every'] > 0:
                 hashes[record['hash']]['delay'] = max(hashes[record['hash']]['freq'], 0) or hashes[record['hash']]['every']
         for record in succeeded:
             hashes[record['hash']]['total'] -= 1
-            if hashes[record['hash']]['delay'] > 0:
+            if hashes[record['hash']]['every'] > 0:
                 hashes[record['hash']]['delay'] = hashes[record['hash']]['every']
         self.update_stats(succeeded, len(succeeded))
         return succeeded, failed
