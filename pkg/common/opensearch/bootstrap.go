@@ -71,7 +71,7 @@ func (i *IndexTemplate) ensure(ctx context.Context, client *v2.Client) error {
 	return fmt.Errorf("Unexpected response status code when creating index %s: %d", i.Name, resp.StatusCode)
 }
 
-func (client *OpensearchClient) Bootstrap() error {
+func (client *OpensearchLogStore) Bootstrap() error {
 	ctx := context.Background()
 
 	// Ensure all indexes exist

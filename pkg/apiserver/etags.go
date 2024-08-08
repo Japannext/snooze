@@ -15,7 +15,8 @@ type eTagCache struct {
 	paths map[string]string
 }
 
-func (e *eTagCache) build() {
+func newETagCache() *eTagCache {
+	etags := &eTagCache{paths: make(map[string]string)}
 	filepath.Walk(config.StaticPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			log.Warnf("Could not generate eTag cache for %s: %s", path, err)
@@ -29,9 +30,10 @@ func (e *eTagCache) build() {
 		if _, err := io.Copy(h, f); err != nil {
 			log.Warnf("Could not generate eTag cache for %s: %s", path, err)
 		}
-		e.paths[path] = fmt.Sprintf("%x", h.Sum(nil))
+		etags.paths[path] = fmt.Sprintf("%x", h.Sum(nil))
 		return nil
 	})
+	return etags
 }
 
 func (e *eTagCache) get(p string) (string, bool) {
@@ -40,8 +42,7 @@ func (e *eTagCache) get(p string) (string, bool) {
 }
 
 func eTagMiddleware() gin.HandlerFunc {
-	etags := &eTagCache{}
-	etags.build()
+	etags := newETagCache()
 	return func(c *gin.Context) {
 		c.Header("Cache-Control", "public max-age=31436000")
 		path := c.Param("filepath") // from the .Static() route

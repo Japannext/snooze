@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var Heath *HealthStatus
+var Health *HealthStatus
 
 type HealthStatus struct {
 	ready       bool
@@ -57,7 +57,7 @@ func (h *HealthStatus) LiveRoute(c *gin.Context) {
 }
 
 func Init() {
-	Heath = &HealthStatus{
+	Health = &HealthStatus{
 		ready:       false,
 		live:        false,
 		readyReason: "starting...",

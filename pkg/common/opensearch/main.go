@@ -6,10 +6,10 @@ import (
 )
 
 var (
-	Client *OpensearchClient
+	LogStore *OpensearchLogStore
 )
 
-type OpensearchClient struct {
+type OpensearchLogStore struct {
 	*v2.Client
 }
 
@@ -29,14 +29,14 @@ func Init() {
 		log.Fatal(err)
 	}
 
-	Client = &OpensearchClient{client}
+	LogStore = &OpensearchLogStore{client}
 
 	// Fail immediately if the database is unreachable
-	if err := Client.CheckHealth(); err != nil {
+	if err := LogStore.CheckHealth(); err != nil {
 		log.Fatal(err)
 	}
 
-	if err := Client.Bootstrap(); err != nil {
+	if err := LogStore.Bootstrap(); err != nil {
 		log.Fatal(err)
 	}
 }

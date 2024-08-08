@@ -1,10 +1,7 @@
 package apiserver
 
 import (
-	"fmt"
-
-	"github.com/gin-gonic/gin"
-
+	"github.com/japannext/snooze/pkg/common/daemon"
 	"github.com/japannext/snooze/pkg/common/health"
 	"github.com/japannext/snooze/pkg/common/logging"
 	"github.com/japannext/snooze/pkg/common/opensearch"
@@ -19,14 +16,25 @@ func Run() {
 	opensearch.Init()
 	redis.Init()
 
-	// Routes
-	r := gin.Default()
-	r.GET("/livez", health.Heath.LiveRoute)
-	r.GET("/readyz", health.Heath.ReadyRoute)
-	r.Group("/static", eTagMiddleware()).Static("/", config.StaticPath)
-	registerRoutes(r)
+	dm := daemon.NewDaemonManager()
+	srv := daemon.NewHttpDaemon()
+
+	// Health
+	h := health.HealthStatus{}
+	srv.Engine.GET("/livez", h.LiveRoute)
+	srv.Engine.GET("/readyz", h.ReadyRoute)
+
+	// Static routes
+	srv.Engine.Group("/static", eTagMiddleware()).Static("/", config.StaticPath)
+
+	// Dynamic routes
+	registerRoutes(srv.Engine)
+	dm.Add("http", srv)
+
+	h.Live()
+	h.Ready()
 
 	// Listen
-	hostport := fmt.Sprintf("%s:%d", config.ListenAddress, config.ListenPort)
-	r.Run(hostport)
+	// hostport := fmt.Sprintf("%s:%d", config.ListenAddress, config.ListenPort)
+	dm.Run()
 }

@@ -34,7 +34,8 @@ spec:
       - name: snooze-syslog
         image: "{{- include "snooze.image" . | trim }}"
         imagePullPolicy: "{{ .Values.image.pullPolicy }}"
-        command: ['/snooze', 'syslog']
+        args:
+        - syslog
         ports:
         - name: syslog-udp
           containerPort: 1514

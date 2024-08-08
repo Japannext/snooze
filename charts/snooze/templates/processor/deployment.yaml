@@ -35,7 +35,8 @@ spec:
       - name: snooze-process
         image: "{{- include "snooze.image" . | trim }}"
         imagePullPolicy: "{{ .Values.image.pullPolicy }}"
-        command: ['/snooze', 'processor']
+        args:
+        - processor
         ports:
         - name: otlp-grpc
           containerPort: 4317

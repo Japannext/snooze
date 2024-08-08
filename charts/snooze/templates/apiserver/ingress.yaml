@@ -13,9 +13,9 @@ metadata:
     {{- if .Values.ingress.certManager.enabled }}
     cert-manager.io/common-name: "{{ .Values.ingress.host }}"
     {{- if eq .Values.ingress.certManager.issuerKind "ClusterIssuer" }}
-    cert-manager.io/cluster-issuer: "{{ .Values.ingress.issuerName }}"
+    cert-manager.io/cluster-issuer: "{{ .Values.ingress.certManager.issuerName }}"
     {{- else if eq .Values.ingress.certManager.issuerKind "Issuer" }}
-    cert-manager.io/issuer: "{{ .Values.ingress.issuerName }}"
+    cert-manager.io/issuer: "{{ .Values.ingress.certManager.issuerName }}"
     {{- end }}
     {{- end }}
 spec:

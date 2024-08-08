@@ -17,18 +17,10 @@ func registerRoutes(r *gin.Engine) {
 
 func searchAlertEvents(c *gin.Context) {
 	// Extract parameters
-	search := c.Param("search")
-	sortBy := c.Param("sort_by")
-	pp, err := extractPerPage(c)
-	if err != nil {
-		return
-	}
-	page, err := extractPage(c)
-	if err != nil {
-		return
-	}
+	query := c.Param("query")
 
-	ll, err := opensearch.Client.SearchAlertEvent(c, search, sortBy, page, pp)
+	pagination := parsePagination(c)
+	ll, err := opensearch.LogStore.Search(c, query, pagination)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error fetching logs from database: %w", err)
 	}

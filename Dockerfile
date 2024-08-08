@@ -28,4 +28,5 @@ RUN CGO_ENABLED=0 GOOS=linux go build \
 
 FROM scratch AS snooze
 USER 1000
-COPY --from=build --chown=1000 --chmod=755 /build/snooze /
+COPY --from=build --chown=1000 --chmod=755 /build/snooze /bin
+ENTRYPOINT ["/bin/snooze"]

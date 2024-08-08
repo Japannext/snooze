@@ -9,56 +9,57 @@ import (
 	"io"
 
 	dsl "github.com/mottaquikarim/esquerydsl"
-	api "github.com/opensearch-project/opensearch-go/v2/opensearchapi"
+	"github.com/opensearch-project/opensearch-go/v2/opensearchapi"
 	// util "github.com/opensearch-project/opensearch-go/opensearchutil"
 
-	"github.com/japannext/snooze/pkg/common/api/v2"
+	api "github.com/japannext/snooze/pkg/common/api/v2"
 )
 
 const (
 	ALERT_EVENTS_V2 = "alert-events-v2"
 )
 
-func (client *OpensearchClient) SearchAlertEvent(ctx context.Context, search, sortBy string, pageNb, perPage int) ([]v2.Alert, error) {
-	query := dsl.QueryDoc{
-		From:     pageNb * perPage,
-		Size:     perPage,
-		PageSize: perPage,
+func (client *OpensearchLogStore) Search(ctx context.Context, query string, pagination *api.Pagination) ([]api.Alert, error) {
+	dslQuery := dsl.QueryDoc{
+		From:     pagination.PageNumber * pagination.PerPage,
+		Size:     pagination.PerPage,
+		PageSize: pagination.PerPage,
 		Sort:     sorts(byTimestamp),
 		Or: []dsl.QueryItem{
-			{Field: "body", Value: search, Type: dsl.Match},
+			{Field: "body", Value: query, Type: dsl.Match},
 		},
 	}
-	body, err := json.Marshal(query)
+	body, err := json.Marshal(dslQuery)
 	if err != nil {
-		return []v2.Alert{}, err
+		return []api.Alert{}, err
 	}
-	req := api.SearchRequest{
+	req := opensearchapi.SearchRequest{
 		Index: []string{ALERT_EVENTS_V2},
 		Body:  bytes.NewReader(body),
 	}
 	resp, err := req.Do(ctx, client.Client)
 	if err != nil {
-		return []v2.Alert{}, err
+		return []api.Alert{}, err
 	}
 	var buf bytes.Buffer
 	if _, err := buf.ReadFrom(resp.Body); err != nil {
-		return []v2.Alert{}, err
+		return []api.Alert{}, err
 	}
-	var items []v2.Alert
+	var items []api.Alert
 	if err := json.Unmarshal(buf.Bytes(), &items); err != nil {
-		return []v2.Alert{}, err
+		return []api.Alert{}, err
 	}
 	return items, nil
 }
 
-func (client *OpensearchClient) InsertAlertEvent(ctx context.Context, a *v2.Alert) error {
-	b, err := json.Marshal(a)
+func (client *OpensearchLogStore) Store(alert *api.Alert) error {
+	ctx := context.Background()
+	b, err := json.Marshal(alert)
 	if err != nil {
 		return err
 	}
 	body := bytes.NewReader(b)
-	req := api.IndexRequest{
+	req := opensearchapi.IndexRequest{
 		Index: ALERT_EVENTS_V2,
 		Body:  body,
 	}
@@ -118,12 +119,12 @@ type Operation struct {
 }
 
 type BulkIndexer struct {
-	client  *OpensearchClient
+	client  *OpensearchLogStore
 	index   string
 	payload *bufio.ReadWriter
 }
 
-func NewBulkIndexer(client *OpensearchClient, index string) *BulkIndexer {
+func NewBulkIndexer(client *OpensearchLogStore, index string) *BulkIndexer {
 	var b bytes.Buffer
 	r := bufio.NewReader(&b)
 	w := bufio.NewWriter(&b)
@@ -164,7 +165,7 @@ func (bulk *BulkIndexer) Flush(ctx context.Context) error {
 	return nil
 }
 
-func (client *OpensearchClient) BulkInsertAlertEvent(ctx context.Context, items []v2.Alert) error {
+func (client *OpensearchLogStore) BulkInsertAlertEvent(ctx context.Context, items []api.Alert) error {
 	bulk := NewBulkIndexer(client, "alert-events-v2")
 	for _, item := range items {
 		bulk.Add(item)
