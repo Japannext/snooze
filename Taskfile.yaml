@@ -21,7 +21,7 @@ tasks:
     cmds:
     - go fmt .
     - go vet .
-    - go build .
+    - go build -o /dev/null .
 
   test:
     cmds:
@@ -33,6 +33,15 @@ tasks:
     - task: image:develop
     - task: chart:develop
     - task: sync
+
+  samples:
+    cmds:
+    - curl https://snooze2.d8.japannext.co.jp/api/sample -X POST
+
+  cleanup:
+    cmds:
+    - kubectl exec -it snooze-opensearch-masters-0 -- curl -k -u admin:admin https://localhost:9200/_data_stream/log-v2 -X DELETE
+    - kubectl exec -it snooze-opensearch-masters-0 -- curl -k -u admin:admin https://localhost:9200/_index_template/log-v2 -X DELETE
 
   sync:
     cmds:

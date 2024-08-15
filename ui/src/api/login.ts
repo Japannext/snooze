@@ -1,22 +1,20 @@
 import axios from 'axios'
 import type { AxiosResponse } from 'axios'
 
-export type LoginBackend = {
-  kind?: LoginBackendKind;
+export type AuthButton = {
+  displayName: string;
+  path: string;
+  icon?: string;
+  color?: string;
 }
 
-export enum LoginBackendKind {
-  Oidc = "oidc",
-  Static = "static",
+export type AuthButtons = {
+  buttons: Array<AuthButton>;
 }
 
-export type LoginBackendList = {
-  items: Array<LoginBackend>;
-}
-
-export function getLoginBackends(): Promise<LoginBackendList> {
-  return axios.get<LoginBackendList>('/login-backends')
-    .then(function(resp: AxiosResponse<LoginBackendList>) {
-      return resp.data
+export function getAuthButtons(): Promise<AxiosResponse<AuthButtons>> {
+  return axios.get<AuthButtons>('/api/auth/buttons')
+    .then(function(resp: AxiosResponse<AuthButtons>) {
+      return resp
     })
 }

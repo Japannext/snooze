@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 	"net/http"
 
-	v2 "github.com/opensearch-project/opensearch-go/v2"
+	"github.com/opensearch-project/opensearch-go/v4"
 	"github.com/spf13/viper"
 )
 
@@ -15,7 +15,7 @@ type Config struct {
 	InsecureSkipVerify bool     `mapstructure:"OPENSEARCH_INSECURE_SKIP_VERIFY"`
 }
 
-func initConfig() (*v2.Config, error) {
+func initConfig() (opensearch.Config, error) {
 	v := viper.New()
 
 	// Defaults
@@ -27,9 +27,9 @@ func initConfig() (*v2.Config, error) {
 	v.AutomaticEnv()
 	cfg := &Config{}
 	if err := v.Unmarshal(&cfg); err != nil {
-		return nil, err
+		return opensearch.Config{}, err
 	}
-	config := &v2.Config{
+	config := opensearch.Config{
 		Addresses: cfg.Addresses,
 		Username:  cfg.Username,
 		Password:  cfg.Password,

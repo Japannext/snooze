@@ -16,6 +16,6 @@ func (rule *SetRule) Compute() Interface {
 type computedSet struct {
 }
 
-func (s *computedSet) Process(alert *api.Alert) error {
+func (s *computedSet) Process(item *api.Log) error {
 	return nil
 }

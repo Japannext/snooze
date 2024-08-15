@@ -1,0 +1,18 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ .Release.Name }}-apiserver-config"
+  namespace: "{{ .Release.Namespace }}"
+data:
+  auth_config.yaml: |
+    # Configuration of auth backend
+    ---
+    backends:
+    {{- .Values.apiserver.auth_backends | toYaml | nindent 6 }}
+  {{- if .Values.apiserver.cors }}
+  cors.yaml: |
+    # CORS configuration
+    ---
+    {{- .Values.apiserver.cors | toYaml | nindent 4 }}
+  {{- end }}

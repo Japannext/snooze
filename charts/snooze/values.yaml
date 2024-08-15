@@ -5,67 +5,137 @@ image:
   tag: ""
   pullPolicy: IfNotPresent
 
-pipeline:
-  transform_rules: []
-  silence_rules: []
-  grouping_rules:
-  - name: by-service
-    if: >
-      has(
-        alert.Labels["service.name"],
-        alert.Labels["environment"]
-      )
-    group_by:
-    - 'alert.Labels["service.name"]'
-    - 'alert.Labels["environment"]'
-  - name: by-k8s-deploy
-    if: >
-      has(
-        alert.Labels["k8s.deployment.name"],
-        alert.Labels["k8s.namespace.name"],
-        alert.Labels["k8s.cluster.name"]
-      )
-    group_by:
-    - alert.Labels["k8s.deployment.name"]
-    - alert.Labels["k8s.namespace.name"]
-    - alert.Labels["k8s.cluster.name"]
-  - name: by-k8s-sts
-    if: >
-      has(
-        alert.Labels["k8s.statefulset.name"],
-        alert.Labels["k8s.namespace.name"],
-        alert.Labels["k8s.cluster.name"]
-      )
-    group_by:
-    - alert.Labels["k8s.statefulset.name"]
-    - alert.Labels["k8s.namespace.name"]
-    - alert.Labels["k8s.cluster.name"]
-  - name: by-syslog-host
-    if: alert.Source.Kind == "syslog"
-    group_by:
-    - alert.Labels["host.name"]
-    - alert.Labels["process"]
+auth_backends: {}
 
-  ratelimit:
-    burst: 50
-    period: 1m
-    cooldown: 5m
+profiles:
+- group: KernelErrors
+  switch: {key: identity.process, value: kernel}
+  patterns:
+  - name: KernelWatchdog
+    regex: "watchdog did not stop!"
+    group_by:
+      host: '{{ .identity.host }}'
+    extra_labels:
+      owner: unix
+- group: SSHErrors
+  switch: {key: identity.process, value: sshd}
+  patterns:
+  - name: SshLoginFailed
+    regex: >
+      Failed (?P<method>.*?) for (?P<user>.*?) from (?P<sourceIP>.*?) port (?P<port>[0-9]+) ssh2
+    group_by:
+      user: '{{ .capture.user }}'
+    extra_labels:
+      owner: cybersecurity
+      user: '{{ .capture.user }}'
+      sourceIP: '{{ .capture.sourceIP }}'
+      authMethod: '{{ .capture.method }}'
+  - name: SshKexExchanceIdentification
+    regex: 'error: kex_exchange_identification: Connection closed by remote host'
+    drop: true
+  - name: SshConnectionReset
+    regex: 'Connection reset by peer'
+    drop: true
+  - group_by:
+      host: '{{ .identity.host }}'
+    default: true
+- group: HaproxyErrors
+  switch: {key: identity.process, value: haproxy}
+  patterns:
+  - name: HaproxyServerDown
+    regex: >
+      Server (?P<backend>.*?)/(?P<server>.*?) is DOWN, reason: (?P<reason>.*?),
+    identity_override:
+      kind: haproxy
+      backend: '{{ .capture.backend }}'
+      server: '{{ .capture.server }}'
+    extra_labels:
+      backend: '{{ .capture.backend }}'
+      reason: '{{ .capture.reason }}'
+  - name: HaproxyBackendDown
+    regex: >
+      backend (?P<backend>.*?) has no server available!
+    identity_override:
+      kind: haproxy
+      backend: '{{ .capture.backend }}'
+- group: PacemakerErrors
+  switch: {key: identity.process, value: pengine}
+  patterns:
+  - name: PacemakerTransitionError
+    regex: 'error: Calculated transition (?P<transitions>[0-9]+) (with errors), saving inputs in (?P<path>.*)'
+- group: RsyslogClientErrors
+  switch: {key: identity.process, value: rsyslogd}
+  patterns:
+  - name: RsyslogRelpError
+    regex: "omrelp.*action may not work as intended"
 
-  notification_rules:
-  - if: 'alert.Attributes["owner"] == "unix"'
-    channels:
-    - 'googlechat:unix'
+transform_rules: []
+silence_rules: []
+grouping_rules:
+- name: by-service
+  if: >
+    has(
+      log.Labels["service.name"],
+      log.Labels["environment"]
+    )
+  group_by:
+  - log.Labels["service.name"]
+  - log.Labels["environment"]
+- name: by-k8s-deploy
+  if: >
+    has(
+      log.Labels["k8s.deployment.name"],
+      log.Labels["k8s.namespace.name"],
+      log.Labels["k8s.cluster.name"]
+    )
+  group_by:
+  - log.Labels["k8s.deployment.name"]
+  - log.Labels["k8s.namespace.name"]
+  - log.Labels["k8s.cluster.name"]
+- name: by-k8s-sts
+  if: >
+    has(
+      log.Labels["k8s.statefulset.name"],
+      log.Labels["k8s.namespace.name"],
+      log.Labels["k8s.cluster.name"]
+    )
+  group_by:
+  - log.Labels["k8s.statefulset.name"]
+  - log.Labels["k8s.namespace.name"]
+  - log.Labels["k8s.cluster.name"]
+- name: by-syslog-host
+  if: log.Source.Kind == "syslog"
+  group_by:
+  - log.Labels["host.name"]
+  - log.Labels["process"]
 
-  default_notification_channels:
+ratelimit:
+  burst: 50
+  period: 1m
+  cooldown: 5m
+
+notification_rules:
+- if: 'log.Attributes["owner"] == "unix"'
+  channels:
   - 'googlechat:unix'
-  - 'googlechat:monitoring'
-  - 'patlite:purple'
+
+default_notification_channels:
+- 'googlechat:unix'
+- 'googlechat:monitoring'
+- 'patlite:purple'
 
 process:
   replicaCount: 2
 
-api:
+apiserver:
   replicaCount: 2
+
+ui:
+  replicaCount: 2
+  image:
+    repo: ghcr.io/japannext/snooze-ui
+    tag: ""
+    pullPolicy: IfNotPresent
 
 opensearch:
   enabled: true

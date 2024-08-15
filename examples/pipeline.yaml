@@ -23,6 +23,73 @@ transform_rules:
       - 'alert.Labels["jnx.server_role"]'
       - 'alert.Labels["process.name"]'
 
+profiles:
+- group: KernelErrors
+  switch: {key: identity.process, value: kernel}
+  patterns:
+  - name: KernelWatchdog
+    regex: "watchdog did not stop!"
+    group_by:
+    - identity.host
+    extra_labels:
+      pattern.url: https://...
+      owner: unix
+- group: SSHErrors
+  switch: {key: identity.process, value: sshd}
+  patterns:
+  - name: SshLoginFailed
+    regex: >
+      Failed (?P<method>.*?) for (?P<user>.*?) from (?P<sourceIP>.*?) port (?P<port>[0-9]+) ssh2
+    group_by: [capture.user]
+    extra_labels:
+      owner: cybersecurity
+      user: '{{ .capture.user }}'
+      sourceIP: '{{ .capture.sourceIP }}'
+      authMethod: '{{ .capture.method }}'
+  - name: SshKexExchanceIdentification
+    regex: 'error: kex_exchange_identification: Connection closed by remote host'
+    drop: true
+  - name: SshConnectionReset
+    regex: 'Connection reset by peer'
+    drop: true
+  - group_by: [identity.host]
+    default: true
+- group: HaproxyErrors
+  switch: {key: identity.process, value: haproxy}
+  patterns:
+  - name: HaproxyServerDown
+    regex: >
+      Server (?P<backend>.*?)/(?P<server>.*?) is DOWN, reason: (?P<reason>.*?),
+    identity_override:
+      kind: haproxy
+      backend: '{{ .capture.backend }}'
+      server: '{{ .capture.server }}'
+    extra_labels:
+      backend: '{{ .capture.backend }}'
+      reason: '{{ .capture.reason }}'
+  - name: HaproxyBackendDown
+    regex: >
+      backend (?P<backend>.*?) has no server available!
+    identity_override:
+      kind: haproxy
+      backend: '{{ .capture.backend }}'
+- group: PacemakerErrors
+  switch: {key: identity.process, value: pengine}
+  patterns:
+  - name: PacemakerTransitionError
+    regex: 'error: Calculated transition (?P<transitions>[0-9]+) (with errors), saving inputs in (?P<path>.*)'
+- group: RsyslogClientErrors
+  switch: {key: identity.process, value: rsyslogd}
+  patterns:
+  - name: RsyslogRelpError
+    regex: "omrelp.*action may not work as intended"
+
+default_grouping_rules:
+- if: 'has labels[jnx.service]'
+  group_by: ['labels[jnx.service]', 'labels[jnx.env]']
+- if: 'has labels[jnx.role]'
+  group_by: ['labels[jnx.role]', 'labels[jnx.prefix]']
+
 silence_rules:
 - if: 'labels[process.name] = "icingaweb" and body[message] =~ "connection reset"'
 - if: 'labels[host.name] =~ "^mmi1"'
@@ -34,20 +101,17 @@ silence_rules:
     from: {time: '10:00'}
     to: {time: '17:00'}
 
-grouping_rules:
-- if: 'has labels[jnx.service]'
-  group_by: ['labels[jnx.service]', 'labels[jnx.env]']
-- if: 'has labels[jnx.role]'
-  group_by: ['labels[jnx.role]', 'labels[jnx.prefix]']
-
 ratelimit:
   burst: 50
   period: 1m
   cooldown: 5m
 
 notificaton_rules:
-- if: 'attributes[owner] == "unix"'
+- if: 'labels.owner == "unix"'
   channels: ['googlechat:unix']
+  continue: true
+- if: 'labels.env == "prod"'
+  channels: ['patlite:red']
 
 default_notification_channels:
 - 'googlechat:unix'

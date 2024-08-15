@@ -10,8 +10,8 @@ metadata:
     app.kubernetes.io/component: api
     app.kubernetes.io/part-of: "{{ .Values.partOf }}"
 spec:
-  replicas: {{ .Values.replicas }}
-  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+  replicas: {{ .Values.apiserver.replicas }}
+  revisionHistoryLimit: {{ .Values.apiserver.revisionHistoryLimit }}
   selector:
     matchLabels:
       app.kubernetes.io/name: snooze
@@ -26,8 +26,8 @@ spec:
         app.kubernetes.io/part-of: "{{ .Values.partOf }}"
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
-        {{- if .Values.podAnnotations }}
-        {{- toYaml .Values.podAnnotations | nindent 8 }}
+        {{- if .Values.apiserver.podAnnotations }}
+        {{- toYaml .Values.apiserver.podAnnotations | nindent 8 }}
         {{- end }}
     spec:
       containers:
@@ -46,9 +46,22 @@ spec:
             memory: 100Mi
         env:
         {{- include "snooze.env" . | nindent 8 }}
+        - name: APISERVER_AUTH_CONFIG
+          value: /config/auth_config.yaml
+        {{- if .Values.apiserver.cors }}
+        - name: APISERVER_CORS_CONFIG
+          value: /config/cors.yaml
+        {{- end }}
         envFrom:
         - configMapRef:
             name: "{{ .Release.Name }}-common"
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        {{- if .Values.apiserver.cacertConfigMap }}
+        - name: cacert
+          mountPath: /cacert
+        {{- end }}
         readinessProbe:
           httpGet:
             path: /readyz
@@ -75,3 +88,12 @@ spec:
           runAsNonRoot: true
           seccompProfile:
             type: RuntimeDefault
+      volumes:
+      - name: config
+        configMap:
+          name: "{{ .Release.Name }}-apiserver-config"
+      {{- if .Values.apiserver.cacertConfigMap }}
+      - name: cacert
+        configMap:
+          name: "{{ .Values.apiserver.cacertConfigMap }}"
+      {{- end }}

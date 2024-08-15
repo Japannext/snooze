@@ -39,3 +39,15 @@ type chOpts struct {
 func consume(ch *amqp.Channel, q, topic string, opts *chOpts) (<-chan amqp.Delivery, error) {
 	return ch.Consume(q, topic, opts.AutoAck, opts.Exclusive, opts.NoLocal, opts.NoWait, opts.Args)
 }
+
+func ack(d amqp.Delivery) error {
+	return d.Ack(false)
+}
+
+func discard(d amqp.Delivery) error {
+	return d.Reject(false)
+}
+
+func requeue(d amqp.Delivery) error {
+	return d.Reject(true)
+}

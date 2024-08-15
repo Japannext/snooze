@@ -9,24 +9,24 @@ import (
 	"github.com/japannext/snooze/pkg/common/utils"
 )
 
-func Process(alert *api.Alert) error {
+func Process(item *api.Log) error {
 	ctx := context.Background()
 	for _, rule := range computedRules {
-		v, err := rule.Condition.Match(ctx, alert)
+		v, err := rule.Condition.Match(ctx, item)
 		if err != nil {
 			return err
 		}
 		if v {
-			alert.GroupLabels = make(map[string]string)
+			item.GroupLabels = make(map[string]string)
 			for _, fi := range rule.Fields {
-				v, err := fi.Get(ctx, alert)
+				v, err := fi.Get(ctx, item)
 				if err != nil {
 					logrus.Warnf("Failed to match %s: %s", fi, err)
 					continue
 				}
-				alert.GroupLabels[fi.String()] = v
+				item.GroupLabels[fi.String()] = v
 			}
-			alert.GroupHash = utils.ComputeHash(alert.GroupLabels)
+			item.GroupHash = utils.ComputeHash(item.GroupLabels)
 			break
 		}
 	}

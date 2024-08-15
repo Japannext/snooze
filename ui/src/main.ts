@@ -1,5 +1,7 @@
+import axios from 'axios'
 import { createApp } from 'vue'
 import { createI18n } from 'vue-i18n'
+import { createPinia } from 'pinia'
 import { useLocalStorage } from '@vueuse/core'
 
 import './style.css'
@@ -17,12 +19,14 @@ const i18n = createI18n({
   fallbackLocale: 'en',
   messages,
 })
+const pinia = createPinia()
 
-/* if (import.meta.env.VITE_BASE_URL) {
-  OpenAPI.BASE = import.meta.env.VITE_BASE_URL
-} */
+if (import.meta.env.VITE_BASE_URL) {
+  axios.defaults.baseURL = import.meta.env.VITE_BASE_URL
+}
 
 const app = createApp(App)
 app.use(router)
 app.use(i18n)
+app.use(pinia)
 app.mount('#app')

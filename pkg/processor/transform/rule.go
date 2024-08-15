@@ -13,7 +13,7 @@ type Rule struct {
 }
 
 type Interface interface {
-	Process(*api.Alert) error
+	Process(*api.Log) error
 }
 
 type Computable interface {

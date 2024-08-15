@@ -10,12 +10,14 @@ import (
 )
 
 const (
-	pexName = "processing-v1"
-	pqName  = "processing-v1"
+	pexName = "processing-log-v2"
+	pqName  = "processing-log-v2"
 )
 
 type ProcessChannel struct {
 	*amqp.Channel
+	done chan struct{}
+	stopping bool
 }
 
 func InitProcessChannel() *ProcessChannel {
@@ -36,7 +38,8 @@ func InitProcessChannel() *ProcessChannel {
 		log.Fatal(err)
 	}
 
-	pch := &ProcessChannel{ch}
+	done := make(chan struct{})
+	pch := &ProcessChannel{Channel: ch, done: done, stopping: false}
 	channelsToClose["process"] = pch
 	return pch
 }
@@ -45,73 +48,87 @@ func (ch *ProcessChannel) Cancel() error {
 	return ch.Channel.Cancel(pqName, false)
 }
 
-type AlertMessage struct {
+type LogMessage struct {
 	Delivery *amqp.Delivery
-	Alert    *api.Alert
+	Log    *api.Log
 }
 
-type AlertHandler = func(*api.Alert) error
+type LogHandler = func(*api.Log) error
 
-func handleAlerts(handler AlertHandler, deliveries <-chan amqp.Delivery, done chan error) {
-	for d := range deliveries {
-		log.Debugf("Received an AMQP message!")
-		var alert *api.Alert
-		if err := json.Unmarshal(d.Body, &alert); err != nil {
-			log.Warnf("Rejecting message (%s): %s", err, d.Body)
-			d.Reject(false)
+func (ch *ProcessChannel) ConsumeForever(handler LogHandler) error {
+	for true {
+		if ch.stopping {
+			log.Debugf("Stopping ConsumeForever loop")
+			break
 		}
-		log.Debugf("Appending alert to channel")
-		if err := handler(alert); err != nil {
-			log.Errorf("error handling message: %s", err)
-			d.Reject(false)
+		deliveries, err := consume(ch.Channel, pqName, "", &chOpts{AutoAck: true})
+		if err != nil {
+			return err
 		}
+
+		for d := range deliveries {
+			if ch.stopping {
+				log.Debugf("Stopping delivery channel loop")
+				break
+			}
+			log.Debugf("Received an AMQP message!")
+			var item *api.Log
+			if err := json.Unmarshal(d.Body, &item); err != nil {
+				log.Warnf("Rejecting message (%s): %s", err, d.Body)
+				// discard(d)
+			}
+			log.Debugf("Appending log to channel")
+			if err := handler(item); err != nil {
+				log.Errorf("error handling message: %s", err)
+				// discard(d)
+			}
+			log.Debug("Done processing message")
+		}
+		log.Debug("Exited delivery loop")
 	}
-	log.Warnf("DONE HANDLING ALERTS")
-}
-
-func (ch *ProcessChannel) ConsumeForever(handler AlertHandler) error {
-	deliveries, err := consume(ch.Channel, pqName, "", &chOpts{AutoAck: true})
-	if err != nil {
-		return err
-	}
-
-	var done chan error
-	go handleAlerts(handler, deliveries, done)
-
-	<-done
+	log.Debugf("Sending termination signal")
+	ch.done <- struct{}{}
 	return nil
 }
 
-func (ch *ProcessChannel) Consume() (<-chan AlertMessage, error) {
+/*
+func (ch *ProcessChannel) Consume() (<-chan LogMessage, error) {
 	log.Debugf("Consuming!")
-	out := make(chan AlertMessage)
+	out := make(chan LogMessage)
 	dd, err := consume(ch.Channel, pqName, "", &chOpts{AutoAck: true})
 	if err != nil {
 		return out, err
 	}
 	for d := range dd {
 		log.Debugf("Received an AMQP message!")
-		var alert *api.Alert
-		if err := json.Unmarshal(d.Body, &alert); err != nil {
+		var item *api.Log
+		if err := json.Unmarshal(d.Body, &item); err != nil {
 			log.Warnf("Rejecting message (%s): %s", err, d.Body)
 			d.Reject(false)
 		}
-		log.Debugf("Appending alert to channel")
-		out <- AlertMessage{&d, alert}
+		log.Debugf("Appending log to channel")
+		out <- LogMessage{&d, item}
 	}
 	log.Warnf("Out of consume loop!")
 	return out, nil
 }
+*/
 
-func (ch *ProcessChannel) Publish(ctx context.Context, alert *api.Alert) error {
-	body, err := json.Marshal(alert)
+func (ch *ProcessChannel) Publish(ctx context.Context, item *api.Log) error {
+	body, err := json.Marshal(item)
 	if err != nil {
 		return err
 	}
 	msg := amqp.Publishing{
 		DeliveryMode: amqp.Persistent,
-		ContentType:  "application/vnd.snooze.alert.v2+json",
+		ContentType:  "application/vnd.snooze.log.v2+json",
 		Body:         body,
 	}
 	return ch.Channel.Publish(pqName, "", false, false, msg)
+}
+
+func (ch *ProcessChannel) Stop() {
+	ch.stopping = true
+	ch.Cancel()
+	<- ch.done
 }

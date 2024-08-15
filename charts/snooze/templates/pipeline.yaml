@@ -7,4 +7,33 @@ metadata:
 data:
   pipeline.yaml: |
     # Snooze pipeline
-    {{- .Values.pipeline | toYaml | nindent 4 }}
+    {{ with .Values.transform_rules }}
+    transform_rules:
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
+    {{ with .Values.silence_rules }}
+    silence_rules:
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
+    {{ with .Values.profiles }}
+    profiles:
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
+    {{ with .Values.grouping_rules }}
+    grouping_rules:
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
+    {{ with .Values.ratelimit }}
+    ratelimit:
+    {{- . | toYaml | nindent 6 }}
+    {{- end }}
+    {{ with .Values.notification_rules }}
+    notification_rules:
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
+    {{ with .Values.default_notification_channels }}
+    default_notification_channels:
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
+
+

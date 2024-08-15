@@ -11,8 +11,7 @@ import { AlertOff20Filled } from '@vicons/fluent'
 import { renderIcon } from '@/utils/render'
 
 const prodMenuRoutes: RouteRecordRaw[] = [
-  {name: 'alerts', path: '/alerts', component: () => import('@/views/SAlertGroups.vue')},
-  {name: 'events', path: '/events', component: () => import('@/views/SAlerts.vue')},
+  {name: 'logs', path: '/logs', component: () => import('@/views/SLogList.vue')},
   {name: 'rules', path: '/rules', component: () => import('@/views/SRules.vue')},
   {name: 'grouping', path: '/grouping', component: () => import('@/views/SPlaceholder.vue')},
   {name: 'throttles', path: '/throttles', component: () => import('@/views/SPlaceholder.vue')},
@@ -36,14 +35,9 @@ export const menuRoutes = (import.meta.env.MODE == "development") ? [...prodMenu
 
 const prodMenuOptions: MenuOption[] = [
   {
-    key: 'alerts',
-    label: renderLink("alerts", "Alerts"),
+    key: 'logs',
+    label: renderLink("logs", "Logs"),
     icon: renderIcon(Alert),
-  },
-  {
-    key: 'events',
-    label: renderLink("events", "Events"),
-    icon: renderIcon(ListSharp),
   },
 
   {type: 'divider', key: 'process'},
@@ -113,14 +107,14 @@ const routes: RouteRecordRaw[] = [
   {
     name: 'menu',
     path: '/',
-    redirect: "alerts",
-    component: () => import('@/views/SDefaultLayout.vue'),
+    redirect: "logs",
+    component: () => import('@/layouts/SDefaultLayout.vue'),
     children: menuRoutes,
   },
   {
     name: 'centered',
     path: '/',
-    component: () => import('@/views/SCenteredLayout.vue'),
+    component: () => import('@/layouts/SCenteredLayout.vue'),
     children: [
       {name: 'login', path: '/login', component: () => import('@/views/SLogin.vue')},
     ],

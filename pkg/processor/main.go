@@ -9,7 +9,7 @@ import (
 	"github.com/japannext/snooze/pkg/common/redis"
 
 	// Sub-Processors
-	"github.com/japannext/snooze/pkg/processor/grouping"
+	"github.com/japannext/snooze/pkg/processor/profile"
 	"github.com/japannext/snooze/pkg/processor/notification"
 	"github.com/japannext/snooze/pkg/processor/ratelimit"
 	"github.com/japannext/snooze/pkg/processor/silence"
@@ -19,7 +19,9 @@ import (
 
 var ch *rabbitmq.ProcessChannel
 
-func Run() {
+// Logic done only at the application startup.
+// All errors are fatal.
+func Startup() *daemon.DaemonManager {
 
 	logging.Init()
 	initConfig()
@@ -30,15 +32,16 @@ func Run() {
 
 	transform.InitRules(pipeline.TransformRules)
 	silence.InitRules(pipeline.SilenceRules)
-	grouping.InitRules(pipeline.GroupingRules)
+	profile.InitRules(pipeline.Profiles)
 	snooze.Init()
 	ratelimit.Init(pipeline.RateLimit)
 	notification.InitRules(pipeline.NotificationRules, pipeline.DefaultNotificationChannels)
 
 	dm := daemon.NewDaemonManager()
-	p := &Processor{}
-	dm.Add("processor", p)
 	h := health.HealthStatus{}
+
+	dm.Add("processor", &Processor{})
+
 	srv := daemon.NewHttpDaemon()
 	srv.Engine.GET("/livez", h.LiveRoute)
 	srv.Engine.GET("/readyz", h.ReadyRoute)
@@ -46,5 +49,11 @@ func Run() {
 
 	h.Live()
 	h.Ready()
+
+	return dm
+}
+
+func Run() {
+	dm := Startup()
 	dm.Run()
 }

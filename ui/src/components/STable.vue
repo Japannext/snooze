@@ -13,7 +13,10 @@ import {
 import { Refresh, Pencil } from '@vicons/ionicons5'
 import type { DataTableRowKey, DataTableColumn, DataTableSortState } from 'naive-ui'
 
-import { SSearch, SItemView, SButtonCreate, SModalEdit } from '@/components'
+import SSearch from '@/components/SSearch.vue'
+import SItemView from '@/components/SItemView.vue'
+import SButtonCreate from '@/components/SButtonCreate.vue'
+import SModalEdit from '@/components/SModalEdit.vue'
 import type { Direction } from '@/api'
 import type { SearchParams, CrudService } from '@/types'
 

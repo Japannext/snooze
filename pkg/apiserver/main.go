@@ -6,6 +6,8 @@ import (
 	"github.com/japannext/snooze/pkg/common/logging"
 	"github.com/japannext/snooze/pkg/common/opensearch"
 	"github.com/japannext/snooze/pkg/common/redis"
+
+	"github.com/gin-contrib/cors"
 )
 
 func Run() {
@@ -27,8 +29,14 @@ func Run() {
 	// Static routes
 	srv.Engine.Group("/static", eTagMiddleware()).Static("/", config.StaticPath)
 
+	if corsConfig != nil {
+	srv.Engine.Use(cors.New(*corsConfig))
+	}
+
 	// Dynamic routes
-	registerRoutes(srv.Engine)
+	registerAuthRoutes(srv.Engine)
+	registerLogRoutes(srv.Engine)
+	registerSampleRoute(srv.Engine)
 	dm.Add("http", srv)
 
 	h.Live()

@@ -1,0 +1,45 @@
+---
+version: '3'
+
+vars:
+  NAME: snooze-ui
+  REPO: nexus.dc.japannext.co.jp:8083/unix/kubernetes
+  VERSION: 2.0.0
+
+env:
+  BUILDAH_FORMAT: docker
+
+tasks:
+  lint:
+    desc: Lint the Dockerfile
+    cmds:
+    - hadolint Dockerfile
+
+  develop:
+    desc: Deploy a temporary dev Docker image
+    cmds:
+    - docker build . -t {{ .REPO }}/{{ .NAME }}:develop
+    - docker push {{ .REPO }}/{{ .NAME }}:develop
+    preconditions:
+    - sh: docker login {{ .REPO }} --get-login
+      msg: "You need to login to docker with `docker login {{ .REPO }}`"
+
+  release:
+    desc: Release the Docker image
+    cmds:
+    - docker build . -t {{ .REPO }}/{{ .NAME }}:{{ .VERSION }}
+    - docker push {{ .REPO }}/{{ .NAME }}:{{ .VERSION }}
+    preconditions:
+    - sh: docker login {{ .REPO }} --get-login
+      msg: "You need to login to docker with `docker login {{ .REPO }}`"
+    status:  # Protect against accidental re-release
+    - docker manifest inspect {{ .REPO }}/{{ .NAME }}:{{ .VERSION }}
+
+  dev-image:
+    desc: Update the dev image used for devspace quick development
+    cmds:
+    - docker build . -f Dockerfile.dev -t {{ .REPO }}/{{ .NAME }}-dev:develop
+    - docker push {{ .REPO }}/{{ .NAME }}-dev:develop
+    preconditions:
+    - sh: docker login {{ .REPO }} --get-login
+      msg: "You need to login to docker with `docker login {{ .REPO }}`"

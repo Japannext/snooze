@@ -8,8 +8,9 @@ type Destination struct {
 }
 
 type Notification struct {
+	TimestampMillis   uint64 `json:"timestampMillis"`
 	Destination Destination `json:"destination"`
-
-	Timestamp         uint64 `json:"timestamp"`
-	ObservedTimestamp uint64 `json:"observed_timestamp,omitempty"`
+	AlertUID string `json:"alertUID,omitempty"`
+	LogUID string `json:"logUID,omitempty"`
+	Body map[string]string `json:"body"`
 }

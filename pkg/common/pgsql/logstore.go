@@ -4,7 +4,7 @@ import (
 	"context"
 	"os"
 
-	// "github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/georgysavva/scany/v2/pgxscan"
 	log "github.com/sirupsen/logrus"
@@ -17,22 +17,43 @@ var (
 )
 
 type PostgresLogStore struct {
-	*pgxpool.Pool
+	pool *pgxpool.Pool
+	conn *pgxpool.Conn
 }
 
 func NewPostgresLogStore() *PostgresLogStore {
 	ctx := context.Background()
-	url := os.Getenv("DATABASE_URL")
-	pool, err := pgxpool.New(ctx, url)
+	cfg := initConfig()
+	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
-	return &PostgresLogStore{pool}
+	conn, err := pgxpool.Acquire(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return &PostgresLogStore{pool, conn}
 }
 
-func (pg *PostgresLogStore) Search(query string, pagination api.Pagination) ([]*api.Alert, error) {
+func (pg *PostgresLogStore) Get(uid string) (*api.Log, error) {
 	ctx := context.Background()
-	var alerts []*api.Alert
+
+	rows, err := pg.conn.Query(ctx, fmt.Sprintf(`SELECT * FROM log_v2 WHERE uid = '%s' LIMIT 1`, uid))
+	if err != nil {
+		return nil, err
+	}
+	var item *api.Log
+	err := pgxscan.ScanOne(&item, rows)
+	if err != nil {
+		return nil, err
+	}
+
+	return item, nil
+}
+
+func (pg *PostgresLogStore) Search(query string, pagination api.Pagination) ([]*api.Log, error) {
+	ctx := context.Background()
+	var aitems []*api.Log
 	err := pgxscan.Select(ctx, pg, &alerts, `SELECT * FROM snooze_v2_alerts LIMIT 10;`)
 	if err != nil {
 		return alerts, err

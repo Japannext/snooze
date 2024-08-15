@@ -1,86 +1,148 @@
 package opensearch
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
-
-	v2 "github.com/opensearch-project/opensearch-go/v2"
-	api "github.com/opensearch-project/opensearch-go/v2/opensearchapi"
 )
 
-type IndexSettings struct {
-	NumberOfShards   int `json:"number_of_shards"`
-	NumberOfReplicas int `json:"number_of_replicas"`
+/*
+var alertIndex = IndexTemplate{
+	Name:         "alerts-v2",
+	IndexPattern: []string{"alerts-v2-*"},
+	Template: Indice{
+		Settings: settings,
+		Mappings: IndexMapping{
+			Properties: map[string]MappingProps{
+				"source.kind": {Type: "keyword"},
+				"source.name": {Type: "keyword"},
+				"timestamp":   {Type: "unsigned_long"},
+				"groupHash":   {Type: "byte"},
+				"groupLabels": {Type: "object"},
+				"labels":      {Type: "object"},
+				"attributes":  {Type: "object"},
+				"body":        {Type: "object"},
+				"mute": {
+					Type: "object",
+					Fields: map[string]MappingProps{
+						"enabled":         {Type: "boolean"},
+						"component":       {Type: "keyword"},
+						"rule":            {Type: "text"},
+						"skipNotificaton": {Type: "boolean"},
+					},
+				},
+			},
+		},
+	},
 }
 
-type MappingProps struct {
-	Type   string                  `json:"type"`
-	Fields map[string]MappingProps `json:"fields,omitempty"`
+var logIndex = IndexTemplate{
+	Name:         "log-v2",
+	IndexPattern: []string{"log-v2-*"},
+	Template: Indice{
+		Settings: settings,
+		Mappings: IndexMapping{
+			Properties: map[string]MappingProps{
+				"source.kind": {Type: "keyword"},
+				"source.name": {Type: "keyword"},
+				"timestamp":   {Type: "unsigned_long"},
+				"groupHash":   {Type: "byte"},
+				"groupLabels": {Type: "object"},
+				"labels":      {Type: "object"},
+				"attributes":  {Type: "object"},
+				"body":        {Type: "object"},
+				"mute": {
+					Type: "object",
+					Fields: map[string]MappingProps{
+						"enabled":         {Type: "boolean"},
+						"component":       {Type: "keyword"},
+						"rule":            {Type: "text"},
+						"skipNotificaton": {Type: "boolean"},
+					},
+				},
+			},
+		},
+	},
 }
 
-type IndexMapping struct {
-	Properties map[string]MappingProps `json:"properties"`
+var groupIndex = IndexTemplate{
+	Name:         "group-v2",
+	IndexPattern: []string{"group-v2-*"},
+	Template: Indice{
+		Settings: settings,
+		Mappings: IndexMapping{
+			Properties: map[string]MappingProps{
+				"hash":     {Type: "byte"},
+				"labels":   {Type: "object"},
+				"hits":     {Type: "integer"},
+				"lastBody": {Type: "object"},
+				"lastHit":  {Type: "integer"},
+				"firstHit": {Type: "unsigned_long"},
+			},
+		},
+	},
 }
-
-type Indice struct {
-	Name     string
-	Settings IndexSettings  `json:"settings"`
-	Mappings []IndexMapping `json:"mappings"`
-}
-
-type IndexTemplate struct {
-	Name         string
-	IndexPattern []string `json:"index_patterns"`
-	Template     Indice   `json:"template"`
-}
-
-var settings IndexSettings
-
-func indices() []IndexTemplate {
-	numberOfShards := 3
-	numberOfReplicas := 3
-	settings = IndexSettings{numberOfShards, numberOfReplicas}
-	return []IndexTemplate{alertIndex, groupIndex}
-}
-
-func (i *IndexTemplate) ensure(ctx context.Context, client *v2.Client) error {
-
-	resp, err := api.IndicesExistsIndexTemplateRequest{Name: i.Name}.Do(ctx, client)
-	if err != nil {
-		return fmt.Errorf("Error while checking if index template '%s' exists: %w", i.Name, err)
-	}
-	if resp.StatusCode == 200 {
-		return nil
-	}
-	if resp.StatusCode == 404 {
-		body, err := json.Marshal(i)
-		if err != nil {
-			return err
-		}
-		_, err = api.IndicesPutIndexTemplateRequest{
-			Name: i.Name,
-			Body: bytes.NewReader(body),
-		}.Do(ctx, client)
-		if err != nil {
-			return fmt.Errorf("Error while creating index template '%s': %w", i.Name, err)
-		}
-		return nil
-	}
-	return fmt.Errorf("Unexpected response status code when creating index %s: %d", i.Name, resp.StatusCode)
-}
+*/
 
 func (client *OpensearchLogStore) Bootstrap() error {
 	ctx := context.Background()
+	log.Info("Bootstrapping opensearch...")
 
-	// Ensure all indexes exist
-	for _, idx := range indices() {
-		err := idx.ensure(ctx, client.Client)
-		if err != nil {
-			return err
-		}
+	numberOfShards := 1
+	numberOfReplicas := 2
+	settings := IndexSettings{numberOfShards, numberOfReplicas}
+
+	logTemplate := IndexTemplate{
+		IndexPattern: []string{"log-v2", "log-v2-*"},
+		DataStream: DataStream{TimestampField{"timestampMillis"}},
+		Template: Indice{
+			Settings: settings,
+			Mappings: IndexMapping{
+				Properties: map[string]MappingProps{
+					"timestampMillis": {Type: "date", Format: "epoch_millis"},
+					"source.kind": {Type: "keyword"},
+					"source.name": {Type: "keyword"},
+					"groupHash":   {Type: "keyword"},
+					"groupLabels": {Type: "object"},
+					"labels":      {Type: "object"},
+					"attributes":  {Type: "object"},
+					"body":        {Type: "object"},
+					/*
+					"mute": {
+						Type: "object",
+						Fields: map[string]MappingProps{
+							"enabled":         {Type: "boolean"},
+							"component":       {Type: "keyword"},
+							"rule":            {Type: "text"},
+							"skipNotificaton": {Type: "boolean"},
+						},
+					},
+					*/
+				},
+			},
+		},
+	}
+	client.ensureIndex(ctx, "log-v2", logTemplate)
+	client.ensureDatastream(ctx, "log-v2")
+
+	notificationTemplate := IndexTemplate{
+		IndexPattern: []string{"notification-v2"},
+		DataStream: DataStream{TimestampField{"timestampMillis"}},
+		Template: Indice{
+			Settings: settings,
+			Mappings: IndexMapping{
+				Properties: map[string]MappingProps{
+					"timestampMillis": {Type: "date", Format: "epoch_millis"},
+					"destination.kind": {Type: "keyword"},
+					"destination.name": {Type: "keyword"},
+					"alertUID": {Type: "keyword"},
+					"logUID": {Type: "keyword"},
+				},
+			},
+		},
 	}
 
+	client.ensureIndex(ctx, "notification-v2", notificationTemplate)
+	client.ensureDatastream(ctx, "notification-v2")
+
+	log.Info("Done bootstrapping indices")
 	return nil
 }

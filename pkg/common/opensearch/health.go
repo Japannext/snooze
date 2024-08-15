@@ -1,43 +1,22 @@
 package opensearch
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 
-	api "github.com/opensearch-project/opensearch-go/v2/opensearchapi"
+	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
 )
 
-type ClusterHealth struct {
-	ClusterName string `json:"cluster_name"`
-	Status      string `json:"status"`
-}
-
 // Check if the session is up
-func (client *OpensearchLogStore) CheckHealth() error {
+func (lst *OpensearchLogStore) CheckHealth() error {
 	ctx := context.Background()
-	resp, err := api.ClusterHealthRequest{}.Do(ctx, client.Client)
+	resp, err := lst.Client.Cluster.Health(ctx, &opensearchapi.ClusterHealthReq{})
 	if err != nil {
 		return err
 	}
 
-	var buf bytes.Buffer
-	buf.ReadFrom(resp.Body)
-	body := buf.Bytes()
-
-	if resp.IsError() {
-		return fmt.Errorf("Unexpected HTTP status: %s. Body: %s", resp.Status(), body)
-	}
-
-	ch := &ClusterHealth{}
-
-	err = json.Unmarshal(buf.Bytes(), &ch)
-	if err != nil {
-		return fmt.Errorf("Can't unmarshal cluster health: %w. Body: %s", err, body)
-	}
-	if ch.Status == "green" {
+	if resp.Status == "green" {
 		return nil
 	}
-	return fmt.Errorf("Status is '%s' (not 'green')", ch.Status)
+	return fmt.Errorf("Status is '%s' (not 'green')", resp.Status)
 }

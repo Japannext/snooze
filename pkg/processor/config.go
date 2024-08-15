@@ -14,6 +14,7 @@ import (
 	"github.com/japannext/snooze/pkg/processor/silence"
 	// "github.com/japannext/snooze/pkg/processor/snooze"
 	"github.com/japannext/snooze/pkg/processor/transform"
+	"github.com/japannext/snooze/pkg/processor/profile"
 )
 
 type Config struct {
@@ -36,11 +37,14 @@ type Pipeline struct {
 	Name                        string               `yaml:"name"`
 	TransformRules              []*transform.Rule    `yaml:"transform_rules"`
 	GroupingRules               []*grouping.Rule     `yaml:"grouping_rules"`
+	Profiles					[]profile.Rule		 `yaml:"profiles"`
 	SilenceRules                []*silence.Rule      `yaml:"silence_rules"`
 	RateLimit                   *ratelimit.Rule      `yaml:"ratelimit"`
 	NotificationRules           []*notification.Rule `yaml:"notification_rules"`
 	DefaultNotificationChannels []string             `yaml:"default_notification_channels"`
 }
+
+
 
 func initConfig() {
 	// Defaults

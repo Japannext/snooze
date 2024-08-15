@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/http"
+	"time"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -46,6 +47,18 @@ func parsePageNumber(c *gin.Context) int {
 	return parseIntegerOrDefault(c, "page_nb", 0)
 }
 
+func parseTimestamp(c *gin.Context, field string) time.Time {
+	text := c.Param(field)
+	if text == "" {
+		return time.UnixMilli(0)
+	}
+	i, err := strconv.Atoi(text)
+	if err != nil {
+		return time.UnixMilli(0)
+	}
+	return time.UnixMilli(int64(i))
+}
+
 // Parse the sorting order (ascending/descending)
 func parseAscending(c *gin.Context) bool {
 	text := c.Param("asc")
@@ -56,12 +69,22 @@ func parseAscending(c *gin.Context) bool {
 }
 
 // Parse all the pagination-related parameters
-func parsePagination(c *gin.Context) *api.Pagination {
+func parsePagination(c *gin.Context) api.Pagination {
 	perPage := parsePerPage(c)
 	pageNumber := parsePageNumber(c)
 	orderBy := c.Param("order_by")
 	asc := parseAscending(c)
 
-	return &api.Pagination{pageNumber, perPage, orderBy, asc}
+	return api.Pagination{
+		PageNumber: pageNumber,
+		PerPage: perPage,
+		OrderBy: orderBy,
+		Ascending: asc,
+	}
 }
 
+func parseTimeRange(c *gin.Context) api.TimeRange {
+	start := parseTimestamp(c, "start_millis")
+	end := parseTimestamp(c, "end_millis")
+	return api.TimeRange{Start: start, End: end}
+}

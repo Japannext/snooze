@@ -9,20 +9,20 @@ import (
 	"github.com/japannext/snooze/pkg/common/utils"
 )
 
-func Process(alert *api.Alert) error {
+func Process(item *api.Log) error {
 
 	ctx := context.Background()
 
-	if alert.Mute.Enabled {
+	if item.Mute.SkipNotification {
 		return nil
 	}
 
 	var queues = set.NewSet[*rabbitmq.NotificationQueue]()
-	var merr = utils.NewMultiError("Failed to notify alert trace_id=%s.")
+	var merr = utils.NewMultiError("Failed to notify item trace_id=%s.")
 
 	for _, rule := range computedRules {
 		if rule.Condition != nil {
-			v, err := rule.Condition.Match(ctx, alert)
+			v, err := rule.Condition.Match(ctx, item)
 			if err != nil {
 				return err
 			}

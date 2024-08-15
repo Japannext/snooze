@@ -1,73 +1,147 @@
 package opensearch
 
 import (
-	"bufio"
+	// "bufio"
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
+	// "io"
+	// "time"
 
 	dsl "github.com/mottaquikarim/esquerydsl"
-	"github.com/opensearch-project/opensearch-go/v2/opensearchapi"
-	// util "github.com/opensearch-project/opensearch-go/opensearchutil"
+	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
+	// "github.com/opensearch-project/opensearch-go/v4/opensearchutil"
 
 	api "github.com/japannext/snooze/pkg/common/api/v2"
 )
 
-const (
-	ALERT_EVENTS_V2 = "alert-events-v2"
-)
+type OpensearchLogStore struct {
+	Client *opensearchapi.Client
+}
 
-func (client *OpensearchLogStore) Search(ctx context.Context, query string, pagination *api.Pagination) ([]api.Alert, error) {
+func NewLogStore() *OpensearchLogStore {
+	cfg, err := initConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	client, err := opensearchapi.NewClient(opensearchapi.Config{Client: cfg})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return &OpensearchLogStore{client}
+}
+
+/*
+func logIndex() string {
+	now := time.Now()
+	return fmt.Sprintf("log-v2-%02d-%02d-%02d", now.Year(), now.Month(), now.Day())
+}
+*/
+
+func (lst *OpensearchLogStore) Get(uid string) (*api.Log, error) {
+	ctx := context.Background()
+	dslQuery := dsl.QueryDoc{
+		PageSize: 1,
+		Or: []dsl.QueryItem{
+			{Field: "_id", Value: uid, Type: dsl.Term},
+		},
+	}
+	body, err := json.Marshal(dslQuery)
+	if err != nil {
+		return nil, err
+	}
+	req := &opensearchapi.SearchReq{
+		Indices: []string{"log-v2"},
+		Body:  bytes.NewReader(body),
+	}
+	resp, err := lst.Client.Search(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	if resp.Errors {
+		return nil, fmt.Errorf("opensearch returned an error: %s", "")
+	}
+	if resp.Hits.Total.Value > 0 {
+		hit := resp.Hits.Hits[0]
+		var item *api.Log
+		if err := json.Unmarshal(hit.Fields, &item); err != nil {
+			return nil, fmt.Errorf("cannot unmarshal to Log: %w", err)
+		}
+		return item, nil
+	}
+	return nil, nil
+}
+
+func (lst *OpensearchLogStore) Search(ctx context.Context, query string, timerange api.TimeRange, pagination api.Pagination) ([]api.Log, error) {
 	dslQuery := dsl.QueryDoc{
 		From:     pagination.PageNumber * pagination.PerPage,
 		Size:     pagination.PerPage,
 		PageSize: pagination.PerPage,
 		Sort:     sorts(byTimestamp),
-		Or: []dsl.QueryItem{
+	}
+	if query != "" {
+		dslQuery.Or = []dsl.QueryItem{
 			{Field: "body", Value: query, Type: dsl.Match},
-		},
+		}
 	}
 	body, err := json.Marshal(dslQuery)
 	if err != nil {
-		return []api.Alert{}, err
+		return []api.Log{}, fmt.Errorf("invalid request body (%+v): %w", dslQuery, err)
 	}
-	req := opensearchapi.SearchRequest{
-		Index: []string{ALERT_EVENTS_V2},
+	req := &opensearchapi.SearchReq{
+		Indices: []string{"log-v2"},
 		Body:  bytes.NewReader(body),
 	}
-	resp, err := req.Do(ctx, client.Client)
+	resp, err := lst.Client.Search(ctx, req)
 	if err != nil {
-		return []api.Alert{}, err
+		return nil, err
 	}
-	var buf bytes.Buffer
-	if _, err := buf.ReadFrom(resp.Body); err != nil {
-		return []api.Alert{}, err
+	if resp.Errors {
+		return nil, fmt.Errorf("opensearch returned an error: %s", "")
 	}
-	var items []api.Alert
-	if err := json.Unmarshal(buf.Bytes(), &items); err != nil {
-		return []api.Alert{}, err
+
+	items := make([]api.Log, resp.Hits.Total.Value)
+	for i, hit := range resp.Hits.Hits {
+		if err := json.Unmarshal(hit.Source, &items[i]); err != nil {
+			return items, fmt.Errorf("failed to unmarshal message %s: %w", hit.Source, err)
+		}
 	}
 	return items, nil
 }
 
-func (client *OpensearchLogStore) Store(alert *api.Alert) error {
+func (lst *OpensearchLogStore) store(index string, item interface{}) error {
 	ctx := context.Background()
-	b, err := json.Marshal(alert)
+	b, err := json.Marshal(item)
 	if err != nil {
 		return err
 	}
 	body := bytes.NewReader(b)
-	req := opensearchapi.IndexRequest{
-		Index: ALERT_EVENTS_V2,
+	req := opensearchapi.IndexReq{
+		Index: "log-v2",
 		Body:  body,
 	}
-	if _, err := req.Do(ctx, client.Client); err != nil {
+	resp, err := lst.Client.Index(ctx, req)
+	if err != nil {
 		return err
+	}
+	if resp.Shards.Successful == 0 {
+		return fmt.Errorf("Failed to index object to '%s': %s", index, resp.Result)
 	}
 	return nil
 }
+
+func (lst *OpensearchLogStore) StoreLog(item *api.Log) error {
+	return lst.store("log-v2", item)
+}
+
+func (lst *OpensearchLogStore) StoreNotification(item *api.Notification) error {
+	return lst.store("notification-v2", item)
+}
+
+/*
 
 type PartialError struct {
 	failed uint32
@@ -165,8 +239,8 @@ func (bulk *BulkIndexer) Flush(ctx context.Context) error {
 	return nil
 }
 
-func (client *OpensearchLogStore) BulkInsertAlertEvent(ctx context.Context, items []api.Alert) error {
-	bulk := NewBulkIndexer(client, "alert-events-v2")
+func (lst *OpensearchLogStore) BulkInsertLogEvent(ctx context.Context, items []api.Log) error {
+	bulk := NewBulkIndexer(lst, "alert-events-v2")
 	for _, item := range items {
 		bulk.Add(item)
 	}
@@ -175,3 +249,4 @@ func (client *OpensearchLogStore) BulkInsertAlertEvent(ctx context.Context, item
 	}
 	return nil
 }
+*/

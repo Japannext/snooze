@@ -7,6 +7,7 @@ import (
 
 	api "github.com/japannext/snooze/pkg/common/api/v2"
 	"github.com/japannext/snooze/pkg/processor/grouping"
+	"github.com/japannext/snooze/pkg/processor/profile"
 	"github.com/japannext/snooze/pkg/processor/notification"
 	"github.com/japannext/snooze/pkg/processor/ratelimit"
 	"github.com/japannext/snooze/pkg/processor/silence"
@@ -16,16 +17,16 @@ import (
 
 type Processor struct{}
 
-// For alert that will not be requeued, because their
+// For item that will not be requeued, because their
 // format is invalid, or they are poison messages.
-type RejectedAlert struct {
-	alert  *api.Alert
+type RejectedLog struct {
+	item  *api.Log
 	reason string
 }
 
-func (r *RejectedAlert) Error() string {
-	// return fmt.Sprintf("Rejected alert id=%s/%s reason=%s", r.alert.TraceID, r.alert.SpanID, r.reason)
-	return fmt.Sprintf("Rejected alert: %s", r.reason)
+func (r *RejectedLog) Error() string {
+	// return fmt.Sprintf("Rejected item id=%s/%s reason=%s", r.item.TraceID, r.item.SpanID, r.reason)
+	return fmt.Sprintf("Rejected item: %s", r.reason)
 }
 
 func (p *Processor) Run() error {
@@ -33,29 +34,32 @@ func (p *Processor) Run() error {
 }
 
 func (p *Processor) HandleStop() {
-	ch.Cancel()
+	ch.Stop()
 }
 
-func Process(alert *api.Alert) error {
-	log.Debugf("Start processing alert: %s", alert)
-	if err := transform.Process(alert); err != nil {
+func Process(item *api.Log) error {
+	log.Debugf("Start processing item: %s", item)
+	if err := transform.Process(item); err != nil {
 		return err
 	}
-	if err := silence.Process(alert); err != nil {
+	if err := silence.Process(item); err != nil {
 		return err
 	}
-	if err := grouping.Process(alert); err != nil {
+	if err := profile.Process(item); err != nil {
 		return err
 	}
-	if err := ratelimit.Process(alert); err != nil {
+	if err := grouping.Process(item); err != nil {
 		return err
 	}
-	if err := notification.Process(alert); err != nil {
+	if err := ratelimit.Process(item); err != nil {
 		return err
 	}
-	if err := store.Process(alert); err != nil {
+	if err := notification.Process(item); err != nil {
 		return err
 	}
-	log.Debugf("End processing alert: %s", alert)
+	if err := store.Process(item); err != nil {
+		return err
+	}
+	log.Debugf("End processing item: %s", item)
 	return nil
 }

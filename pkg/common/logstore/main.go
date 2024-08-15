@@ -5,9 +5,11 @@ import (
 )
 
 type LogStore interface {
-	Store(*api.Alert) error
-	Search(string, api.Pagination) ([]*api.Alert, error)
+	StoreLog(*api.Log) error
+	StoreNotification(*api.Notification) error
+	Search(string, api.TimeRange, api.Pagination) ([]*api.Alert, error)
 	List(api.Pagination) ([]*api.Alert, error)
+	Get(string) (*api.Alert, error)
 }
 
 type BulkStore interface {

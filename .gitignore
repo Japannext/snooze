@@ -5,3 +5,9 @@
 charts/snooze/charts/
 .env.local
 *.swp
+.devspace/
+.env
+
+
+# Ignore DevSpace cache and log folder
+.devspace/

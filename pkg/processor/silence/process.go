@@ -2,24 +2,22 @@ package silence
 
 import (
 	"context"
+	"fmt"
+
 	api "github.com/japannext/snooze/pkg/common/api/v2"
 )
 
-func Process(alert *api.Alert) error {
+func Process(item *api.Log) error {
 
 	ctx := context.Background()
 
 	for _, rule := range computedRules {
-		v, err := rule.Condition.Match(ctx, alert)
+		v, err := rule.Condition.Match(ctx, item)
 		if err != nil {
 			return err
 		}
 		if v {
-			// Silence the alert
-			alert.Mute.Enabled = true
-			alert.Mute.Component = "silence"
-			alert.Mute.Rule = rule.String()
-			alert.Mute.SkipNotification = true
+			item.Mute.Silence(fmt.Sprintf("Silenced by rule %s", rule.String()))
 			break
 		}
 	}

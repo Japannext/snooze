@@ -9,11 +9,11 @@ import (
 	"github.com/japannext/snooze/pkg/common/redis"
 )
 
-func Process(alert *api.Alert) error {
+func Process(item *api.Log) error {
 	ctx := context.Background()
 
 	i := time.Now().Unix() / period
-	key := fmt.Sprintf("ratelimit/group_hash/%s:%d", alert.GroupHash, i)
+	key := fmt.Sprintf("ratelimit/group_hash/%s:%d", item.GroupHash, i)
 
 	// Test for existence and set if needed
 	v, err := rdb.Get(ctx, key).Int64()
@@ -30,11 +30,8 @@ func Process(alert *api.Alert) error {
 	pipe.ExpireNX(ctx, key, rateLimit.Period)
 
 	if v > burst {
-		alert.Mute.Enabled = true
-		alert.Mute.Component = "ratelimit"
-		alert.Mute.SkipNotification = true
-		alert.Mute.SkipStorage = true
-		return fmt.Errorf("ratelimit: immediate stop")
+		item.Mute.Drop("Dropped by ratelimit")
+		return nil
 	}
 
 	return nil
