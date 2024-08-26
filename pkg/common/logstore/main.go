@@ -7,12 +7,11 @@ import (
 type LogStore interface {
 	StoreLog(*api.Log) error
 	StoreNotification(*api.Notification) error
-	Search(string, api.TimeRange, api.Pagination) ([]*api.Alert, error)
-	List(api.Pagination) ([]*api.Alert, error)
-	Get(string) (*api.Alert, error)
+	SearchLogs(string, api.TimeRange, api.Pagination) (api.LogsResponse, error)
+	GetLog(string) (*api.Alert, error)
 }
 
 type BulkStore interface {
 	LogStore
-	BulkStore([]*api.Alert) error
+	BulkStore([]*api.Log) error
 }

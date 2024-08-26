@@ -37,7 +37,7 @@ type Pipeline struct {
 	Name                        string               `yaml:"name"`
 	TransformRules              []*transform.Rule    `yaml:"transform_rules"`
 	GroupingRules               []*grouping.Rule     `yaml:"grouping_rules"`
-	Profiles					[]profile.Rule		 `yaml:"profiles"`
+	Profiles					[]*profile.Rule		 `yaml:"profiles"`
 	SilenceRules                []*silence.Rule      `yaml:"silence_rules"`
 	RateLimit                   *ratelimit.Rule      `yaml:"ratelimit"`
 	NotificationRules           []*notification.Rule `yaml:"notification_rules"`

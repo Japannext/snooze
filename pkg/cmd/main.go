@@ -11,6 +11,7 @@ import (
 	"github.com/japannext/snooze/pkg/version"
 	"github.com/japannext/snooze/pkg/sources/syslog"
 	"github.com/japannext/snooze/pkg/samples"
+	"github.com/japannext/snooze/pkg/notifiers/mail"
 )
 
 var root = &cobra.Command{
@@ -24,6 +25,7 @@ func init() {
 	root.AddCommand(processor.Cmd)
 	root.AddCommand(apiserver.Cmd)
 	root.AddCommand(syslog.Cmd)
+	root.AddCommand(mail.Cmd)
 	root.AddCommand(samples.Cmd)
 }
 

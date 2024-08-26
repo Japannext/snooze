@@ -1,46 +1,35 @@
 <script setup lang="ts">
+import { ref, onMounted, defineEmits } from 'vue'
 
-import {
-  ref,
-  defineEmits,
-} from 'vue'
-
-import {
-  NInput, NInputGroup,
-  NButton, NIcon,
-} from 'naive-ui'
-
-import { Search, Close } from '@vicons/ionicons5'
+import { NInput, NInputGroup, NButton, NIcon } from 'naive-ui'
+import { Search } from '@vicons/ionicons5'
+import { useRouteQuery } from '@vueuse/router'
 
 const emit = defineEmits<{
-  // Pass the query to parent when the search bar is trigerred
-  (e: "search", value: string): void,
+  "search": [value: string]
 }>()
 
-const query = ref<string>("")
+const search = useRouteQuery("search", "")
+const tmp = ref<string>("")
 
-// Emit the query to parent
-function search() {
-  emit("search", query)
+onMounted(() => {
+  tmp.value = search.value
+})
+
+function run() {
+  search.value = tmp.value
+  emit("search", tmp.value)
 }
-
-// Clear the search bar and emit to parent
-function clear() {
-  query.value = ""
-  emit("search", "")
-}
-
 </script>
 
 <template>
   <n-input-group>
     <n-input
-      v-model:value="query"
-      clearable
+      v-model:value="tmp"
       placeholder="Search"
-      @keyup.enter="search"
+      clearable
+      @keyup.enter="run()"
     />
-    <n-button secondary type="info" @click="search"><n-icon :component="Search" /></n-button>
-    <n-button secondary @click="clear"><n-icon :component="Close" /></n-button>
+    <n-button type="info" @click="run()"><n-icon :component="Search" /></n-button>
   </n-input-group>
 </template>

@@ -13,7 +13,7 @@ type ProcessedLog struct {
 }
 
 type Log struct {
-	ID string `json:"_id,omitempty"`
+	ID string `json:"id,omitempty"`
 
 	// The type of alert (syslog, opentelemetry, snmptrap, prometheus rule...),
 	// as well as the name of the instance (if any)
@@ -44,6 +44,11 @@ type Log struct {
 
 	// Mute the alert. This may skip notifications, or skip even display
 	Mute Mute `json:"mute,omitempty"`
+}
+
+type LogResults struct {
+	Items []Log `json:"items"`
+	Total int `json:"total"`
 }
 
 func (a *Log) String() string {

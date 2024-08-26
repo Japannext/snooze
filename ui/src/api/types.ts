@@ -1,8 +1,12 @@
 export type Log = {
-  source: Source;
+  id?: string;
 
-  timestamp?: number;
-  observedTimestamp?: number;
+  source: Source;
+  identity?: object
+  labels?: object;
+
+  timestampMillis: number;
+  observedMillis: number;
 
   groupHash?: string;
   groupLabels?: any;
@@ -10,15 +14,29 @@ export type Log = {
   severityText: string;
   severityNumber: number;
 
-  labels?: any;
-  attributes?: any;
-  body?: any;
+  message: string;
 
   mute?: Mute;
 }
 
-export type LogsResponse = {
-  logs: Array<Log>;
+export type LogResults = {
+  items: Array<Log>;
+  total: number;
+}
+
+export type Notification = {
+  id?: string;
+  timestampMillis: number;
+  destination: Destination;
+  Acknowledged: boolean;
+  alertUID?: string;
+  logUID?: string;
+  body: object;
+}
+
+export type NotificationResults = {
+  items: Array<Notification>;
+  total: number;
 }
 
 export type Source = {
@@ -26,13 +44,13 @@ export type Source = {
   name?: string
 }
 
-export type Mute = {
-  enabled: boolean;
-  component: string;
-  rule: string;
-  skipNotification: boolean;
-  skipStorage: boolean;
-  silentTest: boolean;
-  humanTest: boolean;
+export type Destination = {
+  kind: string
+  name: string
 }
 
+export type Mute = {
+  skipNotification: boolean;
+  skipStorage: boolean;
+  reason: string;
+}

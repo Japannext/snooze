@@ -2,10 +2,10 @@ package notification
 
 import (
 	"context"
-	set "github.com/deckarep/golang-set/v2"
+	"time"
 
 	api "github.com/japannext/snooze/pkg/common/api/v2"
-	"github.com/japannext/snooze/pkg/common/rabbitmq"
+	"github.com/japannext/snooze/pkg/common/opensearch"
 	"github.com/japannext/snooze/pkg/common/utils"
 )
 
@@ -17,30 +17,42 @@ func Process(item *api.Log) error {
 		return nil
 	}
 
-	var queues = set.NewSet[*rabbitmq.NotificationQueue]()
+	var queues = utils.NewOrderedStringSet()
 	var merr = utils.NewMultiError("Failed to notify item trace_id=%s.")
 
 	for _, rule := range computedRules {
-		if rule.Condition != nil {
-			v, err := rule.Condition.Match(ctx, item)
+		if rule.internal.condition != nil {
+			match, err := rule.internal.condition.MatchLog(ctx, item)
 			if err != nil {
 				return err
 			}
-			if v {
-				for _, q := range rule.Queues {
-					queues.Add(q)
-				}
-			}
-		} else {
-			for _, q := range rule.Queues {
-				queues.Add(q)
+			if !match {
+				continue
 			}
 		}
+		queues.AppendMany(rule.Channels)
 	}
 
-	for q := range queues.Iter() {
-		notif := &api.Notification{}
-		if err := q.Publish(ctx, notif); err != nil {
+	for _, queue := range queues.Items() {
+		log.Debugf("sending to queue `%s`", queue)
+		notification := &api.Notification{
+			TimestampMillis: uint64(time.Now().UnixMilli()),
+			Destination: api.Destination{Name: queue},
+			LogUID: item.ID,
+			Body: map[string]string{
+				"message": item.Message,
+			},
+		}
+		producer, found := producers[queue]
+		if !found {
+			log.Errorf("Producer for queue '%s' not found! This should not happen!", queue)
+			continue
+		}
+		if err := producer.Publish(notification); err != nil {
+			merr.AppendErr(err)
+			continue
+		}
+		if err := opensearch.LogStore.StoreNotification(notification); err != nil {
 			merr.AppendErr(err)
 			continue
 		}

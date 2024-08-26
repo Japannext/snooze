@@ -1,19 +1,29 @@
 import { reactive } from 'vue'
 
+import { useRouteQuery } from '@vueuse/router'
+
 // Return a pagination reactive object compatible with
 // naive-ui `n-data-table`
-export function usePagination() {
+export function usePagination(refresh: Function) {
+  const page = useRouteQuery('page', 1, {transform: Number})
+  const size = useRouteQuery('size', 20, {transform: Number})
   const pagination = reactive({
-    page: 1,
-    pageSize: 20,
+    page: page,
+    pageSize: size,
     showSizePicker: true,
     pageSizes: [5, 10, 20, 30, 50, 100],
-    onChange: (page: number) => {
-      pagination.page = page
+    itemCount: 0,
+    prefix({ itemCount }: {itemCount: number}) {
+      return `${itemCount} objects`
     },
-    onUpdatePageSize: (pageSize: number) => {
-      pagination.pageSize = pageSize
-      pagination.page = 1
+    onUpdatePage(currentPage: number) {
+      page.value = currentPage
+      refresh()
+    },
+    onUpdatePageSize(pageSize: number) {
+      size.value = pageSize
+      page.value = 1
+      refresh()
     }
   })
   return pagination

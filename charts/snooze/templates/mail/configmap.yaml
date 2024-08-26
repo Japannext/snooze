@@ -1,0 +1,12 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ .Release.Name }}-mail-profiles"
+  namespace: "{{ .Release.Namespace }}"
+data:
+  profiles.yaml: |
+    # Configuration of mail profiles
+    ---
+    profiles:
+    {{- .Values.mail.profiles | toYaml | nindent 4 }}

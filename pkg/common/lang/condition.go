@@ -152,6 +152,10 @@ func (c *Condition) String() string {
 	return c.raw
 }
 
-func (c *Condition) Match(ctx context.Context, item *api.Log) (bool, error) {
-	return c.gval.EvalBool(ctx, map[string]interface{}{"log": item})
+func (c *Condition) MatchLog(ctx context.Context, item *api.Log) (bool, error) {
+	return c.gval.EvalBool(ctx, map[string]interface{}{
+		"source": item.Source,
+		"identity": item.Identity,
+		"labels": item.Labels,
+	})
 }

@@ -34,14 +34,7 @@ func NewLogStore() *OpensearchLogStore {
 	return &OpensearchLogStore{client}
 }
 
-/*
-func logIndex() string {
-	now := time.Now()
-	return fmt.Sprintf("log-v2-%02d-%02d-%02d", now.Year(), now.Month(), now.Day())
-}
-*/
-
-func (lst *OpensearchLogStore) Get(uid string) (*api.Log, error) {
+func (lst *OpensearchLogStore) GetLog(uid string) (*api.Log, error) {
 	ctx := context.Background()
 	dslQuery := dsl.QueryDoc{
 		PageSize: 1,
@@ -70,29 +63,119 @@ func (lst *OpensearchLogStore) Get(uid string) (*api.Log, error) {
 		if err := json.Unmarshal(hit.Fields, &item); err != nil {
 			return nil, fmt.Errorf("cannot unmarshal to Log: %w", err)
 		}
+		item.ID = hit.ID
 		return item, nil
 	}
 	return nil, nil
 }
 
-func (lst *OpensearchLogStore) Search(ctx context.Context, query string, timerange api.TimeRange, pagination api.Pagination) ([]api.Log, error) {
-	dslQuery := dsl.QueryDoc{
-		From:     pagination.PageNumber * pagination.PerPage,
-		Size:     pagination.PerPage,
-		PageSize: pagination.PerPage,
-		Sort:     sorts(byTimestamp),
+type Range struct {
+	Gte *uint64 `json:"gte,omitempty"`
+	Lte *uint64 `json:"lte,omitempty"`
+}
+
+func addTimeRange(doc *dsl.QueryDoc, timerange api.TimeRange) {
+	var r = Range{}
+	if timerange.Start > 0 {
+		r.Gte = &timerange.Start
 	}
-	if query != "" {
-		dslQuery.Or = []dsl.QueryItem{
-			{Field: "body", Value: query, Type: dsl.Match},
-		}
+	if timerange.End > 0 {
+		r.Lte = &timerange.End
 	}
-	body, err := json.Marshal(dslQuery)
+	if timerange.Start > 0 || timerange.End > 0 {
+		item := dsl.QueryItem{Type: dsl.Range, Field: "timestampMillis", Value: r}
+		doc.And = append(doc.And, item)
+	}
+}
+
+func addPagination(doc *dsl.QueryDoc, params *opensearchapi.SearchParams, pagination api.Pagination) {
+	params.From = pointer((pagination.Page - 1) * pagination.Size)
+	params.Size = pointer(pagination.Size)
+	sort := map[string]string{}
+	if pagination.Ascending {
+		sort[pagination.OrderBy] = "asc"
+	} else {
+		sort[pagination.OrderBy] = "desc"
+	}
+	doc.Sort = []map[string]string{sort}
+}
+
+func addSearch(doc *dsl.QueryDoc, search string) {
+	if search != "" {
+		item := dsl.QueryItem{Type: dsl.Match, Field: "message", Value: search}
+		doc.And = append(doc.And, item)
+	}
+}
+
+func (lst *OpensearchLogStore) SearchLogs(ctx context.Context, search string, timerange api.TimeRange, pagination api.Pagination) (api.LogResults, error) {
+	var res api.LogResults
+	var doc = &dsl.QueryDoc{}
+	var params = &opensearchapi.SearchParams{}
+
+	addTimeRange(doc, timerange)
+	addPagination(doc, params, pagination)
+	addSearch(doc, search)
+
+	body, err := json.Marshal(doc)
 	if err != nil {
-		return []api.Log{}, fmt.Errorf("invalid request body (%+v): %w", dslQuery, err)
+		return res, fmt.Errorf("invalid request body (%+v): %w", doc, err)
 	}
 	req := &opensearchapi.SearchReq{
 		Indices: []string{"log-v2"},
+		Params: *params,
+		Body:  bytes.NewReader(body),
+	}
+	resp, err := lst.Client.Search(ctx, req)
+	if err != nil {
+		return res, err
+	}
+	if resp.Errors {
+		return res, fmt.Errorf("opensearch returned an error: %s", "")
+	}
+
+	res.Items = make([]api.Log, len(resp.Hits.Hits))
+	for i, hit := range resp.Hits.Hits {
+		if err := json.Unmarshal(hit.Source, &res.Items[i]); err != nil {
+			return res, fmt.Errorf("failed to unmarshal message %s: %w", hit.Source, err)
+		}
+		res.Items[i].ID = hit.ID
+	}
+	res.Total = resp.Hits.Total.Value
+	return res, nil
+}
+
+func (lst *OpensearchLogStore) SearchNotifications(ctx context.Context, search string, timerange api.TimeRange, pagination api.Pagination) (api.NotificationResults, error) {
+	var res api.NotificationResults
+	resp, err := lst.search(ctx, "notification-v2", search, timerange, pagination)
+	if err != nil {
+		return res, err
+	}
+	res.Items = make([]api.Notification, len(resp.Hits.Hits))
+	for i, hit := range resp.Hits.Hits {
+		if err := json.Unmarshal(hit.Source, &res.Items[i]); err != nil {
+			return res, fmt.Errorf("failed to unmarshal message %s: %w", hit.Source, err)
+		}
+		res.Items[i].ID = hit.ID
+	}
+	res.Total = resp.Hits.Total.Value
+	return res, nil
+}
+
+func (lst OpensearchLogStore) search(ctx context.Context, index, search string, timerange api.TimeRange, pagination api.Pagination) (*opensearchapi.SearchResp, error) {
+	var doc = &dsl.QueryDoc{}
+	var params = &opensearchapi.SearchParams{}
+
+	addTimeRange(doc, timerange)
+	addPagination(doc, params, pagination)
+	addSearch(doc, search)
+
+	body, err := json.Marshal(doc)
+	if err != nil {
+		return nil, fmt.Errorf("invalid request body (%+v): %w", doc, err)
+	}
+	req := &opensearchapi.SearchReq{
+		Indices: []string{index},
+		Params: *params,
 		Body:  bytes.NewReader(body),
 	}
 	resp, err := lst.Client.Search(ctx, req)
@@ -102,14 +185,7 @@ func (lst *OpensearchLogStore) Search(ctx context.Context, query string, timeran
 	if resp.Errors {
 		return nil, fmt.Errorf("opensearch returned an error: %s", "")
 	}
-
-	items := make([]api.Log, resp.Hits.Total.Value)
-	for i, hit := range resp.Hits.Hits {
-		if err := json.Unmarshal(hit.Source, &items[i]); err != nil {
-			return items, fmt.Errorf("failed to unmarshal message %s: %w", hit.Source, err)
-		}
-	}
-	return items, nil
+	return resp, nil
 }
 
 func (lst *OpensearchLogStore) store(index string, item interface{}) error {
@@ -120,7 +196,7 @@ func (lst *OpensearchLogStore) store(index string, item interface{}) error {
 	}
 	body := bytes.NewReader(b)
 	req := opensearchapi.IndexReq{
-		Index: "log-v2",
+		Index: index,
 		Body:  body,
 	}
 	resp, err := lst.Client.Index(ctx, req)
@@ -130,6 +206,7 @@ func (lst *OpensearchLogStore) store(index string, item interface{}) error {
 	if resp.Shards.Successful == 0 {
 		return fmt.Errorf("Failed to index object to '%s': %s", index, resp.Result)
 	}
+	log.Debugf("inserted into `%s`: %s", index, b)
 	return nil
 }
 

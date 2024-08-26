@@ -11,17 +11,18 @@ import (
 
 type LogsResponse struct {
 	Logs []api.Log `json:"logs"`
+	Total int `json:"total"`
 }
 
 func registerLogRoutes(r *gin.Engine) {
 	r.GET("/api/log/:uid", getLog)
-	r.GET("/api/logs", getLogs)
+	r.GET("/api/logs", searchLogs)
 }
 
 func getLog(c *gin.Context) {
 	uid := c.Param("uid")
 
-	item, err := opensearch.LogStore.Get(uid)
+	item, err := opensearch.LogStore.GetLog(uid)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error getting log uid=%s: %w", uid, err)
 		return
@@ -34,18 +35,26 @@ func getLog(c *gin.Context) {
 	c.JSON(http.StatusOK, item)
 }
 
-func getLogs(c *gin.Context) {
-	query := c.Param("query")
+type Search struct {
+	Text string `form:"search"`
+}
 
-	pagination := parsePagination(c)
-	timerange := parseTimeRange(c)
+func searchLogs(c *gin.Context) {
 
-	items, err := opensearch.LogStore.Search(c, query, timerange, pagination)
+	var (
+		pagination = api.NewPagination()
+		timerange api.TimeRange
+		search Search
+	)
+	c.BindQuery(&pagination)
+	c.BindQuery(&timerange)
+	c.BindQuery(&search)
+
+	res, err := opensearch.LogStore.SearchLogs(c, search.Text, timerange, pagination)
 	if err != nil {
-		c.String(http.StatusInternalServerError, "Error getting logs for query='%s': %s", query, err)
+		c.String(http.StatusInternalServerError, "Error getting logs for search='%s': %s", search.Text, err)
 		return
 	}
-	resp := LogsResponse{Logs: items}
 
-	c.JSON(http.StatusOK, resp)
+	c.JSON(http.StatusOK, res)
 }

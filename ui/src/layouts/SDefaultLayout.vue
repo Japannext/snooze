@@ -14,20 +14,19 @@ const { collapsed } = useSider()
 </script>
 
 <template>
-  Snooze
   <n-layout position="absolute">
     <n-layout-header
       bordered
       position="absolute"
-      style="height: 48px; padding: 12px"
+      style="height: 48px; padding: 3px"
     >
       <s-header />
     </n-layout-header>
     <n-layout
-      has-sider
       position="absolute"
       style="top: 48px; bottom: 48px"
     >
+      <!--
       <n-layout-sider
         v-model:collapsed="collapsed"
         bordered
@@ -37,6 +36,7 @@ const { collapsed } = useSider()
       >
         <s-menu />
       </n-layout-sider>
+      -->
       <n-layout-content content-style="padding: 24px;">
         <router-view v-slot="{ Component }">
           <component :is="Component" />

@@ -64,13 +64,3 @@ func Init() {
 		liveReason:  "starting...",
 	}
 }
-
-// An utility for services that don't listen on HTTP
-/*
-func (h *HealthStatus) Serve(host string, port int) {
-  r := gin.Default()
-  r.GET("/readyz", h.ReadyRoute)
-  r.GET("/livez", h.LiveRoute)
-  r.Run(fmt.Sprintf("%s:%d", host, port))
-}
-*/

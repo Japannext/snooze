@@ -12,7 +12,7 @@ func Process(item *api.Log) error {
 	ctx := context.Background()
 
 	for _, rule := range computedRules {
-		v, err := rule.Condition.Match(ctx, item)
+		v, err := rule.Condition.MatchLog(ctx, item)
 		if err != nil {
 			return err
 		}

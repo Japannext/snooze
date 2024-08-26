@@ -2,10 +2,13 @@ package processor
 
 import (
 	"fmt"
+	"encoding/json"
 
 	log "github.com/sirupsen/logrus"
 
 	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/common/rabbitmq"
+
 	"github.com/japannext/snooze/pkg/processor/grouping"
 	"github.com/japannext/snooze/pkg/processor/profile"
 	"github.com/japannext/snooze/pkg/processor/notification"
@@ -15,7 +18,20 @@ import (
 	"github.com/japannext/snooze/pkg/processor/transform"
 )
 
-type Processor struct{}
+type Processor struct{
+	Consumer *rabbitmq.Consumer
+}
+
+func NewProcessor() *Processor {
+	processor := &Processor{}
+	processor.Consumer = &rabbitmq.Consumer{
+		Queue: rabbitmq.PROCESSING_QUEUE,
+		Handler: handler,
+		Options: rabbitmq.ConsumerOptions{},
+	}
+	rabbitmq.SetupProcessing()
+	return processor
+}
 
 // For item that will not be requeued, because their
 // format is invalid, or they are poison messages.
@@ -30,11 +46,24 @@ func (r *RejectedLog) Error() string {
 }
 
 func (p *Processor) Run() error {
-	return ch.ConsumeForever(Process)
+	if err := p.Consumer.ConsumeForever(); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (p *Processor) HandleStop() {
-	ch.Stop()
+}
+
+func handler(delivery rabbitmq.Delivery) error {
+	var item *api.Log
+	if err := json.Unmarshal(delivery.Body, &item); err != nil {
+		return err
+	}
+	if err := Process(item); err != nil {
+		return err
+	}
+	return nil
 }
 
 func Process(item *api.Log) error {

@@ -7,3 +7,7 @@ var (
 func sorts(ss ...map[string]string) []map[string]string {
 	return ss
 }
+
+func pointer[V any](v V) *V {
+	return &v
+}

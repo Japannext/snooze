@@ -16,8 +16,7 @@ func Init() {
 	log = logrus.WithFields(logrus.Fields{"module": "rabbitmq"})
 
 	url, config := initConfig()
-
-	conn, err = amqp.DialConfig(url, config)
+	Client.conn, err = amqp.DialConfig(url, config)
 	if err != nil {
 		log.Fatal(err)
 	}

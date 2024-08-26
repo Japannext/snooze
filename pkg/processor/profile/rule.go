@@ -1,6 +1,7 @@
 package profile
 
 import (
+	"fmt"
 	"strings"
 	"github.com/sirupsen/logrus"
 
@@ -39,13 +40,14 @@ type Rule struct {
 	// Examples: process=sshd, service.name=keycloak, k8s.statefulset.name=postgresql
 	Switch Kv `yaml:"switch"`
 	// Patterns and actions to apply to logs matching this pattern
-	Patterns []Pattern `yaml:"patterns"`
+	Patterns []*Pattern `yaml:"patterns"`
 }
 
 func (rule *Rule) Startup() error {
+	log.Debugf("[Startup] Profile %s", rule.Name)
 	for _, pattern := range rule.Patterns {
 		if err := pattern.Startup(); err != nil {
-			return err
+			return fmt.Errorf("in pattern %s: %w", pattern.Name, err)
 		}
 	}
 	return nil
@@ -70,7 +72,7 @@ var fastMapper *FastMapper
 
 var log *logrus.Entry
 
-func InitRules(rules []Rule) {
+func InitRules(rules []*Rule) {
 	log = logrus.WithFields(logrus.Fields{"module": "profile"})
 	fastMapper = NewFastMapper(rules)
 }

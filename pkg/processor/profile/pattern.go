@@ -39,30 +39,33 @@ type Pattern struct {
 }
 
 // Initialize internal values at startup
-func (p *Pattern) Startup() (err error) {
+func (p *Pattern) Startup() error {
+	var err error
+	log.Debugf("[Startup] Pattern %s", p.Name)
 	p.internal.regexp, err = regexp.Compile(p.Regex)
 	if err != nil {
-		return
+		return err
 	}
 	p.internal.extraLabels, err = NewTemplateMap(p.ExtraLabels)
 	if err != nil {
-		return
+		return err
 	}
 	p.internal.groupBy, err = NewTemplateMap(p.GroupBy)
 	if err != nil {
-		return
+		return err
 	}
 	p.internal.identityOverride, err = NewTemplateMap(p.IdentityOverride)
 	if err != nil {
-		return
+		return err
 	}
 	if p.Message != "" {
 		p.internal.message, err = NewTemplate(p.Message)
 		if err != nil {
-			return
+			return err
 		}
 	}
-	return
+	log.Debugf("[Startup] %+v", p.internal)
+	return nil
 }
 
 func (p *Pattern) Process(item *api.Log) (match, reject bool) {
@@ -135,14 +138,17 @@ func (p *Pattern) Process(item *api.Log) (match, reject bool) {
 }
 
 // Match the regex of the pattern, return the capture groups if any
-func (p *Pattern) match(item *api.Log) (match bool, capture map[string]string) {
+func (p *Pattern) match(item *api.Log) (bool, map[string]string) {
+	var (
+		match bool
+		capture = make(map[string]string)
+	)
 	if p.internal.regexp == nil {
-		match = true
-		return
+		return true, capture
 	}
 	match = p.internal.regexp.MatchString(item.Message)
 	if !match {
-		return
+		return false, capture
 	}
 	keys := p.internal.regexp.SubexpNames()
 	if len(keys) > 1 {

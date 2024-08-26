@@ -1,10 +1,8 @@
 package v2
 
-import (
-	"time"
-)
-
 type TimeRange struct {
-	Start time.Time `json:"start"`
-	End time.Time `json:"end"`
+	// Start time in milliseconds
+	Start uint64 `form:"start"`
+	// End time in milliseconds
+	End uint64 `form:"end"`
 }

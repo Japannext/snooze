@@ -27,7 +27,7 @@ func Run() {
 	srv.Engine.GET("/readyz", h.ReadyRoute)
 
 	// Static routes
-	srv.Engine.Group("/static", eTagMiddleware()).Static("/", config.StaticPath)
+	// srv.Engine.Group("/static", eTagMiddleware()).Static("/", config.StaticPath)
 
 	if corsConfig != nil {
 	srv.Engine.Use(cors.New(*corsConfig))
@@ -36,6 +36,7 @@ func Run() {
 	// Dynamic routes
 	registerAuthRoutes(srv.Engine)
 	registerLogRoutes(srv.Engine)
+	registerNotificationRoutes(srv.Engine)
 	registerSampleRoute(srv.Engine)
 	dm.Add("http", srv)
 

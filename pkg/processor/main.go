@@ -17,8 +17,6 @@ import (
 	"github.com/japannext/snooze/pkg/processor/transform"
 )
 
-var ch *rabbitmq.ProcessChannel
-
 // Logic done only at the application startup.
 // All errors are fatal.
 func Startup() *daemon.DaemonManager {
@@ -28,14 +26,13 @@ func Startup() *daemon.DaemonManager {
 	opensearch.Init()
 	redis.Init()
 	rabbitmq.Init()
-	ch = rabbitmq.InitProcessChannel()
 
 	transform.InitRules(pipeline.TransformRules)
 	silence.InitRules(pipeline.SilenceRules)
 	profile.InitRules(pipeline.Profiles)
 	snooze.Init()
 	ratelimit.Init(pipeline.RateLimit)
-	notification.InitRules(pipeline.NotificationRules, pipeline.DefaultNotificationChannels)
+	notification.Startup(pipeline.NotificationRules, pipeline.DefaultNotificationChannels)
 
 	dm := daemon.NewDaemonManager()
 	h := health.HealthStatus{}

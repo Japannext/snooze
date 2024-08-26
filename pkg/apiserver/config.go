@@ -78,7 +78,6 @@ func initConfig() {
 	if err := viper.Unmarshal(&config); err != nil {
 		log.Fatal(err)
 	}
-	log.Debugf("Loaded config: %+v", config)
 
 	// Load auth backends
 	data, err := os.ReadFile(config.AuthConfig)
@@ -91,6 +90,7 @@ func initConfig() {
 
 	// CORS
 	cc := cors.DefaultConfig()
+	cc.AllowAllOrigins = true
 	corsConfig = &cc
 	if config.CorsConfig != "" {
 		loadCorsConfig()

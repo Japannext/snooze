@@ -1,8 +1,9 @@
 package syslog
 
 import (
-	"context"
+	"fmt"
 	"time"
+
 	"gopkg.in/mcuadros/go-syslog.v2"
 	"gopkg.in/mcuadros/go-syslog.v2/format"
 	log "github.com/sirupsen/logrus"
@@ -21,8 +22,9 @@ func NewSyslogServer() *SyslogServer {
 	ch := make(syslog.LogPartsChannel)
 	handler := syslog.NewChannelHandler(ch)
 	srv.SetHandler(handler)
-	srv.ListenUDP("0.0.0.0:1514")
-	srv.ListenTCP("0.0.0.0:1514")
+	addr := fmt.Sprintf("%s:%d", config.ListenAddress, config.ListenPort)
+	srv.ListenUDP(addr)
+	srv.ListenTCP(addr)
 
 	return &SyslogServer{srv, ch}
 }
@@ -38,7 +40,7 @@ func parseLog(record format.LogParts) *api.Log {
 	item.Labels = make(map[string]string)
 
 	item.TimestampMillis = uint64(record["timestamp"].(time.Time).UnixMilli())
-	item.Source = api.Source{Kind: "syslog", Name: instanceName}
+	item.Source = api.Source{Kind: "syslog", Name: config.InstanceName}
 	item.Identity["kind"] = "host"
 	item.Identity["hostname"] = record["hostname"].(string)
 	item.Identity["process"] = record["app_name"].(string)
@@ -67,11 +69,10 @@ func (s *SyslogServer) Run() error {
 
 	go func (channel syslog.LogPartsChannel) {
 		for record := range channel {
-			ctx := context.Background()
 			log.Debugf("Received log: %s", record)
 			item := parseLog(record)
 
-			if err := processChannel.Publish(ctx, item); err != nil {
+			if err := producer.Publish(item); err != nil {
 				// TODO
 				log.Warnf("Failed to publish log to process channel: %s", err)
 				continue

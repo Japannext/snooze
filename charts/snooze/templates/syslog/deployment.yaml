@@ -10,7 +10,7 @@ metadata:
     app.kubernetes.io/component: syslog
     app.kubernetes.io/part-of: "{{ .Values.partOf }}"
 spec:
-  replicas: {{ .Values.replicas }}
+  replicas: {{ .Values.syslog.replicas }}
   revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
   selector:
     matchLabels:
@@ -53,6 +53,8 @@ spec:
         env:
         {{- include "snooze.env" . | nindent 8 }}
         {{- include "snooze.rabbitmqEnv" . | nindent 8 }}
+        - name: SYSLOG_INSTANCE_NAME
+          value: "{{ .Values.syslog.instanceName }}"
         envFrom:
         - configMapRef:
             name: "{{ .Release.Name }}-common"

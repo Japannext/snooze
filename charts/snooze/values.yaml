@@ -8,7 +8,7 @@ image:
 auth_backends: {}
 
 profiles:
-- group: KernelErrors
+- name: KernelErrors
   switch: {key: identity.process, value: kernel}
   patterns:
   - name: KernelWatchdog
@@ -17,7 +17,7 @@ profiles:
       host: '{{ .identity.host }}'
     extra_labels:
       owner: unix
-- group: SSHErrors
+- name: SSHErrors
   switch: {key: identity.process, value: sshd}
   patterns:
   - name: SshLoginFailed
@@ -39,12 +39,11 @@ profiles:
   - group_by:
       host: '{{ .identity.host }}'
     default: true
-- group: HaproxyErrors
+- name: HaproxyErrors
   switch: {key: identity.process, value: haproxy}
   patterns:
   - name: HaproxyServerDown
-    regex: >
-      Server (?P<backend>.*?)/(?P<server>.*?) is DOWN, reason: (?P<reason>.*?),
+    regex: 'Server (?P<backend>.*?)/(?P<server>.*?) is DOWN, reason: (?P<reason>.*?),.*'
     identity_override:
       kind: haproxy
       backend: '{{ .capture.backend }}'
@@ -58,12 +57,12 @@ profiles:
     identity_override:
       kind: haproxy
       backend: '{{ .capture.backend }}'
-- group: PacemakerErrors
+- name: PacemakerErrors
   switch: {key: identity.process, value: pengine}
   patterns:
   - name: PacemakerTransitionError
     regex: 'error: Calculated transition (?P<transitions>[0-9]+) (with errors), saving inputs in (?P<path>.*)'
-- group: RsyslogClientErrors
+- name: RsyslogClientErrors
   switch: {key: identity.process, value: rsyslogd}
   patterns:
   - name: RsyslogRelpError
@@ -104,10 +103,10 @@ grouping_rules:
   - log.Labels["k8s.namespace.name"]
   - log.Labels["k8s.cluster.name"]
 - name: by-syslog-host
-  if: log.Source.Kind == "syslog"
+  if: 'source.Kind == "syslog" && identity.kind == "host"'
   group_by:
-  - log.Labels["host.name"]
-  - log.Labels["process"]
+  - identity.host
+  - identity.process
 
 ratelimit:
   burst: 50
@@ -115,7 +114,7 @@ ratelimit:
   cooldown: 5m
 
 notification_rules:
-- if: 'log.Attributes["owner"] == "unix"'
+- if: 'labels.owner == "unix"'
   channels:
   - 'googlechat:unix'
 
@@ -129,6 +128,20 @@ process:
 
 apiserver:
   replicaCount: 2
+
+mail:
+  replicaCount: 2
+  config:
+    server: ""
+    port: 25
+    defaultSender: ""
+    queue: "mail"
+  profiles: []
+
+
+syslog:
+  replicaCount: 2
+  instanceName: ""
 
 ui:
   replicaCount: 2

@@ -7,14 +7,14 @@ import (
 	"github.com/japannext/snooze/pkg/common/rabbitmq"
 )
 
-var processChannel *rabbitmq.ProcessChannel
+var producer *rabbitmq.Producer
 
 func Run() {
 
 	logging.Init()
-	// initConfig()
+	initConfig()
 	rabbitmq.Init()
-	processChannel = rabbitmq.InitProcessChannel()
+	producer = rabbitmq.NewLogProducer()
 
 	syslogServer := NewSyslogServer()
 	dm := daemon.NewDaemonManager()

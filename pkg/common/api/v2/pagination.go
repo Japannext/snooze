@@ -1,16 +1,16 @@
 package v2
 
 type Pagination struct {
-	PageNumber int
-	PerPage int
-	OrderBy string
-	Ascending bool
+	Page int `form:"page"`
+	Size int `form:"size"`
+	OrderBy string `form:"order_by"`
+	Ascending bool `form:"asc"`
 }
 
-func NewPagination() *Pagination {
-	return &Pagination{PageNumber: 1, PerPage: 20, OrderBy: "", Ascending: false}
+func NewPagination() Pagination {
+	return Pagination{Page: 1, Size: 20, OrderBy: "timestampMillis", Ascending: false}
 }
 
 func (p *Pagination) Next() {
-	p.PageNumber++
+	p.Page++
 }

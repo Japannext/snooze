@@ -4,6 +4,10 @@ import { useLocalStorage } from '@vueuse/core'
 
 import { defineRefStore } from '@/utils/pinia-store'
 
+export const useTimeRelative = defineRefStore('time-relative', () => ({
+  timeRelative: useLocalStorage('time-relative', true)
+}))
+
 export const useDevMode = defineRefStore('dev-mode', () => ({
   devMode: useLocalStorage('dev-mode', false),
 }))

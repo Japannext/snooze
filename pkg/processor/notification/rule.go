@@ -5,57 +5,46 @@ import (
 
 	"github.com/japannext/snooze/pkg/common/lang"
 	"github.com/japannext/snooze/pkg/common/rabbitmq"
+	"github.com/japannext/snooze/pkg/common/utils"
 )
 
 type Rule struct {
 	If       string   `yaml:"if"`
 	Channels []string `yaml:"channels"`
+
+	internal struct {
+		condition *lang.Condition
+	}
 }
 
-type computedRule struct {
-	Condition *lang.Condition
-	Queues    []*rabbitmq.NotificationQueue
-}
-
-func compute(rule *Rule) *computedRule {
-	var condition *lang.Condition
+func (rule *Rule) Startup() {
 	var err error
 	if rule.If != "" {
-		condition, err = lang.NewCondition(rule.If)
+		rule.internal.condition, err = lang.NewCondition(rule.If)
 		if err != nil {
 			log.Fatalf("while parsing `%s`: %s", rule.If, err)
 		}
 	}
-
-	var qq []*rabbitmq.NotificationQueue
-
-	for _, name := range rule.Channels {
-		q, found := queues[name]
-		if !found {
-			q = ch.NewQueue(name)
-			queues[name] = q
-		}
-		qq = append(qq, q)
-	}
-	return &computedRule{
-		Condition: condition,
-		Queues:    qq,
-	}
 }
 
-var ch *rabbitmq.NotificationChannel
-var queues = make(map[string]*rabbitmq.NotificationQueue)
-
-var computedRules []*computedRule
-
+var computedRules []*Rule
 var log *logrus.Entry
+var producers map[string]*rabbitmq.Producer
 
-func InitRules(rules []*Rule, defaults []string) {
+func Startup(rules []*Rule, defaults []string) {
 	log = logrus.WithFields(logrus.Fields{"module": "notification"})
-	ch = rabbitmq.InitNotificationChannel()
+
+	rules = append(rules, &Rule{Channels: defaults})
+
+	var queues = utils.NewOrderedStringSet()
 
 	for _, rule := range rules {
-		computedRules = append(computedRules, compute(rule))
+		rule.Startup()
+		computedRules = append(computedRules, rule)
+		queues.AppendMany(rule.Channels)
 	}
-	computedRules = append(computedRules, compute(&Rule{Channels: defaults}))
+
+	for _, queue := range queues.Items() {
+		producers[queue] = rabbitmq.NewNotificationProducer(queue)
+	}
 }
