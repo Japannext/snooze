@@ -8,7 +8,7 @@ import { Refresh } from '@vicons/ionicons5'
 import SSearch from '@/components/SSearch.vue'
 import STimeRange from '@/components/STimeRange.vue'
 import STimestamp from '@/components/STimestamp.vue'
-import SIdentity from '@/components/SIdentity.vue'
+import SDestination from '@/components/SDestination.vue'
 import type { Notification, NotificationResults } from '@/api/types'
 import { defaultRangeMillis } from '@/utils/timerange'
 import { usePagination } from '@/utils/pagination'
@@ -92,8 +92,7 @@ function renderExpand(row) {
 const columns = [
   {type: 'expand', renderExpand: renderExpand},
   {title: 'Timestamp', key: 'timestampMillis', render: (row) => h(STimestamp, {timestampMillis: row.timestampMillis}), width: 230},
-  {title: 'Severity', render: renderSeverity, width: 100, align: 'center'},
-  {title: 'Destination', key: 'destination'},
+  {title: 'Destination', render: (row) => h(SDestination, {destination: row.destination})},
   {title: 'Body', key: 'body', ellipsis: {tooltip: {placement: "bottom-end", width: 500}}},
   {title: 'Action', width: 200},
 ]

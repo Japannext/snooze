@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defineProps } from 'vue'
+import { defineProps, computed } from 'vue'
 import { DateTime } from 'luxon'
 import { useTimeRelative } from '@/stores'
 
@@ -9,15 +9,19 @@ const props = defineProps<{
   timestampMillis: number,
 }>()
 
+const date = computed(() => {
+  return DateTime.fromMillis(props.timestampMillis)
+})
+
 </script>
 
 <template>
   <div>
     <span v-if="timeRelative">
-      {{ DateTime.fromMillis(props.timestampMillis).toRelative() }}
+      {{ date.toRelative() }}
     </span>
     <span v-else>
-      {{ DateTime.fromMillis(props.timestampMillis).toISO() }}
+      {{ date.toFormat("yyyy-mm-dd HH:MM:ss") }}
     </span>
   </div>
 </template>

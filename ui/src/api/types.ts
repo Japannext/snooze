@@ -45,8 +45,8 @@ export type Source = {
 }
 
 export type Destination = {
-  kind: string
-  name: string
+  queue: string
+  profile: string
 }
 
 export type Mute = {
