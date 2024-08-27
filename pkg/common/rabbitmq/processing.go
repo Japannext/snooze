@@ -14,12 +14,12 @@ func SetupProcessing() {
 	queues := map[string]QueueOptions{
 		PROCESSING_QUEUE: {Durable: true},
 	}
-	binds := map[string]string{
-		PROCESSING_QUEUE: PROCESSING_EXCHANGE,
+	binds := map[string]BindOptions{
+		PROCESSING_QUEUE: {Exchange: PROCESSING_EXCHANGE},
 	}
 	Client.setup(exchanges, queues, binds)
 }
 
 func NewLogProducer() *Producer {
-	return NewProducer(PROCESSING_EXCHANGE, PROCESSING_QUEUE, "", LOG_CONTENT_TYPE)
+	return NewProducer(PROCESSING_EXCHANGE, "", LOG_CONTENT_TYPE)
 }

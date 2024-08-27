@@ -2,7 +2,6 @@ package processor
 
 import (
 	"github.com/japannext/snooze/pkg/common/daemon"
-	"github.com/japannext/snooze/pkg/common/health"
 	"github.com/japannext/snooze/pkg/common/logging"
 	"github.com/japannext/snooze/pkg/common/opensearch"
 	"github.com/japannext/snooze/pkg/common/rabbitmq"
@@ -35,17 +34,7 @@ func Startup() *daemon.DaemonManager {
 	notification.Startup(pipeline.NotificationRules, pipeline.DefaultNotificationChannels)
 
 	dm := daemon.NewDaemonManager()
-	h := health.HealthStatus{}
-
-	dm.Add("processor", &Processor{})
-
-	srv := daemon.NewHttpDaemon()
-	srv.Engine.GET("/livez", h.LiveRoute)
-	srv.Engine.GET("/readyz", h.ReadyRoute)
-	dm.Add("http", srv)
-
-	h.Live()
-	h.Ready()
+	dm.AddDaemon("processor", NewProcessor())
 
 	return dm
 }

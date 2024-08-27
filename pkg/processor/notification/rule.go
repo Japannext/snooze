@@ -3,6 +3,7 @@ package notification
 import (
 	"github.com/sirupsen/logrus"
 
+	api "github.com/japannext/snooze/pkg/common/api/v2"
 	"github.com/japannext/snooze/pkg/common/lang"
 	"github.com/japannext/snooze/pkg/common/rabbitmq"
 	"github.com/japannext/snooze/pkg/common/utils"
@@ -10,7 +11,7 @@ import (
 
 type Rule struct {
 	If       string   `yaml:"if"`
-	Channels []string `yaml:"channels"`
+	Destinations []api.Destination `yaml:"destinations"`
 
 	internal struct {
 		condition *lang.Condition
@@ -28,20 +29,23 @@ func (rule *Rule) Startup() {
 }
 
 var computedRules []*Rule
+var defaultDestinations []api.Destination
 var log *logrus.Entry
-var producers map[string]*rabbitmq.Producer
+var producers = map[string]*rabbitmq.Producer{}
 
-func Startup(rules []*Rule, defaults []string) {
+func Startup(rules []*Rule, defaults []api.Destination) {
 	log = logrus.WithFields(logrus.Fields{"module": "notification"})
 
-	rules = append(rules, &Rule{Channels: defaults})
+	defaultDestinations = defaults
 
-	var queues = utils.NewOrderedStringSet()
+	var queues = utils.NewOrderedSet[string]()
 
 	for _, rule := range rules {
 		rule.Startup()
 		computedRules = append(computedRules, rule)
-		queues.AppendMany(rule.Channels)
+		for _, dest := range rule.Destinations {
+			queues.Append(dest.Queue)
+		}
 	}
 
 	for _, queue := range queues.Items() {

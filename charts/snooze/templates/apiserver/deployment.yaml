@@ -58,7 +58,7 @@ spec:
         volumeMounts:
         - name: config
           mountPath: /config
-        {{- if .Values.apiserver.cacertConfigMap }}
+        {{- if .Values.cacertConfigMap }}
         - name: cacert
           mountPath: /cacert
         {{- end }}
@@ -92,8 +92,8 @@ spec:
       - name: config
         configMap:
           name: "{{ .Release.Name }}-apiserver-config"
-      {{- if .Values.apiserver.cacertConfigMap }}
+      {{- with .Values.cacertConfigMap }}
       - name: cacert
         configMap:
-          name: "{{ .Values.apiserver.cacertConfigMap }}"
+          name: "{{ . }}"
       {{- end }}

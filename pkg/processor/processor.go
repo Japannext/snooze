@@ -24,12 +24,11 @@ type Processor struct{
 
 func NewProcessor() *Processor {
 	processor := &Processor{}
-	processor.Consumer = &rabbitmq.Consumer{
-		Queue: rabbitmq.PROCESSING_QUEUE,
-		Handler: handler,
-		Options: rabbitmq.ConsumerOptions{},
-	}
+
 	rabbitmq.SetupProcessing()
+
+	options := rabbitmq.ConsumerOptions{}
+	processor.Consumer = rabbitmq.NewConsumer(rabbitmq.PROCESSING_QUEUE, "", handler, options)
 	return processor
 }
 
@@ -52,7 +51,8 @@ func (p *Processor) Run() error {
 	return nil
 }
 
-func (p *Processor) HandleStop() {
+func (p *Processor) Stop() {
+	p.Consumer.Stop()
 }
 
 func handler(delivery rabbitmq.Delivery) error {
@@ -63,6 +63,7 @@ func handler(delivery rabbitmq.Delivery) error {
 	if err := Process(item); err != nil {
 		return err
 	}
+	delivery.Ack(false)
 	return nil
 }
 

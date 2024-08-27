@@ -7,6 +7,8 @@ import (
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
 
+	api "github.com/japannext/snooze/pkg/common/api/v2"
+
 	// Sub-Processors
 	"github.com/japannext/snooze/pkg/processor/grouping"
 	"github.com/japannext/snooze/pkg/processor/notification"
@@ -40,8 +42,8 @@ type Pipeline struct {
 	Profiles					[]*profile.Rule		 `yaml:"profiles"`
 	SilenceRules                []*silence.Rule      `yaml:"silence_rules"`
 	RateLimit                   *ratelimit.Rule      `yaml:"ratelimit"`
-	NotificationRules           []*notification.Rule `yaml:"notification_rules"`
-	DefaultNotificationChannels []string             `yaml:"default_notification_channels"`
+	NotificationRules           []*notification.Rule `yaml:"notification_destinations"`
+	DefaultNotificationChannels []api.Destination    `yaml:"default_notification_destinations"`
 }
 
 

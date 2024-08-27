@@ -10,7 +10,7 @@ import (
 )
 
 const DEFAULT_TEMPLATE_TEXT = `
-Subject: Snooze notification ({{ .Profile }})
+Subject: Snooze notification ({{ .Destination.Profile }})
 
 Your received a snooze notification!
 Body = {{ .Body }}

@@ -14,27 +14,37 @@ import (
 
 type Daemon interface {
 	Run() error
-	HandleStop()
+	Stop()
 }
 
 type DaemonManager struct {
 	errs    *errgroup.Group
 	context context.Context
 	daemons map[string]Daemon
+	ready []Check
+	live []Check
 }
 
 func NewDaemonManager() *DaemonManager {
 	ctx := context.Background()
 	errs, ctx := errgroup.WithContext(ctx)
-	return &DaemonManager{errs, ctx, map[string]Daemon{}}
+	return &DaemonManager{
+		errs: errs,
+		context: ctx,
+		daemons: map[string]Daemon{},
+		ready: []Check{},
+		live: []Check{},
+	}
 }
 
-func (dm *DaemonManager) Add(name string, d Daemon) {
+func (dm *DaemonManager) AddDaemon(name string, d Daemon) {
 	dm.daemons[name] = d
 }
 
 func (dm *DaemonManager) Run() {
 	var err error
+
+	dm.setupHealthcheck()
 
 	// Catch SIGTERM signals and exit everything
 	dm.errs.Go(func() error {
@@ -61,7 +71,7 @@ func (dm *DaemonManager) Run() {
 		dm.errs.Go(func() error {
 			<-dm.context.Done()
 			log.Debug(fmt.Sprintf("Stopping '%s' daemon...", n))
-			d.HandleStop()
+			d.Stop()
 			log.Info(fmt.Sprintf("Stopped '%s' daemon", n))
 			return nil
 		})

@@ -6,14 +6,12 @@ require (
 	github.com/PaesslerAG/gval v1.2.2
 	github.com/PaesslerAG/jsonpath v0.1.0
 	github.com/coreos/go-oidc/v3 v3.10.0
-	github.com/deckarep/golang-set/v2 v2.6.0
 	github.com/georgysavva/scany/v2 v2.1.3
 	github.com/gin-contrib/cors v1.7.2
 	github.com/gin-gonic/gin v1.9.1
 	github.com/jackc/pgx v3.6.2+incompatible
 	github.com/jackc/pgx/v5 v5.6.0
 	github.com/mottaquikarim/esquerydsl v0.0.0-20230908215636-2a15c9ace5b9
-	github.com/opensearch-project/opensearch-go/v2 v2.3.0
 	github.com/opensearch-project/opensearch-go/v4 v4.1.0
 	github.com/rabbitmq/amqp091-go v1.9.0
 	github.com/redis/go-redis/v9 v9.5.1
@@ -26,6 +24,7 @@ require (
 	golang.org/x/oauth2 v0.13.0
 	golang.org/x/sync v0.3.0
 	google.golang.org/grpc v1.58.2
+	gopkg.in/mail.v2 v2.3.1
 	gopkg.in/mcuadros/go-syslog.v2 v2.3.0
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -89,5 +88,6 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20230913181813-007df8e322eb // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230920204549-e6e6cdab5c13 // indirect
 	google.golang.org/protobuf v1.34.0 // indirect
+	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 )

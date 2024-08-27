@@ -87,7 +87,7 @@ func (s *SyslogServer) Run() error {
 	return nil
 }
 
-func (s *SyslogServer) HandleStop() {
+func (s *SyslogServer) Stop() {
 	close(s.ch)
 	s.srv.Kill()
 }

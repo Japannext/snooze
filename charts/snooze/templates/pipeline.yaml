@@ -27,12 +27,12 @@ data:
     ratelimit:
     {{- . | toYaml | nindent 6 }}
     {{- end }}
-    {{ with .Values.notification_rules }}
-    notification_rules:
+    {{ with .Values.notification_destinations }}
+    notification_destinations:
     {{- . | toYaml | nindent 4 }}
     {{- end }}
-    {{ with .Values.default_notification_channels }}
-    default_notification_channels:
+    {{ with .Values.default_notification_destinations }}
+    default_notification_destinations:
     {{- . | toYaml | nindent 4 }}
     {{- end }}
 

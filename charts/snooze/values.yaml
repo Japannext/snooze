@@ -7,6 +7,8 @@ image:
 
 auth_backends: {}
 
+cacertConfigMap: ""
+
 profiles:
 - name: KernelErrors
   switch: {key: identity.process, value: kernel}
@@ -113,15 +115,13 @@ ratelimit:
   period: 1m
   cooldown: 5m
 
-notification_rules:
+notification_destinations:
 - if: 'labels.owner == "unix"'
-  channels:
-  - 'googlechat:unix'
+  destinations:
+  - {queue: mail, profile: to-unix}
 
-default_notification_channels:
-- 'googlechat:unix'
-- 'googlechat:monitoring'
-- 'patlite:purple'
+default_notification_destinations:
+- {queue: mail, profile: to-guillaume}
 
 process:
   replicaCount: 2

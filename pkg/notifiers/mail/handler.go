@@ -3,7 +3,7 @@ package mail
 import (
 	"bytes"
 	"fmt"
-	"net/smtp"
+	gomail "gopkg.in/mail.v2"
 
 	log "github.com/sirupsen/logrus"
 
@@ -28,21 +28,38 @@ func computeTemplate(profile *Profile, notification *api.Notification) ([]byte, 
 }
 
 func handler(notification *api.Notification) error {
-	profile, found := profiles[notification.Profile]
+	log.Debug("Handing notification")
+	profile, found := profiles[notification.Destination.Profile]
 	if !found {
-		return fmt.Errorf("Dropping: profile '%s' not found", notification.Profile)
+		return fmt.Errorf("Dropping: profile '%s' not found", notification.Destination.Profile)
 	}
-	addr := fmt.Sprintf("%s:%d", profile.Server, profile.Port)
+	log.Debugf("Found profile %s", profile.Name)
 
-	message, err := computeTemplate(profile, notification)
+	body, err := computeTemplate(profile, notification)
 	if err != nil {
 		return err
 	}
 
-	err = smtp.SendMail(addr, nil, profile.From, []string{profile.To}, message)
+	// Building email
+	msg := gomail.NewMessage()
+	msg.SetHeader("From", profile.From)
+	msg.SetHeader("To", profile.To)
+	msg.SetHeader("Subject", fmt.Sprintf("[Snooze] Alert %s", profile.Name))
+	msg.SetBody("text/plain", string(body))
+
+	tlsConfig := config.TLS.Config()
+	tlsConfig.ServerName = profile.Server
+	dialer := gomail.Dialer{Host: profile.Server, Port: profile.Port, TLSConfig: tlsConfig}
+	sender, err := dialer.Dial()
 	if err != nil {
-		log.Errorf("error sending mail with profile '%s': %s", profile.Name, err)
 		return err
 	}
+
+	log.Debugf("Sending mail to %s...", profile.To)
+	err = sender.Send(profile.From, []string{profile.To}, msg)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

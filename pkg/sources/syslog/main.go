@@ -2,30 +2,26 @@ package syslog
 
 import (
 	"github.com/japannext/snooze/pkg/common/daemon"
-	"github.com/japannext/snooze/pkg/common/health"
 	"github.com/japannext/snooze/pkg/common/logging"
 	"github.com/japannext/snooze/pkg/common/rabbitmq"
 )
 
 var producer *rabbitmq.Producer
 
-func Run() {
+func Startup() *daemon.DaemonManager {
 
 	logging.Init()
 	initConfig()
 	rabbitmq.Init()
 	producer = rabbitmq.NewLogProducer()
 
-	syslogServer := NewSyslogServer()
 	dm := daemon.NewDaemonManager()
-	dm.Add("server", syslogServer)
-	h := health.HealthStatus{}
-	srv := daemon.NewHttpDaemon()
-	srv.Engine.GET("/livez", h.LiveRoute)
-	srv.Engine.GET("/readyz", h.ReadyRoute)
-	dm.Add("http", srv)
+	dm.AddDaemon("server", NewSyslogServer())
 
-	h.Live()
-	h.Ready()
+	return dm
+}
+
+func Run() {
+	dm := Startup()
 	dm.Run()
 }

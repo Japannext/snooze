@@ -2,7 +2,6 @@ package apiserver
 
 import (
 	"github.com/japannext/snooze/pkg/common/daemon"
-	"github.com/japannext/snooze/pkg/common/health"
 	"github.com/japannext/snooze/pkg/common/logging"
 	"github.com/japannext/snooze/pkg/common/opensearch"
 	"github.com/japannext/snooze/pkg/common/redis"
@@ -10,21 +9,15 @@ import (
 	"github.com/gin-contrib/cors"
 )
 
-func Run() {
+func Startup() *daemon.DaemonManager {
 	// Init components
 	logging.Init()
-	health.Init()
 	initConfig()
 	opensearch.Init()
 	redis.Init()
 
 	dm := daemon.NewDaemonManager()
 	srv := daemon.NewHttpDaemon()
-
-	// Health
-	h := health.HealthStatus{}
-	srv.Engine.GET("/livez", h.LiveRoute)
-	srv.Engine.GET("/readyz", h.ReadyRoute)
 
 	// Static routes
 	// srv.Engine.Group("/static", eTagMiddleware()).Static("/", config.StaticPath)
@@ -38,12 +31,12 @@ func Run() {
 	registerLogRoutes(srv.Engine)
 	registerNotificationRoutes(srv.Engine)
 	registerSampleRoute(srv.Engine)
-	dm.Add("http", srv)
+	dm.AddDaemon("http", srv)
 
-	h.Live()
-	h.Ready()
+	return dm
+}
 
-	// Listen
-	// hostport := fmt.Sprintf("%s:%d", config.ListenAddress, config.ListenPort)
+func Run() {
+	dm := Startup()
 	dm.Run()
 }

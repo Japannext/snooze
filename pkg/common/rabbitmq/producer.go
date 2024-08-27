@@ -15,14 +15,14 @@ type Producer struct {
 	ContentType string
 }
 
-func NewProducer(exchange, queue, topic, contentType string) *Producer {
+func NewProducer(exchange, topic, contentType string) *Producer {
 	channel, err := Client.conn.Channel()
 	if err != nil {
 		log.Fatal(err)
 	}
 	return &Producer{
 		channel: channel,
-		Exchange: queue,
+		Exchange: exchange,
 		Key: topic,
 		ContentType: contentType,
 	}
@@ -38,5 +38,9 @@ func (p *Producer) Publish(item interface{}) error {
 		ContentType:  p.ContentType,
 		Body:         body,
 	}
-	return p.channel.Publish(p.Exchange, p.Key, p.Mandatory, p.Immediate, msg)
+	if err := p.channel.Publish(p.Exchange, p.Key, p.Mandatory, p.Immediate, msg); err != nil {
+		return err
+	}
+	log.Debugf("Successfully sent message to %s[%s]", p.Exchange, p.Key)
+	return nil
 }

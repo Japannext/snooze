@@ -1,5 +1,5 @@
 {
-  "name": "snooze-web",
+  "name": "snooze-ui",
   "private": true,
   "version": "2.0.0",
   "type": "module",
@@ -9,10 +9,10 @@
     "preview": "vite preview",
     "lint": "eslint --fix src/**/*.{ts,vue}"
   },
-  "homepage": "https://snoozeweb.net",
+  "homepage": "https://github.com/japannext/snooze",
   "repository": {
     "type": "git",
-    "url": "https://github.com/snoozeweb/snooze"
+    "url": "https://github.com/japannext/snooze"
   },
   "dependencies": {
     "@types/uuid": "^9.0.1",

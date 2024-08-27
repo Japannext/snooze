@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 )
 
 type HttpDaemon struct {
@@ -35,6 +36,8 @@ func (d *HttpDaemon) Run() error {
 	return nil
 }
 
-func (d *HttpDaemon) HandleStop() {
+func (d *HttpDaemon) Stop() {
+	log.Debugf("Stopping HTTP server...")
 	d.srv.Shutdown(context.Background())
+	log.Debug("Stopped HTTP server")
 }

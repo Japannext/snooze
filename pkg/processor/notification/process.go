@@ -17,7 +17,9 @@ func Process(item *api.Log) error {
 		return nil
 	}
 
-	var queues = utils.NewOrderedStringSet()
+	// A set is necessary to avoid sending duplicates when 2 rules match
+	// the same destination.
+	var destinations = utils.NewOrderedSet[api.Destination]()
 	var merr = utils.NewMultiError("Failed to notify item trace_id=%s.")
 
 	for _, rule := range computedRules {
@@ -29,23 +31,29 @@ func Process(item *api.Log) error {
 			if !match {
 				continue
 			}
+			log.Debugf("Matched rule '%s', destination(s): %s", rule.If, rule.Destinations)
 		}
-		queues.AppendMany(rule.Channels)
+		destinations.AppendMany(rule.Destinations)
+	}
+	// Defaults
+	if len(destinations.Items()) == 0 {
+		log.Debugf("Match no rule, default destinations: %s", defaultDestinations)
+		destinations.AppendMany(defaultDestinations)
 	}
 
-	for _, queue := range queues.Items() {
-		log.Debugf("sending to queue `%s`", queue)
+	for _, dest := range destinations.Items() {
+		log.Debugf("sending to destination `%s`", dest)
 		notification := &api.Notification{
 			TimestampMillis: uint64(time.Now().UnixMilli()),
-			Destination: api.Destination{Name: queue},
+			Destination: dest,
 			LogUID: item.ID,
 			Body: map[string]string{
 				"message": item.Message,
 			},
 		}
-		producer, found := producers[queue]
+		producer, found := producers[dest.Queue]
 		if !found {
-			log.Errorf("Producer for queue '%s' not found! This should not happen!", queue)
+			log.Errorf("Producer for queue '%s' not found! This should not happen!", dest.Queue)
 			continue
 		}
 		if err := producer.Publish(notification); err != nil {

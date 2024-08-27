@@ -3,6 +3,8 @@ package mail
 import (
     "github.com/spf13/viper"
     log "github.com/sirupsen/logrus"
+
+	"github.com/japannext/snooze/pkg/common/utils"
 )
 
 var config *Config
@@ -13,6 +15,7 @@ type Config struct {
 	Queue string `mapstructure:"SMTP_QUEUE"`
 	DefaultSender string `mapstructure:"SMTP_DEFAULT_SENDER"`
 	ProfilePath string `mapstructure:"SMTP_PROFILE_PATH"`
+	TLS utils.TLSConfig `mapstructure:",squash"`
 }
 
 func initConfig() {
@@ -21,9 +24,15 @@ func initConfig() {
 	viper.SetDefault("SMTP_QUEUE", "mail")
 	viper.SetDefault("SMTP_PORT", "25")
 	viper.SetDefault("SMTP_PROFILE_PATH", "/config/profiles.yaml")
+	viper.SetDefault("SNOOZE_CACERT", "/cacert/ca.crt")
 
 	viper.AutomaticEnv()
 	if err := viper.Unmarshal(&config); err != nil {
 		log.Fatal(err)
 	}
+
+	if err := config.TLS.Load(); err != nil {
+		log.Fatal(err)
+	}
+
 }

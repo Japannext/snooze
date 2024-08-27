@@ -1,15 +1,12 @@
 package v2
 
-type Destination struct {
-	// Type of destination (e.g mail/googlechat/patlite/browser)
-	Kind string `json:"kind"`
-	// Name of the instance of destination backend (e.g. prod/example.com)
-	Name string `json:"name"`
-}
+import (
+	"fmt"
+)
 
 type NotificationResults struct {
-	Items []Notification
-	Total int
+	Items []Notification `json:"items"`
+	Total int `json:"total"`
 }
 
 type Notification struct {
@@ -21,9 +18,19 @@ type Notification struct {
 	LogUID string `json:"logUID,omitempty"`
 	Body map[string]string `json:"body"`
 
-	// The notification profile
-	Profile string `json:"profile"`
 	Labels map[string]string `json:"labels"`
 	DocumentationURL string `json:"documentationURL"`
 	SnoozeURL string `json:"snoozeURL"`
+}
+
+type Destination struct {
+	// Name of the notification queue it will be sent to
+	Queue string `json:"queue" yaml:"queue"`
+
+	// Name of the profile (when notification have multiple profiles, e.g. destinations)
+	Profile string `json:"profile" yaml:"profile"`
+}
+
+func (dest *Destination) String() string {
+	return fmt.Sprintf("%s:%s", dest.Queue, dest.Profile)
 }

@@ -1,18 +1,18 @@
 package utils
 
-type OrderedStringSet struct {
-	a []string
-	m map[string]bool
+type OrderedSet[T comparable] struct {
+	a []T
+	m map[T]bool
 }
 
-func NewOrderedStringSet() *OrderedStringSet {
-	return &OrderedStringSet{
-		a: []string{},
-		m: map[string]bool{},
+func NewOrderedSet[T comparable]() *OrderedSet[T] {
+	return &OrderedSet[T]{
+		a: []T{},
+		m: map[T]bool{},
 	}
 }
 
-func (set *OrderedStringSet) Append(item string) {
+func (set *OrderedSet[T]) Append(item T) {
 	if _, exists := set.m[item]; exists {
 		return
 	}
@@ -20,12 +20,12 @@ func (set *OrderedStringSet) Append(item string) {
 	set.a = append(set.a, item)
 }
 
-func (set *OrderedStringSet) AppendMany(items []string) {
+func (set *OrderedSet[T]) AppendMany(items []T) {
 	for _, item := range items {
 		set.Append(item)
 	}
 }
 
-func (set *OrderedStringSet) Items() []string {
+func (set *OrderedSet[T]) Items() []T {
 	return set.a
 }

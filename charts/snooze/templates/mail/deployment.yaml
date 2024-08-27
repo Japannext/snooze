@@ -7,7 +7,7 @@ metadata:
   labels:
     app.kubernetes.io/name: snooze
     app.kubernetes.io/instance: "{{ .Release.Name }}"
-    app.kubernetes.io/component: api
+    app.kubernetes.io/component: mail
     app.kubernetes.io/part-of: "{{ .Values.partOf }}"
 spec:
   replicas: {{ .Values.mail.replicas }}
@@ -16,13 +16,13 @@ spec:
     matchLabels:
       app.kubernetes.io/name: snooze
       app.kubernetes.io/instance: "{{ .Release.Name }}"
-      app.kubernetes.io/component: api
+      app.kubernetes.io/component: mail
   template:
     metadata:
       labels:
         app.kubernetes.io/name: snooze
         app.kubernetes.io/instance: "{{ .Release.Name }}"
-        app.kubernetes.io/component: api
+        app.kubernetes.io/component: mail
         app.kubernetes.io/part-of: "{{ .Values.partOf }}"
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
@@ -53,13 +53,17 @@ spec:
           value: "{{ .Values.mail.config.port }}"
         - name: SMTP_DEFAULT_SENDER
           value: "{{ .Values.mail.config.defaultSender }}"
+        {{- if .Values.cacertConfigMap }}
+        - name: SNOOZE_CACERT
+          value: "/cacert/ca.crt"
+        {{- end }}
         envFrom:
         - configMapRef:
             name: "{{ .Release.Name }}-common"
         volumeMounts:
         - name: config
           mountPath: /config
-        {{- if .Values.mail.cacertConfigMap }}
+        {{- if .Values.cacertConfigMap }}
         - name: cacert
           mountPath: /cacert
         {{- end }}
@@ -93,8 +97,8 @@ spec:
       - name: config
         configMap:
           name: "{{ .Release.Name }}-mail-profiles"
-      {{- if .Values.mail.cacertConfigMap }}
+      {{- with .Values.cacertConfigMap }}
       - name: cacert
         configMap:
-          name: "{{ .Values.mail.cacertConfigMap }}"
+          name: "{{ . }}"
       {{- end }}
