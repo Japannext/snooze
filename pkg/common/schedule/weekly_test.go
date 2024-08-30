@@ -18,8 +18,8 @@ type weeklyTest struct {
 }
 
 // 20 cases (going through all code cases in order)
-// Friday     Saturday   Sunday     Monday     Tuesday    Wednesday
-// 2024-04-19 2024-04-20 2024-04-21 2024-04-22 2024-04-23 2024-04-24
+// Friday      Saturday    Sunday      Monday      Tuesday     Wednesday
+// 2024-04-19  2024-04-20  2024-04-21  2024-04-22  2024-04-23  2024-04-24
 var weeklyTests = []weeklyTest{
 	// Simple case
 	{"Simple case #1: (a.hour < w.hour) && (w.hour < b.hour)",
@@ -62,24 +62,29 @@ var weeklyTests = []weeklyTest{
 		"Monday", "22:00", "Wednesday", "01:30", "2024-04-24T01:40:00+09:00", false},
 }
 
+func newWeektime(weekday, t string) *Weektime {
+	wt := &Weektime{}
+	wt.Weekday = weekday
+	wt.Time = t
+	return wt
+}
+
 func TestWeeklyMatch(t *testing.T) {
 
 	tzName := "Asia/Tokyo"
 
 	for _, td := range weeklyTests {
 		t.Run(td.Name, func(t *testing.T) {
-			s := &WeeklySchedule{
-				From:     &WeekTimeRepr{td.FromWeekday, td.FromTime},
-				To:       &WeekTimeRepr{td.ToWeekday, td.ToTime},
-				TimeZone: tzName,
-			}
-			w, err := s.Resolve()
-			assert.NoError(t, err)
+			s := &WeeklySchedule{}
+			s.From = newWeektime(td.FromWeekday, td.FromTime)
+			s.To = newWeektime(td.ToWeekday, td.ToTime)
+			s.TimeZone = tzName
+			s.Load()
 
 			tt, err := time.Parse(time.RFC3339, td.Time)
 			assert.NoError(t, err)
 
-			assert.Equal(t, td.Expected, w.Match(&tt))
+			assert.Equal(t, td.Expected, s.Match(&tt))
 		})
 	}
 }

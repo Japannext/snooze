@@ -12,6 +12,7 @@ func Startup() *daemon.DaemonManager {
 
 	logging.Init()
 	initConfig()
+	initMetrics()
 	rabbitmq.Init()
 	producer = rabbitmq.NewLogProducer()
 

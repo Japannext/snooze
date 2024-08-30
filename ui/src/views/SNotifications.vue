@@ -3,11 +3,13 @@ import { h, ref, onMounted } from 'vue'
 import axios from 'axios'
 import type { AxiosResponse } from 'axios'
 import { NTag, NIcon, NButton, NDataTable, NInputGroup } from 'naive-ui'
+import { useLoadingBar } from 'naive-ui'
 import { Refresh } from '@vicons/ionicons5'
 
 import SSearch from '@/components/SSearch.vue'
 import STimeRange from '@/components/STimeRange.vue'
 import STimestamp from '@/components/STimestamp.vue'
+import STimestampTitle from '@/components/STimestampTitle.vue'
 import SDestination from '@/components/SDestination.vue'
 import type { Notification, NotificationResults } from '@/api/types'
 import { defaultRangeMillis } from '@/utils/timerange'
@@ -15,13 +17,13 @@ import { usePagination } from '@/utils/pagination'
 
 const search = ref<string>("")
 const items = ref<Array<Notification>>()
-const loading = ref<boolean>(false)
+const loading = useLoadingBar()
 const rangeMillis = ref<[number, number]>(defaultRangeMillis())
 const stimerange = ref(null)
 const pagination = usePagination(getItems)
 
 function getItems(): Promise {
-  loading.value = true
+  loading.start()
   var timerange = stimerange.value.getTime()
   var params = {
     page: pagination.page,
@@ -42,45 +44,16 @@ function getItems(): Promise {
       if (resp.data) {
         items.value = resp.data.items
         pagination.itemCount = resp.data.total
+        pagination.setMore(resp.data.more)
       } else {
         console.log("Notifications not found")
       }
-      loading.value = false
+      loading.finish()
     })
     .catch((err) => {
-      items.value = []
-      loading.value = false
+      // items.value = []
+      loading.error()
     })
-}
-
-function renderSeverity(row) {
-  var color: string
-  // Trace
-  if (row.severityNumber <= 4) {
-    color = "default"
-  }
-  // Debug
-  else if (row.severityNumber <= 8) {
-    color = "default"
-  }
-  // Info
-  else if (row.severityNumber <= 12) {
-    color = "info"
-  }
-  // Warning
-  else if (row.severityNumber <= 16) {
-    color = "warning"
-  }
-  // Error
-  else if (row.severityNumber <= 20) {
-    color = "error"
-  }
-  // Fatal
-  else {
-    color = "error"
-  }
-
-  return h(NTag, {type: color}, {default: () => row.severityText})
 }
 
 function renderExpand(row) {
@@ -91,7 +64,12 @@ function renderExpand(row) {
 
 const columns = [
   {type: 'expand', renderExpand: renderExpand},
-  {title: 'Timestamp', key: 'timestampMillis', render: (row) => h(STimestamp, {timestampMillis: row.timestampMillis}), width: 230},
+  {
+    key: 'timestampMillis',
+    title: () => h(STimestampTitle),
+    render: (row) => h(STimestamp, {timestampMillis: row.timestampMillis}),
+    width: 150,
+  },
   {title: 'Destination', render: (row) => h(SDestination, {destination: row.destination})},
   {title: 'Body', key: 'body', ellipsis: {tooltip: {placement: "bottom-end", width: 500}}},
   {title: 'Action', width: 200},
@@ -125,7 +103,6 @@ function onSearch(text: string) {
     remote
     striped
     bordered
-    :loading="loading"
     :resizable="true"
     size="small"
     :single-line="false"

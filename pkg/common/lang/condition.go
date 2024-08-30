@@ -153,9 +153,5 @@ func (c *Condition) String() string {
 }
 
 func (c *Condition) MatchLog(ctx context.Context, item *api.Log) (bool, error) {
-	return c.gval.EvalBool(ctx, map[string]interface{}{
-		"source": item.Source,
-		"identity": item.Identity,
-		"labels": item.Labels,
-	})
+	return c.gval.EvalBool(ctx, item.Context())
 }

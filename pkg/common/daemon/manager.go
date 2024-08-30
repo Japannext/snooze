@@ -45,6 +45,7 @@ func (dm *DaemonManager) Run() {
 	var err error
 
 	dm.setupHealthcheck()
+	dm.setupPrometheus()
 
 	// Catch SIGTERM signals and exit everything
 	dm.errs.Go(func() error {

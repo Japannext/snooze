@@ -1,0 +1,28 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: "{{ .Release.Name }}-rabbitmq"
+  namespace: "{{ .Release.Namespace }}"
+  {{- with .Values.podMonitor.extraLabels }}
+  labels:
+    {{- . | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+  endpoints:
+  - port: prometheus
+    scheme: http
+    interval: 15s
+    scrapeTimeout: 14s
+  - port: prometheus
+    scheme: http
+    path: /metrics/detailed
+    params:
+      family:
+        - queue_coarse_metrics
+        - queue_metrics
+    interval: 15s
+    scrapeTimeout: 14s
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: rabbitmq

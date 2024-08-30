@@ -22,22 +22,22 @@ func Process(item *api.Log) error {
 	var destinations = utils.NewOrderedSet[api.Destination]()
 	var merr = utils.NewMultiError("Failed to notify item trace_id=%s.")
 
-	for _, rule := range computedRules {
-		if rule.internal.condition != nil {
-			match, err := rule.internal.condition.MatchLog(ctx, item)
+	for _, notif := range notifications {
+		if notif.internal.condition != nil {
+			match, err := notif.internal.condition.MatchLog(ctx, item)
 			if err != nil {
 				return err
 			}
 			if !match {
 				continue
 			}
-			log.Debugf("Matched rule '%s', destination(s): %s", rule.If, rule.Destinations)
+			log.Debugf("Matched notif '%s', destination(s): %s", notif.If, notif.Destinations)
 		}
-		destinations.AppendMany(rule.Destinations)
+		destinations.AppendMany(notif.Destinations)
 	}
 	// Defaults
 	if len(destinations.Items()) == 0 {
-		log.Debugf("Match no rule, default destinations: %s", defaultDestinations)
+		log.Debugf("Match no notif, default destinations: %s", defaultDestinations)
 		destinations.AppendMany(defaultDestinations)
 	}
 
@@ -51,14 +51,16 @@ func Process(item *api.Log) error {
 				"message": item.Message,
 			},
 		}
-		producer, found := producers[dest.Queue]
-		if !found {
-			log.Errorf("Producer for queue '%s' not found! This should not happen!", dest.Queue)
-			continue
-		}
-		if err := producer.Publish(notification); err != nil {
-			merr.AppendErr(err)
-			continue
+		if dest.Queue != "dummy" {
+			producer, found := producers[dest.Queue]
+			if !found {
+				log.Errorf("Producer for queue '%s' not found! This should not happen!", dest.Queue)
+				continue
+			}
+			if err := producer.Publish(notification); err != nil {
+				merr.AppendErr(err)
+				continue
+			}
 		}
 		if err := opensearch.LogStore.StoreNotification(notification); err != nil {
 			merr.AppendErr(err)

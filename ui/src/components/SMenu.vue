@@ -9,10 +9,7 @@ console.log(`menuOptions: ${JSON.stringify(menuOptions)}`)
 </script>
 
 <template>
-  <div>
-    <n-menu
-      bordered
-      :options="menuOptions"
-    />
-  </div>
+  <n-menu
+    :options="menuOptions"
+  />
 </template>

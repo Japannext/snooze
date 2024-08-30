@@ -5,10 +5,10 @@ import (
 )
 
 type LogStore interface {
+	GetLog(string) (*api.Log, error)
 	StoreLog(*api.Log) error
 	StoreNotification(*api.Notification) error
-	SearchLogs(string, api.TimeRange, api.Pagination) (api.LogsResponse, error)
-	GetLog(string) (*api.Alert, error)
+	SearchLogs(string, api.TimeRange, api.Pagination) (*api.LogResults, error)
 }
 
 type BulkStore interface {

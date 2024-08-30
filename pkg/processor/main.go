@@ -22,16 +22,17 @@ func Startup() *daemon.DaemonManager {
 
 	logging.Init()
 	initConfig()
+	initMetrics()
 	opensearch.Init()
 	redis.Init()
 	rabbitmq.Init()
 
-	transform.InitRules(pipeline.TransformRules)
-	silence.InitRules(pipeline.SilenceRules)
-	profile.InitRules(pipeline.Profiles)
+	transform.Startup(pipeline.Transforms)
+	silence.Startup(pipeline.Silences)
+	profile.Startup(pipeline.Profiles)
 	snooze.Init()
-	ratelimit.Init(pipeline.RateLimit)
-	notification.Startup(pipeline.NotificationRules, pipeline.DefaultNotificationChannels)
+	ratelimit.Startup(pipeline.RateLimits)
+	notification.Startup(pipeline.Notifications, pipeline.DefaultDestinations)
 
 	dm := daemon.NewDaemonManager()
 	dm.AddDaemon("processor", NewProcessor())

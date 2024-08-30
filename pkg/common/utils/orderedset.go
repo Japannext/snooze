@@ -12,6 +12,12 @@ func NewOrderedSet[T comparable]() *OrderedSet[T] {
 	}
 }
 
+func OrderedSetFrom[T comparable](items []T) *OrderedSet[T] {
+	set := NewOrderedSet[T]()
+	set.AppendMany(items)
+	return set
+}
+
 func (set *OrderedSet[T]) Append(item T) {
 	if _, exists := set.m[item]; exists {
 		return

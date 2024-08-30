@@ -6,8 +6,10 @@ import { DateTime } from 'luxon'
 import { useRouteQuery } from '@vueuse/router'
 
 const day = (24 * 3600 * 1000)
+const hour = 3600 * 1000
 
 enum Preset {
+  Last1Hour = "Last 1 hour",
   Last24Hours = "Last 24 hours",
   Last7Days = "Last 7 days"
 }
@@ -65,6 +67,9 @@ function getTime(): [number, number] {
       case Preset.Last7Days: {
         return [now - 7*day, 0]
       }
+      case Preset.Last1Hour: {
+        return [now - 1*hour, 0]
+      }
     }
   }
   if (start.value || end.value) {
@@ -94,6 +99,7 @@ function exit() {
     <n-tabs>
       <n-tab-pane name="presets" tab="Presets">
         <n-radio-group v-model:value="preset">
+          <n-radio-button :value="Preset.Last1Hour" label="Last 1 hour" @click="setPreset(Preset.Last1Hour)" />
           <n-radio-button :value="Preset.Last24Hours" label="Last 24 hours" @click="setPreset(Preset.Last24Hours)" />
           <n-radio-button :value="Preset.Last7Days" label="Last 7 days" @click="setPreset(Preset.Last7Days)" />
         </n-radio-group>

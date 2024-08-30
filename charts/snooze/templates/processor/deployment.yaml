@@ -38,10 +38,7 @@ spec:
         args:
         - processor
         ports:
-        - name: otlp-grpc
-          containerPort: 4317
-          protocol: TCP
-        - name: rest-api
+        - name: http
           containerPort: 8080
           protocol: TCP
         resources:

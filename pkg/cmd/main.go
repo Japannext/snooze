@@ -10,6 +10,7 @@ import (
 	"github.com/japannext/snooze/pkg/processor"
 	"github.com/japannext/snooze/pkg/version"
 	"github.com/japannext/snooze/pkg/sources/syslog"
+	"github.com/japannext/snooze/pkg/sources/otel"
 	"github.com/japannext/snooze/pkg/samples"
 	"github.com/japannext/snooze/pkg/notifiers/mail"
 )
@@ -25,6 +26,7 @@ func init() {
 	root.AddCommand(processor.Cmd)
 	root.AddCommand(apiserver.Cmd)
 	root.AddCommand(syslog.Cmd)
+	root.AddCommand(otel.Cmd)
 	root.AddCommand(mail.Cmd)
 	root.AddCommand(samples.Cmd)
 }

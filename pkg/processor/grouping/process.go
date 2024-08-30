@@ -2,32 +2,37 @@ package grouping
 
 import (
 	"context"
+	"encoding/hex"
 
 	"github.com/sirupsen/logrus"
 
 	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/common/lang"
 	"github.com/japannext/snooze/pkg/common/utils"
 )
 
 func Process(item *api.Log) error {
 	ctx := context.Background()
-	for _, rule := range computedRules {
-		v, err := rule.Condition.MatchLog(ctx, item)
+	if len(item.Group.Labels) != 0 { // existing grouping
+		item.Group.Hash = hex.EncodeToString(utils.ComputeHash(item.Group.Labels))
+		return nil
+	}
+	for _, group := range groupings {
+		match, err := group.internal.condition.MatchLog(ctx, item)
 		if err != nil {
 			return err
 		}
-		if v {
-			item.GroupLabels = make(map[string]string)
-			for _, fi := range rule.Fields {
-				v, err := fi.Get(ctx, item)
+		if match {
+			item.Group.Labels = make(map[string]string)
+			for _, field := range group.internal.fields {
+				value, err := lang.ExtractField(item, field)
 				if err != nil {
-					logrus.Warnf("Failed to match %s: %s", fi, err)
+					logrus.Warnf("Failed to match %s: %s", field, err)
 					continue
 				}
-				item.GroupLabels[fi.String()] = v
+				item.Group.Labels[field.String()] = value
 			}
-			item.GroupHash = utils.ComputeHash(item.GroupLabels)
-			break
+			item.Group.Hash = hex.EncodeToString(utils.ComputeHash(item.Group.Labels))
 		}
 	}
 

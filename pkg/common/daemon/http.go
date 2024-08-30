@@ -16,7 +16,7 @@ type HttpDaemon struct {
 func NewHttpDaemon() *HttpDaemon {
 	router := gin.New()
 	router.Use(gin.LoggerWithConfig(gin.LoggerConfig{
-		SkipPaths: []string{"/livez", "/readyz"},
+		SkipPaths: []string{"/livez", "/readyz", "/metrics"},
 	}))
 	router.Use(gin.Recovery())
 	return &HttpDaemon{

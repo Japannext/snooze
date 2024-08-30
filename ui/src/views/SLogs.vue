@@ -5,10 +5,10 @@ import type { AxiosResponse } from 'axios'
 import { NIcon, NButton, NSpace, NDataTable, NInputGroup, NLoadingBarProvider, useLoadingBar } from 'naive-ui'
 import { Refresh } from '@vicons/ionicons5'
 
-import STimestampTitle from '@/components/STimestampTitle.vue'
 import SSearch from '@/components/SSearch.vue'
 import STimeRange from '@/components/STimeRange.vue'
 import STimestamp from '@/components/STimestamp.vue'
+import STimestampTitle from '@/components/STimestampTitle.vue'
 import SLogAttributes from '@/components/SLogAttributes.vue'
 import type { Log, LogResults } from '@/api/types'
 import { defaultRangeMillis } from '@/utils/timerange'
@@ -16,7 +16,6 @@ import { usePagination } from '@/utils/pagination'
 
 const search = ref<string>("")
 const items = ref<Array<Log>>()
-// const loading = ref<boolean>(false)
 const rangeMillis = ref<[number, number]>(defaultRangeMillis())
 const stimerange = ref(null)
 const loading = useLoadingBar()
@@ -46,6 +45,7 @@ function getLogs(): Promise {
       if (resp.data) {
         items.value = resp.data.items
         pagination.itemCount = resp.data.total
+        pagination.setMore(resp.data.more)
       } else {
         console.log("Logs not found")
       }

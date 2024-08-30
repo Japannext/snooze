@@ -2,52 +2,56 @@ package profile
 
 import (
 	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/common/lang"
+	"github.com/japannext/snooze/pkg/common/utils"
 )
+
+type Kv struct {
+	Key string `yaml:"key"`
+	Value string `yaml:"value"`
+}
 
 type FastMapper struct {
 	keys []string
-	mapper map[Kv][]*Rule
+	mapper map[Kv][]*Profile
+	fields map[string]*lang.Field
 }
 
-// Return a set of keys, ordered by order of appearance
-// in rules
-func orderedSetOfKeys(rules []*Rule) (keys []string) {
-	inserted := make(map[string]bool)
-	for _, rule := range rules {
-		key := rule.Switch.Key
-		if !inserted[key] {
-			keys = append(keys, key)
+func NewFastMapper(prfs []*Profile) *FastMapper {
+	m := map[Kv][]*Profile{}
+	keys := utils.NewOrderedSet[string]()
+	fields := map[string]*lang.Field{}
+	var err error
+	for _, prf := range prfs {
+		prf.Load()
+		m[prf.Switch] = append(m[prf.Switch], prf)
+		fields[prf.Switch.Key], err = lang.NewField(prf.Switch.Key)
+		if err != nil {
+			log.Fatalf("invalid field `%s`", prf.Switch.Key)
 		}
+		keys.Append(prf.Switch.Key)
+
 	}
-	return
+	return &FastMapper{keys.Items(), m, fields}
 }
 
-func NewFastMapper(rules []*Rule) *FastMapper {
-	m := make(map[Kv][]*Rule)
-	keys := orderedSetOfKeys(rules)
-	for _, rule := range rules {
-		if err := rule.Startup(); err != nil {
-			log.Fatalf("[Startup] in profile %s: %s", rule.Name, err)
-		}
-		if _, ok := m[rule.Switch]; !ok {
-			m[rule.Switch] = []*Rule{}
-		}
-		m[rule.Switch] = append(m[rule.Switch], rule)
-	}
-	return &FastMapper{keys, m}
-}
-
-func (m *FastMapper) GetRules(item *api.Log) (rules []*Rule) {
+func (m *FastMapper) GetMatches(item *api.Log) []*Profile {
 	for _, key := range m.keys {
-		value, ok := FindValue(key, item)
-		if !ok {
+		field, found := m.fields[key]
+		if !found {
+			log.Warnf("unexpected field `%s`", key)
 			continue
 		}
-		rules, ok = m.mapper[Kv{key, value}]
-		if !ok {
+		value, err := lang.ExtractField(item, field)
+		if err != nil {
+			log.Warnf("bad match: %s", err)
 			continue
 		}
-		return
+		prfs, found := m.mapper[Kv{key, value}]
+		if !found {
+			continue
+		}
+		return prfs
 	}
-	return
+	return []*Profile{}
 }

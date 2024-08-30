@@ -24,7 +24,7 @@ func NewOtelGrpcServer() *OtelGrpcServer {
 	}
 }
 
-func (s *OtelGrpcServer) Start() error {
+func (s *OtelGrpcServer) Run() error {
 	log.Infof("Starting opentelemetry listener")
 
 	hostport := fmt.Sprintf("%s:%d", config.GrpcListeningAddress, config.GrpcListeningPort)

@@ -1,7 +1,6 @@
 package grouping
 
 import (
-	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 
@@ -9,47 +8,45 @@ import (
 )
 
 func TestProcess(t *testing.T) {
-	rules := []*Rule{
+	groupings := []*Grouping{
 		{
-			If:      `alert.Source.Kind == "syslog"`,
-			GroupBy: []string{`alert.Labels.host`, `alert.Labels.process`},
+			If:      `source.Kind == "syslog"`,
+			GroupBy: []string{`labels.host`, `labels.process`},
 		},
 	}
-	InitRules(rules)
+	Startup(groupings)
 
 	tests := []struct {
 		Name           string
-		Alert          *api.Alert
+		Log          *api.Log
 		ExpectedLabels map[string]string
 		ExpectMatch    bool
 	}{
 		{
 			"syslog hash",
-			&api.Alert{
+			&api.Log{
 				Source:         api.Source{Kind: "syslog", Name: "prod-syslog-1.example.com"},
 				SeverityText:   "error",
 				SeverityNumber: 13,
 				Labels:         map[string]string{"host": "host-1", "process": "sshd"},
-				Body:           map[string]string{"body": "error: kex_exchange_identification: Connection closed by remote host"},
+				Message:        "error: kex_exchange_identification: Connection closed by remote host",
 			},
-			map[string]string{`alert.Labels.host`: "host-1", `alert.Labels.process`: "sshd"},
+			map[string]string{`labels.host`: "host-1", `labels.process`: "sshd"},
 			true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
-			err := Process(tt.Alert)
+			err := Process(tt.Log)
 			assert.NoError(t, err)
 			if tt.ExpectMatch {
-				assert.NotEmpty(t, tt.Alert.GroupHash)
+				assert.NotEmpty(t, tt.Log.Group.Hash)
 			} else {
-				assert.Empty(t, tt.Alert.GroupHash)
+				assert.Empty(t, tt.Log.Group.Hash)
 			}
-			fmt.Printf("GroupHash: %v+\n", tt.Alert.GroupHash)
-			fmt.Printf("GroupLabels: %v+\n", tt.Alert.GroupLabels)
 			for k, v := range tt.ExpectedLabels {
-				assert.Equal(t, v, tt.Alert.GroupLabels[k])
+				assert.Equal(t, v, tt.Log.Group.Labels[k])
 			}
 		})
 	}

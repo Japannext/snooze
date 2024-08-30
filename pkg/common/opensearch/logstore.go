@@ -141,6 +141,9 @@ func (lst *OpensearchLogStore) SearchLogs(ctx context.Context, search string, ti
 		res.Items[i].ID = hit.ID
 	}
 	res.Total = resp.Hits.Total.Value
+	if resp.Hits.Total.Relation != "eq" {
+		res.More = true
+	}
 	return res, nil
 }
 

@@ -16,6 +16,10 @@ export const useLocale = defineRefStore('locale', () => ({
   locale: useLocalStorage('locale', 'en'),
 }))
 
+export const useTheme = defineRefStore('theme', () => ({
+  theme: useLocalStorage('theme', 'light'),
+}))
+
 export const useSider = defineRefStore('sider', () => {
   return {
     collapsed: useLocalStorage('sider-collapsed', false),

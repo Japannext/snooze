@@ -36,14 +36,13 @@ var config *Config
 var pipeline *Pipeline
 
 type Pipeline struct {
-	Name                        string               `yaml:"name"`
-	TransformRules              []*transform.Rule    `yaml:"transform_rules"`
-	GroupingRules               []*grouping.Rule     `yaml:"grouping_rules"`
-	Profiles					[]*profile.Rule		 `yaml:"profiles"`
-	SilenceRules                []*silence.Rule      `yaml:"silence_rules"`
-	RateLimit                   *ratelimit.Rule      `yaml:"ratelimit"`
-	NotificationRules           []*notification.Rule `yaml:"notification_destinations"`
-	DefaultNotificationChannels []api.Destination    `yaml:"default_notification_destinations"`
+	Transforms	        []*transform.Transform		 `yaml:"transforms"`
+	Grouping	        []*grouping.Grouping		 `yaml:"groupings"`
+	Profiles			[]*profile.Profile			 `yaml:"profiles"`
+	Silences	        []*silence.Silence			 `yaml:"silences"`
+	RateLimits			[]*ratelimit.RateLimit		 `yaml:"ratelimits"`
+	Notifications       []*notification.Notification `yaml:"notifications"`
+	DefaultDestinations []api.Destination			 `yaml:"default_destinations"`
 }
 
 

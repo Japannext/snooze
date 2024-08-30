@@ -1,6 +1,9 @@
 package otel
 
 import (
+	"time"
+	"fmt"
+
 	commonv1 "go.opentelemetry.io/proto/otlp/common/v1"
 	logv1 "go.opentelemetry.io/proto/otlp/logs/v1"
 	resv1 "go.opentelemetry.io/proto/otlp/resource/v1"
@@ -8,28 +11,40 @@ import (
 	api "github.com/japannext/snooze/pkg/common/api/v2"
 )
 
-// Convert an opentelemetry format to the snooze native format
-func convertLog(resource *resv1.Resource, scope *commonv1.InstrumentationScope, lr *logv1.LogRecord) *api.Alert {
-	var alert *api.Alert
+const (
+	SOURCE_KIND = "otel"
+)
 
-	alert.Source = api.Source{Kind: "opentelemetry.io/logv1", Name: "main"}
+// Convert an opentelemetry format to the snooze native format
+func convertLog(resource *resv1.Resource, scope *commonv1.InstrumentationScope, lr *logv1.LogRecord) *api.Log {
+	var item *api.Log
+
+	item.Source = api.Source{Kind: SOURCE_KIND, Name: config.SourceName}
 
 	// Timestamps
-	alert.Timestamp = lr.TimeUnixNano
+	item.TimestampMillis = lr.TimeUnixNano / 1000 / 1000
 	if lr.ObservedTimeUnixNano == 0 {
-		alert.ObservedTimestamp = timeNow()
+		item.ObservedTimestampMillis = uint64(time.Now().UnixMilli())
 	} else {
-		alert.ObservedTimestamp = lr.ObservedTimeUnixNano
+		item.ObservedTimestampMillis = lr.ObservedTimeUnixNano / 1000 / 1000
 	}
 
-	alert.SeverityText = lr.SeverityText
-	alert.SeverityNumber = int32(lr.SeverityNumber)
+	item.SeverityText = lr.SeverityText
+	item.SeverityNumber = int32(lr.SeverityNumber)
 
-	alert.Labels = kvToMap(resource.Attributes)
-	alert.Attributes = kvToMap(lr.Attributes)
+	item.Labels = map[string]string{}
+	for key, value := range kvToMap(resource.Attributes) {
+		item.Labels[fmt.Sprintf("otel.resource.%s", key)] = value
+	}
 
-	anyvalue := &AnyValue{lr.Body}
-	alert.Body = anyvalue.ToMap()
+	body := (&AnyValue{lr.Body}).ToMap()
+	for key, value := range body {
+		if key == "message" {
+			item.Message = value
+		} else {
+			item.Labels[fmt.Sprintf("otel.body.%s", key)] = value
+		}
+	}
 
-	return alert
+	return item
 }

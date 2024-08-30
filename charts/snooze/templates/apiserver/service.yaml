@@ -12,11 +12,11 @@ spec:
   type: ClusterIP
   ports:
   - port: 8080
-    name: rest-api
-    targetPort: rest-api
+    name: http
+    targetPort: http
     protocol: TCP
     appProtocol: http
   selector:
     app.kubernetes.io/name: snooze
     app.kubernetes.io/instance: "{{ .Release.Name }}"
-    app.kubernetes.io/component: api
+    app.kubernetes.io/component: apiserver

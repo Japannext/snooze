@@ -1,28 +1,49 @@
 package lang
 
 import (
-	"bytes"
+    "bytes"
+	"context"
+	"fmt"
 
-	"text/template"
+    "text/template"
+
+	api "github.com/japannext/snooze/pkg/common/api/v2"
 )
 
 type Template struct {
 	template *template.Template
 }
 
-func NewTemplate(name, raw string) (*Template, error) {
-	tmpl, err := template.New(name).Parse(raw)
+func NewTemplate(raw string) (*Template, error) {
+	t, err := template.New("log-pattern").Parse(raw)
 	if err != nil {
 		return nil, err
 	}
-	return &Template{tmpl}, nil
+	return &Template{t}, nil
 }
 
-func (tmpl *Template) Execute(data any) (string, error) {
-	var buf bytes.Buffer
-	err := tmpl.template.Execute(&buf, data)
-	if err != nil {
-		return "", err
+func NewTemplateMap(rawMap map[string]string) (map[string]Template, error) {
+	results := make(map[string]Template)
+	for key, text := range rawMap {
+		tpl, err := NewTemplate(text)
+		if err != nil {
+			return nil, fmt.Errorf("invalid template at key='%s' template='%s': %w", key, text, err)
+		}
+		results[key] = *tpl
 	}
-	return buf.String(), nil
+	return results, nil
+}
+
+func (t *Template) Execute(ctx context.Context, item api.HasContext) (string, error) {
+	data := item.Context()
+	capture := ctx.Value("capture").(map[string]string)
+	if len(capture) > 0 {
+		data["capture"] = capture
+	}
+	var buf bytes.Buffer
+	err := t.template.Execute(&buf, data)
+    if err != nil {
+        return "", err
+    }
+    return buf.String(), nil
 }

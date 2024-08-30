@@ -12,27 +12,27 @@ func TestCondition(t *testing.T) {
 
 	tests := []struct {
 		Raw         string
-		Alert       *api.Alert
+		Log       *api.Log
 		ExpectMatch bool
 	}{
 		{
-			`alert.Source.Kind == "syslog"`,
-			&api.Alert{Source: api.Source{Kind: "syslog", Name: "prod-syslog"}},
+			`source.Kind == "syslog"`,
+			&api.Log{Source: api.Source{Kind: "syslog", Name: "prod-syslog"}},
 			true,
 		},
 		{
-			`alert.Source.Kind == "otlp"`,
-			&api.Alert{Source: api.Source{Kind: "syslog", Name: "prod-syslog"}},
+			`source.Kind == "otlp"`,
+			&api.Log{Source: api.Source{Kind: "syslog", Name: "prod-syslog"}},
 			false,
 		},
 		{
-			`has(alert.Labels.a, alert.Labels.b)`,
-			&api.Alert{Labels: map[string]string{"a": "1", "b": "2"}},
+			`has(labels.a, labels.b)`,
+			&api.Log{Labels: map[string]string{"a": "1", "b": "2"}},
 			true,
 		},
 		{
-			`has(alert.Labels["c"])`,
-			&api.Alert{Labels: map[string]string{"a": "1", "b": "2"}},
+			`has(labels["c"])`,
+			&api.Log{Labels: map[string]string{"a": "1", "b": "2"}},
 			false,
 		},
 	}
@@ -41,7 +41,7 @@ func TestCondition(t *testing.T) {
 		t.Run(tt.Raw, func(t *testing.T) {
 			c, err := NewCondition(tt.Raw)
 			if assert.NoError(t, err) {
-				m, err := c.Match(context.Background(), tt.Alert)
+				m, err := c.MatchLog(context.Background(), tt.Log)
 				if assert.NoError(t, err) {
 					assert.Equal(t, tt.ExpectMatch, m)
 				}

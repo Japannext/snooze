@@ -1,14 +1,18 @@
 <script setup lang="ts">
-import '@/utils/token'
 import { NConfigProvider, NDialogProvider, NNotificationProvider, NMessageProvider, NLoadingBarProvider } from 'naive-ui'
+import '@/utils/token'
+import { useTheme, useLocale } from '@/stores'
+
+const locale = useLocale()
+const theme = useTheme()
+
 </script>
 
 <template>
   <n-config-provider
-    class="demo"
-    :locale="lang"
+    class="config"
+    :locale="locale"
     :theme="theme"
-    :theme-overrides="themeOverrides"
   >
     <n-dialog-provider>
       <n-message-provider>

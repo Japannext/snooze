@@ -11,13 +11,13 @@ func Process(item *api.Log) error {
 
 	ctx := context.Background()
 
-	for _, rule := range computedRules {
-		v, err := rule.Condition.MatchLog(ctx, item)
+	for _, s := range silences {
+		v, err := s.internal.condition.MatchLog(ctx, item)
 		if err != nil {
 			return err
 		}
 		if v {
-			item.Mute.Silence(fmt.Sprintf("Silenced by rule %s", rule.String()))
+			item.Mute.Silence(fmt.Sprintf("Silenced by rule %s", s))
 			break
 		}
 	}

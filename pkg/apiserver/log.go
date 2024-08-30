@@ -2,22 +2,13 @@ package apiserver
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/japannext/snooze/pkg/common/opensearch"
 	api "github.com/japannext/snooze/pkg/common/api/v2"
 )
-
-type LogsResponse struct {
-	Logs []api.Log `json:"logs"`
-	Total int `json:"total"`
-}
-
-func registerLogRoutes(r *gin.Engine) {
-	r.GET("/api/log/:uid", getLog)
-	r.GET("/api/logs", searchLogs)
-}
 
 func getLog(c *gin.Context) {
 	uid := c.Param("uid")
@@ -42,6 +33,7 @@ type Search struct {
 func searchLogs(c *gin.Context) {
 
 	var (
+		start = time.Now()
 		pagination = api.NewPagination()
 		timerange api.TimeRange
 		search Search
@@ -57,4 +49,12 @@ func searchLogs(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, res)
+	logSearchDuration.Observe(time.Since(start).Seconds())
+}
+
+func init() {
+	routes = append(routes, func(r *gin.Engine) {
+		r.GET("/api/log/:uid", getLog)
+		r.GET("/api/logs", searchLogs)
+	})
 }

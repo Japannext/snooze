@@ -48,3 +48,7 @@ func registerAuthRoutes(r *gin.Engine) {
 	}
 	r.GET("/api/auth/buttons", listAuthButtons)
 }
+
+func init() {
+	routes = append(routes, registerAuthRoutes)
+}

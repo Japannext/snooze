@@ -14,11 +14,6 @@ type NotificationsResponse struct {
 	Total int `json:"total"`
 }
 
-func registerNotificationRoutes(r *gin.Engine) {
-	// r.GET("/api/log/:uid", getNotification)
-	r.GET("/api/notifications", searchNotifications)
-}
-
 /*
 func getNotification(c *gin.Context) {
 	uid := c.Param("uid")
@@ -55,4 +50,10 @@ func searchNotifications(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, res)
+}
+
+func init() {
+	routes = append(routes, func(r *gin.Engine) {
+		r.GET("/api/notifications", searchNotifications)
+	})
 }

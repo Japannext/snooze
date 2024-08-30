@@ -3,6 +3,7 @@ package processor
 import (
 	"fmt"
 	"encoding/json"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 
@@ -68,6 +69,8 @@ func handler(delivery rabbitmq.Delivery) error {
 }
 
 func Process(item *api.Log) error {
+	start := time.Now()
+
 	log.Debugf("Start processing item: %s", item)
 	if err := transform.Process(item); err != nil {
 		return err
@@ -91,5 +94,8 @@ func Process(item *api.Log) error {
 		return err
 	}
 	log.Debugf("End processing item: %s", item)
+
+	processMetrics(start, item)
+
 	return nil
 }

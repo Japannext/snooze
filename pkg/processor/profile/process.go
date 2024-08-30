@@ -7,7 +7,7 @@ import (
 )
 
 func Process(item *api.Log) error {
-	for _, rule := range fastMapper.GetRules(item) {
+	for _, rule := range fastMapper.GetMatches(item) {
 		reject := rule.Process(item)
 		if reject {
 			return nil

@@ -2,43 +2,43 @@ package schedule
 
 import (
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type DailySchedule struct {
 	From     string `yaml:"from" json:"from"`
 	To       string `yaml:"to" json:"to"`
 	TimeZone string `yaml:"timezone" json:"timezone"`
+
+	internal struct {
+		from *hourminute
+		to *hourminute
+		timezone *time.Location
+	}
+}
+
+func (dr *DailySchedule) Load() {
+	h1, m1, err := parseTime(dr.From)
+	if err != nil {
+		log.Fatalf("failed to load time `%s`: %s", dr.From, err)
+	}
+	dr.internal.from = &hourminute{h1, m1}
+	h2, m2, err := parseTime(dr.To)
+	if err != nil {
+		log.Fatalf("failed to load time `%s`: %s", dr.To, err)
+	}
+	dr.internal.to = &hourminute{h2, m2}
+	tz, err := time.LoadLocation(dr.TimeZone)
+	if err != nil {
+		log.Fatalf("failed to load timezone `%s`: %s", dr.TimeZone, err)
+	}
+	dr.internal.timezone = tz
 }
 
 type hourminute struct {
 	hour   int
 	minute int
-}
-
-type Daily struct {
-	From     *hourminute
-	To       *hourminute
-	TimeZone *time.Location
-}
-
-func (dr *DailySchedule) Resolve() (*Daily, error) {
-	h1, m1, err := parseTime(dr.From)
-	if err != nil {
-		return nil, err
-	}
-	h2, m2, err := parseTime(dr.To)
-	if err != nil {
-		return nil, err
-	}
-	tz, err := time.LoadLocation(dr.TimeZone)
-	if err != nil {
-		return nil, err
-	}
-	return &Daily{
-		From:     &hourminute{h1, m1},
-		To:       &hourminute{h2, m2},
-		TimeZone: tz,
-	}, nil
 }
 
 func (hm *hourminute) before(a *hourminute) bool {
@@ -72,8 +72,8 @@ func (hm *hourminute) InBetween(a, b *hourminute) bool {
 	return false
 }
 
-func (s *Daily) Match(t *time.Time) bool {
-	tt := t.In(s.TimeZone)
+func (s *DailySchedule) Match(t *time.Time) bool {
+	tt := t.In(s.internal.timezone)
 	hm := &hourminute{tt.Hour(), tt.Minute()}
-	return hm.InBetween(s.From, s.To)
+	return hm.InBetween(s.internal.from, s.internal.to)
 }

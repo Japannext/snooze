@@ -29,14 +29,16 @@ func TestMatch(t *testing.T) {
 
 	for _, td := range dailyTests {
 		t.Run(td.Name, func(t *testing.T) {
-			s := &DailySchedule{td.FromTime, td.ToTime, tzName}
-			d, err := s.Resolve()
-			assert.NoError(t, err)
+			s := &DailySchedule{}
+			s.From = td.FromTime
+			s.To = td.ToTime
+			s.TimeZone = tzName
+			s.Load()
 
 			tt, err := time.Parse(time.RFC3339, td.Time)
 			assert.NoError(t, err)
 
-			assert.Equal(t, td.Expected, d.Match(&tt))
+			assert.Equal(t, td.Expected, s.Match(&tt))
 		})
 	}
 }

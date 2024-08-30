@@ -4,18 +4,13 @@ import (
 	api "github.com/japannext/snooze/pkg/common/api/v2"
 )
 
-type SetRule struct {
+type SetTransform struct {
 	Target string `yaml:"target" json:"target"`
 	Value  string `yaml:"value" json:"value"`
 }
 
-func (rule *SetRule) Compute() Interface {
-	return nil
-}
+func (tr *SetTransform) Load() {}
 
-type computedSet struct {
-}
-
-func (s *computedSet) Process(item *api.Log) error {
+func (tr *SetTransform) Process(item *api.Log) error {
 	return nil
 }

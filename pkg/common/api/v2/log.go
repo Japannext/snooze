@@ -4,31 +4,21 @@ import (
 	"strings"
 )
 
-type ProcessedLog struct {
-	Log *Log `json:",inline"`
-
-	LogPattern string `json:"logPattern"`
-	Identity map[string]string `json:"identity"`
-	Group map[string]string `json:"group"`
-}
-
 type Log struct {
 	ID string `json:"id,omitempty"`
-
-	// The type of alert (syslog, opentelemetry, snmptrap, prometheus rule...),
-	// as well as the name of the instance (if any)
-	Source Source `json:"source"`
-
-	Identity map[string]string `json:"identity,omitempty"`
 
 	TimestampMillis         uint64 `json:"timestampMillis"`
 	ObservedTimestampMillis uint64 `json:"observedTimestampMillis,omitempty"`
 
+	// Information regarding the source plugin that created the log.
+	Source Source `json:"source"`
+
+	// What server/container/pod emitted the log.
+	Identity map[string]string `json:"identity,omitempty"`
+
 	Profile string `json:"profile,omitempty"`
 	Pattern string `json:"pattern,omitempty"`
-
-	GroupHash   []byte            `json:"groupHash,omitempty"`
-	GroupLabels map[string]string `json:"groupLabels,omitempty"`
+	Group LogGroup `json:"group"`
 
 	// Text representing the severity
 	SeverityText string `json:"severityText,omitempty"`
@@ -42,13 +32,46 @@ type Log struct {
 	// The main message of the log
 	Message string `json:"message"`
 
+	// Details written during snooze-process
+	Process *Process `json:"process,omitempty"`
+
 	// Mute the alert. This may skip notifications, or skip even display
 	Mute Mute `json:"mute,omitempty"`
 }
 
+type HasContext interface {
+	Context() map[string]interface{}
+}
+
+// Used by template systems in transforms/profiles/etc
+func (item *Log) Context() map[string]interface{} {
+	return map[string]interface{}{
+		"timestamp": item.TimestampMillis,
+		"source": item.Source,
+		"identity": item.Identity,
+		"labels": item.Labels,
+		"message": item.Message,
+	}
+}
+
+type Process struct {
+	Profile string `json:"profile,omitempty"`
+	Pattern string `json:"pattern,omitempty"`
+	Group LogGroup `json:"group"`
+}
+// A group of logs, that can be uniquely identified by a hash
+type LogGroup struct {
+	Hash string `json:"hash,omitempty"`
+	Labels map[string]string `json:"labels"`
+}
+
 type LogResults struct {
 	Items []Log `json:"items"`
+	// Indicate the total number of logs during the requested time period
 	Total int `json:"total"`
+	// Indicate if the total is exact, or if it reached
+	// the backend limit per response.
+	More bool `json:"more"`
 }
 
 func (a *Log) String() string {

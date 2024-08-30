@@ -27,12 +27,18 @@ func (s *server) Export(ctx context.Context, in *collectorv1.ExportLogsServiceRe
 			scope := sl.GetScope()
 			lrs := sl.GetLogRecords()
 			for _, lr := range lrs {
-				alert := convertLog(resource, scope, lr)
+				item := convertLog(resource, scope, lr)
 				if err != nil {
+					log.Warnf("Failed to convert log: %s", err)
 					failedItems++
 					continue
 				}
-				pq.Publish(ctx, alert)
+				if err := producer.Publish(item); err != nil {
+					// TODO
+					log.Warnf("Failed to publish log to process channel: %s", err)
+					failedItems++
+					continue
+				}
 			}
 		}
 	}

@@ -60,7 +60,7 @@ func (s *State) Validate() error {
 
 func StateFromBytes(b []byte) (*State, error) {
 	if len(b) < 6 {
-		fmt.Errorf("unknown response: expected 6 bytes, got %d", len(b))
+		return nil, fmt.Errorf("unknown response: expected 6 bytes, got %d", len(b))
 	}
 	s := &State{
 		Lights: make(map[string]string),
@@ -68,14 +68,14 @@ func StateFromBytes(b []byte) (*State, error) {
 	for i, color := range COLORS {
 		light, ok := lightByteToString[b[i]]
 		if !ok {
-			return s, fmt.Errorf("unknown byte `%s` for light", b[i])
+			return s, fmt.Errorf("unknown byte `%x` for light", b[i])
 		}
 		s.Lights[color] = light
 	}
 	var ok bool
 	s.Sound, ok = soundByteToString[b[5]]
 	if !ok {
-		return s, fmt.Errorf("unknown byte '%s' for sound", b[5])
+		return s, fmt.Errorf("unknown byte '%x' for sound", b[5])
 	}
 
 	return s, nil

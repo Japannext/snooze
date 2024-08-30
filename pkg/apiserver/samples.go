@@ -7,10 +7,6 @@ import (
 	"github.com/japannext/snooze/pkg/samples"
 )
 
-func registerSampleRoute(r *gin.Engine) {
-	r.POST("/api/sample", generateSamples)
-}
-
 func generateSamples(c *gin.Context) {
 
 	err := samples.Run()
@@ -22,3 +18,8 @@ func generateSamples(c *gin.Context) {
 	c.String(http.StatusOK, "All samples generated successfully")
 }
 
+func init() {
+	routes = append(routes, func(r *gin.Engine) {
+		r.POST("/api/sample", generateSamples)
+	})
+}

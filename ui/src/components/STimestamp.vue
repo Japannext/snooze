@@ -21,7 +21,7 @@ const date = computed(() => {
       {{ date.toRelative() }}
     </span>
     <span v-else>
-      {{ date.toFormat("yyyy-mm-dd HH:MM:ss") }}
+      {{ date.toFormat("yyyy-MM-dd HH:mm:ss") }}
     </span>
   </div>
 </template>
