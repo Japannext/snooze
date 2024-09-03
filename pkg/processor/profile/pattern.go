@@ -76,8 +76,7 @@ func (p *Pattern) Load() error {
 	return nil
 }
 
-func (p *Pattern) Process(item *api.Log) (match, reject bool) {
-	ctx := context.TODO()
+func (p *Pattern) Process(ctx context.Context, item *api.Log) (match, reject bool) {
 	// Matching pattern
 	match, capture := p.match(item)
 	if !match {

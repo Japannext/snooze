@@ -1,8 +1,9 @@
 package processor
 
 import (
-	"fmt"
+	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -69,28 +70,29 @@ func handler(delivery rabbitmq.Delivery) error {
 }
 
 func Process(item *api.Log) error {
+	ctx := context.TODO()
 	start := time.Now()
 
 	log.Debugf("Start processing item: %s", item)
-	if err := transform.Process(item); err != nil {
+	if err := transform.Process(ctx, item); err != nil {
 		return err
 	}
-	if err := silence.Process(item); err != nil {
+	if err := silence.Process(ctx, item); err != nil {
 		return err
 	}
-	if err := profile.Process(item); err != nil {
+	if err := profile.Process(ctx, item); err != nil {
 		return err
 	}
-	if err := grouping.Process(item); err != nil {
+	if err := grouping.Process(ctx, item); err != nil {
 		return err
 	}
-	if err := ratelimit.Process(item); err != nil {
+	if err := ratelimit.Process(ctx, item); err != nil {
 		return err
 	}
-	if err := notification.Process(item); err != nil {
+	if err := notification.Process(ctx, item); err != nil {
 		return err
 	}
-	if err := store.Process(item); err != nil {
+	if err := store.Process(ctx, item); err != nil {
 		return err
 	}
 	log.Debugf("End processing item: %s", item)

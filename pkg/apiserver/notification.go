@@ -43,7 +43,7 @@ func searchNotifications(c *gin.Context) {
 	c.BindQuery(&timerange)
 	c.BindQuery(&search)
 
-	res, err := opensearch.LogStore.SearchNotifications(c, search.Text, timerange, pagination)
+	res, err := opensearch.SearchNotifications(c, search.Text, timerange, pagination)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error getting logs for search='%s': %s", search.Text, err)
 		return

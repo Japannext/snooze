@@ -11,10 +11,10 @@ import (
 var buckets = []float64{0.1, 0.5, 1.0, 10.0, 60.0, 3600.0}
 
 var (
-    processedLogs = prometheus.NewCounterVec(prometheus.CounterOpts{
+    ingestedLogs = prometheus.NewCounterVec(prometheus.CounterOpts{
         Namespace: "snooze",
-        Name: "source_processed_logs",
-        Help: "number of logs processed",
+        Name: "ingested_logs",
+        Help: "number of logs ingested by source plugins (and queued)",
 	}, []string{"source_kind", "source_name"})
 	emptyTimestamp = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "snooze",
@@ -34,7 +34,7 @@ func processMetrics(start time.Time, item *api.Log) {
 	observedTimestamp := time.UnixMilli(int64(item.ObservedTimestampMillis))
 
 	// counter
-	processedLogs.WithLabelValues(SOURCE_KIND, config.InstanceName).Inc()
+	ingestedLogs.WithLabelValues(SOURCE_KIND, config.InstanceName).Inc()
 
 	if item.TimestampMillis == item.ObservedTimestampMillis {
 		emptyTimestamp.WithLabelValues(SOURCE_KIND, config.InstanceName).Inc()
@@ -47,7 +47,7 @@ func processMetrics(start time.Time, item *api.Log) {
 
 func initMetrics() {
 	prometheus.MustRegister(
-		processedLogs,
+		ingestedLogs,
 		emptyTimestamp,
 		sourceDelay,
 	)

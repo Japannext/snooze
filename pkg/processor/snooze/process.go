@@ -1,10 +1,12 @@
 package snooze
 
 import (
+	"context"
+
 	api "github.com/japannext/snooze/pkg/common/api/v2"
 )
 
-func Process(alert *api.Alert) error {
+func Process(ctx context.Context, alert *api.Alert) error {
 
 	// TODO
 

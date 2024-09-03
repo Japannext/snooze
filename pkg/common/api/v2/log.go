@@ -18,6 +18,8 @@ type Log struct {
 
 	Profile string `json:"profile,omitempty"`
 	Pattern string `json:"pattern,omitempty"`
+
+	// Grouping
 	Group LogGroup `json:"group"`
 
 	// Text representing the severity
@@ -38,6 +40,9 @@ type Log struct {
 	// Mute the alert. This may skip notifications, or skip even display
 	Mute Mute `json:"mute,omitempty"`
 }
+
+func (item *Log) GetID() string { return item.ID }
+func (item *Log) SetID(id string) { item.ID = id }
 
 type HasContext interface {
 	Context() map[string]interface{}

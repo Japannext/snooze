@@ -7,6 +7,7 @@ import (
 type NotificationResults struct {
 	Items []Notification `json:"items"`
 	Total int `json:"total"`
+	More bool `json:"more"`
 }
 
 type Notification struct {
@@ -22,6 +23,9 @@ type Notification struct {
 	DocumentationURL string `json:"documentationURL"`
 	SnoozeURL string `json:"snoozeURL"`
 }
+
+func (item *Notification) GetID() string { return item.ID }
+func (item *Notification) SetID(id string) { item.ID = id }
 
 type Destination struct {
 	// Name of the notification queue it will be sent to

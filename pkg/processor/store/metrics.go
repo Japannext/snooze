@@ -1,4 +1,4 @@
-package ratelimit
+package store
 
 import (
     "github.com/prometheus/client_golang/prometheus"

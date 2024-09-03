@@ -25,6 +25,9 @@ mail:
   profiles: []
 
 
+alertmanager:
+  replicaCount: 2
+  instanceName: ""
 syslog:
   replicaCount: 2
   instanceName: ""

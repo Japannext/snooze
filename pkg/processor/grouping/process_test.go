@@ -1,6 +1,7 @@
 package grouping
 
 import (
+	"context"
 	"github.com/stretchr/testify/assert"
 	"testing"
 
@@ -38,7 +39,7 @@ func TestProcess(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
-			err := Process(tt.Log)
+			err := Process(context.TODO(), tt.Log)
 			assert.NoError(t, err)
 			if tt.ExpectMatch {
 				assert.NotEmpty(t, tt.Log.Group.Hash)

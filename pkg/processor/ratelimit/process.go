@@ -2,7 +2,6 @@ package ratelimit
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -12,9 +11,7 @@ import (
 	"github.com/japannext/snooze/pkg/common/utils"
 )
 
-func Process(item *api.Log) error {
-	ctx := context.Background()
-
+func Process(ctx context.Context, item *api.Log) error {
 	for _, rate := range rates {
 		log.Debugf("Evaluating ratelimit '%s'", rate.Name)
 		// Condition
@@ -33,7 +30,7 @@ func Process(item *api.Log) error {
 		if err != nil {
 			return err
 		}
-		hash := hex.EncodeToString(utils.ComputeHash(fields))
+		hash := utils.ComputeHash(fields)
 
 		// Check redis
 		period := time.Now().Unix() / int64(rate.Period.Seconds())

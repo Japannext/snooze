@@ -1,6 +1,8 @@
 package profile
 
 import (
+	"context"
+
 	api "github.com/japannext/snooze/pkg/common/api/v2"
 )
 
@@ -23,9 +25,9 @@ func (prf *Profile) Load() {
 	}
 }
 
-func (prf *Profile) Process(item *api.Log) bool {
+func (prf *Profile) Process(ctx context.Context, item *api.Log) bool {
 	for _, pattern := range prf.Patterns {
-		match, reject := pattern.Process(item)
+		match, reject := pattern.Process(ctx, item)
 		if reject {
 			return true
 		}

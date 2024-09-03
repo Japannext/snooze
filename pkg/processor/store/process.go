@@ -1,15 +1,17 @@
 package store
 
 import (
+	"context"
+
 	api "github.com/japannext/snooze/pkg/common/api/v2"
 	"github.com/japannext/snooze/pkg/common/opensearch"
 )
 
-func Process(item *api.Log) error {
+func Process(ctx context.Context, item *api.Log) error {
 	if item.Mute.SkipStorage {
 		return nil
 	}
-	err := opensearch.LogStore.StoreLog(item)
+	_, err := opensearch.StoreLog(ctx, item)
 	if err != nil {
 		return err
 	}
@@ -18,3 +20,7 @@ func Process(item *api.Log) error {
 	return nil
 }
 
+// Process a batch of items
+func Batch(items []*api.Log) {
+	// TODO
+}

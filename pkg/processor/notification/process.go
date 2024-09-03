@@ -9,9 +9,7 @@ import (
 	"github.com/japannext/snooze/pkg/common/utils"
 )
 
-func Process(item *api.Log) error {
-
-	ctx := context.Background()
+func Process(ctx context.Context, item *api.Log) error {
 
 	if item.Mute.SkipNotification {
 		return nil
@@ -62,7 +60,7 @@ func Process(item *api.Log) error {
 				continue
 			}
 		}
-		if err := opensearch.LogStore.StoreNotification(notification); err != nil {
+		if _, err := opensearch.StoreNotification(ctx, notification); err != nil {
 			merr.AppendErr(err)
 			continue
 		}

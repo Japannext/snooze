@@ -2,11 +2,12 @@ package utils
 
 import (
 	"crypto/md5"
+	"encoding/hex"
 	"sort"
 )
 
 // Compute the hash of a map of string, in a predictable way
-func ComputeHash(m map[string]string) []byte {
+func ComputeHash(m map[string]string) string {
 	var keys []string
 	h := md5.New()
 	for k := range m {
@@ -22,5 +23,5 @@ func ComputeHash(m map[string]string) []byte {
 		h.Write(b[:])
 	}
 
-	return h.Sum(nil)
+	return hex.EncodeToString(h.Sum(nil))
 }

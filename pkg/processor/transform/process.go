@@ -5,8 +5,7 @@ import (
 	api "github.com/japannext/snooze/pkg/common/api/v2"
 )
 
-func Process(item *api.Log) error {
-	ctx := context.Background()
+func Process(ctx context.Context, item *api.Log) error {
 	for _, tr := range transforms {
 		if tr.internal.condition != nil {
 			match, err := tr.internal.condition.MatchLog(ctx, item)

@@ -8,11 +8,12 @@ import (
 	"github.com/japannext/snooze/pkg/common/redis"
 
 	// Sub-Processors
-	"github.com/japannext/snooze/pkg/processor/profile"
 	"github.com/japannext/snooze/pkg/processor/notification"
+	"github.com/japannext/snooze/pkg/processor/profile"
 	"github.com/japannext/snooze/pkg/processor/ratelimit"
 	"github.com/japannext/snooze/pkg/processor/silence"
 	"github.com/japannext/snooze/pkg/processor/snooze"
+	"github.com/japannext/snooze/pkg/processor/store"
 	"github.com/japannext/snooze/pkg/processor/transform"
 )
 
@@ -33,6 +34,7 @@ func Startup() *daemon.DaemonManager {
 	snooze.Init()
 	ratelimit.Startup(pipeline.RateLimits)
 	notification.Startup(pipeline.Notifications, pipeline.DefaultDestinations)
+	store.Startup()
 
 	dm := daemon.NewDaemonManager()
 	dm.AddDaemon("processor", NewProcessor())

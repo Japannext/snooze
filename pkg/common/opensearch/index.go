@@ -31,10 +31,9 @@ type Indice struct {
 
 type IndexTemplate struct {
 	IndexPattern []string `json:"index_patterns"`
-	DataStream DataStream `json:"data_stream"`
+	DataStream *DataStream `json:"data_stream,omitempty"`
 	Template     Indice   `json:"template"`
 }
-
 type DataStream struct {
 	TimestampField TimestampField `json:"timestamp_field"`
 }
@@ -43,12 +42,13 @@ type TimestampField struct {
 	Name string `json:"name"`
 }
 
-func (lst *OpensearchLogStore) createIndex(ctx context.Context, name string, tpl IndexTemplate) error {
+func createIndex(ctx context.Context, name string, tpl IndexTemplate) error {
 	body, err := json.Marshal(tpl)
 	if err != nil {
 		return fmt.Errorf("error marshaling index template: %s", err)
 	}
-	resp, err := lst.Client.IndexTemplate.Create(ctx, opensearchapi.IndexTemplateCreateReq{
+	log.Debugf("Template: %s", body)
+	resp, err := client.IndexTemplate.Create(ctx, opensearchapi.IndexTemplateCreateReq{
 		IndexTemplate: name,
 		Body: bytes.NewReader(body),
 	})
@@ -58,65 +58,37 @@ func (lst *OpensearchLogStore) createIndex(ctx context.Context, name string, tpl
 	if !resp.Acknowledged {
 		return fmt.Errorf("Index template request received but not acknowledged!")
 	}
+	log.Infof("Created index %s", name)
 	return nil
 }
 
-func (lst *OpensearchLogStore) ensureIndex(ctx context.Context, name string, tpl IndexTemplate) {
-	resp, err := lst.Client.IndexTemplate.Exists(ctx, opensearchapi.IndexTemplateExistsReq{
+func hasIndex(ctx context.Context, name string) (bool, error) {
+	resp, err := client.IndexTemplate.Exists(ctx, opensearchapi.IndexTemplateExistsReq{
 		IndexTemplate: name,
 	})
 	if resp.StatusCode == 200 {
-		log.Infof("Index %s already exists", name)
-		return
+		return true, nil
 	}
 	if resp.StatusCode == 404 {
-		if err := lst.createIndex(ctx, name, tpl); err != nil {
-			log.Fatalf("failed to create index template '%s': %s", name, err)
-		}
-		log.Infof("Successfully created index %s", name)
-		return
+		return false, nil
 	}
 	if err != nil {
-		log.Fatalf("Error while checking if index template '%s' exists: %s", name, err)
+		return false, err
 	}
 	var buf bytes.Buffer
-	if _, err := buf.ReadFrom(resp.Body); err != nil {
-		log.Fatal(err)
-	}
-	log.Fatalf("Unexpected status code %d when checking index %s: %s", resp.StatusCode, name, buf.Bytes())
+	buf.ReadFrom(resp.Body)
+	return false, fmt.Errorf("Unexpected status code %d when checking index %s: %s", resp.StatusCode, name, buf.Bytes())
 }
 
-func (lst *OpensearchLogStore) createDatastream(ctx context.Context, name string) error {
-	resp, err := lst.Client.DataStream.Create(ctx, opensearchapi.DataStreamCreateReq{DataStream: name})
+func ensureIndex(ctx context.Context, name string, tpl IndexTemplate) {
+	found, err := hasIndex(ctx, name)
 	if err != nil {
-		return err
-	}
-	if !resp.Acknowledged {
-		return fmt.Errorf("Datastream request received but not acknowledged!")
-	}
-	return nil
-}
-
-func (lst *OpensearchLogStore) ensureDatastream(ctx context.Context, name string) {
-	ds, err := lst.Client.DataStream.Get(ctx, &opensearchapi.DataStreamGetReq{DataStreams: []string{name}})
-	resp := ds.Inspect().Response
-	if resp.StatusCode == 200 {
-		log.Infof("Datastream '%s' already exists", name)
-		return
-	}
-	if resp.StatusCode == 404 {
-		if err := lst.createDatastream(ctx, name); err != nil {
-			log.Fatalf("Failed to create datastream '%s': %s", name, err)
-		}
-		log.Infof("Successfully created datastream '%s'", name)
-		return
-	}
-	if err != nil {
-		log.Fatalf("Failed to fetch datastream '%s': %s", name, err)
-	}
-	var buf bytes.Buffer
-	if _, err := buf.ReadFrom(resp.Body); err != nil {
 		log.Fatal(err)
 	}
-	log.Fatalf("Unexpected status code %d when checking datastream %s: %s", resp.StatusCode, name, buf.Bytes())
+	if found {
+		return
+	}
+	if err := createIndex(ctx, name, tpl); err != nil {
+		log.Fatal(err)
+	}
 }

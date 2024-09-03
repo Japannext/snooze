@@ -7,10 +7,7 @@ import (
 	api "github.com/japannext/snooze/pkg/common/api/v2"
 )
 
-func Process(item *api.Log) error {
-
-	ctx := context.Background()
-
+func Process(ctx context.Context, item *api.Log) error {
 	for _, s := range silences {
 		v, err := s.internal.condition.MatchLog(ctx, item)
 		if err != nil {
@@ -23,4 +20,11 @@ func Process(item *api.Log) error {
 	}
 
 	return nil
+}
+
+// Process a batch of items
+func Batch(ctx context.Context, items []*api.Log) {
+	 for _, item := range items {
+		Process(ctx, item)
+	 }
 }

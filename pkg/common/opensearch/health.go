@@ -8,9 +8,8 @@ import (
 )
 
 // Check if the session is up
-func (lst *OpensearchLogStore) CheckHealth() error {
-	ctx := context.Background()
-	resp, err := lst.Client.Cluster.Health(ctx, &opensearchapi.ClusterHealthReq{})
+func CheckHealth(ctx context.Context) error {
+	resp, err := client.Cluster.Health(ctx, &opensearchapi.ClusterHealthReq{})
 	if err != nil {
 		return err
 	}

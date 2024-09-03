@@ -2,7 +2,6 @@ package grouping
 
 import (
 	"context"
-	"encoding/hex"
 
 	"github.com/sirupsen/logrus"
 
@@ -11,10 +10,9 @@ import (
 	"github.com/japannext/snooze/pkg/common/utils"
 )
 
-func Process(item *api.Log) error {
-	ctx := context.Background()
+func Process(ctx context.Context, item *api.Log) error {
 	if len(item.Group.Labels) != 0 { // existing grouping
-		item.Group.Hash = hex.EncodeToString(utils.ComputeHash(item.Group.Labels))
+		item.Group.Hash = utils.ComputeHash(item.Group.Labels)
 		return nil
 	}
 	for _, group := range groupings {
@@ -32,9 +30,16 @@ func Process(item *api.Log) error {
 				}
 				item.Group.Labels[field.String()] = value
 			}
-			item.Group.Hash = hex.EncodeToString(utils.ComputeHash(item.Group.Labels))
+			item.Group.Hash = utils.ComputeHash(item.Group.Labels)
 		}
 	}
 
 	return nil
+}
+
+// Process a batch of items
+func Batch(ctx context.Context, items []*api.Log) {
+	 for _, item := range items {
+		Process(ctx, item)
+	 }
 }

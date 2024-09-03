@@ -10,22 +10,6 @@ import (
 	api "github.com/japannext/snooze/pkg/common/api/v2"
 )
 
-func getLog(c *gin.Context) {
-	uid := c.Param("uid")
-
-	item, err := opensearch.LogStore.GetLog(uid)
-	if err != nil {
-		c.String(http.StatusInternalServerError, "Error getting log uid=%s: %w", uid, err)
-		return
-	}
-	if item == nil {
-		c.String(http.StatusNotFound, "Could not find log uid=%s", uid)
-		return
-	}
-
-	c.JSON(http.StatusOK, item)
-}
-
 type Search struct {
 	Text string `form:"search"`
 }
@@ -42,7 +26,7 @@ func searchLogs(c *gin.Context) {
 	c.BindQuery(&timerange)
 	c.BindQuery(&search)
 
-	res, err := opensearch.LogStore.SearchLogs(c, search.Text, timerange, pagination)
+	res, err := opensearch.SearchLogs(c, search.Text, timerange, pagination)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error getting logs for search='%s': %s", search.Text, err)
 		return
@@ -54,7 +38,6 @@ func searchLogs(c *gin.Context) {
 
 func init() {
 	routes = append(routes, func(r *gin.Engine) {
-		r.GET("/api/log/:uid", getLog)
 		r.GET("/api/logs", searchLogs)
 	})
 }

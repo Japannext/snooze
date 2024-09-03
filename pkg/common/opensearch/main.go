@@ -1,11 +1,17 @@
 package opensearch
 
 import (
+	"context"
+
 	"github.com/sirupsen/logrus"
+	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
 )
 
+type BootstrapFunction = func(context.Context)
+
 var (
-	LogStore *OpensearchLogStore
+	client *opensearchapi.Client
+	bootstraps = []BootstrapFunction{}
 )
 
 var log *logrus.Entry
@@ -14,14 +20,25 @@ func Init() {
 
 	log = logrus.WithFields(logrus.Fields{"module": "opensearch"})
 
-	LogStore = NewLogStore()
-
-	// Fail immediately if the database is unreachable
-	if err := LogStore.CheckHealth(); err != nil {
+	// client initialization
+	cfg, err := initConfig()
+	if err != nil {
 		log.Fatal(err)
 	}
 
-	if err := LogStore.Bootstrap(); err != nil {
+	client, err = opensearchapi.NewClient(opensearchapi.Config{Client: cfg})
+	if err != nil {
 		log.Fatal(err)
+	}
+
+	// Fail immediately if the database is unreachable
+	ctx := context.Background()
+	if err := CheckHealth(ctx); err != nil {
+		log.Fatal(err)
+	}
+
+	// bootstrap
+	for _, bootstrap := range bootstraps {
+		bootstrap(ctx)
 	}
 }
