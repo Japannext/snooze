@@ -2,7 +2,7 @@
 import { h, ref, onMounted, onActivated, Component } from 'vue'
 import axios from 'axios'
 import type { AxiosResponse } from 'axios'
-import { NIcon, NButton, NSpace, NDataTable, NInputGroup, NLoadingBarProvider, useLoadingBar } from 'naive-ui'
+import { NIcon, NTag, NCard, NTabs, NTab, NButton, NSpace, NDataTable, NInputGroup, NLoadingBarProvider, useLoadingBar, useMessage } from 'naive-ui'
 import { Refresh } from '@vicons/ionicons5'
 
 import SSearch from '@/components/SSearch.vue'
@@ -21,6 +21,7 @@ const stimerange = ref(null)
 const loading = useLoadingBar()
 const pagination = usePagination(getLogs)
 const table = ref<undefined|HTMLElement>(undefined)
+const message = useMessage()
 
 function getLogs(): Promise {
   // loading.value = true
@@ -52,16 +53,15 @@ function getLogs(): Promise {
       // loading.value = false
       loading.finish()
     })
-    .catch((err) => {
+    .catch(err => {
       // items.value = []
       // loading.value = false
+      message.error(`failed to load logs: ${err}`)
       loading.error()
     })
 }
 
 function renderExpand(row) {
-  console.log(`renderExpand: ${row}`)
-  console.log(row)
   return h("pre", null, JSON.stringify(row, null, 2))
 }
 
@@ -78,7 +78,7 @@ const columns = [
   {
     key: 'timestampMillis',
     title: () => h(STimestampTitle),
-    render: render(STimestamp, "timestampMillis"),
+    render: (row) => h(STimestamp, {value: row.timestampMillis}),
     width: 150,
   },
   {title: 'Attributes', render: (row) => h(SLogAttributes, {row: row}), width: 300},
@@ -108,7 +108,6 @@ function rowProps(row: Log) {
     },
   }
 }
-
 </script>
 
 <template>
@@ -118,6 +117,17 @@ function rowProps(row: Log) {
       <s-search @search="onSearch" />
       <n-button @click="getLogs()"><n-icon :component="Refresh" /></n-button>
     </n-input-group>
+    <n-tabs type="bar" tabs-padding="20" :theme-overrides="tabsStyleOverrides">
+      <n-tab name="Active" />
+      <n-tab name="Snoozed" />
+      <n-tab name="Acknowledged" />
+      <n-tab name="Failed">
+        <n-space size="small">
+          <span>Failed</span>
+          <n-tag size="tiny" type="error" round>10</n-tag>
+        </n-space>
+      </n-tab>
+    </n-tabs>
     <n-data-table
       ref="table"
       remote

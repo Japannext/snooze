@@ -3,7 +3,7 @@ import { defineProps, ref, onMounted } from 'vue'
 import { NTag } from 'naive-ui'
 
 const props = defineProps<{
-  text: string,
+  text: string|undefined,
   number: number,
 }>()
 
@@ -38,7 +38,7 @@ onMounted(() => {
 
 </script>
 <template>
-  <n-tag size="small" :type="color">
-    {{ props.text }}
+  <n-tag v-if="text" size="small" :type="color">
+    {{ text }}
   </n-tag>
 </template>

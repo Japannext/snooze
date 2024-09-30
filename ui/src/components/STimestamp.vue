@@ -6,11 +6,11 @@ import { useTimeRelative } from '@/stores'
 const { timeRelative } = useTimeRelative()
 
 const props = defineProps<{
-  timestampMillis: number,
+  value: number,
 }>()
 
 const date = computed(() => {
-  return DateTime.fromMillis(props.timestampMillis)
+  return DateTime.fromMillis(props.value)
 })
 
 </script>

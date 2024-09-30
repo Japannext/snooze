@@ -3,13 +3,29 @@ package opensearch
 import (
     "context"
 
+    dsl "github.com/mottaquikarim/esquerydsl"
+    "github.com/opensearch-project/opensearch-go/v4/opensearchapi"
+
 	api "github.com/japannext/snooze/pkg/common/api/v2"
 )
 
 const ALERT_INDEX = "v2-alerts"
 
-func SearchAlerts(ctx context.Context, text string, timerange api.TimeRange, pagination api.Pagination) (*api.ListOf[*api.Alert], error) {
-	return search[*api.Alert](ctx, ALERT_INDEX, text, timerange, pagination)
+func SearchAlerts(ctx context.Context, pagination *api.Pagination, history bool) (*api.ListOf[*api.Alert], error) {
+	var doc = &dsl.QueryDoc{}
+	var params = &opensearchapi.SearchParams{}
+
+	if pagination.OrderBy == "" {
+		pagination.OrderBy = "startsAt"
+	}
+
+	if !history {
+		doc.And = []dsl.QueryItem{{Type: dsl.Term, Field: "endsAt", Value: 0}}
+	}
+
+	addPagination(doc, params, pagination)
+
+	return search[*api.Alert](ctx, ALERT_INDEX, params, doc)
 }
 
 func UpdateAlert(ctx context.Context, item *api.Alert) error {

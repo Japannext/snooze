@@ -40,10 +40,11 @@ tasks:
 
   cleanup:
     cmds:
-    - kubectl exec -it snooze-opensearch-masters-0 -- curl -k -u admin:admin https://localhost:9200/_data_stream/log-v2 -X DELETE
-    - kubectl exec -it snooze-opensearch-masters-0 -- curl -k -u admin:admin https://localhost:9200/_index_template/log-v2 -X DELETE
-    - kubectl exec -it snooze-opensearch-masters-0 -- curl -k -u admin:admin https://localhost:9200/_data_stream/notification-v2 -X DELETE
-    - kubectl exec -it snooze-opensearch-masters-0 -- curl -k -u admin:admin https://localhost:9200/_index_template/notification-v2 -X DELETE
+    - kubectl exec -it snooze-opensearch-masters-0 -- curl -k -u admin:admin https://localhost:9200/_data_stream/v2-logs -X DELETE
+    - kubectl exec -it snooze-opensearch-masters-0 -- curl -k -u admin:admin https://localhost:9200/_index_template/v2-logs -X DELETE
+    - kubectl exec -it snooze-opensearch-masters-0 -- curl -k -u admin:admin https://localhost:9200/_data_stream/v2-notifications -X DELETE
+    - kubectl exec -it snooze-opensearch-masters-0 -- curl -k -u admin:admin https://localhost:9200/_index_template/v2-notifications -X DELETE
+    - kubectl exec -it snooze-opensearch-masters-0 -- curl -k -u admin:admin https://localhost:9200/_index_template/v2-alerts -X DELETE
 
   sync:
     cmds:

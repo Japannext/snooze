@@ -7,16 +7,28 @@ type Alert struct {
 
 	Source Source `json:"source"`
 
+	Identity map[string]string `json:"identity"`
+
 	// Timestamps
 	StartsAt uint64 `json:"startsAt"`
 	EndsAt uint64 `json:"endsAt"`
+
+	// Name of the alert
+	AlertName string `json:"alertName"`
+	// Group of the alert
+	AlertGroup string `json:"alertGroup"`
+
+	// Text representing the severity
+	SeverityText string `json:"severityText,omitempty"`
+	// Number representing the severity. Useful for filters (severity higher than a given value)
+	SeverityNumber int32 `json:"severityNumber,omitempty"`
 
 	// Text representing the severity
 	//SeverityText string `json:"severityText,omitempty"`
 	// Number representing the severity. Useful for filters (severity higher than a given value)
 	//SeverityNumber int32 `json:"severityNumber,omitempty"`
 
-	Message string `json:"message"`
+	Description string `json:"description"`
 	Summary string `json:"summary"`
 
 	// Key-value representing the main resource identifiers.

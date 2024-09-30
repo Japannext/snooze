@@ -12,6 +12,14 @@ const (
 	SOURCE_KIND = "syslog"
 )
 
+func extract(record format.LogParts, key string) (string, bool) {
+	text, ok := record[key].(string)
+	if !ok || text == "-" || text == "" {
+		return "", false
+	}
+	return text, true
+}
+
 func parseLog(record format.LogParts) *api.Log {
 	item := &api.Log{}
 	item.Identity = make(map[string]string)
@@ -23,17 +31,33 @@ func parseLog(record format.LogParts) *api.Log {
 		item.TimestampMillis = item.ObservedTimestampMillis
 	}
 	item.Source = api.Source{Kind: SOURCE_KIND, Name: config.InstanceName}
-	item.Identity["kind"] = "host"
-	item.Identity["hostname"] = record["hostname"].(string)
-	item.Identity["process"] = record["app_name"].(string)
 
-	item.Labels["client"] = record["client"].(string)
-	if tlsPeer := record["tls_peer"].(string); tlsPeer != "" {
-		item.Labels["tls_peer"] = tlsPeer
+	clientIP := record["client"].(string)
+
+	// Identity
+	if value, ok := extract(record, "hostname"); ok {
+		item.Identity["kind"] = "host"
+		item.Identity["host"] = value
+	} else {
+		item.Identity["kind"] = "ip"
+		item.Identity["ip"] = clientIP
+	}
+	if value, ok := extract(record, "app_name"); ok {
+		item.Identity["process"] = value
 	}
 
-	item.Labels["proc_id"] = record["proc_id"].(string)
-	item.Labels["msg_id"] = record["msg_id"].(string)
+	// Labels
+	item.Labels["syslog.client_ip"] = clientIP
+	if value, ok := extract(record, "tls_peer"); ok {
+		item.Labels["syslog.tls_peer"] = value
+	}
+
+	if value, ok := extract(record, "proc_id"); ok {
+		item.Labels["syslog.proc_id"] = value
+	}
+	if value, ok := extract(record, "msg_id"); ok {
+		item.Labels["syslog.msg_id"] = value
+	}
 
 	item.Message = record["message"].(string)
 

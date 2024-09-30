@@ -44,7 +44,6 @@ func (m *FastMapper) GetMatches(item *api.Log) []*Profile {
 		}
 		value, err := lang.ExtractField(item, field)
 		if err != nil {
-			log.Warnf("bad match: %s", err)
 			continue
 		}
 		prfs, found := m.mapper[Kv{key, value}]

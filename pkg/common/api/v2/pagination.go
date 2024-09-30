@@ -7,8 +7,8 @@ type Pagination struct {
 	Ascending bool `form:"asc"`
 }
 
-func NewPagination() Pagination {
-	return Pagination{Page: 1, Size: 20, OrderBy: "timestampMillis", Ascending: false}
+func NewPagination() *Pagination {
+	return &Pagination{Page: 1, Size: 20, OrderBy: "", Ascending: false}
 }
 
 func (p *Pagination) Next() {

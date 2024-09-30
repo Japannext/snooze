@@ -36,7 +36,7 @@ func searchNotifications(c *gin.Context) {
 
 	var (
 		pagination = api.NewPagination()
-		timerange api.TimeRange
+		timerange *api.TimeRange
 		search Search
 	)
 	c.BindQuery(&pagination)

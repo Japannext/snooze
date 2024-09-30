@@ -3,13 +3,27 @@ package opensearch
 import (
 	"context"
 
+    dsl "github.com/mottaquikarim/esquerydsl"
+    "github.com/opensearch-project/opensearch-go/v4/opensearchapi"
+
 	api "github.com/japannext/snooze/pkg/common/api/v2"
 )
 
 const LOG_INDEX = "v2-logs"
 
-func SearchLogs(ctx context.Context, text string, timerange api.TimeRange, pagination api.Pagination) (*api.ListOf[*api.Log], error) {
-	return search[*api.Log](ctx, LOG_INDEX, text, timerange, pagination)
+func SearchLogs(ctx context.Context, text string, timerange *api.TimeRange, pagination *api.Pagination) (*api.ListOf[*api.Log], error) {
+    var doc = &dsl.QueryDoc{}
+    var params = &opensearchapi.SearchParams{}
+
+	if pagination.OrderBy == "" {
+		pagination.OrderBy = "timestampMillis"
+	}
+
+    addTimeRange(doc, timerange)
+    addPagination(doc, params, pagination)
+    addSearch(doc, text)
+
+	return search[*api.Log](ctx, LOG_INDEX, params, doc)
 }
 
 func StoreLog(ctx context.Context, item *api.Log) (string, error) {

@@ -24,6 +24,15 @@ export type LogResults = {
   total: number;
 }
 
+export type Alert = {
+}
+
+export type AlertResults = {
+  items: Array<Alert>;
+  total: number;
+  more: boolean;
+}
+
 export type Notification = {
   id?: string;
   timestampMillis: number;

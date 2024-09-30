@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+	"strconv"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 
@@ -15,7 +17,6 @@ import (
 )
 
 const ALERTMANAGER_KIND = "alertmanager"
-const TIME_LAYOUT = "2006-01-02T03:04:05.999999999Z"
 
 func getAlertStatus(ctx context.Context, key string) (*api.AlertStatus, error) {
 	body, err := redis.Client.Get(ctx, key).Bytes()
@@ -43,6 +44,8 @@ func setAlertStatus(ctx context.Context, key string, status *api.AlertStatus) er
 	return nil
 }
 
+const TIME_LAYOUT = "2006-01-02T15:04:05.999999999Z"
+
 func timeTextToMillis(text string) uint64 {
 	var millis uint64
 	if text != "" {
@@ -55,14 +58,69 @@ func timeTextToMillis(text string) uint64 {
 	return millis
 }
 
+func hasKeys(labels map[string]string, keys ...string) bool {
+	for _, key := range keys {
+		if value, ok := labels[key]; !ok || value == "" {
+			return false
+		}
+	}
+	return true
+}
+
+const IDENTITY_PREFIX = "identity__"
+
+func pop(m map[string]string, key string) string {
+	v, ok := m[key]
+	if ok {
+		delete(m, key)
+	}
+	return v
+}
+
+func parseIdentity(labels map[string]string) map[string]string {
+	identity := map[string]string{}
+	for key, value := range labels {
+		if strings.HasPrefix(key, IDENTITY_PREFIX) {
+			k := strings.TrimPrefix(key, IDENTITY_PREFIX)
+			identity[k] = value
+		}
+	}
+	return identity
+}
+
+func parseSeverity(labels map[string]string) (string, int32) {
+	text, ok := labels["severity__text"]
+	if !ok {
+		text = labels["severity"]
+	}
+
+	var number int32
+	if n, ok := labels["severity__number"]; ok {
+		i, err := strconv.Atoi(n)
+		if err != nil {
+			log.Warnf("in label `severity__number`, `%s` is not a number", n)
+		}
+		number = int32(i)
+	}
+
+	if number == 0 {
+		number = utils.GuessSeverityNumber(text)
+	}
+
+	return text, number
+}
+
 func Process(alert PostableAlert) {
 	ctx := context.Background()
-	hash := utils.ComputeHash(alert.Labels)
-	key := fmt.Sprintf("alertmanager/%s", hash)
+	labels := alert.Labels
+	alertName := pop(labels, "alertname")
+	alertGroup := pop(labels, "alertgroup")
+	hash := utils.ComputeHash(labels)
+	key := fmt.Sprintf("alertmanager/%s/%s/%s", alertGroup, alertName, hash)
 	startMillis := timeTextToMillis(alert.StartsAt)
 	endMillis := timeTextToMillis(alert.EndsAt)
 
-	status, err := getAlertStatus(ctx, hash)
+	status, err := getAlertStatus(ctx, key)
 	if err != nil {
 		log.Warnf("failed to get alert status from redis for hash=%s: %s", hash, err)
 		return
@@ -70,13 +128,23 @@ func Process(alert PostableAlert) {
 
 	// New alert
 	if status == nil {
+		annotations := alert.Annotations
+		description := pop(annotations, "description")
+		summary := pop(annotations, "summary")
+		text, number := parseSeverity(labels)
+
 		item := &api.Alert{
 			Hash: hash,
 			Source: api.Source{Kind: ALERTMANAGER_KIND, Name: config.InstanceName},
+			Identity: parseIdentity(labels),
 			StartsAt: startMillis,
+			AlertName: alertName,
+			AlertGroup: alertGroup,
+			SeverityText: text,
+			SeverityNumber: number,
 			Labels: alert.Labels,
-			Message: alert.Annotations["message"],
-			Summary: alert.Annotations["summary"],
+			Description: description,
+			Summary: summary,
 		}
 		id, err := opensearch.StoreAlert(ctx, item)
 		if err != nil {
@@ -92,6 +160,7 @@ func Process(alert PostableAlert) {
 			log.Warnf("failed to set alert status")
 			return
 		}
+		ingestedAlerts.WithLabelValues(ALERTMANAGER_KIND, config.InstanceName).Inc()
 		return
 	}
 
@@ -105,4 +174,5 @@ func Process(alert PostableAlert) {
 		log.Warnf("failed to set alert status")
 		return
 	}
+	updatedAlerts.WithLabelValues(ALERTMANAGER_KIND, config.InstanceName).Inc()
 }

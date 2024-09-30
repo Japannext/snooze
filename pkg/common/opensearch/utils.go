@@ -47,14 +47,7 @@ func store(ctx context.Context, index string, item interface{}) (string, error) 
     return resp.ID, nil
 }
 
-func search[T api.HasID](ctx context.Context, index, search string, timerange api.TimeRange, pagination api.Pagination) (*api.ListOf[T], error) {
-    var doc = &dsl.QueryDoc{}
-    var params = &opensearchapi.SearchParams{}
-
-    addTimeRange(doc, timerange)
-    addPagination(doc, params, pagination)
-    addSearch(doc, search)
-
+func search[T api.HasID](ctx context.Context, index string, params *opensearchapi.SearchParams, doc *dsl.QueryDoc) (*api.ListOf[T], error) {
     body, err := json.Marshal(doc)
     if err != nil {
         return nil, fmt.Errorf("invalid request body (%+v): %w", doc, err)
@@ -77,6 +70,7 @@ func search[T api.HasID](ctx context.Context, index, search string, timerange ap
 		if err := json.Unmarshal(hit.Source, &list.Items[i]); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal message %s: %w", hit.Source, err)
 		}
+		(*list.Items[i]).SetID(hit.ID)
 	}
 	list.Total = resp.Hits.Total.Value
 	if resp.Hits.Total.Relation != "eq" {
@@ -90,7 +84,10 @@ type Range struct {
 	Lte *uint64 `json:"lte,omitempty"`
 }
 
-func addTimeRange(doc *dsl.QueryDoc, timerange api.TimeRange) {
+func addTimeRange(doc *dsl.QueryDoc, timerange *api.TimeRange) {
+	if timerange == nil {
+		return
+	}
 	var r = Range{}
 	if timerange.Start > 0 {
 		r.Gte = &timerange.Start
@@ -104,7 +101,10 @@ func addTimeRange(doc *dsl.QueryDoc, timerange api.TimeRange) {
 	}
 }
 
-func addPagination(doc *dsl.QueryDoc, params *opensearchapi.SearchParams, pagination api.Pagination) {
+func addPagination(doc *dsl.QueryDoc, params *opensearchapi.SearchParams, pagination *api.Pagination) {
+	if pagination == nil {
+		return
+	}
 	params.From = pointer((pagination.Page - 1) * pagination.Size)
 	params.Size = pointer(pagination.Size)
 	sort := map[string]string{}
@@ -117,9 +117,10 @@ func addPagination(doc *dsl.QueryDoc, params *opensearchapi.SearchParams, pagina
 }
 
 func addSearch(doc *dsl.QueryDoc, search string) {
-	if search != "" {
-		item := dsl.QueryItem{Type: dsl.Match, Field: "message", Value: search}
-		doc.And = append(doc.And, item)
+	if search == "" {
+		return
 	}
+	item := dsl.QueryItem{Type: dsl.Match, Field: "message", Value: search}
+	doc.And = append(doc.And, item)
 }
 

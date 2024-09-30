@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { NConfigProvider, NDialogProvider, NNotificationProvider, NMessageProvider, NLoadingBarProvider } from 'naive-ui'
+import { NConfigProvider, NDialogProvider, NNotificationProvider, NMessageProvider, NLoadingBarProvider, NThemeEditor } from 'naive-ui'
 import '@/utils/token'
 import { useTheme, useLocale } from '@/stores'
 
@@ -18,7 +18,9 @@ const theme = useTheme()
       <n-message-provider>
         <n-notification-provider>
           <n-loading-bar-provider>
-            <router-view />
+            <n-theme-editor>
+              <router-view />
+            </n-theme-editor>
           </n-loading-bar-provider>
         </n-notification-provider>
       </n-message-provider>
