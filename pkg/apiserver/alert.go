@@ -4,6 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
+	dsl "github.com/mottaquikarim/esquerydsl"
 
 	"github.com/japannext/snooze/pkg/common/opensearch"
 	"github.com/japannext/snooze/pkg/common/redis"
@@ -12,11 +14,19 @@ import (
 
 func listAlerts(c *gin.Context) {
 
-	var history = false
 	var pagination = api.NewPagination()
 	c.BindQuery(&pagination)
 
-	res, err := opensearch.SearchAlerts(c, pagination, history)
+	doc := &dsl.QueryDoc{}
+	params := &opensearchapi.SearchParams{}
+
+	if pagination.OrderBy == "" {
+		pagination.OrderBy = "startsAt"
+	}
+	// opensearch.AddTimeRange(doc, timerange)
+	opensearch.AddPagination(doc, params, pagination)
+
+	res, err := opensearch.Search[*api.Alert](c, api.ALERT_INDEX, params, doc)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error getting alerts for : %s", err)
 		return

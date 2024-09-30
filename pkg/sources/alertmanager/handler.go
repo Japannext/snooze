@@ -146,7 +146,7 @@ func Process(alert PostableAlert) {
 			Description: description,
 			Summary: summary,
 		}
-		id, err := opensearch.StoreAlert(ctx, item)
+		id, err := opensearch.Store(ctx, api.ALERT_INDEX, item)
 		if err != nil {
 			log.Warnf("failed to insert alert: %s", err)
 			return

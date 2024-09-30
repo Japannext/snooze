@@ -11,7 +11,7 @@ func Process(ctx context.Context, item *api.Log) error {
 	if item.Mute.SkipStorage {
 		return nil
 	}
-	_, err := opensearch.StoreLog(ctx, item)
+	_, err := opensearch.Store(ctx, api.LOG_INDEX, item)
 	if err != nil {
 		return err
 	}

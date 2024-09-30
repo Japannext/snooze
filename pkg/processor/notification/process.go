@@ -60,7 +60,7 @@ func Process(ctx context.Context, item *api.Log) error {
 				continue
 			}
 		}
-		if _, err := opensearch.StoreNotification(ctx, notification); err != nil {
+		if _, err := opensearch.Store(ctx, api.NOTIFICATION_INDEX, notification); err != nil {
 			merr.AppendErr(err)
 			continue
 		}

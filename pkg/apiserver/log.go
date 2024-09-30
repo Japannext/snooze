@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
+	dsl "github.com/mottaquikarim/esquerydsl"
 
 	"github.com/japannext/snooze/pkg/common/opensearch"
 	api "github.com/japannext/snooze/pkg/common/api/v2"
@@ -15,7 +17,6 @@ type Search struct {
 }
 
 func searchLogs(c *gin.Context) {
-
 	var (
 		start = time.Now()
 		pagination = api.NewPagination()
@@ -26,13 +27,23 @@ func searchLogs(c *gin.Context) {
 	c.BindQuery(&timerange)
 	c.BindQuery(&search)
 
-	res, err := opensearch.SearchLogs(c, search.Text, timerange, pagination)
+	doc := &dsl.QueryDoc{}
+	params := &opensearchapi.SearchParams{}
+
+	if pagination.OrderBy == "" {
+		pagination.OrderBy = "timestampMillis"
+	}
+	opensearch.AddTimeRange(doc, timerange)
+	opensearch.AddPagination(doc, params, pagination)
+	opensearch.AddSearch(doc, search.Text)
+
+	items, err := opensearch.Search[*api.Log](c, api.LOG_INDEX, params, doc)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error getting logs for search='%s': %s", search.Text, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, res)
+	c.JSON(http.StatusOK, items)
 	logSearchDuration.Observe(time.Since(start).Seconds())
 }
 

@@ -4,6 +4,8 @@ import (
 	"strings"
 )
 
+const LOG_INDEX = "v2-logs"
+
 type Log struct {
 	ID string `json:"id,omitempty"`
 
@@ -64,19 +66,11 @@ type Process struct {
 	Pattern string `json:"pattern,omitempty"`
 	Group LogGroup `json:"group"`
 }
+
 // A group of logs, that can be uniquely identified by a hash
 type LogGroup struct {
 	Hash string `json:"hash,omitempty"`
 	Labels map[string]string `json:"labels"`
-}
-
-type LogResults struct {
-	Items []Log `json:"items"`
-	// Indicate the total number of logs during the requested time period
-	Total int `json:"total"`
-	// Indicate if the total is exact, or if it reached
-	// the backend limit per response.
-	More bool `json:"more"`
 }
 
 func (a *Log) String() string {
@@ -112,4 +106,33 @@ type Source struct {
 	Kind string `json:"kind"`
 	// The source instance name (e.g. "prod-relay", "host01", "tenant-A")
 	Name string `json:"name,omitempty"`
+}
+
+func init() {
+	index := IndexTemplate{
+		Version: 0,
+		IndexPatterns: []string{LOG_INDEX},
+		DataStream: map[string]map[string]string{"timestamp_field": {"name": "timestampMillis"}},
+		Template: Indice{
+			Settings: IndexSettings{1, 2},
+			Mappings: IndexMapping{
+				Properties: map[string]MappingProps{
+					"timestampMillis": {Type: "date", Format: "epoch_millis"},
+					"source.kind": {Type: "keyword"},
+					"source.name": {Type: "keyword"},
+					"identity": {Type: "object"},
+					"group.hash":   {Type: "keyword"},
+					"group.labels": {Type: "object"},
+					"profile": {Type: "keyword"},
+					"pattern": {Type: "keyword"},
+					"labels":      {Type: "object"},
+					"message":        {Type: "text"},
+					"mute.skipNotification": {Type: "boolean"},
+					"mute.skipStorage": {Type: "boolean"},
+					"mute.reason": {Type: "keyword"},
+				},
+			},
+		},
+	}
+	INDEXES = append(INDEXES, index)
 }

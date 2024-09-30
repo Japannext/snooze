@@ -7,42 +7,11 @@ import (
 	"fmt"
 
 	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
+
+	api "github.com/japannext/snooze/pkg/common/api/v2"
 )
 
-type IndexSettings struct {
-	NumberOfShards   int `json:"number_of_shards"`
-	NumberOfReplicas int `json:"number_of_replicas"`
-}
-
-type MappingProps struct {
-	Type   string                  `json:"type,omitempty"`
-	Format string				   `json:"format,omitempty"`
-	Fields map[string]MappingProps `json:"fields,omitempty"`
-}
-
-type IndexMapping struct {
-	Properties map[string]MappingProps `json:"properties"`
-}
-
-type Indice struct {
-	Settings IndexSettings  `json:"settings"`
-	Mappings IndexMapping `json:"mappings"`
-}
-
-type IndexTemplate struct {
-	IndexPattern []string `json:"index_patterns"`
-	DataStream *DataStream `json:"data_stream,omitempty"`
-	Template     Indice   `json:"template"`
-}
-type DataStream struct {
-	TimestampField TimestampField `json:"timestamp_field"`
-}
-
-type TimestampField struct {
-	Name string `json:"name"`
-}
-
-func createIndex(ctx context.Context, name string, tpl IndexTemplate) error {
+func createIndex(ctx context.Context, name string, tpl api.IndexTemplate) error {
 	body, err := json.Marshal(tpl)
 	if err != nil {
 		return fmt.Errorf("error marshaling index template: %s", err)
@@ -80,7 +49,7 @@ func hasIndex(ctx context.Context, name string) (bool, error) {
 	return false, fmt.Errorf("Unexpected status code %d when checking index %s: %s", resp.StatusCode, name, buf.Bytes())
 }
 
-func ensureIndex(ctx context.Context, name string, tpl IndexTemplate) {
+func ensureIndex(ctx context.Context, name string, tpl api.IndexTemplate) {
 	found, err := hasIndex(ctx, name)
 	if err != nil {
 		log.Fatal(err)

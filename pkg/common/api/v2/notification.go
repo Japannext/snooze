@@ -4,11 +4,7 @@ import (
 	"fmt"
 )
 
-type NotificationResults struct {
-	Items []Notification `json:"items"`
-	Total int `json:"total"`
-	More bool `json:"more"`
-}
+const NOTIFICATION_INDEX = "v2-notifications"
 
 type Notification struct {
 	ID string `json:"id,omitempty"`
@@ -37,4 +33,23 @@ type Destination struct {
 
 func (dest *Destination) String() string {
 	return fmt.Sprintf("%s:%s", dest.Queue, dest.Profile)
+}
+
+func init() {
+	index := IndexTemplate{
+		Version: 0,
+		IndexPatterns: []string{NOTIFICATION_INDEX},
+		DataStream: map[string]map[string]string{"timestamp_field": {"name": "timestampMillis"}},
+		Template: Indice{
+			Settings: IndexSettings{1, 2},
+			Mappings: IndexMapping{
+				Properties: map[string]MappingProps{
+					"timestampMillis": {Type: "date", Format: "epoch_millis"},
+					"destination.kind": {Type: "keyword"},
+					"destination.name": {Type: "keyword"},
+				},
+			},
+		},
+	}
+	INDEXES = append(INDEXES, index)
 }

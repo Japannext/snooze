@@ -4,15 +4,12 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
+	dsl "github.com/mottaquikarim/esquerydsl"
 
 	"github.com/japannext/snooze/pkg/common/opensearch"
 	api "github.com/japannext/snooze/pkg/common/api/v2"
 )
-
-type NotificationsResponse struct {
-	Notifications []api.Notification `json:"logs"`
-	Total int `json:"total"`
-}
 
 /*
 func getNotification(c *gin.Context) {
@@ -43,7 +40,16 @@ func searchNotifications(c *gin.Context) {
 	c.BindQuery(&timerange)
 	c.BindQuery(&search)
 
-	res, err := opensearch.SearchNotifications(c, search.Text, timerange, pagination)
+	var params = &opensearchapi.SearchParams{}
+	var doc = &dsl.QueryDoc{}
+	if pagination.OrderBy == "" {
+		pagination.OrderBy = "timestampMillis"
+	}
+	opensearch.AddTimeRange(doc, timerange)
+	opensearch.AddPagination(doc, params, pagination)
+	// opensearch.AddSearch(doc, text)
+
+	res, err := opensearch.Search[*api.Notification](c, api.NOTIFICATION_INDEX, params, doc)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error getting logs for search='%s': %s", search.Text, err)
 		return

@@ -1,11 +1,6 @@
 package opensearch
 
 import (
-	"bytes"
-	"context"
-	"encoding/json"
-	"fmt"
-
 	dsl "github.com/mottaquikarim/esquerydsl"
 	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
 
@@ -24,67 +19,12 @@ func pointer[V any](v V) *V {
 	return &v
 }
 
-
-// Store one object (json serializable) into an index
-func store(ctx context.Context, index string, item interface{}) (string, error) {
-    b, err := json.Marshal(item)
-    if err != nil {
-        return "", err
-    }
-    body := bytes.NewReader(b)
-    req := opensearchapi.IndexReq{
-        Index: index,
-        Body:  body,
-    }
-    resp, err := client.Index(ctx, req)
-    if err != nil {
-        return "", err
-    }
-    if resp.Shards.Successful == 0 {
-        return "", fmt.Errorf("Failed to index object to '%s': %s", index, resp.Result)
-    }
-    log.Debugf("inserted into `%s`: %s", index, b)
-    return resp.ID, nil
-}
-
-func search[T api.HasID](ctx context.Context, index string, params *opensearchapi.SearchParams, doc *dsl.QueryDoc) (*api.ListOf[T], error) {
-    body, err := json.Marshal(doc)
-    if err != nil {
-        return nil, fmt.Errorf("invalid request body (%+v): %w", doc, err)
-    }
-    req := &opensearchapi.SearchReq{
-        Indices: []string{index},
-        Params: *params,
-        Body:  bytes.NewReader(body),
-    }
-    resp, err := client.Search(ctx, req)
-    if err != nil {
-        return nil, err
-    }
-    if resp.Errors {
-        return nil, fmt.Errorf("opensearch returned an error: %s", "")
-    }
-	list := api.ListOf[T]{}
-	list.Items = make([]*T, len(resp.Hits.Hits))
-	for i, hit := range resp.Hits.Hits {
-		if err := json.Unmarshal(hit.Source, &list.Items[i]); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal message %s: %w", hit.Source, err)
-		}
-		(*list.Items[i]).SetID(hit.ID)
-	}
-	list.Total = resp.Hits.Total.Value
-	if resp.Hits.Total.Relation != "eq" {
-		list.More = true
-	}
-    return &list, nil
-}
-
 type Range struct {
 	Gte *uint64 `json:"gte,omitempty"`
 	Lte *uint64 `json:"lte,omitempty"`
 }
 
-func addTimeRange(doc *dsl.QueryDoc, timerange *api.TimeRange) {
+func AddTimeRange(doc *dsl.QueryDoc, timerange *api.TimeRange) {
 	if timerange == nil {
 		return
 	}
@@ -101,7 +41,7 @@ func addTimeRange(doc *dsl.QueryDoc, timerange *api.TimeRange) {
 	}
 }
 
-func addPagination(doc *dsl.QueryDoc, params *opensearchapi.SearchParams, pagination *api.Pagination) {
+func AddPagination(doc *dsl.QueryDoc, params *opensearchapi.SearchParams, pagination *api.Pagination) {
 	if pagination == nil {
 		return
 	}
@@ -116,11 +56,10 @@ func addPagination(doc *dsl.QueryDoc, params *opensearchapi.SearchParams, pagina
 	doc.Sort = []map[string]string{sort}
 }
 
-func addSearch(doc *dsl.QueryDoc, search string) {
+func AddSearch(doc *dsl.QueryDoc, search string) {
 	if search == "" {
 		return
 	}
 	item := dsl.QueryItem{Type: dsl.Match, Field: "message", Value: search}
 	doc.And = append(doc.And, item)
 }
-

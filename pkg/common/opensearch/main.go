@@ -11,7 +11,6 @@ type BootstrapFunction = func(context.Context)
 
 var (
 	client *opensearchapi.Client
-	bootstraps = []BootstrapFunction{}
 )
 
 var log *logrus.Entry
@@ -38,7 +37,5 @@ func Init() {
 	}
 
 	// bootstrap
-	for _, bootstrap := range bootstraps {
-		bootstrap(ctx)
-	}
+	bootstrap(ctx)
 }

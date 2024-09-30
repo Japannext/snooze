@@ -1,5 +1,7 @@
 package v2
 
+const ALERT_INDEX = "v2-alerts"
+
 type Alert struct {
 	ID string `json:"id,omitempty"`
 
@@ -53,8 +55,24 @@ type AlertUpdate struct {
 	Upsert *Alert `json:"upsert"`
 }
 
-type AlertResults struct {
-	Items []Alert `json:"items"`
-	Total int `json:"total"`
-	More bool `json:"more"`
+func init() {
+	index := IndexTemplate{
+		Version: 0,
+		IndexPatterns: []string{ALERT_INDEX},
+		DataStream: map[string]map[string]string{"timestamp_field": {"name": "timestampMillis"}},
+		Template: Indice{
+			Settings: IndexSettings{1, 2},
+			Mappings: IndexMapping{
+				Properties: map[string]MappingProps{
+					"hash": {Type: "keyword"},
+					"startsAt": {Type: "date", Format: "epoch_millis"},
+					"endsAt": {Type: "date", Format: "epoch_millis"},
+					"source.kind": {Type: "keyword"},
+					"source.name": {Type: "keyword"},
+					"labels": {Type: "object"},
+				},
+			},
+		},
+	}
+	INDEXES = append(INDEXES, index)
 }
