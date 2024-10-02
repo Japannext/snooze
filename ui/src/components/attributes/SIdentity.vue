@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { defineProps } from 'vue'
-import { NDescriptions, NDescriptionsItem, NTag, NIcon, NSpace, NPopover } from 'naive-ui'
+import { NList, NListItem, NTag, NIcon, NSpace, NPopover } from 'naive-ui'
 
 import { Alert } from '@vicons/ionicons5'
 import { Server, Terminal, Hashtag } from '@vicons/fa'
@@ -43,7 +43,7 @@ function k8sKind(kind: string): string {
         {{ shortname(identity.host) }}<b v-if="identity.process"># {{ identity.process }}</b>
       </n-tag>
     </template>
-    <n-popover v-else-if="identity.kind && (identity.kind).startsWith('k8s.')" trigger="click">
+    <n-popover v-else-if="identity.kind && (identity.kind).startsWith('k8s.')" trigger="click" style="padding: 0;">
       <template #trigger>
         <n-tag size="small">
           <template #icon>
@@ -53,19 +53,30 @@ function k8sKind(kind: string): string {
         </n-tag>
       </template>
       <template #default>
-        <n-icon :component="Kubernetes" size="40" />
-        <n-descriptions size="small" label-placement="left">
-          <n-descriptions-item label="Kind">
-            {{ identity.kind }}
-          </n-descriptions-item>
-          <n-descriptions-item label="Name">
-            {{ identity.name }}
-          </n-descriptions-item>
-          <n-descriptions-item label="Namespace">
-            {{ identity.namespace }}
-          </n-descriptions-item>
-        </n-descriptions>
+        <n-list bordered>
+          <template #header>
+            <n-space justify="center">
+            <n-icon :component="Kubernetes" />
+            Kubernetes resource
+            </n-space>
+          </template>
+          <n-list-item>
+            <b>Kind</b>: {{ identity.kind }}
+          </n-list-item>
+          <n-list-item>
+            <b>Name</b>: {{ identity.name }}
+          </n-list-item>
+          <n-list-item>
+            <b>Namespace</b>: {{ identity.namespace }}
+          </n-list-item>
+        </n-list>
       </template>
     </n-popover>
   </template>
 </template>
+
+<style>
+.n-tag {
+  cursor: help;
+}
+</style>

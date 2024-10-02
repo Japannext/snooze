@@ -67,5 +67,10 @@ func parseLog(record format.LogParts) *api.Log {
 		item.SeverityNumber = SEVERITY_NUMBERS[severity]
 	}
 
+	// Active-check
+	if item.Identity["process"] == "snooze.activecheck" {
+		item.Labels["activecheck.url"] = item.Message
+	}
+
 	return item
 }

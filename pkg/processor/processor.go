@@ -11,6 +11,7 @@ import (
 	api "github.com/japannext/snooze/pkg/common/api/v2"
 	"github.com/japannext/snooze/pkg/common/rabbitmq"
 
+	"github.com/japannext/snooze/pkg/processor/activecheck"
 	"github.com/japannext/snooze/pkg/processor/grouping"
 	"github.com/japannext/snooze/pkg/processor/profile"
 	"github.com/japannext/snooze/pkg/processor/notification"
@@ -89,6 +90,10 @@ func Process(item *api.Log) error {
 	if err := ratelimit.Process(ctx, item); err != nil {
 		return err
 	}
+
+	// Active-check
+	activecheck.Process(ctx, item)
+
 	if err := notification.Process(ctx, item); err != nil {
 		return err
 	}

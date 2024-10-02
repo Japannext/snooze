@@ -1,0 +1,81 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ .Release.Name }}-exporter"
+  namespace: "{{ .Release.Namespace }}"
+  labels:
+    app.kubernetes.io/name: snooze
+    app.kubernetes.io/instance: "{{ .Release.Name }}"
+    app.kubernetes.io/component: exporter
+    app.kubernetes.io/part-of: "{{ .Values.partOf }}"
+spec:
+  replicas: {{ .Values.replicas }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: snooze
+      app.kubernetes.io/instance: "{{ .Release.Name }}"
+      app.kubernetes.io/component: exporter
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: snooze
+        app.kubernetes.io/instance: "{{ .Release.Name }}"
+        app.kubernetes.io/component: exporter
+        app.kubernetes.io/part-of: "{{ .Values.partOf }}"
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }
+        {{- if .Values.podAnnotations }}
+        {{- toYaml .Values.podAnnotations | nindent 8 }}
+        {{- end }}
+    spec:
+      containers:
+      - name: snooze-exporter
+        image: "{{- include "snooze.image" . | trim }}"
+        imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+        args:
+        - exporter
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        env:
+        {{- include "snooze.env" . | nindent 8 }}
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 1
+          periodSeconds: 1
+          successThreshold: 1
+          timeoutSeconds: 1
+        livenessProbe:
+          httpGet:
+            path: /livez
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 1
+          periodSeconds: 1
+          successThreshold: 1
+          timeoutSeconds: 1
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+        volumeMounts:
+        - name: activechecks
+          mountPath: /etc/snooze/activechecks.yaml
+      volumes:
+      - name: activechecks
+        configMap:
+          name: "{{ .Release.Name }}-activechecks"

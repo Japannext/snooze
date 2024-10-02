@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/japannext/snooze/pkg/apiserver"
+	"github.com/japannext/snooze/pkg/exporter"
 	"github.com/japannext/snooze/pkg/processor"
 	"github.com/japannext/snooze/pkg/version"
 	"github.com/japannext/snooze/pkg/sources/syslog"
@@ -26,6 +27,7 @@ func init() {
 	root.AddCommand(version.Cmd)
 	root.AddCommand(processor.Cmd)
 	root.AddCommand(apiserver.Cmd)
+	root.AddCommand(exporter.Cmd)
 	root.AddCommand(syslog.Cmd)
 	root.AddCommand(otel.Cmd)
 	root.AddCommand(alertmanager.Cmd)

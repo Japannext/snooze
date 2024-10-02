@@ -32,7 +32,7 @@ func Startup() *daemon.DaemonManager {
 	// srv.Engine.Group("/static", eTagMiddleware()).Static("/", config.StaticPath)
 
 	if corsConfig != nil {
-	srv.Engine.Use(cors.New(*corsConfig))
+		srv.Engine.Use(cors.New(*corsConfig))
 	}
 
 	// Registering routes

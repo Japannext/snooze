@@ -39,6 +39,14 @@ type Log struct {
 	// Details written during snooze-process
 	Process *Process `json:"process,omitempty"`
 
+	// If this log is part of an active-check, to internally monitor
+	// snooze availability/latency, there will be a string used to call
+	// a webhook at the end, to notify the active check of the result.
+	ActiveCheckURL string `json:"activeCheckURL,omitempty"`
+	// In case the log encountered a live error during processing, this
+	// can be indicated here.
+	Error string `json:"error,omitempty"`
+
 	// Mute the alert. This may skip notifications, or skip even display
 	Mute Mute `json:"mute,omitempty"`
 }

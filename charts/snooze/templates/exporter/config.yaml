@@ -1,0 +1,14 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ .Release.Name }}-activechecks"
+  namespace: "{{ .Release.Namespace }}"
+data:
+  activechecks.yaml: |-
+    # Active checks configuration
+    syslog_relays:
+    - name: snooze-syslog
+      address: snooze-syslog
+      port: 1514
+      format: rfc5424
