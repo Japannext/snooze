@@ -8,8 +8,6 @@ import (
     api "github.com/japannext/snooze/pkg/common/api/v2"
 )
 
-var buckets = []float64{0.1, 0.5, 1.0, 10.0, 60.0, 3600.0}
-
 var (
     ingestedLogs = prometheus.NewCounterVec(prometheus.CounterOpts{
         Namespace: "snooze",
@@ -25,7 +23,7 @@ var (
          Namespace: "snooze",
          Name: "delay_by_source_seconds",
          Help: "time between log timestamp and entering the earlier snooze sub-system",
-         Buckets: buckets,
+         Buckets: prometheus.ExponentialBuckets(0.1, 3, 8),
      }, []string{"source_kind", "source_name"})
 )
 

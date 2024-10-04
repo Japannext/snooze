@@ -5,9 +5,12 @@ import (
 
 	api "github.com/japannext/snooze/pkg/common/api/v2"
 	"github.com/japannext/snooze/pkg/common/opensearch"
+	"github.com/japannext/snooze/pkg/processor/tracing"
 )
 
 func Process(ctx context.Context, item *api.Log) error {
+	ctx, span := tracing.TRACER.Start(ctx, "store")
+	defer span.End()
 	if item.Mute.SkipStorage {
 		return nil
 	}

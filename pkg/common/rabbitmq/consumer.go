@@ -50,7 +50,7 @@ func NewConsumer(queue, topic string, handler Handler, options ConsumerOptions) 
 
 func (consumer *Consumer) ConsumeForever() error {
 	opts := consumer.Options
-	if true {
+	for true {
 		if consumer.stopping {
 			consumer.done <- true
 			return nil

@@ -9,9 +9,12 @@ import (
 	"github.com/japannext/snooze/pkg/common/redis"
 	"github.com/japannext/snooze/pkg/common/lang"
 	"github.com/japannext/snooze/pkg/common/utils"
+	"github.com/japannext/snooze/pkg/processor/tracing"
 )
 
 func Process(ctx context.Context, item *api.Log) error {
+	ctx, span := tracing.TRACER.Start(ctx, "ratelimit")
+	defer span.End()
 	for _, rate := range rates {
 		log.Debugf("Evaluating ratelimit '%s'", rate.Name)
 		// Condition

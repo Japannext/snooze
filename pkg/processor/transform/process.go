@@ -2,10 +2,14 @@ package transform
 
 import (
 	"context"
+
+	"github.com/japannext/snooze/pkg/processor/tracing"
 	api "github.com/japannext/snooze/pkg/common/api/v2"
 )
 
 func Process(ctx context.Context, item *api.Log) error {
+	ctx, span := tracing.TRACER.Start(ctx, "transform")
+	defer span.End()
 	for _, tr := range transforms {
 		if tr.internal.condition != nil {
 			match, err := tr.internal.condition.MatchLog(ctx, item)

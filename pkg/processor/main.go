@@ -15,6 +15,7 @@ import (
 	"github.com/japannext/snooze/pkg/processor/snooze"
 	"github.com/japannext/snooze/pkg/processor/store"
 	"github.com/japannext/snooze/pkg/processor/transform"
+	"github.com/japannext/snooze/pkg/processor/tracing"
 )
 
 // Logic done only at the application startup.
@@ -23,6 +24,7 @@ func Startup() *daemon.DaemonManager {
 
 	logging.Init()
 	initConfig()
+	tracing.Init()
 	initMetrics()
 	opensearch.Init()
 	redis.Init()

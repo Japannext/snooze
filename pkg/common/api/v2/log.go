@@ -21,6 +21,9 @@ type Log struct {
 	Profile string `json:"profile,omitempty"`
 	Pattern string `json:"pattern,omitempty"`
 
+	// ID for opentelemetry traces
+	TraceID string `json:"traceID"`
+
 	// Grouping
 	Group LogGroup `json:"group"`
 

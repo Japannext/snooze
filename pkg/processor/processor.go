@@ -19,6 +19,7 @@ import (
 	"github.com/japannext/snooze/pkg/processor/silence"
 	"github.com/japannext/snooze/pkg/processor/store"
 	"github.com/japannext/snooze/pkg/processor/transform"
+	"github.com/japannext/snooze/pkg/processor/tracing"
 )
 
 type Processor struct{
@@ -72,6 +73,8 @@ func handler(delivery rabbitmq.Delivery) error {
 
 func Process(item *api.Log) error {
 	ctx := context.TODO()
+	ctx, span := tracing.TRACER.Start(ctx, "process")
+	defer span.End()
 	start := time.Now()
 
 	log.Debugf("Start processing item: %s", item)

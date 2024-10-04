@@ -8,10 +8,11 @@ import (
 func Startup() *daemon.DaemonManager {
 	logging.Init()
 	initConfig()
-	initSyslogMetrics()
+	// initSyslogMetrics()
 	dm := daemon.NewDaemonManager()
 	srv := daemon.NewHttpDaemon()
-	srv.Engine.GET("/webhook/:uid", webhookHandler)
+	srv.Engine.POST("/webhook/:uid", webhookHandler)
+	srv.Engine.GET("/probe/:name", probeHandler)
 	dm.AddDaemon("http", srv)
 	return dm
 }

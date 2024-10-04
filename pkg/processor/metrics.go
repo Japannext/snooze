@@ -9,10 +9,6 @@ import (
 )
 
 var (
-	buckets = []float64{0.5, 1.0, 10.0, 30.0, 60.0, 300.0}
-)
-
-var (
 	processedLogs = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "snooze",
 		Name: "processed_logs",
@@ -22,13 +18,13 @@ var (
 		Namespace: "snooze",
 		Name: "inqueue_time_seconds",
 		Help: "time spent in the processing queue, waiting to be processed",
-		Buckets: buckets,
+		Buckets: prometheus.ExponentialBuckets(0.1, 10, 8),
 	})
 	processTime = prometheus.NewHistogram(prometheus.HistogramOpts{
 		Namespace: "snooze",
 		Name: "process_time_seconds",
 		Help: "time spent processing logs",
-		Buckets: buckets,
+		Buckets: prometheus.ExponentialBuckets(0.1, 2, 8),
 	})
 )
 

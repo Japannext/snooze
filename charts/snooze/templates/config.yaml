@@ -16,3 +16,7 @@ data:
   AMQP_ADDRESS: "amqp://{{ .Release.Name }}-rabbitmq:5672/"
   # samples
   SYSLOG_SERVER_ADDR: "{{ .Release.Name }}-syslog:514"
+  {{- if .Values.tracing.enabled }}
+  # Opentelemetry Tracing
+  OTEL_EXPORTER_OTLP_ENDPOINT: "{{ .Values.tracing.endpoint }}"
+  {{- end }}

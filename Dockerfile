@@ -1,4 +1,4 @@
-FROM golang:1.23 AS build
+FROM golang:1.23-alpine AS build
 
 ARG PROJECT=github.com/japannext/snooze
 ARG VERSION=0.0.0
@@ -9,25 +9,20 @@ WORKDIR /code
 COPY .ca-bundle /usr/local/share/ca-certificates/
 RUN chmod -R 644 /usr/local/share/ca-certificates/ && update-ca-certificates
 
+ENV GOCACHE=/root/.cache/go-build
+
 # Copy and download dependencies.
 # We do it before for cache reasons
-RUN \
-  --mount=type=cache,target=/go/pkg/mod/ \
-  --mount=type=bind,source=go.sum,target=go.sum \
-  --mount=type=bind,source=go.mod,target=go.mod \
-  go mod download
+COPY go.sum go.mod ./
+RUN go mod download
 
 # Common
-ENV GOCACHE=/root/.cache/go-build
 ENV CGO_ENABLED=0
 ENV GOOS=linux
-COPY main.go go.sum go.mod ./
-COPY pkg/ ./
+COPY main.go .
+COPY pkg pkg
 RUN \
-  --mount=type=cache,target=/go/pkg/mod/ \
-  --mount=type=cache,target=/root/.cache/go-build \
-  --mount=type=bind,target=. \
-  go build -o /build/snooze \
+    go build -o /build/snooze \
   -ldflags "-X ${PROJECT}/server.Version=${VERSION} -X ${PROJECT}/server.Commit=${COMMIT} -w -s" \
   .
 

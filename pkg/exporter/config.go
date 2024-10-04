@@ -7,28 +7,39 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
+	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 )
 
 var config *Config
-var checks *CheckConfig
+var probes = map[string]ProbeHandler{}
 
 type Config struct {
 	CallbackAddress string `mapstructure:"CALLBACK_ADDRESS"`
 	CallbackPort int `mapstructure:"CALLBACK_PORT"`
 	SyslogAddress string `mapstructure:"SYSLOG_ADDRESS"`
 	SyslogPort int `mapstructure:"SYSLOG_PORT"`
-	ConfigPath string `mapstructure:"CONFIG_PATH"`
+	ProbeConfigPath string `mapstructure:"PROBE_CONFIG_PATH"`
 }
 
-type CheckConfig struct {
-	SyslogRelays []*SyslogRelay `yaml:"syslog_relays"`
+type ProbeConfig struct {
+	Probes []Probe `yaml:"probes"`
 }
 
-func (cc *CheckConfig) FillDefaults() {
-	for _, relay := range cc.SyslogRelays {
-		relay.FillDefaults()
-	}
+type Probe struct {
+	Name string `yaml:"name" validate:"required"`
+	Syslog *SyslogConfig `yaml:"syslog"`
+}
+
+type ProbeHandler interface {
+	ServeHTTP(*gin.Context)
+}
+
+type SyslogConfig struct {
+	Address string `yaml:"address" validate:"required"`
+	Port int `yaml:"port"`
+	// Valid values: rfc5424, rfc3164
+	Format string `yaml:"format" validate:"oneof=rfc5424 rfc3164"`
 }
 
 func getOutboundIP() string {
@@ -50,24 +61,29 @@ func initConfig() {
 	viper.SetDefault("SYSLOG_PORT", 1514)
 	viper.SetDefault("CALLBACK_ADDRESS", getOutboundIP())
 	viper.SetDefault("CALLBACK_PORT", 8080)
-	viper.SetDefault("CONFIG_PATH", "/etc/snooze/activecheck.yaml")
+	viper.SetDefault("PROBE_CONFIG_PATH", "/etc/snooze/probes.yaml")
 
 	viper.AutomaticEnv()
 	if err := viper.Unmarshal(&config); err != nil {
 		log.Fatal(err)
 	}
 
-	data, err := os.ReadFile(config.ConfigPath)
+	data, err := os.ReadFile(config.ProbeConfigPath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	if err := yaml.Unmarshal(data, &checks); err != nil {
+	var probeConfig ProbeConfig
+	if err := yaml.Unmarshal(data, &probeConfig); err != nil {
 		log.Fatal(err)
 	}
-	checks.FillDefaults()
-
 	validate := validator.New()
-	if err := validate.Struct(checks); err != nil {
+	if err := validate.Struct(probeConfig); err != nil {
 		log.Fatal(err)
+	}
+	for _, probe := range probeConfig.Probes {
+		switch {
+		case probe.Syslog != nil:
+			probes[probe.Name] = NewSyslogRelay(probe.Name, probe.Syslog)
+		}
 	}
 }
