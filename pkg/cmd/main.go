@@ -10,11 +10,11 @@ import (
 	"github.com/japannext/snooze/pkg/exporter"
 	"github.com/japannext/snooze/pkg/processor"
 	"github.com/japannext/snooze/pkg/version"
-	"github.com/japannext/snooze/pkg/sources/syslog"
-	"github.com/japannext/snooze/pkg/sources/otel"
-	"github.com/japannext/snooze/pkg/sources/alertmanager"
+	"github.com/japannext/snooze/pkg/syslog"
+	"github.com/japannext/snooze/pkg/otel"
+	"github.com/japannext/snooze/pkg/alertmanager"
 	"github.com/japannext/snooze/pkg/samples"
-	"github.com/japannext/snooze/pkg/notifiers/mail"
+	"github.com/japannext/snooze/pkg/mail"
 )
 
 var root = &cobra.Command{
