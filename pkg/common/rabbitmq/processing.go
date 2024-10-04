@@ -1,9 +1,9 @@
 package rabbitmq
 
 const (
-	PROCESSING_EXCHANGE = "processing-log-v2"
-	PROCESSING_QUEUE = "processing-log-v2"
-	LOG_CONTENT_TYPE = "application/vnd.snooze.log.v2+json"
+	PROCESSING_EXCHANGE = "processing-batch-v2"
+	PROCESSING_QUEUE = "processing-batch-v2"
+	LOG_CONTENT_TYPE = "application/vnd.snooze.batch.v2+json"
 )
 
 func SetupProcessing() {

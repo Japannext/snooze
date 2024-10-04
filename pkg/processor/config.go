@@ -30,6 +30,11 @@ type Config struct {
 	PrometheusEnable bool `mapstructure:"OTEL_PROMETHEUS_ENABLE"`
 	// Port the prometheus exporter should listen to
 	PrometheusPort int `mapstructure:"OTEL_PROMETHEUS_PORT"`
+
+	// Maximum size of a batch
+	BatchSize int `mapstructure:"BATCH_SIZE"`
+	// Number of time to wait for messages in batch
+	BatchTimeoutSeconds int `mapstructure:"BATCH_TIMEOUT_SECONDS"`
 }
 
 var config *Config
@@ -45,8 +50,6 @@ type Pipeline struct {
 	DefaultDestinations []api.Destination			 `yaml:"default_destinations"`
 }
 
-
-
 func initConfig() {
 	// Defaults
 	viper.SetDefault("PROCESSOR_PIPELINE_FILE", "/etc/snooze/pipeline.yaml")
@@ -55,6 +58,8 @@ func initConfig() {
 	viper.SetDefault("PROCESSOR_LISTENING_PORT", 8080)
 	viper.SetDefault("OTEL_PROMETHEUS_ENABLE", true)
 	viper.SetDefault("OTEL_PROMETHEUS_PORT", 9317)
+	viper.SetDefault("BATCH_SIZE", 20)
+	viper.SetDefault("BATCH_TIMEOUT_SECONDS", 1)
 
 	viper.AutomaticEnv()
 	if err := viper.Unmarshal(&config); err != nil {

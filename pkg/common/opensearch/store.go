@@ -5,8 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
+
+	api "github.com/japannext/snooze/pkg/common/api/v2"
 )
 
 // Store one object (json serializable) into an index
@@ -29,4 +32,47 @@ func Store(ctx context.Context, index string, item interface{}) (string, error) 
     }
     log.Debugf("inserted into `%s`: %s", index, b)
     return resp.ID, nil
+}
+
+func StoreLogs(ctx context.Context, index string, items []*api.Log) error {
+	var buf bytes.Buffer
+	indexLine := fmt.Sprintf(`{"index": {"_index": "%s"}}`, index)
+	for _, item := range items {
+		b, err := json.Marshal(item)
+		if err != nil {
+			log.Warnf("can't marshal into json `%+v`: %s", item, err)
+			continue
+		}
+		buf.WriteString(indexLine)
+		buf.WriteString("\n")
+		buf.Write(b)
+		buf.WriteString("\n")
+	}
+	req := opensearchapi.BulkReq{
+		Index: index,
+		Body: bytes.NewReader(buf.Bytes()),
+	}
+	resp, err := client.Bulk(ctx, req)
+	if err != nil {
+		return err
+	}
+	if resp.Errors {
+		log.Warnf("Bulk query: %s", buf.String())
+		return bulkRespToError(resp)
+	}
+
+	return nil
+}
+
+func bulkRespToError(resp *opensearchapi.BulkResp) error {
+	var buf strings.Builder
+	for i, v := range resp.Items {
+		for k, r := range v {
+			if r.Error != nil {
+				msg := fmt.Sprintf("[#%d:%s] type='%s' reason='%s'\n", i, k, r.Error.Type, r.Error.Reason)
+				buf.WriteString(msg)
+			}
+		}
+	}
+	return fmt.Errorf("error in bulk log:\n%s", buf.String())
 }

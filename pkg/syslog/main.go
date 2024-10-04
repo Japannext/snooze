@@ -17,7 +17,9 @@ func Startup() *daemon.DaemonManager {
 	producer = rabbitmq.NewLogProducer()
 
 	dm := daemon.NewDaemonManager()
-	dm.AddDaemon("server", NewSyslogServer())
+	dm.AddDaemon("syslog", NewSyslogServer())
+	dm.AddDaemon("parser", NewParser())
+	dm.AddDaemon("publisher", NewPublisher())
 
 	return dm
 }

@@ -20,6 +20,7 @@ import (
 	"github.com/japannext/snooze/pkg/processor/store"
 	"github.com/japannext/snooze/pkg/processor/transform"
 	"github.com/japannext/snooze/pkg/processor/tracing"
+	"github.com/japannext/snooze/pkg/common/utils"
 )
 
 type Processor struct{
@@ -32,7 +33,7 @@ func NewProcessor() *Processor {
 	rabbitmq.SetupProcessing()
 
 	options := rabbitmq.ConsumerOptions{}
-	processor.Consumer = rabbitmq.NewConsumer(rabbitmq.PROCESSING_QUEUE, "", handler, options)
+	processor.Consumer = rabbitmq.NewBatchConsumer(rabbitmq.PROCESSING_QUEUE, "", batchHandler, options)
 	return processor
 }
 
@@ -49,7 +50,9 @@ func (r *RejectedLog) Error() string {
 }
 
 func (p *Processor) Run() error {
-	if err := p.Consumer.ConsumeForever(); err != nil {
+	//if err := p.Consumer.ConsumeForever(); err != nil {
+	timeout := time.Duration(config.BatchTimeoutSeconds) * time.Second
+	if err := p.Consumer.BatchConsume(config.BatchSize, timeout); err != nil {
 		return err
 	}
 	return nil
@@ -68,6 +71,23 @@ func handler(delivery rabbitmq.Delivery) error {
 		return err
 	}
 	delivery.Ack(false)
+	return nil
+}
+
+func batchHandler(deliveries []rabbitmq.Delivery) error {
+	for _, delivery := range deliveries {
+		var batch utils.Batch[*api.Log]
+		if err := json.Unmarshal(delivery.Body, &batch); err != nil {
+			log.Warnf("cannot unmarshal `%s`: %s", delivery.Body, err)
+			delivery.Reject(false)
+			continue
+		}
+		if err := Batch(batch.Items); err != nil {
+			delivery.Reject(false)
+			return err
+		}
+		delivery.Ack(false)
+	}
 	return nil
 }
 
@@ -106,6 +126,45 @@ func Process(item *api.Log) error {
 	log.Debugf("End processing item: %s", item)
 
 	processMetrics(start, item)
+
+	return nil
+}
+
+func Batch(items []*api.Log) error {
+	ctx := context.TODO()
+	ctx, span := tracing.TRACER.Start(ctx, "process")
+	defer span.End()
+	start := time.Now()
+
+	log.Debugf("Start processing batch of %d items", len(items))
+	if err := transform.Batch(ctx, items); err != nil {
+		return err
+	}
+	if err := silence.Batch(ctx, items); err != nil {
+		return err
+	}
+	if err := profile.Batch(ctx, items); err != nil {
+		return err
+	}
+	if err := grouping.Batch(ctx, items); err != nil {
+		return err
+	}
+	if err := ratelimit.Batch(ctx, items); err != nil {
+		return err
+	}
+
+	// Active-check
+	activecheck.Batch(ctx, items)
+
+	if err := notification.Batch(ctx, items); err != nil {
+		return err
+	}
+	if err := store.Batch(ctx, items); err != nil {
+		return err
+	}
+	log.Debugf("End processing %d items", len(items))
+
+	processBatch(start, items)
 
 	return nil
 }

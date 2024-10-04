@@ -7,7 +7,7 @@ import (
 	"github.com/japannext/snooze/pkg/processor/tracing"
 )
 
-func Process(ctx context.Context, alert *api.Alert) error {
+func Process(ctx context.Context, alert *api.Log) error {
 	ctx, span := tracing.TRACER.Start(ctx, "snooze")
 	defer span.End()
 

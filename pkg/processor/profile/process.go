@@ -20,10 +20,3 @@ func Process(ctx context.Context, item *api.Log) error {
 
 	return nil
 }
-
-// Process a batch of items
-func Batch(ctx context.Context, items []*api.Log) {
-	 for _, item := range items {
-		Process(ctx, item)
-	 }
-}

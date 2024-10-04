@@ -22,8 +22,3 @@ func Process(ctx context.Context, item *api.Log) error {
 	log.Debugf("Successfully stored log %s", item)
 	return nil
 }
-
-// Process a batch of items
-func Batch(items []*api.Log) {
-	// TODO
-}

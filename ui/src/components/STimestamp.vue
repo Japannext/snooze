@@ -10,7 +10,7 @@ const props = defineProps<{
 }>()
 
 const date = computed(() => {
-  return DateTime.fromMillis(props.value)
+  return DateTime.fromMillis(props.value, {zone: "system"})
 })
 
 </script>
@@ -21,7 +21,7 @@ const date = computed(() => {
       {{ date.toRelative() }}
     </span>
     <span v-else>
-      {{ date.toFormat("yyyy-MM-dd HH:mm:ss") }}
+      {{ date.toFormat("yyyy-MM-dd HH:mm:ss") }} ({{ date.zoneName }})
     </span>
   </div>
 </template>

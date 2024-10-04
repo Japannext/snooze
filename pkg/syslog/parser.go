@@ -8,9 +8,30 @@ import (
 	api "github.com/japannext/snooze/pkg/common/api/v2"
 )
 
+var SEVERITY_TEXTS = []string{"emergency", "alert", "critical", "error", "warning", "notice", "informational", "debug"}
+var SEVERITY_NUMBERS = []int32{21, 19, 18, 17, 13, 10, 9, 5}
+
 const (
 	SOURCE_KIND = "syslog"
 )
+
+type Parser struct {}
+
+func NewParser() *Parser {
+	return &Parser{}
+}
+
+func (parser *Parser) Run() error {
+	for record := range receiveQueue {
+		item := parseLog(record)
+		publishQueue.Add(*item)
+	}
+
+	return nil
+}
+
+func (parser *Parser) Stop() {
+}
 
 func extract(record format.LogParts, key string) (string, bool) {
 	text, ok := record[key].(string)
@@ -25,11 +46,18 @@ func parseLog(record format.LogParts) *api.Log {
 	item.Identity = make(map[string]string)
 	item.Labels = make(map[string]string)
 
-	item.TimestampMillis = uint64(record["timestamp"].(time.Time).UnixMilli())
-	item.ObservedTimestampMillis = uint64(time.Now().UnixMilli())
+	timestamp := record["timestamp"].(time.Time)
+	observedTimestamp := time.Now()
+	item.TimestampMillis = uint64(timestamp.UnixMilli())
+	item.ObservedTimestampMillis = uint64(observedTimestamp.UnixMilli())
 	if item.TimestampMillis == 0 {
 		item.TimestampMillis = item.ObservedTimestampMillis
+		emptyTimestamp.WithLabelValues(SOURCE_KIND, config.InstanceName).Inc()
+	} else {
+		delay := observedTimestamp.Sub(timestamp).Seconds()
+		sourceDelay.WithLabelValues(SOURCE_KIND, config.InstanceName).Observe(delay)
 	}
+
 	item.Source = api.Source{Kind: SOURCE_KIND, Name: config.InstanceName}
 
 	clientIP := record["client"].(string)

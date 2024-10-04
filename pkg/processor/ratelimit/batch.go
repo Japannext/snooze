@@ -11,21 +11,31 @@ import (
 	"github.com/japannext/snooze/pkg/common/redis"
 	"github.com/japannext/snooze/pkg/common/lang"
 	"github.com/japannext/snooze/pkg/common/utils"
+	"github.com/japannext/snooze/pkg/processor/tracing"
 )
 
+func newMap[T any](n int) []map[string]T {
+	mm := make([]map[string]T, n)
+	for i, _ := range mm {
+		mm[i] = make(map[string]T)
+	}
+	return mm
+}
+
 // Process a batch of items
-func Batch(items []*api.Log) {
-	ctx := context.Background()
+func Batch(ctx context.Context, items []*api.Log) error {
+	ctx, span := tracing.TRACER.Start(ctx, "ratelimit")
+	defer span.End()
 
 	n := len(items)
 
 	// This stores the variables per-rate/per-item,
 	// but because we batch, we need to save these
 	// variables between loops
-	previousKeys := make([]map[string]string, n)
-	currentKeys := make([]map[string]string, n)
-	previousCmds := make([]map[string]*redisv9.StringCmd, n)
-	currentCmds := make([]map[string]*redisv9.StringCmd, n)
+	previousKeys := make(map[string]string)
+	currentKeys := make(map[string]string)
+	previousCmds := map[string]*redisv9.StringCmd{}
+	currentCmds := map[string]*redisv9.StringCmd{}
 
 	// First redis pipe: get all previous/current values
 	pipe := redis.Client.Pipeline()
@@ -39,27 +49,30 @@ func Batch(items []*api.Log) {
 				continue
 			}
 			hash := utils.ComputeHash(fields)
-			previousKeys[i][rate.Name] = fmt.Sprintf("ratelimits/%s:%s/period:%d", rate.Name, hash, period)
-			currentKeys[i][rate.Name] = fmt.Sprintf("ratelimits/%s:%s/period:%d", rate.Name, hash, period-1)
-			previousCmds[i][rate.Name] = pipe.Get(ctx, previousKeys[i][rate.Name])
-			currentCmds[i][rate.Name] = pipe.Get(ctx, currentKeys[i][rate.Name])
+			k := fmt.Sprintf("%s:%d", rate.Name, i)
+			previousKeys[k] = fmt.Sprintf("ratelimits/%s:%s/period:%d", rate.Name, hash, period)
+			currentKeys[k] = fmt.Sprintf("ratelimits/%s:%s/period:%d", rate.Name, hash, period-1)
+			previousCmds[k] = pipe.Get(ctx, previousKeys[k])
+			currentCmds[k] = pipe.Get(ctx, currentKeys[k])
 		}
 	}
-	if _, err := pipe.Exec(ctx); err != nil {
-		log.Warnf("failed to get ratelimits for %d logs!", n)
-		return
+	_, err := pipe.Exec(ctx)
+	if err != nil && err != redis.Nil {
+		log.Warnf("failed to get ratelimits for %d logs: %s", n, err)
+		return err
 	}
 	for _, rate := range rates {
 		// Verify burst is not passed
 		for i, item := range items {
-			previous, err := previousCmds[i][rate.Name].Uint64()
+			k := fmt.Sprintf("%s:%d", rate.Name, i)
+			previous, err := extractInteger(previousCmds, k)
 			if err != nil {
-				log.Warnf("invalid format for previous ratelimit")
+				log.Warnf("unexpected error while getting previous value: %s", err)
 				continue
 			}
-			current, err := currentCmds[i][rate.Name].Uint64()
+			current, err := extractInteger(currentCmds, k)
 			if err != nil {
-				log.Warnf("invalid format for current ratelimit")
+				log.Warnf("unexpected error while getting current value: %s", err)
 				continue
 			}
 			if previous > rate.Burst || current > rate.Burst {
@@ -74,12 +87,32 @@ func Batch(items []*api.Log) {
 	pipe = redis.Client.Pipeline()
 	for _, rate := range rates {
 		for i, _ := range items {
-			pipe.Incr(ctx, currentKeys[i][rate.Name])
-			pipe.ExpireNX(ctx, currentKeys[i][rate.Name], rate.Period*2)
+			k := fmt.Sprintf("%s:%d", rate.Name, i)
+			pipe.Incr(ctx, currentKeys[k])
+			pipe.ExpireNX(ctx, currentKeys[k], rate.Period*3)
 		}
 	}
 	if _, err := pipe.Exec(ctx); err != nil {
 		log.Warnf("failed to increment ratelimits for %d logs!", n)
-		return
+		return err
 	}
+
+	return nil
+}
+
+// Extract an integer, and handle all edge cases
+func extractInteger(cmds map[string]*redisv9.StringCmd, key string) (uint64, error) {
+	cmd, found := cmds[key]
+	if !found {
+		return 0, nil
+	}
+	value, err := cmd.Uint64()
+	if err == redis.Nil {
+		return 0, nil
+	}
+	if err != nil {
+		return 0, err
+	}
+	return value, nil
+
 }

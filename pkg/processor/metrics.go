@@ -23,7 +23,7 @@ var (
 	processTime = prometheus.NewHistogram(prometheus.HistogramOpts{
 		Namespace: "snooze",
 		Name: "process_time_seconds",
-		Help: "time spent processing logs",
+		Help: "time spent processing logs (time processing batch / batch size)",
 		Buckets: prometheus.ExponentialBuckets(0.1, 2, 8),
 	})
 )
@@ -40,6 +40,16 @@ func processMetrics(start time.Time, item *api.Log) {
 
 	// Counters
 	processedLogs.Inc()
+}
+
+func processBatch(start time.Time, items []*api.Log) {
+	for _, item := range items {
+		observedTimestamp := time.UnixMilli(int64(item.ObservedTimestampMillis))
+		processTime.Observe(time.Since(start).Seconds())
+		inqueueSeconds := start.Sub(observedTimestamp).Seconds()
+		inqueueTime.Observe(inqueueSeconds)
+	}
+	processedLogs.Add(float64(len(items)))
 }
 
 func initMetrics() {
