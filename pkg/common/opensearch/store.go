@@ -9,7 +9,7 @@ import (
 
 	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
 
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 // Store one object (json serializable) into an index
@@ -34,7 +34,7 @@ func Store(ctx context.Context, index string, item interface{}) (string, error) 
     return resp.ID, nil
 }
 
-func StoreLogs(ctx context.Context, index string, items []*api.Log) error {
+func StoreLogs(ctx context.Context, index string, items []*models.Log) error {
 	var buf bytes.Buffer
 	indexLine := fmt.Sprintf(`{"index": {"_index": "%s"}}`, index)
 	for _, item := range items {

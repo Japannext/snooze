@@ -4,7 +4,7 @@ import (
 	dsl "github.com/mottaquikarim/esquerydsl"
 	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
 
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 var (
@@ -24,7 +24,7 @@ type Range struct {
 	Lte *uint64 `json:"lte,omitempty"`
 }
 
-func AddTimeRange(doc *dsl.QueryDoc, timerange *api.TimeRange) {
+func AddTimeRange(doc *dsl.QueryDoc, timerange *models.TimeRange) {
 	if timerange == nil {
 		return
 	}
@@ -41,7 +41,7 @@ func AddTimeRange(doc *dsl.QueryDoc, timerange *api.TimeRange) {
 	}
 }
 
-func AddPagination(doc *dsl.QueryDoc, params *opensearchapi.SearchParams, pagination *api.Pagination) {
+func AddPagination(doc *dsl.QueryDoc, params *opensearchapi.SearchParams, pagination *models.Pagination) {
 	if pagination == nil {
 		return
 	}

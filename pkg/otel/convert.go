@@ -8,7 +8,7 @@ import (
 	logv1 "go.opentelemetry.io/proto/otlp/logs/v1"
 	resv1 "go.opentelemetry.io/proto/otlp/resource/v1"
 
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 const (
@@ -16,10 +16,10 @@ const (
 )
 
 // Convert an opentelemetry format to the snooze native format
-func convertLog(resource *resv1.Resource, scope *commonv1.InstrumentationScope, lr *logv1.LogRecord) *api.Log {
-	var item *api.Log
+func convertLog(resource *resv1.Resource, scope *commonv1.InstrumentationScope, lr *logv1.LogRecord) *models.Log {
+	var item *models.Log
 
-	item.Source = api.Source{Kind: SOURCE_KIND, Name: config.SourceName}
+	item.Source = models.Source{Kind: SOURCE_KIND, Name: config.SourceName}
 
 	// Timestamps
 	item.TimestampMillis = lr.TimeUnixNano / 1000 / 1000

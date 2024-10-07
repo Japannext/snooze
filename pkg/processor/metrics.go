@@ -5,7 +5,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 var (
@@ -28,7 +28,7 @@ var (
 	})
 )
 
-func processMetrics(start time.Time, item *api.Log) {
+func processMetrics(start time.Time, item *models.Log) {
 	observedTimestamp := time.UnixMilli(int64(item.ObservedTimestampMillis))
 
 	// Process time
@@ -42,7 +42,7 @@ func processMetrics(start time.Time, item *api.Log) {
 	processedLogs.Inc()
 }
 
-func processBatch(start time.Time, items []*api.Log) {
+func processBatch(start time.Time, items []*models.Log) {
 	for _, item := range items {
 		observedTimestamp := time.UnixMilli(int64(item.ObservedTimestampMillis))
 		processTime.Observe(time.Since(start).Seconds())

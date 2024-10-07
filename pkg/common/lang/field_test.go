@@ -4,18 +4,18 @@ import (
 	"github.com/stretchr/testify/assert"
 	"testing"
 
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 func TestField(t *testing.T) {
 	tests := []struct {
 		Raw          string
-		Log        *api.Log
+		Log        *models.Log
 		ExpectResult string
 	}{
 		{
 			`source.Kind`,
-			&api.Log{Source: api.Source{Kind: "syslog", Name: "prod-syslog"}},
+			&api.Log{Source: models.Source{Kind: "syslog", Name: "prod-syslog"}},
 			"syslog",
 		},
 		{
@@ -41,7 +41,7 @@ func TestFieldMap(t *testing.T) {
 	tests := []struct{
 		name string
 		fields []string
-		log *api.Log
+		log *models.Log
 		expected map[string]string
 	}{
 		{
@@ -53,7 +53,7 @@ func TestFieldMap(t *testing.T) {
 		{
 			name: "source matching",
 			fields: []string{"source.Kind", "source.Name"},
-			log: &api.Log{Source: api.Source{Kind: "syslog", Name: "dev"}},
+			log: &api.Log{Source: models.Source{Kind: "syslog", Name: "dev"}},
 			expected: map[string]string{"source.Kind": "syslog", "source.Name": "dev"},
 		},
 	}

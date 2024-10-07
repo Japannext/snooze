@@ -1,4 +1,4 @@
-package v2
+package models
 
 type Escalation struct {
 	LogID string

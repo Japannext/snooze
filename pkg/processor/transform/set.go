@@ -1,7 +1,7 @@
 package transform
 
 import (
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 type SetTransform struct {
@@ -11,6 +11,6 @@ type SetTransform struct {
 
 func (tr *SetTransform) Load() {}
 
-func (tr *SetTransform) Process(item *api.Log) error {
+func (tr *SetTransform) Process(item *models.Log) error {
 	return nil
 }

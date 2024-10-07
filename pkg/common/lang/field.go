@@ -7,7 +7,7 @@ import (
 	"github.com/PaesslerAG/gval"
 	"github.com/PaesslerAG/jsonpath"
 
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 type Field struct {
@@ -39,12 +39,12 @@ func (f *Field) String() string {
 	return f.raw
 }
 
-func ExtractField(item api.HasContext, field *Field) (string, error) {
+func ExtractField(item models.HasContext, field *Field) (string, error) {
 	ctx := context.Background()
 	return field.gval.EvalString(ctx, item.Context())
 }
 
-func ExtractFields(item api.HasContext, fields []*Field) (map[string]string, error) {
+func ExtractFields(item models.HasContext, fields []*Field) (map[string]string, error) {
 	mapper := map[string]string{}
 	for _, field := range fields {
 		value, err := ExtractField(item, field)

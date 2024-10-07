@@ -1,10 +1,10 @@
 package transform
 
 import (
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 type Transform interface {
-	Transform(*api.Log) error
+	Transform(*models.Log) error
 	Load() error
 }

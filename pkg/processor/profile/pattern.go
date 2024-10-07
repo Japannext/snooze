@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"fmt"
 
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/common/lang"
 )
 
@@ -76,7 +76,7 @@ func (p *Pattern) Load() error {
 	return nil
 }
 
-func (p *Pattern) Process(ctx context.Context, item *api.Log) (match, reject bool) {
+func (p *Pattern) Process(ctx context.Context, item *models.Log) (match, reject bool) {
 	// Matching pattern
 	match, capture := p.match(item)
 	if !match {
@@ -165,7 +165,7 @@ func (p *Pattern) Process(ctx context.Context, item *api.Log) (match, reject boo
 }
 
 // Match the regex of the pattern, return the capture groups if any
-func (p *Pattern) match(item *api.Log) (bool, map[string]string) {
+func (p *Pattern) match(item *models.Log) (bool, map[string]string) {
 	var (
 		match bool
 		capture = make(map[string]string)

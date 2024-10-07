@@ -1,7 +1,7 @@
 package transform
 
 import (
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/common/lang"
 )
 
@@ -41,5 +41,5 @@ func (tr *Transform) Load() {
 
 type Transformation interface {
 	Load()
-	Process(*api.Log) error
+	Process(*models.Log) error
 }

@@ -1,4 +1,4 @@
-package v2
+package models
 
 type Mute struct {
     // Skip the notification step. Usually on.

@@ -1,4 +1,4 @@
-package v2
+package models
 
 type ActiveCheckCallback struct {
 	// Delay in milliseconds between the active check being emitted and it

@@ -9,7 +9,7 @@ import (
 	"github.com/georgysavva/scany/v2/pgxscan"
 	log "github.com/sirupsen/logrus"
 
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 var (
@@ -35,14 +35,14 @@ func NewPostgresLogStore() *PostgresLogStore {
 	return &PostgresLogStore{pool, conn}
 }
 
-func (pg *PostgresLogStore) Get(uid string) (*api.Log, error) {
+func (pg *PostgresLogStore) Get(uid string) (*models.Log, error) {
 	ctx := context.Background()
 
 	rows, err := pg.conn.Query(ctx, fmt.Sprintf(`SELECT * FROM log_v2 WHERE uid = '%s' LIMIT 1`, uid))
 	if err != nil {
 		return nil, err
 	}
-	var item *api.Log
+	var item *models.Log
 	err := pgxscan.ScanOne(&item, rows)
 	if err != nil {
 		return nil, err
@@ -51,9 +51,9 @@ func (pg *PostgresLogStore) Get(uid string) (*api.Log, error) {
 	return item, nil
 }
 
-func (pg *PostgresLogStore) Search(query string, pagination api.Pagination) ([]*api.Log, error) {
+func (pg *PostgresLogStore) Search(query string, pagination models.Pagination) ([]*models.Log, error) {
 	ctx := context.Background()
-	var aitems []*api.Log
+	var aitems []*models.Log
 	err := pgxscan.Select(ctx, pg, &alerts, `SELECT * FROM snooze_v2_alerts LIMIT 10;`)
 	if err != nil {
 		return alerts, err

@@ -1,4 +1,4 @@
-package v2
+package models
 
 type Group struct {
 	// Hash value of the key-value

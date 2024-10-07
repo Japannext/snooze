@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
 
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 
 	// Sub-Processors
 	"github.com/japannext/snooze/pkg/processor/grouping"
@@ -47,7 +47,7 @@ type Pipeline struct {
 	Silences	        []*silence.Silence			 `yaml:"silences"`
 	RateLimits			[]*ratelimit.RateLimit		 `yaml:"ratelimits"`
 	Notifications       []*notification.Notification `yaml:"notifications"`
-	DefaultDestinations []api.Destination			 `yaml:"default_destinations"`
+	DefaultDestinations []models.Destination		 `yaml:"default_destinations"`
 }
 
 func initConfig() {

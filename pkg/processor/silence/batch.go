@@ -5,10 +5,10 @@ import (
     "sync"
 
     "github.com/japannext/snooze/pkg/processor/tracing"
-    api "github.com/japannext/snooze/pkg/common/api/v2"
+    "github.com/japannext/snooze/pkg/models"
 )
 
-func Batch(ctx context.Context, items []*api.Log) error {
+func Batch(ctx context.Context, items []*models.Log) error {
     ctx, span := tracing.TRACER.Start(ctx, "transform")
     defer span.End()
     var wg sync.WaitGroup

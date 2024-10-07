@@ -3,11 +3,11 @@ package opensearch
 import (
 	"context"
 
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 func bootstrap(ctx context.Context) {
-	for _, tpl := range api.INDEXES {
+	for _, tpl := range models.INDEXES {
 		ensureIndex(ctx, tpl.IndexPatterns[0], tpl)
 		if tpl.DataStream != nil {
 			ensureDatastream(ctx, tpl.IndexPatterns[0])

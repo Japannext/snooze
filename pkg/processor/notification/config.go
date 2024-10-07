@@ -1,13 +1,13 @@
 package notification
 
 import (
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/common/lang"
 )
 
 type Notification struct {
 	If       string   `yaml:"if"`
-	Destinations []api.Destination `yaml:"destinations"`
+	Destinations []models.Destination `yaml:"destinations"`
 
 	internal struct {
 		condition *lang.Condition

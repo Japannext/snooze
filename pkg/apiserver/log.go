@@ -9,7 +9,7 @@ import (
 	dsl "github.com/mottaquikarim/esquerydsl"
 
 	"github.com/japannext/snooze/pkg/common/opensearch"
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 type Search struct {
@@ -19,8 +19,8 @@ type Search struct {
 func searchLogs(c *gin.Context) {
 	var (
 		start = time.Now()
-		pagination = api.NewPagination()
-		timerange *api.TimeRange
+		pagination = models.NewPagination()
+		timerange *models.TimeRange
 		search Search
 	)
 	c.BindQuery(&pagination)
@@ -37,7 +37,7 @@ func searchLogs(c *gin.Context) {
 	opensearch.AddPagination(doc, params, pagination)
 	opensearch.AddSearch(doc, search.Text)
 
-	items, err := opensearch.Search[*api.Log](c, api.LOG_INDEX, params, doc)
+	items, err := opensearch.Search[*models.Log](c, models.LOG_INDEX, params, doc)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error getting logs for search='%s': %s", search.Text, err)
 		return

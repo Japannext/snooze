@@ -8,7 +8,7 @@ import (
 	dsl "github.com/mottaquikarim/esquerydsl"
 
 	"github.com/japannext/snooze/pkg/common/opensearch"
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 /*
@@ -32,8 +32,8 @@ func getNotification(c *gin.Context) {
 func searchNotifications(c *gin.Context) {
 
 	var (
-		pagination = api.NewPagination()
-		timerange *api.TimeRange
+		pagination = models.NewPagination()
+		timerange *models.TimeRange
 		search Search
 	)
 	c.BindQuery(&pagination)
@@ -49,7 +49,7 @@ func searchNotifications(c *gin.Context) {
 	opensearch.AddPagination(doc, params, pagination)
 	// opensearch.AddSearch(doc, text)
 
-	res, err := opensearch.Search[*api.Notification](c, api.NOTIFICATION_INDEX, params, doc)
+	res, err := opensearch.Search[*models.Notification](c, models.NOTIFICATION_INDEX, params, doc)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error getting logs for search='%s': %s", search.Text, err)
 		return

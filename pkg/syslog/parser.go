@@ -5,7 +5,7 @@ import (
 
 	"gopkg.in/mcuadros/go-syslog.v2/format"
 
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 var SEVERITY_TEXTS = []string{"emergency", "alert", "critical", "error", "warning", "notice", "informational", "debug"}
@@ -41,8 +41,8 @@ func extract(record format.LogParts, key string) (string, bool) {
 	return text, true
 }
 
-func parseLog(record format.LogParts) *api.Log {
-	item := &api.Log{}
+func parseLog(record format.LogParts) *models.Log {
+	item := &models.Log{}
 	item.Identity = make(map[string]string)
 	item.Labels = make(map[string]string)
 
@@ -58,7 +58,7 @@ func parseLog(record format.LogParts) *api.Log {
 		sourceDelay.WithLabelValues(SOURCE_KIND, config.InstanceName).Observe(delay)
 	}
 
-	item.Source = api.Source{Kind: SOURCE_KIND, Name: config.InstanceName}
+	item.Source = models.Source{Kind: SOURCE_KIND, Name: config.InstanceName}
 
 	clientIP := record["client"].(string)
 

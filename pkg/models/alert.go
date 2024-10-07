@@ -1,4 +1,4 @@
-package v2
+package models
 
 const ALERT_INDEX = "v2-alerts"
 

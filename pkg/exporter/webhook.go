@@ -3,12 +3,12 @@ package exporter
 import (
 	"github.com/gin-gonic/gin"
 
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 func webhookHandler(c *gin.Context) {
 	key := c.Param("uid")
-	var callback *api.ActiveCheckCallback
+	var callback *models.ActiveCheckCallback
 	c.BindJSON(&callback)
 
 	waiter.Insert(key, callback)

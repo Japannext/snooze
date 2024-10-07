@@ -8,10 +8,10 @@ import (
 
 	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
 
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 )
 
-func createIndex(ctx context.Context, name string, tpl api.IndexTemplate) error {
+func createIndex(ctx context.Context, name string, tpl models.IndexTemplate) error {
 	body, err := json.Marshal(tpl)
 	if err != nil {
 		return fmt.Errorf("error marshaling index template: %s", err)
@@ -49,7 +49,7 @@ func hasIndex(ctx context.Context, name string) (bool, error) {
 	return false, fmt.Errorf("Unexpected status code %d when checking index %s: %s", resp.StatusCode, name, buf.Bytes())
 }
 
-func ensureIndex(ctx context.Context, name string, tpl api.IndexTemplate) {
+func ensureIndex(ctx context.Context, name string, tpl models.IndexTemplate) {
 	found, err := hasIndex(ctx, name)
 	if err != nil {
 		log.Fatal(err)

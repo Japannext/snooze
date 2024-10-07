@@ -6,7 +6,7 @@ import (
 
 	amqp "github.com/rabbitmq/amqp091-go"
 
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 const (
@@ -50,10 +50,10 @@ func (ch *ProcessChannel) Cancel() error {
 
 type LogMessage struct {
 	Delivery *amqp.Delivery
-	Log    *api.Log
+	Log    *models.Log
 }
 
-type LogHandler = func(*api.Log) error
+type LogHandler = func(*models.Log) error
 
 func (ch *ProcessChannel) ConsumeForever(handler LogHandler) error {
 	for true {
@@ -72,7 +72,7 @@ func (ch *ProcessChannel) ConsumeForever(handler LogHandler) error {
 				break
 			}
 			log.Debugf("Received an AMQP message!")
-			var item *api.Log
+			var item *models.Log
 			if err := json.Unmarshal(d.Body, &item); err != nil {
 				log.Warnf("Rejecting message (%s): %s", err, d.Body)
 				// discard(d)
@@ -101,7 +101,7 @@ func (ch *ProcessChannel) Consume() (<-chan LogMessage, error) {
 	}
 	for d := range dd {
 		log.Debugf("Received an AMQP message!")
-		var item *api.Log
+		var item *models.Log
 		if err := json.Unmarshal(d.Body, &item); err != nil {
 			log.Warnf("Rejecting message (%s): %s", err, d.Body)
 			d.Reject(false)
@@ -114,7 +114,7 @@ func (ch *ProcessChannel) Consume() (<-chan LogMessage, error) {
 }
 */
 
-func (ch *ProcessChannel) Publish(ctx context.Context, item *api.Log) error {
+func (ch *ProcessChannel) Publish(ctx context.Context, item *models.Log) error {
 	body, err := json.Marshal(item)
 	if err != nil {
 		return err

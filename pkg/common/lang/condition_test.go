@@ -5,24 +5,24 @@ import (
 	"github.com/stretchr/testify/assert"
 	"testing"
 
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 func TestCondition(t *testing.T) {
 
 	tests := []struct {
 		Raw         string
-		Log       *api.Log
+		Log       *models.Log
 		ExpectMatch bool
 	}{
 		{
 			`source.Kind == "syslog"`,
-			&api.Log{Source: api.Source{Kind: "syslog", Name: "prod-syslog"}},
+			&api.Log{Source: models.Source{Kind: "syslog", Name: "prod-syslog"}},
 			true,
 		},
 		{
 			`source.Kind == "otlp"`,
-			&api.Log{Source: api.Source{Kind: "syslog", Name: "prod-syslog"}},
+			&api.Log{Source: models.Source{Kind: "syslog", Name: "prod-syslog"}},
 			false,
 		},
 		{

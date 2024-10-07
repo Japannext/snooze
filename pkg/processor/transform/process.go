@@ -4,10 +4,10 @@ import (
 	"context"
 
 	"github.com/japannext/snooze/pkg/processor/tracing"
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 )
 
-func Process(ctx context.Context, item *api.Log) error {
+func Process(ctx context.Context, item *models.Log) error {
 	ctx, span := tracing.TRACER.Start(ctx, "transform")
 	defer span.End()
 	for _, tr := range transforms {

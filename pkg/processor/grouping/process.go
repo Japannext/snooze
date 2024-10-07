@@ -5,13 +5,13 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/common/lang"
 	"github.com/japannext/snooze/pkg/common/utils"
 	"github.com/japannext/snooze/pkg/processor/tracing"
 )
 
-func Process(ctx context.Context, item *api.Log) error {
+func Process(ctx context.Context, item *models.Log) error {
 	ctx, span := tracing.TRACER.Start(ctx, "grouping")
 	defer span.End()
 	if len(item.Group.Labels) != 0 { // existing grouping

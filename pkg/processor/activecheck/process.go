@@ -9,11 +9,11 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/processor/tracing"
 )
 
-func Process(ctx context.Context, item *api.Log) error {
+func Process(ctx context.Context, item *models.Log) error {
 	ctx, span := tracing.TRACER.Start(ctx, "activecheck")
 	defer span.End()
 	url, ok := item.Labels["activecheck.url"]
@@ -31,7 +31,7 @@ func Process(ctx context.Context, item *api.Log) error {
 		return nil
 	}
 
-	data, err := json.Marshal(api.ActiveCheckCallback{
+	data, err := json.Marshal(models.ActiveCheckCallback{
 		DelayMillis: delayMillis,
 		Error: item.Error,
 	})

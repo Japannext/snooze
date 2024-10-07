@@ -1,4 +1,4 @@
-package v2
+package models
 
 type Team struct {
 	Name string `json:"name"`

@@ -1,4 +1,4 @@
-package v2
+package models
 
 // A rate limit object. Represent the start or end of rate limiting.
 type Ratelimit struct {

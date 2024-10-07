@@ -6,7 +6,7 @@ import (
 
 	amqp "github.com/rabbitmq/amqp091-go"
 
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 const (
@@ -66,7 +66,7 @@ func (nc *NotificationChannel) NewQueue(name string) *NotificationQueue {
 
 type NotificationMessage struct {
 	Delivery     *amqp.Delivery
-	Notification *api.Notification
+	Notification *models.Notification
 }
 
 func (nq *NotificationQueue) Consume() (<-chan NotificationMessage, error) {
@@ -76,7 +76,7 @@ func (nq *NotificationQueue) Consume() (<-chan NotificationMessage, error) {
 		return out, err
 	}
 	for d := range dd {
-		var notif *api.Notification
+		var notif *models.Notification
 		if err := json.Unmarshal(d.Body, &notif); err != nil {
 			log.Warnf("Rejecting message (%s): %s", err, d.Body)
 			d.Reject(false)
@@ -86,7 +86,7 @@ func (nq *NotificationQueue) Consume() (<-chan NotificationMessage, error) {
 	return out, nil
 }
 
-type NotificationHandler = func(*api.Notification) error
+type NotificationHandler = func(*models.Notification) error
 
 func (ch *NotificationQueue) ConsumeForever(handler NotificationHandler) error {
 	for true {
@@ -105,7 +105,7 @@ func (ch *NotificationQueue) ConsumeForever(handler NotificationHandler) error {
 				break
 			}
 			log.Debugf("Received an AMQP message!")
-			var item *api.Log
+			var item *models.Log
 			if err := json.Unmarshal(d.Body, &item); err != nil {
 				log.Warnf("Rejecting message (%s): %s", err, d.Body)
 				// discard(d)
@@ -124,7 +124,7 @@ func (ch *NotificationQueue) ConsumeForever(handler NotificationHandler) error {
 	return nil
 }
 
-func (nq *NotificationQueue) Publish(ctx context.Context, notif *api.Notification) error {
+func (nq *NotificationQueue) Publish(ctx context.Context, notif *models.Notification) error {
 	body, err := json.Marshal(notif)
 	if err != nil {
 		return err

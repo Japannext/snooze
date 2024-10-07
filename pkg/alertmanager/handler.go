@@ -13,12 +13,12 @@ import (
 	"github.com/japannext/snooze/pkg/common/redis"
 	"github.com/japannext/snooze/pkg/common/opensearch"
 	"github.com/japannext/snooze/pkg/common/utils"
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 const ALERTMANAGER_KIND = "alertmanager"
 
-func getAlertStatus(ctx context.Context, key string) (*api.AlertStatus, error) {
+func getAlertStatus(ctx context.Context, key string) (*models.AlertStatus, error) {
 	body, err := redis.Client.Get(ctx, key).Bytes()
 	if err != nil && err != redis.Nil {
 		return nil, err
@@ -26,14 +26,14 @@ func getAlertStatus(ctx context.Context, key string) (*api.AlertStatus, error) {
 	if err == redis.Nil {
 		return nil, nil
 	}
-	var status *api.AlertStatus
+	var status *models.AlertStatus
 	if err := json.Unmarshal(body, &status); err != nil {
 		return nil, err
 	}
 	return status, nil
 }
 
-func setAlertStatus(ctx context.Context, key string, status *api.AlertStatus) error {
+func setAlertStatus(ctx context.Context, key string, status *models.AlertStatus) error {
 	body, err := json.Marshal(status)
 	if err != nil {
 		return fmt.Errorf("failed to marshal alert status `%+v`: %w", status, err)
@@ -133,9 +133,9 @@ func Process(alert PostableAlert) {
 		summary := pop(annotations, "summary")
 		text, number := parseSeverity(labels)
 
-		item := &api.Alert{
+		item := &models.Alert{
 			Hash: hash,
-			Source: api.Source{Kind: ALERTMANAGER_KIND, Name: config.InstanceName},
+			Source: models.Source{Kind: ALERTMANAGER_KIND, Name: config.InstanceName},
 			Identity: parseIdentity(labels),
 			StartsAt: startMillis,
 			AlertName: alertName,
@@ -146,12 +146,12 @@ func Process(alert PostableAlert) {
 			Description: description,
 			Summary: summary,
 		}
-		id, err := opensearch.Store(ctx, api.ALERT_INDEX, item)
+		id, err := opensearch.Store(ctx, models.ALERT_INDEX, item)
 		if err != nil {
 			log.Warnf("failed to insert alert: %s", err)
 			return
 		}
-		status = &api.AlertStatus{
+		status = &models.AlertStatus{
 			ID: id,
 			LastCheck: startMillis,
 			NextCheck: endMillis,
@@ -165,7 +165,7 @@ func Process(alert PostableAlert) {
 	}
 
 	// Update status
-	newStatus := &api.AlertStatus{
+	newStatus := &models.AlertStatus{
 		ID: status.ID,
 		LastCheck: startMillis,
 		NextCheck: endMillis,

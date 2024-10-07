@@ -7,7 +7,7 @@ import (
 
     "text/template"
 
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 type Template struct {
@@ -34,7 +34,7 @@ func NewTemplateMap(rawMap map[string]string) (map[string]Template, error) {
 	return results, nil
 }
 
-func (t *Template) Execute(ctx context.Context, item api.HasContext) (string, error) {
+func (t *Template) Execute(ctx context.Context, item models.HasContext) (string, error) {
 	data := item.Context()
 	capture := ctx.Value("capture").(map[string]string)
 	if len(capture) > 0 {

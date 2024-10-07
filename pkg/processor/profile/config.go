@@ -3,7 +3,7 @@ package profile
 import (
 	"context"
 
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 type Profile struct {
@@ -25,7 +25,7 @@ func (prf *Profile) Load() {
 	}
 }
 
-func (prf *Profile) Process(ctx context.Context, item *api.Log) bool {
+func (prf *Profile) Process(ctx context.Context, item *models.Log) bool {
 	for _, pattern := range prf.Patterns {
 		match, reject := pattern.Process(ctx, item)
 		if reject {

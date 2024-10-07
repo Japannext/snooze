@@ -4,13 +4,13 @@ import (
 	"context"
 	"time"
 
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/common/opensearch"
 	"github.com/japannext/snooze/pkg/common/utils"
 	"github.com/japannext/snooze/pkg/processor/tracing"
 )
 
-func Process(ctx context.Context, item *api.Log) error {
+func Process(ctx context.Context, item *models.Log) error {
 	ctx, span := tracing.TRACER.Start(ctx, "notification")
 	defer span.End()
 
@@ -20,7 +20,7 @@ func Process(ctx context.Context, item *api.Log) error {
 
 	// A set is necessary to avoid sending duplicates when 2 rules match
 	// the same destination.
-	var destinations = utils.NewOrderedSet[api.Destination]()
+	var destinations = utils.NewOrderedSet[models.Destination]()
 	var merr = utils.NewMultiError("Failed to notify item trace_id=%s.")
 
 	for _, notif := range notifications {
@@ -44,7 +44,7 @@ func Process(ctx context.Context, item *api.Log) error {
 
 	for _, dest := range destinations.Items() {
 		log.Debugf("sending to destination `%s`", dest)
-		notification := &api.Notification{
+		notification := &models.Notification{
 			TimestampMillis: uint64(time.Now().UnixMilli()),
 			Destination: dest,
 			LogUID: item.ID,
@@ -63,7 +63,7 @@ func Process(ctx context.Context, item *api.Log) error {
 				continue
 			}
 		}
-		if _, err := opensearch.Store(ctx, api.NOTIFICATION_INDEX, notification); err != nil {
+		if _, err := opensearch.Store(ctx, models.NOTIFICATION_INDEX, notification); err != nil {
 			merr.AppendErr(err)
 			continue
 		}

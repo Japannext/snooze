@@ -1,7 +1,7 @@
 package transform
 
 import (
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 type ParentTransform struct {
@@ -14,7 +14,7 @@ func (parent *ParentTransform) Load() {
 	}
 }
 
-func (parent *ParentTransform) Process(item *api.Log) error {
+func (parent *ParentTransform) Process(item *models.Log) error {
 	for _, tr := range parent.Children {
 		err := tr.internal.transform.Process(item)
 		if err != nil {

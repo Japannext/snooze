@@ -1,7 +1,7 @@
 package profile
 
 import (
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/common/lang"
 	"github.com/japannext/snooze/pkg/common/utils"
 )
@@ -35,7 +35,7 @@ func NewFastMapper(prfs []*Profile) *FastMapper {
 	return &FastMapper{keys.Items(), m, fields}
 }
 
-func (m *FastMapper) GetMatches(item *api.Log) []*Profile {
+func (m *FastMapper) GetMatches(item *models.Log) []*Profile {
 	for _, key := range m.keys {
 		field, found := m.fields[key]
 		if !found {

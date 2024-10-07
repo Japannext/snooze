@@ -3,17 +3,17 @@ package notification
 import (
 	"github.com/sirupsen/logrus"
 
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/common/rabbitmq"
 	"github.com/japannext/snooze/pkg/common/utils"
 )
 
 var notifications []*Notification
-var defaultDestinations []api.Destination
+var defaultDestinations []models.Destination
 var log *logrus.Entry
 var producers = map[string]*rabbitmq.Producer{}
 
-func Startup(notifs []*Notification, defaults []api.Destination) {
+func Startup(notifs []*Notification, defaults []models.Destination) {
 	log = logrus.WithFields(logrus.Fields{"module": "notification"})
 
 	defaultDestinations = defaults

@@ -7,7 +7,7 @@ import (
 
 	redisv9 "github.com/redis/go-redis/v9"
 
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/common/redis"
 	"github.com/japannext/snooze/pkg/common/lang"
 	"github.com/japannext/snooze/pkg/common/utils"
@@ -23,7 +23,7 @@ func newMap[T any](n int) []map[string]T {
 }
 
 // Process a batch of items
-func Batch(ctx context.Context, items []*api.Log) error {
+func Batch(ctx context.Context, items []*models.Log) error {
 	ctx, span := tracing.TRACER.Start(ctx, "ratelimit")
 	defer span.End()
 

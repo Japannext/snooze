@@ -1,4 +1,4 @@
-package v2
+package models
 
 type Pagination struct {
 	Page int `form:"page"`

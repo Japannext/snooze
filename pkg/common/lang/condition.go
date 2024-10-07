@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"github.com/PaesslerAG/gval"
 
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 type Condition struct {
@@ -152,6 +152,6 @@ func (c *Condition) String() string {
 	return c.raw
 }
 
-func (c *Condition) MatchLog(ctx context.Context, item *api.Log) (bool, error) {
+func (c *Condition) MatchLog(ctx context.Context, item *models.Log) (bool, error) {
 	return c.gval.EvalBool(ctx, item.Context())
 }

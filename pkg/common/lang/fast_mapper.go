@@ -5,7 +5,7 @@ package lang
 /*
 import (
 	"github.com/japannext/snooze/pkg/common/utils"
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 // The fast mapper is an alternative to if/conditions.
@@ -43,7 +43,7 @@ func NewFastMapper[T switchable](items []T) *FastMapper[T] {
     return &FastMapper[T]{fields, mapper}
 }
 
-func (fast *FastMapper[T]) MatchLog(item api.Log) []T {
+func (fast *FastMapper[T]) MatchLog(item models.Log) []T {
     for _, key := range fast.keys {
 		sw := key.GetSwitch()
         value, ok := lang.ExtractFromLog(item, sw.Key)

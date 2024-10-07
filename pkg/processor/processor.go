@@ -8,7 +8,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/common/rabbitmq"
 
 	"github.com/japannext/snooze/pkg/processor/activecheck"
@@ -40,7 +40,7 @@ func NewProcessor() *Processor {
 // For item that will not be requeued, because their
 // format is invalid, or they are poison messages.
 type RejectedLog struct {
-	item  *api.Log
+	item  *models.Log
 	reason string
 }
 
@@ -63,7 +63,7 @@ func (p *Processor) Stop() {
 }
 
 func handler(delivery rabbitmq.Delivery) error {
-	var item *api.Log
+	var item *models.Log
 	if err := json.Unmarshal(delivery.Body, &item); err != nil {
 		return err
 	}
@@ -76,7 +76,7 @@ func handler(delivery rabbitmq.Delivery) error {
 
 func batchHandler(deliveries []rabbitmq.Delivery) error {
 	for _, delivery := range deliveries {
-		var batch utils.Batch[*api.Log]
+		var batch utils.Batch[*models.Log]
 		if err := json.Unmarshal(delivery.Body, &batch); err != nil {
 			log.Warnf("cannot unmarshal `%s`: %s", delivery.Body, err)
 			delivery.Reject(false)
@@ -91,7 +91,7 @@ func batchHandler(deliveries []rabbitmq.Delivery) error {
 	return nil
 }
 
-func Process(item *api.Log) error {
+func Process(item *models.Log) error {
 	ctx := context.TODO()
 	ctx, span := tracing.TRACER.Start(ctx, "process")
 	defer span.End()
@@ -130,7 +130,7 @@ func Process(item *api.Log) error {
 	return nil
 }
 
-func Batch(items []*api.Log) error {
+func Batch(items []*models.Log) error {
 	ctx := context.TODO()
 	ctx, span := tracing.TRACER.Start(ctx, "process")
 	defer span.End()

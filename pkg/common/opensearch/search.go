@@ -9,10 +9,10 @@ import (
 	dsl "github.com/mottaquikarim/esquerydsl"
 	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
 
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 )
 
-func Search[T api.HasID](ctx context.Context, index string, params *opensearchapi.SearchParams, doc *dsl.QueryDoc) (*api.ListOf[T], error) {
+func Search[T models.HasID](ctx context.Context, index string, params *opensearchapi.SearchParams, doc *dsl.QueryDoc) (*models.ListOf[T], error) {
     body, err := json.Marshal(doc)
     if err != nil {
         return nil, fmt.Errorf("invalid request body (%+v): %w", doc, err)
@@ -29,7 +29,7 @@ func Search[T api.HasID](ctx context.Context, index string, params *opensearchap
     if resp.Errors {
         return nil, fmt.Errorf("opensearch returned an error: %s", "")
     }
-	list := api.ListOf[T]{}
+	list := models.ListOf[T]{}
 	list.Items = make([]*T, len(resp.Hits.Hits))
 	for i, hit := range resp.Hits.Hits {
 		if err := json.Unmarshal(hit.Source, &list.Items[i]); err != nil {

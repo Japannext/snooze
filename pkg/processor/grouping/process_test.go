@@ -5,7 +5,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"testing"
 
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 func TestProcess(t *testing.T) {
@@ -19,14 +19,14 @@ func TestProcess(t *testing.T) {
 
 	tests := []struct {
 		Name           string
-		Log          *api.Log
+		Log          *models.Log
 		ExpectedLabels map[string]string
 		ExpectMatch    bool
 	}{
 		{
 			"syslog hash",
 			&api.Log{
-				Source:         api.Source{Kind: "syslog", Name: "prod-syslog-1.example.com"},
+				Source:         models.Source{Kind: "syslog", Name: "prod-syslog-1.example.com"},
 				SeverityText:   "error",
 				SeverityNumber: 13,
 				Labels:         map[string]string{"host": "host-1", "process": "sshd"},

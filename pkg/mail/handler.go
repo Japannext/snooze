@@ -7,10 +7,10 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 )
 
-func computeTemplate(profile *Profile, notification *api.Notification) ([]byte, error) {
+func computeTemplate(profile *Profile, notification *models.Notification) ([]byte, error) {
 	var buf bytes.Buffer
 	err := profile.internal.template.Execute(&buf, notification)
 	if err != nil {
@@ -27,7 +27,7 @@ func computeTemplate(profile *Profile, notification *api.Notification) ([]byte, 
 	return buf.Bytes(), nil
 }
 
-func handler(notification *api.Notification) error {
+func handler(notification *models.Notification) error {
 	log.Debug("Handing notification")
 	profile, found := profiles[notification.Destination.Profile]
 	if !found {

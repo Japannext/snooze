@@ -9,7 +9,7 @@ import (
     // dsl "github.com/mottaquikarim/esquerydsl"
 
     // "github.com/japannext/snooze/pkg/common/opensearch"
-    // api "github.com/japannext/snooze/pkg/common/api/v2"
+    // "github.com/japannext/snooze/pkg/models"
 )
 
 type Timeline struct {

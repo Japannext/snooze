@@ -5,12 +5,12 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/common/rabbitmq"
 	"github.com/japannext/snooze/pkg/common/utils"
 )
 
-var publishQueue = utils.NewBatchingChannel[api.Log](50, time.Second)
+var publishQueue = utils.NewBatchingChannel[models.Log](50, time.Second)
 
 type Publisher struct {
 	*rabbitmq.Producer

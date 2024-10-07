@@ -9,7 +9,7 @@ import (
 	dsl "github.com/mottaquikarim/esquerydsl"
 	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
 
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 type AggregationResult struct {
@@ -23,7 +23,7 @@ type AggregationBucket struct {
 	DocCount int `json:"doc_count"`
 }
 
-func Aggregate[T api.HasID](ctx context.Context, index string, params *opensearchapi.SearchParams, doc *dsl.QueryDoc) (map[string]AggregationResult, error) {
+func Aggregate[T models.HasID](ctx context.Context, index string, params *opensearchapi.SearchParams, doc *dsl.QueryDoc) (map[string]AggregationResult, error) {
     body, err := json.Marshal(doc)
     if err != nil {
         return nil, fmt.Errorf("invalid request body (%+v): %w", doc, err)

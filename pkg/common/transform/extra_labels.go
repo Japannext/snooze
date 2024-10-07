@@ -5,7 +5,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/common/lang"
 )
 
@@ -26,7 +26,7 @@ func (tr *ExtraLabels) Load() error {
 	return nil
 }
 
-func (tr *ExtraLabels) Transform(ctx context.Context, item *api.Log) error {
+func (tr *ExtraLabels) Transform(ctx context.Context, item *models.Log) error {
     for label, tpl := range tr.internal.templates {
         value, err := tpl.Execute(ctx, item)
         if err != nil {

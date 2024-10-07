@@ -9,12 +9,12 @@ import (
 
 	"github.com/japannext/snooze/pkg/common/opensearch"
 	"github.com/japannext/snooze/pkg/common/redis"
-	api "github.com/japannext/snooze/pkg/common/api/v2"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 func listAlerts(c *gin.Context) {
 
-	var pagination = api.NewPagination()
+	var pagination = models.NewPagination()
 	c.BindQuery(&pagination)
 
 	doc := &dsl.QueryDoc{}
@@ -26,7 +26,7 @@ func listAlerts(c *gin.Context) {
 	// opensearch.AddTimeRange(doc, timerange)
 	opensearch.AddPagination(doc, params, pagination)
 
-	res, err := opensearch.Search[*api.Alert](c, api.ALERT_INDEX, params, doc)
+	res, err := opensearch.Search[*models.Alert](c, models.ALERT_INDEX, params, doc)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error getting alerts for : %s", err)
 		return

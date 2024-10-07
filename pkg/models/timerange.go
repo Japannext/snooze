@@ -1,4 +1,4 @@
-package v2
+package models
 
 type TimeRange struct {
 	// Start time in milliseconds
