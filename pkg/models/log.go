@@ -1,16 +1,13 @@
 package models
 
-import (
-	"strings"
-)
-
 const LOG_INDEX = "v2-logs"
 
 type Log struct {
+
 	ID string `json:"id,omitempty"`
 
-	TimestampMillis         uint64 `json:"timestampMillis"`
-	ObservedTimestampMillis uint64 `json:"observedTimestampMillis,omitempty"`
+	// Several timestamps important to the log.
+	Timestamp Timestamp `json:"timestamp"`
 
 	// Information regarding the source plugin that created the log.
 	Source Source `json:"source"`
@@ -64,7 +61,7 @@ type HasContext interface {
 // Used by template systems in transforms/profiles/etc
 func (item *Log) Context() map[string]interface{} {
 	return map[string]interface{}{
-		"timestamp": item.TimestampMillis,
+		"timestamp": item.Timestamp,
 		"source": item.Source,
 		"identity": item.Identity,
 		"labels": item.Labels,
@@ -84,6 +81,7 @@ type LogGroup struct {
 	Labels map[string]string `json:"labels"`
 }
 
+/*
 func (a *Log) String() string {
 	var s strings.Builder
 
@@ -111,29 +109,27 @@ func (a *Log) String() string {
 
 	return s.String()
 }
-
-type Source struct {
-	// Source kind/protocol (e.g. syslog, OTEL, prometheus, etc)
-	Kind string `json:"kind"`
-	// The source instance name (e.g. "prod-relay", "host01", "tenant-A")
-	Name string `json:"name,omitempty"`
-}
+*/
 
 func init() {
 	index := IndexTemplate{
 		Version: 0,
 		IndexPatterns: []string{LOG_INDEX},
-		DataStream: map[string]map[string]string{"timestamp_field": {"name": "timestampMillis"}},
+		DataStream: map[string]map[string]string{"timestamp_field": {"name": "timestamp.display"}},
 		Template: Indice{
 			Settings: IndexSettings{1, 2},
 			Mappings: IndexMapping{
 				Properties: map[string]MappingProps{
-					"timestampMillis": {Type: "date", Format: "epoch_millis"},
+					"timestamp.display": {Type: "date", Format: "epoch_millis"},
+					"timestamp.actual": {Type: "date", Format: "epoch_millis"},
+					"timestamp.observed": {Type: "date", Format: "epoch_millis"},
+					"timestamp.processed": {Type: "date", Format: "epoch_millis"},
+					"timestamp.warning": {Type: "keyword"},
 					"source.kind": {Type: "keyword"},
 					"source.name": {Type: "keyword"},
 					"identity": {Type: "object"},
-					"group.hash":   {Type: "keyword"},
-					"group.labels": {Type: "object"},
+					//"group.hash":   {Type: "keyword"},
+					//"group.labels": {Type: "object"},
 					"profile": {Type: "keyword"},
 					"pattern": {Type: "keyword"},
 					"labels":      {Type: "object"},

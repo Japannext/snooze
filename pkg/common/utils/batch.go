@@ -5,6 +5,10 @@ import (
 )
 
 type Batch[T any] struct {
+	// Time when the batch was queued. Used to make metrics about
+	// time in-queue.
+	TimestampMillis uint64 `json:"timestampMillis"`
+	// Items composing the batch.
 	Items []T `json:"items"`
 }
 

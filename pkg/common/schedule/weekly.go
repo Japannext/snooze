@@ -100,23 +100,6 @@ func (wt *Weektime) Load() {
 	}
 }
 
-func compareInt(a, b int) int {
-	if a == b {
-		return 0
-	}
-	if a < b {
-		return -1
-	}
-	return +1
-}
-
-func isWeekdayInBetween(x, a, b int) bool {
-	if a > b {
-		return (x <= b) || (a <= x)
-	}
-	return (a <= x) && (x <= b)
-}
-
 // Check if a weektime is between 2 weektimes
 func (wt *Weektime) InBetween(wa, wb *Weektime) bool {
 	a := wa.internal

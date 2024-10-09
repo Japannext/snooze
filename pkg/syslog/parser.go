@@ -48,10 +48,9 @@ func parseLog(record format.LogParts) *models.Log {
 
 	timestamp := record["timestamp"].(time.Time)
 	observedTimestamp := time.Now()
-	item.TimestampMillis = uint64(timestamp.UnixMilli())
-	item.ObservedTimestampMillis = uint64(observedTimestamp.UnixMilli())
-	if item.TimestampMillis == 0 {
-		item.TimestampMillis = item.ObservedTimestampMillis
+	item.Timestamp.Actual = uint64(timestamp.UnixMilli())
+	item.Timestamp.Observed = uint64(observedTimestamp.UnixMilli())
+	if item.Timestamp.Actual == 0 {
 		emptyTimestamp.WithLabelValues(SOURCE_KIND, config.InstanceName).Inc()
 	} else {
 		delay := observedTimestamp.Sub(timestamp).Seconds()

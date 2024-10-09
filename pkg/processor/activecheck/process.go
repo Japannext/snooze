@@ -24,7 +24,7 @@ func Process(ctx context.Context, item *models.Log) error {
 	// Making sure the log is dropped no matter what
 	item.Mute.Drop("active check")
 
-	delayMillis := uint64(time.Now().UnixMilli()) - item.TimestampMillis
+	delayMillis := uint64(time.Now().UnixMilli()) - item.Timestamp.Actual
 
 	if delayMillis > uint64((30 * time.Second).Milliseconds()) {
 		// skipping

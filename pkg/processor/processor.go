@@ -3,7 +3,6 @@ package processor
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -18,35 +17,52 @@ import (
 	"github.com/japannext/snooze/pkg/processor/ratelimit"
 	"github.com/japannext/snooze/pkg/processor/silence"
 	"github.com/japannext/snooze/pkg/processor/store"
+	"github.com/japannext/snooze/pkg/processor/timestamp"
 	"github.com/japannext/snooze/pkg/processor/transform"
 	"github.com/japannext/snooze/pkg/processor/tracing"
 	"github.com/japannext/snooze/pkg/common/utils"
 )
 
-type Processor struct{
-	Consumer *rabbitmq.Consumer
+type Process interface {
+	Name() string
+	Batch(models.BatchOfLogs) error
 }
 
+type Processor struct {
+	processes []BatchFunc
+	consumer *rabbitmq.Consumer
+}
+
+func (processor *Processor) Batch(batch models.BatchOfLogs) error {
+	for _, p := range processor.processes {
+		if err := p(batch); err != nil {
+			log.Warnf("[process:%s] %s", p.Name(), err)
+			continue
+		}
+	}
+}
+
+type BatchFunc = func(context.Context, []*models.Log) error
+
 func NewProcessor() *Processor {
-	processor := &Processor{}
+	processor := &Processor{
+		processes: []Process{
+			transform.Batch,
+			silence.Batch,
+			profile.Batch,
+			grouping.Batch,
+			ratelimit.Batch,
+			activecheck.Batch,
+			notification.Batch,
+			store.Batch,
+		},
+	}
 
 	rabbitmq.SetupProcessing()
 
 	options := rabbitmq.ConsumerOptions{}
 	processor.Consumer = rabbitmq.NewBatchConsumer(rabbitmq.PROCESSING_QUEUE, "", batchHandler, options)
 	return processor
-}
-
-// For item that will not be requeued, because their
-// format is invalid, or they are poison messages.
-type RejectedLog struct {
-	item  *models.Log
-	reason string
-}
-
-func (r *RejectedLog) Error() string {
-	// return fmt.Sprintf("Rejected item id=%s/%s reason=%s", r.item.TraceID, r.item.SpanID, r.reason)
-	return fmt.Sprintf("Rejected item: %s", r.reason)
 }
 
 func (p *Processor) Run() error {
@@ -62,18 +78,6 @@ func (p *Processor) Stop() {
 	p.Consumer.Stop()
 }
 
-func handler(delivery rabbitmq.Delivery) error {
-	var item *models.Log
-	if err := json.Unmarshal(delivery.Body, &item); err != nil {
-		return err
-	}
-	if err := Process(item); err != nil {
-		return err
-	}
-	delivery.Ack(false)
-	return nil
-}
-
 func batchHandler(deliveries []rabbitmq.Delivery) error {
 	for _, delivery := range deliveries {
 		var batch utils.Batch[*models.Log]
@@ -82,7 +86,7 @@ func batchHandler(deliveries []rabbitmq.Delivery) error {
 			delivery.Reject(false)
 			continue
 		}
-		if err := Batch(batch.Items); err != nil {
+		if err := Batch(batch); err != nil {
 			delivery.Reject(false)
 			return err
 		}
@@ -91,50 +95,21 @@ func batchHandler(deliveries []rabbitmq.Delivery) error {
 	return nil
 }
 
-func Process(item *models.Log) error {
+func Batch(batch utils.Batch[*models.Log]) error {
 	ctx := context.TODO()
-	ctx, span := tracing.TRACER.Start(ctx, "process")
-	defer span.End()
 	start := time.Now()
 
-	log.Debugf("Start processing item: %s", item)
-	if err := transform.Process(ctx, item); err != nil {
-		return err
-	}
-	if err := silence.Process(ctx, item); err != nil {
-		return err
-	}
-	if err := profile.Process(ctx, item); err != nil {
-		return err
-	}
-	if err := grouping.Process(ctx, item); err != nil {
-		return err
-	}
-	if err := ratelimit.Process(ctx, item); err != nil {
-		return err
-	}
+	// In-queue time statistics
+	ts := time.UnixMilli(int64(batch.TimestampMillis))
+	inqueueTime.Observe(time.Since(ts).Seconds())
 
-	// Active-check
-	activecheck.Process(ctx, item)
-
-	if err := notification.Process(ctx, item); err != nil {
-		return err
-	}
-	if err := store.Process(ctx, item); err != nil {
-		return err
-	}
-	log.Debugf("End processing item: %s", item)
-
-	processMetrics(start, item)
-
-	return nil
-}
-
-func Batch(items []*models.Log) error {
-	ctx := context.TODO()
+	// Tracing
 	ctx, span := tracing.TRACER.Start(ctx, "process")
 	defer span.End()
-	start := time.Now()
+
+	items := batch.Items
+
+	timestamp.Batch(ctx, items)
 
 	log.Debugf("Start processing batch of %d items", len(items))
 	if err := transform.Batch(ctx, items); err != nil {
@@ -164,7 +139,9 @@ func Batch(items []*models.Log) error {
 	}
 	log.Debugf("End processing %d items", len(items))
 
-	processBatch(start, items)
+	batchTime.Observe(time.Since(start).Seconds())
+	batchSize.Observe(float64(len(items)))
+	processedLogs.Add(float64(len(batch.Items)))
 
 	return nil
 }

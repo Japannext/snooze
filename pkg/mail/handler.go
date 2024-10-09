@@ -10,23 +10,6 @@ import (
 	"github.com/japannext/snooze/pkg/models"
 )
 
-func computeTemplate(profile *Profile, notification *models.Notification) ([]byte, error) {
-	var buf bytes.Buffer
-	err := profile.internal.template.Execute(&buf, notification)
-	if err != nil {
-		if profile.internal.isDefault {
-			return []byte(""), err
-		} else {
-			log.Warnf("failed to execute template for profile '%s'. Fall-back to default template", profile.Name)
-			buf = bytes.Buffer{}
-			if err := defaultTemplate.Execute(&buf, notification); err != nil {
-				return []byte(""), err
-			}
-		}
-	}
-	return buf.Bytes(), nil
-}
-
 func handler(notification *models.Notification) error {
 	log.Debug("Handing notification")
 	profile, found := profiles[notification.Destination.Profile]
@@ -62,4 +45,21 @@ func handler(notification *models.Notification) error {
 	}
 
 	return nil
+}
+
+func computeTemplate(profile *Profile, notification *models.Notification) ([]byte, error) {
+	var buf bytes.Buffer
+	err := profile.internal.template.Execute(&buf, notification)
+	if err != nil {
+		if profile.internal.isDefault {
+			return []byte(""), err
+		} else {
+			log.Warnf("failed to execute template for profile '%s'. Fall-back to default template", profile.Name)
+			buf = bytes.Buffer{}
+			if err := defaultTemplate.Execute(&buf, notification); err != nil {
+				return []byte(""), err
+			}
+		}
+	}
+	return buf.Bytes(), nil
 }

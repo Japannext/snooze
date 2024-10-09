@@ -10,7 +10,7 @@ metadata:
     app.kubernetes.io/component: process
     app.kubernetes.io/part-of: "{{ .Values.partOf }}"
 spec:
-  replicas: {{ .Values.replicas }}
+  replicas: {{ .Values.process.replicaCount }}
   revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
   selector:
     matchLabels:

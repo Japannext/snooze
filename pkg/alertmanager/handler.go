@@ -58,15 +58,6 @@ func timeTextToMillis(text string) uint64 {
 	return millis
 }
 
-func hasKeys(labels map[string]string, keys ...string) bool {
-	for _, key := range keys {
-		if value, ok := labels[key]; !ok || value == "" {
-			return false
-		}
-	}
-	return true
-}
-
 const IDENTITY_PREFIX = "identity__"
 
 func pop(m map[string]string, key string) string {

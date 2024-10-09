@@ -15,6 +15,10 @@ process:
 apiserver:
   replicaCount: 2
 
+googlechat:
+  replicaCount: 2
+  saSecretName: ""
+
 mail:
   replicaCount: 2
   config:

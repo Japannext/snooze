@@ -24,6 +24,7 @@ func NewPublisher() *Publisher {
 
 func (pub *Publisher) Run() error {
 	for batch := range publishQueue.Channel() {
+		batch.TimestampMillis = uint64(time.Now().UnixMilli())
 		if err := pub.Publish(batch); err != nil {
 			log.Warnf("error sending batch: %s", err)
 		}
