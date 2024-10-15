@@ -1,40 +1,39 @@
 package syslog
 
 import (
-	"time"
-
 	log "github.com/sirupsen/logrus"
 
 	"github.com/japannext/snooze/pkg/models"
-	"github.com/japannext/snooze/pkg/common/rabbitmq"
-	"github.com/japannext/snooze/pkg/common/utils"
+	"github.com/japannext/snooze/pkg/common/mq"
 )
 
-var publishQueue = utils.NewBatchingChannel[models.Log](50, time.Second)
+var publishQueue = make(chan *models.Log)
 
 type Publisher struct {
-	*rabbitmq.Producer
 }
 
 func NewPublisher() *Publisher {
-	return &Publisher{
-		rabbitmq.NewLogProducer(),
-	}
+	return &Publisher{}
 }
 
 func (pub *Publisher) Run() error {
-	for batch := range publishQueue.Channel() {
-		batch.TimestampMillis = uint64(time.Now().UnixMilli())
-		if err := pub.Publish(batch); err != nil {
-			log.Warnf("error sending batch: %s", err)
+	for item := range publishQueue {
+		future, err := mq.PublishAsync("PROCESS.logs", item)
+		if err != nil {
+			log.Warnf("failed to publish: %s", err)
+			continue
 		}
-		ingestedLogs.WithLabelValues(SOURCE_KIND, config.InstanceName).Add(float64(len(batch.Items)))
-		batchSize.WithLabelValues(SOURCE_KIND, config.InstanceName).Observe(float64(len(batch.Items)))
+		go func() {
+			if err := <-future.Err(); err != nil {
+				log.Warnf("failed to publish (async): %s", err)
+			}
+		}()
+		ingestedLogs.WithLabelValues(SOURCE_KIND, config.InstanceName).Inc()
 	}
 
 	return nil
 }
 
 func (pub *Publisher) Stop() {
-	publishQueue.Stop()
+	close(publishQueue)
 }

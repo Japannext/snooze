@@ -3,9 +3,10 @@ package notification
 import (
 	"context"
 	"time"
+	"fmt"
 
 	"github.com/japannext/snooze/pkg/models"
-	"github.com/japannext/snooze/pkg/common/opensearch"
+	"github.com/japannext/snooze/pkg/common/mq"
 	"github.com/japannext/snooze/pkg/common/utils"
 	"github.com/japannext/snooze/pkg/processor/tracing"
 )
@@ -58,6 +59,7 @@ func Process(ctx context.Context, item *models.Log) error {
 				log.Errorf("Producer for queue '%s' not found! This should not happen!", dest.Queue)
 				continue
 			}
+			mq.PublishAsync(fmt.Sprintf("NOTIFY.%s", dest.Queue), notification)
 			if err := producer.Publish(notification); err != nil {
 				merr.AppendErr(err)
 				continue

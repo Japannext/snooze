@@ -46,7 +46,7 @@ spec:
         - name: SNOOZE_CACERT
           value: "/cacert/ca.crt"
         - name: GOOGLECHAT_SA_PATH
-          value: /sa/sa_secrets.json
+          value: /sa/sa.json
         {{- end }}
         envFrom:
         - configMapRef:

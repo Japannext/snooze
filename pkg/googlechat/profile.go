@@ -45,7 +45,7 @@ func (p *Profile) Load() {
 	}
 }
 
-var profiles map[string]*Profile
+var profiles = map[string]*Profile{}
 
 func loadProfiles() {
     data, err := os.ReadFile(config.ProfilePath)

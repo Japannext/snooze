@@ -11,6 +11,11 @@
       key: password
 {{- end }}
 
+{{- define "snooze.nats.env" }}
+- name: NATS_URL
+  value: "http://nats:4222"
+{{- end }}
+
 {{- define "snooze.rabbitmqEnv" }}
 - name: AMQP_USERNAME
   valueFrom:

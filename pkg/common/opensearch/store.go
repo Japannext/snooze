@@ -64,6 +64,10 @@ func StoreLogs(ctx context.Context, index string, items []*models.Log) error {
 	return nil
 }
 
+func Bulk(ctx context.Context, req opensearchapi.BulkReq) (*opensearchapi.BulkResp, error) {
+	return client.Bulk(ctx, req)
+}
+
 func bulkRespToError(resp *opensearchapi.BulkResp) error {
 	var buf strings.Builder
 	for i, v := range resp.Items {

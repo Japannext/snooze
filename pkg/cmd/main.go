@@ -16,6 +16,7 @@ import (
 	"github.com/japannext/snooze/pkg/samples"
 	"github.com/japannext/snooze/pkg/syslog"
 	"github.com/japannext/snooze/pkg/version"
+	"github.com/japannext/snooze/pkg/writer"
 )
 
 var root = &cobra.Command{
@@ -35,6 +36,7 @@ func init() {
 	root.AddCommand(samples.Cmd)
 	root.AddCommand(syslog.Cmd)
 	root.AddCommand(version.Cmd)
+	root.AddCommand(writer.Cmd)
 }
 
 func Execute() {

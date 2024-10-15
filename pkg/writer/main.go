@@ -1,10 +1,14 @@
-package syslog
+package writer
 
 import (
+	"github.com/nats-io/nats.go/jetstream"
+
 	"github.com/japannext/snooze/pkg/common/daemon"
 	"github.com/japannext/snooze/pkg/common/logging"
 	"github.com/japannext/snooze/pkg/common/mq"
 )
+
+var storeQ jetstream.Consumer
 
 func Startup() *daemon.DaemonManager {
 
@@ -12,11 +16,10 @@ func Startup() *daemon.DaemonManager {
 	initConfig()
 	initMetrics()
 	mq.Init()
+	storeQ = mq.Consumer(mq.STORE_STREAM)
 
 	dm := daemon.NewDaemonManager()
-	dm.AddDaemon("syslog", NewSyslogServer())
-	dm.AddDaemon("parser", NewParser())
-	dm.AddDaemon("publisher", NewPublisher())
+	dm.AddDaemon("consumer", NewConsumer())
 
 	return dm
 }

@@ -18,6 +18,10 @@ apiserver:
 googlechat:
   replicaCount: 2
   saSecretName: ""
+  profiles: []
+
+writer:
+  replicaCount: 2
 
 mail:
   replicaCount: 2

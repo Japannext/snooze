@@ -24,7 +24,7 @@ func NewParser() *Parser {
 func (parser *Parser) Run() error {
 	for record := range receiveQueue {
 		item := parseLog(record)
-		publishQueue.Add(*item)
+		publishQueue <-item
 	}
 
 	return nil

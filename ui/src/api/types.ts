@@ -5,8 +5,7 @@ export type Log = {
   identity?: object
   labels?: object;
 
-  timestampMillis: number;
-  observedMillis: number;
+  timestamp: Timestamp;
 
   groupHash?: string;
   groupLabels?: any;
@@ -17,6 +16,14 @@ export type Log = {
   message: string;
 
   mute?: Mute;
+}
+
+export type Timestamp = {
+  actual: number;
+  observed: number;
+  processed: number;
+  display: number;
+  warning: string;
 }
 
 export type LogResults = {

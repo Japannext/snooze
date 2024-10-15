@@ -2,11 +2,11 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: "{{ .Release.Name }}-mail-profiles"
+  name: "{{ .Release.Name }}-googlechat-profiles"
   namespace: "{{ .Release.Namespace }}"
 data:
   profiles.yaml: |
     # Configuration of mail profiles
     ---
     profiles:
-    {{- .Values.mail.profiles | toYaml | nindent 4 }}
+    {{- .Values.googlechat.profiles | toYaml | nindent 4 }}

@@ -1,10 +1,11 @@
 package processor
 
 import (
+	"github.com/nats-io/nats.go/jetstream"
+
 	"github.com/japannext/snooze/pkg/common/daemon"
 	"github.com/japannext/snooze/pkg/common/logging"
-	"github.com/japannext/snooze/pkg/common/opensearch"
-	"github.com/japannext/snooze/pkg/common/rabbitmq"
+	"github.com/japannext/snooze/pkg/common/mq"
 	"github.com/japannext/snooze/pkg/common/redis"
 
 	// Sub-Processors
@@ -18,6 +19,8 @@ import (
 	"github.com/japannext/snooze/pkg/processor/tracing"
 )
 
+var processQ jetstream.Consumer
+
 // Logic done only at the application startup.
 // All errors are fatal.
 func Startup() *daemon.DaemonManager {
@@ -26,9 +29,8 @@ func Startup() *daemon.DaemonManager {
 	initConfig()
 	tracing.Init()
 	initMetrics()
-	opensearch.Init()
 	redis.Init()
-	rabbitmq.Init()
+	mq.Init()
 
 	transform.Startup(pipeline.Transforms)
 	silence.Startup(pipeline.Silences)
@@ -38,8 +40,10 @@ func Startup() *daemon.DaemonManager {
 	notification.Startup(pipeline.Notifications, pipeline.DefaultDestinations)
 	store.Startup()
 
+	processQ = mq.Consumer(mq.PROCESS_STREAM)
+
 	dm := daemon.NewDaemonManager()
-	dm.AddDaemon("processor", NewProcessor())
+	dm.AddDaemon("consumer", NewConsumer())
 
 	return dm
 }
