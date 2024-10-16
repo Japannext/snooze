@@ -51,7 +51,6 @@ spec:
             cpu: 100m
             memory: 100Mi
         env:
-        {{- include "snooze.env" . | nindent 8 }}
         {{- include "snooze.nats.env" . | nindent 8 }}
         - name: SYSLOG_INSTANCE_NAME
           value: "{{ .Values.syslog.instanceName }}"

@@ -4,19 +4,20 @@ import (
 	"github.com/japannext/snooze/pkg/common/daemon"
 	"github.com/japannext/snooze/pkg/common/logging"
 	"github.com/japannext/snooze/pkg/common/mq"
+	"github.com/japannext/snooze/pkg/common/tracing"
 )
+
+var processQ = mq.ProcessPub()
+var tracer = tracing.Tracer("snooze-syslog")
 
 func Startup() *daemon.DaemonManager {
 
 	logging.Init()
 	initConfig()
 	initMetrics()
-	mq.Init()
 
 	dm := daemon.NewDaemonManager()
 	dm.AddDaemon("syslog", NewSyslogServer())
-	dm.AddDaemon("parser", NewParser())
-	dm.AddDaemon("publisher", NewPublisher())
 
 	return dm
 }

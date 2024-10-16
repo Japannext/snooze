@@ -8,12 +8,19 @@ import (
 	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/common/mq"
 	"github.com/japannext/snooze/pkg/common/utils"
-	"github.com/japannext/snooze/pkg/processor/tracing"
+	"github.com/japannext/snooze/pkg/common/tracing"
 )
 
+var tracer = tracing.Tracer("snooze-process")
+var notifyQ = mq.NotifyPub()
+
 func Process(ctx context.Context, item *models.Log) error {
-	ctx, span := tracing.TRACER.Start(ctx, "notification")
+	ctx, span := tracer.Start(ctx, "notification")
 	defer span.End()
+
+	if item.ActiveCheckID != "" {
+		// TODO
+	}
 
 	if item.Mute.SkipNotification {
 		return nil
@@ -53,21 +60,14 @@ func Process(ctx context.Context, item *models.Log) error {
 				"message": item.Message,
 			},
 		}
+		subject := fmt.Sprintf("NOTIFY.%s", dest.Queue)
 		if dest.Queue != "dummy" {
-			producer, found := producers[dest.Queue]
-			if !found {
-				log.Errorf("Producer for queue '%s' not found! This should not happen!", dest.Queue)
-				continue
-			}
-			mq.PublishAsync(fmt.Sprintf("NOTIFY.%s", dest.Queue), notification)
-			if err := producer.Publish(notification); err != nil {
-				merr.AppendErr(err)
-				continue
+			if err := notifyQ.PublishWithSubject(ctx, subject, notification); err != nil {
+				log.Warnf("failed to notify: %s", err)
 			}
 		}
-		if _, err := opensearch.Store(ctx, models.NOTIFICATION_INDEX, notification); err != nil {
-			merr.AppendErr(err)
-			continue
+		if err := notifyQ.PublishWithSubject(ctx, subject, notification); err != nil {
+			log.Warnf("failed to notify: %s", err)
 		}
 	}
 

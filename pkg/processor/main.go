@@ -1,12 +1,11 @@
 package processor
 
 import (
-	"github.com/nats-io/nats.go/jetstream"
-
 	"github.com/japannext/snooze/pkg/common/daemon"
 	"github.com/japannext/snooze/pkg/common/logging"
 	"github.com/japannext/snooze/pkg/common/mq"
 	"github.com/japannext/snooze/pkg/common/redis"
+	"github.com/japannext/snooze/pkg/common/utils"
 
 	// Sub-Processors
 	"github.com/japannext/snooze/pkg/processor/notification"
@@ -16,10 +15,10 @@ import (
 	"github.com/japannext/snooze/pkg/processor/snooze"
 	"github.com/japannext/snooze/pkg/processor/store"
 	"github.com/japannext/snooze/pkg/processor/transform"
-	"github.com/japannext/snooze/pkg/processor/tracing"
 )
 
-var processQ jetstream.Consumer
+var processQ = mq.ProcessSub()
+var pool *utils.Pool
 
 // Logic done only at the application startup.
 // All errors are fatal.
@@ -27,10 +26,10 @@ func Startup() *daemon.DaemonManager {
 
 	logging.Init()
 	initConfig()
-	tracing.Init()
 	initMetrics()
 	redis.Init()
-	mq.Init()
+
+	pool = utils.NewPool(config.MaxWorkers)
 
 	transform.Startup(pipeline.Transforms)
 	silence.Startup(pipeline.Silences)
@@ -39,8 +38,6 @@ func Startup() *daemon.DaemonManager {
 	ratelimit.Startup(pipeline.RateLimits)
 	notification.Startup(pipeline.Notifications, pipeline.DefaultDestinations)
 	store.Startup()
-
-	processQ = mq.Consumer(mq.PROCESS_STREAM)
 
 	dm := daemon.NewDaemonManager()
 	dm.AddDaemon("consumer", NewConsumer())

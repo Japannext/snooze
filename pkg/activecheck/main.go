@@ -1,4 +1,4 @@
-package exporter
+package activecheck
 
 import (
 	"github.com/japannext/snooze/pkg/common/daemon"

@@ -1,15 +1,30 @@
 package syslog
 
 import (
+	"context"
 	"fmt"
 
+	log "github.com/sirupsen/logrus"
+
 	"gopkg.in/mcuadros/go-syslog.v2"
+	"gopkg.in/mcuadros/go-syslog.v2/format"
 )
 
 var receiveQueue = make(syslog.LogPartsChannel)
 
 type SyslogServer struct {
 	srv *syslog.Server
+}
+
+type Handler struct {}
+func (h *Handler) Handle(record format.LogParts, msgLength int64, err error) {
+	ctx := context.TODO()
+	if err != nil {
+		log.Warnf("error handling log: %s", err)
+		return
+	}
+	item := parseLog(ctx, record)
+	processQ.Publish(ctx, item)
 }
 
 func NewSyslogServer() *SyslogServer {

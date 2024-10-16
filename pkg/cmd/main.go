@@ -8,7 +8,7 @@ import (
 
 	"github.com/japannext/snooze/pkg/alertmanager"
 	"github.com/japannext/snooze/pkg/apiserver"
-	"github.com/japannext/snooze/pkg/exporter"
+	"github.com/japannext/snooze/pkg/activecheck"
 	"github.com/japannext/snooze/pkg/googlechat"
 	"github.com/japannext/snooze/pkg/mail"
 	"github.com/japannext/snooze/pkg/otel"
@@ -28,7 +28,7 @@ var root = &cobra.Command{
 func init() {
 	root.AddCommand(alertmanager.Cmd)
 	root.AddCommand(apiserver.Cmd)
-	root.AddCommand(exporter.Cmd)
+	root.AddCommand(activecheck.Cmd)
 	root.AddCommand(googlechat.Cmd)
 	root.AddCommand(mail.Cmd)
 	root.AddCommand(otel.Cmd)

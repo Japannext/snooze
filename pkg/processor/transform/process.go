@@ -3,12 +3,14 @@ package transform
 import (
 	"context"
 
-	"github.com/japannext/snooze/pkg/processor/tracing"
+	"github.com/japannext/snooze/pkg/common/tracing"
 	"github.com/japannext/snooze/pkg/models"
 )
 
+var tracer = tracing.Tracer("snooze-process")
+
 func Process(ctx context.Context, item *models.Log) error {
-	ctx, span := tracing.TRACER.Start(ctx, "transform")
+	ctx, span := tracer.Start(ctx, "transform")
 	defer span.End()
 	for _, tr := range transforms {
 		if tr.internal.condition != nil {

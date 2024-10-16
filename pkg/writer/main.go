@@ -1,22 +1,20 @@
 package writer
 
 import (
-	"github.com/nats-io/nats.go/jetstream"
-
 	"github.com/japannext/snooze/pkg/common/daemon"
 	"github.com/japannext/snooze/pkg/common/logging"
 	"github.com/japannext/snooze/pkg/common/mq"
+	"github.com/japannext/snooze/pkg/common/opensearch"
 )
 
-var storeQ jetstream.Consumer
+var storeQ = mq.StoreSub()
 
 func Startup() *daemon.DaemonManager {
 
 	logging.Init()
 	initConfig()
 	initMetrics()
-	mq.Init()
-	storeQ = mq.Consumer(mq.STORE_STREAM)
+	opensearch.Init()
 
 	dm := daemon.NewDaemonManager()
 	dm.AddDaemon("consumer", NewConsumer())

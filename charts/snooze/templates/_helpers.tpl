@@ -1,4 +1,4 @@
-{{- define "snooze.env" }}
+{{- define "snooze.opensearch.env" }}
 - name: OPENSEARCH_USERNAME
   valueFrom:
     secretKeyRef:
@@ -14,19 +14,6 @@
 {{- define "snooze.nats.env" }}
 - name: NATS_URL
   value: "http://nats:4222"
-{{- end }}
-
-{{- define "snooze.rabbitmqEnv" }}
-- name: AMQP_USERNAME
-  valueFrom:
-    secretKeyRef:
-      name: "{{ .Release.Name }}-rabbitmq-default-user"
-      key: username
-- name: AMQP_PASSWORD
-  valueFrom:
-    secretKeyRef:
-      name: "{{ .Release.Name }}-rabbitmq-default-user"
-      key: password
 {{- end }}
 
 {{- define "snooze.image" }}

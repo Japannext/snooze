@@ -44,8 +44,6 @@ spec:
           requests:
             cpu: 100m
             memory: 100Mi
-        env:
-        {{- include "snooze.env" . | nindent 8 }}
         envFrom:
         - configMapRef:
             name: "{{ .Release.Name }}-common"

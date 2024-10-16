@@ -5,11 +5,10 @@ import (
 	"fmt"
 
 	"github.com/japannext/snooze/pkg/models"
-	"github.com/japannext/snooze/pkg/processor/tracing"
 )
 
 func Process(ctx context.Context, item *models.Log) error {
-	ctx, span := tracing.TRACER.Start(ctx, "silence")
+	ctx, span := tracer.Start(ctx, "silence")
 	defer span.End()
 	for _, s := range silences {
 		v, err := s.internal.condition.MatchLog(ctx, item)

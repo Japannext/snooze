@@ -1,10 +1,10 @@
 package writer
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"strings"
 	"time"
 
@@ -13,6 +13,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/japannext/snooze/pkg/common/opensearch"
+	"github.com/japannext/snooze/pkg/common/mq"
 )
 
 type Consumer struct {}
@@ -23,15 +24,13 @@ func NewConsumer() *Consumer {
 
 func (c *Consumer) Run() error {
 	for {
-		batch, err := storeQ.Fetch(config.BatchSize, jetstream.FetchMaxWait(5*time.Second))
+		log.Debugf("Ready to fetch items...")
+		msgs, err := storeQ.Fetch(config.BatchSize, jetstream.FetchMaxWait(5*time.Second))
 		if err != nil {
 			log.Warnf("failed to fetch items: %s", err)
 			continue
 		}
-		var msgs = []jetstream.Msg{}
-		for msg := range batch.Messages() {
-			msgs = append(msgs, msg)
-		}
+		log.Debugf("Fetched %d items", len(msgs))
 		if len(msgs) == 0 {
 			continue
 		}
@@ -40,64 +39,83 @@ func (c *Consumer) Run() error {
 	}
 }
 
-func bulkWrite(ctx context.Context, msgs []jetstream.Msg) {
-	//var buf bytes.Buffer
-	reader, writer := io.Pipe()
-	var inserting map[int]jetstream.Msg
-	for i, msg := range msgs {
-		msg.InProgress()
+func extractBulkError(resp opensearchapi.BulkRespItem) error {
+	if resp.Error == nil {
+		return nil
+	}
+	err := resp.Error
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "[%s] %s", err.Type, err.Reason)
+	if err.Cause.Type != "" {
+		cause := err.Cause
+		fmt.Fprintf(&builder, ": [%s] %s", cause.Type, cause.Reason)
+		if cause.Cause.Reason != nil {
+			cause2 := cause.Cause
+			fmt.Fprintf(&builder, ": [%s] %s", cause2.Type, *cause2.Reason)
+		}
+	}
+	return fmt.Errorf("%s", builder.String())
+}
+
+func bulkWrite(ctx context.Context, msgs []mq.MsgWithContext) {
+	var buf bytes.Buffer
+	var inserting = map[int]jetstream.Msg{}
+	for i, m := range msgs {
+		msg, _ := m.Extract()
 		splits := strings.Split(msg.Subject(), ".")
 		if len(splits) < 1 {
-			// TODO
+			log.Warnf("cannot extract index from subject '%s'", msg.Subject())
 			errorItems.WithLabelValues("unknown").Inc()
 			continue
 		}
 		indexString, err := json.Marshal(splits[1])
 		if err != nil {
-			// TODO
+			log.Warnf("cannot marshal index '%s'", splits[1])
 			errorItems.WithLabelValues("unknown").Inc()
 			continue
 		}
-		fmt.Fprintf(writer, `{"index": {"_index": %s}}`+"\n", indexString)
-		writer.Write(msg.Data())
-		writer.Write([]byte("\n"))
+		fmt.Fprintf(&buf, `{"create": {"_index": %s}}`+"\n", indexString)
+		buf.Write(msg.Data())
+		buf.WriteString("\n")
 		inserting[i] = msg
 	}
-	req := opensearchapi.BulkReq{
-		Body: reader,
+	params := opensearchapi.BulkParams{
+		Timeout: 10 * time.Second,
 	}
+	req := opensearchapi.BulkReq{
+		Body: bytes.NewReader(buf.Bytes()),
+		Params: params,
+	}
+	log.Debugf("Inserting bulk into opensearch...")
 	resp, err := opensearch.Bulk(ctx, req)
 	if err != nil {
 		log.Errorf("failed to send bulk message: %s", err)
-		for _, msg := range msgs {
-			msg.NakWithDelay(1*time.Minute)
+		for _, m := range msgs {
+			m.Msg.NakWithDelay(1*time.Minute)
 		}
 	}
 	if resp.Errors {
-		for i, actionMap := range resp.Items {
-			item, ok := actionMap["index"]
-			if !ok {
-				// TODO
-				continue
-			}
-			if item.Error != nil {
-				msg, ok := inserting[i]
-				if !ok {
-					// TODO
-					continue
-				}
+		log.Debugf("Query: %s", buf.Bytes())
+	}
+	log.Debugf("opensearch returned result")
+	for i, result := range resp.Items {
+		res, ok := result["create"]
+		if !ok {
+			log.Warnf("cannot find action `index` in error response: %+v", result)
+			continue
+		}
+		if res.Error != nil {
+			log.Warnf("failed to write item to '%s': %s", res.Index, extractBulkError(res))
+			if msg, ok := inserting[i]; ok {
 				msg.Term()
-				errorItems.WithLabelValues().Inc()
-			} else {
-				//writeItems.Inc()
+			}
+			errorItems.WithLabelValues(res.Index).Inc()
+		} else {
+			writeItems.WithLabelValues(res.Index).Inc()
+			if msg, ok := inserting[i]; ok {
+				msg.Ack()
 			}
 		}
-	} else {
-		// No error: ACK everything
-		for _, msg := range msgs {
-			msg.Ack()
-		}
-		// writeItems.Add(float64(len(msgs)))
 	}
 }
 

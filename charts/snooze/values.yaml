@@ -107,12 +107,6 @@ opensearch:
       tag: latest
       pullPolicy: IfNotPresent
 
-rabbitmq:
-  enabled: true
-  replicaCount: 3
-  storageClassName: openebs-lvm-sysvg
-  storageSize: 20Gi
-
 ingress:
   enabled: false
   className: nginx

@@ -45,7 +45,7 @@ spec:
             cpu: 100m
             memory: 100Mi
         env:
-        {{- include "snooze.env" . | nindent 8 }}
+        {{- include "snooze.opensearch.env" . | nindent 8 }}
         - name: APISERVER_AUTH_CONFIG
           value: /config/auth_config.yaml
         {{- if .Values.apiserver.cors }}

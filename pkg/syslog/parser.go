@@ -1,6 +1,7 @@
 package syslog
 
 import (
+	"context"
 	"time"
 
 	"gopkg.in/mcuadros/go-syslog.v2/format"
@@ -15,33 +16,10 @@ const (
 	SOURCE_KIND = "syslog"
 )
 
-type Parser struct {}
+func parseLog(ctx context.Context, record format.LogParts) *models.Log {
+	ctx, span := tracer.Start(ctx, "parseLog")
+	defer span.End()
 
-func NewParser() *Parser {
-	return &Parser{}
-}
-
-func (parser *Parser) Run() error {
-	for record := range receiveQueue {
-		item := parseLog(record)
-		publishQueue <-item
-	}
-
-	return nil
-}
-
-func (parser *Parser) Stop() {
-}
-
-func extract(record format.LogParts, key string) (string, bool) {
-	text, ok := record[key].(string)
-	if !ok || text == "-" || text == "" {
-		return "", false
-	}
-	return text, true
-}
-
-func parseLog(record format.LogParts) *models.Log {
 	item := &models.Log{}
 	item.Identity = make(map[string]string)
 	item.Labels = make(map[string]string)
@@ -96,8 +74,16 @@ func parseLog(record format.LogParts) *models.Log {
 
 	// Active-check
 	if item.Identity["process"] == "snooze.activecheck" {
-		item.Labels["activecheck.url"] = item.Message
+		item.ActiveCheckID = item.Message
 	}
 
 	return item
+}
+
+func extract(record format.LogParts, key string) (string, bool) {
+	text, ok := record[key].(string)
+	if !ok || text == "-" || text == "" {
+		return "", false
+	}
+	return text, true
 }

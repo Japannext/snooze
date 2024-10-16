@@ -24,6 +24,7 @@ func SetupStreams() {
 	var err error
 	streams[PROCESS_STREAM], err = js.CreateStream(ctx, jetstream.StreamConfig{
 		Name: string(PROCESS_STREAM),
+		Retention: jetstream.WorkQueuePolicy,
 		Subjects: []string{"PROCESS.logs"},
 	})
 	if err != nil {
@@ -32,6 +33,7 @@ func SetupStreams() {
 
 	streams[NOTIFY_STREAM], err = js.CreateStream(ctx, jetstream.StreamConfig{
 		Name: string(NOTIFY_STREAM),
+		Retention: jetstream.WorkQueuePolicy,
 		Subjects: []string{"NOTIFY.*"},
 	})
 	if err != nil {
@@ -40,6 +42,7 @@ func SetupStreams() {
 
 	streams[STORE_STREAM], err = js.CreateStream(ctx, jetstream.StreamConfig{
 		Name: string(STORE_STREAM),
+		Retention: jetstream.WorkQueuePolicy,
 		Subjects: []string{"STORE.*"},
 	})
 	if err != nil {

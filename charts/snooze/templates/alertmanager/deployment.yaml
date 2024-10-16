@@ -45,8 +45,7 @@ spec:
             cpu: 100m
             memory: 100Mi
         env:
-        {{- include "snooze.env" . | nindent 8 }}
-        {{- include "snooze.rabbitmqEnv" . | nindent 8 }}
+        {{- include "snooze.nats.env" . | nindent 8 }}
         - name: INSTANCE_NAME
           value: "{{ .Values.alertmanager.instanceName }}"
         envFrom:

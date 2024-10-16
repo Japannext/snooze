@@ -9,12 +9,13 @@ var (
 		Namespace: "snooze",
 		Name: "write_items",
 		Help: "number of items (logs, alerts, notifications, etc) stored to the opensearch backend",
-	}, []string{"kind"})
+	}, []string{"index"})
+
 	errorItems = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "snooze",
 		Name: "write_error",
 		Help: "number of items that has been rejected by opensearch, and will be requeued in a simpler format",
-	}, []string{"kind"})
+	}, []string{"index"})
 )
 
 func initMetrics() {

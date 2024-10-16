@@ -35,6 +35,8 @@ type Config struct {
 	BatchSize int `mapstructure:"BATCH_SIZE"`
 	// Number of time to wait for messages in batch
 	BatchTimeoutSeconds int `mapstructure:"BATCH_TIMEOUT_SECONDS"`
+
+	MaxWorkers int `mapstructure:"MAX_WORKERS"`
 }
 
 var config *Config
@@ -60,6 +62,7 @@ func initConfig() {
 	viper.SetDefault("OTEL_PROMETHEUS_PORT", 9317)
 	viper.SetDefault("BATCH_SIZE", 20)
 	viper.SetDefault("BATCH_TIMEOUT_SECONDS", 1)
+	viper.SetDefault("MAX_WORKERS", 50)
 
 	viper.AutomaticEnv()
 	if err := viper.Unmarshal(&config); err != nil {

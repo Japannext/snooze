@@ -11,7 +11,6 @@ import (
 	"github.com/japannext/snooze/pkg/common/redis"
 	"github.com/japannext/snooze/pkg/common/lang"
 	"github.com/japannext/snooze/pkg/common/utils"
-	"github.com/japannext/snooze/pkg/processor/tracing"
 )
 
 func newMap[T any](n int) []map[string]T {
@@ -24,7 +23,7 @@ func newMap[T any](n int) []map[string]T {
 
 // Process a batch of items
 func Batch(ctx context.Context, items []*models.Log) error {
-	ctx, span := tracing.TRACER.Start(ctx, "ratelimit")
+	ctx, span := tracer.Start(ctx, "ratelimit")
 	defer span.End()
 
 	n := len(items)

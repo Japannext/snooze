@@ -10,12 +10,9 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/japannext/snooze/pkg/models"
-	"github.com/japannext/snooze/pkg/processor/tracing"
 )
 
 func Process(ctx context.Context, item *models.Log) error {
-	ctx, span := tracing.TRACER.Start(ctx, "activecheck")
-	defer span.End()
 	url, ok := item.Labels["activecheck.url"]
 	if !ok {
 		return nil

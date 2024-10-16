@@ -28,6 +28,20 @@ var (
 		Help: "size of a batch",
 		Buckets: []float64{1.0, 5.0, 10.0, 25.0, 50.0},
 	})
+	workerBusy = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Namespace: "snooze",
+		Name: "worker_busy",
+		Help: "Number of workers that are currently busy",
+	}, func() float64 {
+		return float64(pool.Busy())
+	})
+	workerMax = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Namespace: "snooze",
+		Name: "worker_max",
+		Help: "Number of max workers in the pool",
+	}, func() float64 {
+		return float64(pool.Max())
+	})
 )
 
 func initMetrics() {
@@ -36,5 +50,7 @@ func initMetrics() {
 		inqueueTime,
 		batchTime,
 		batchSize,
+		workerBusy,
+		workerMax,
 	)
 }
