@@ -18,11 +18,8 @@ var inQueue = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 }, []string{"stream_name"})
 
 // Inject the publication time into the message header
-func injectPublishTime(msg *nats.Msg) {
-	header := nats.Header(map[string][]string{
-		X_SNOOZE_PUBLISHED_TIME: []string{strconv.Itoa(int(time.Now().UnixMilli()))},
-	})
-	msg.Header = header
+func injectPublishTime(header *nats.Header) {
+	header.Add(X_SNOOZE_PUBLISHED_TIME, strconv.Itoa(int(time.Now().UnixMilli())))
 }
 
 // Use the publication time to deduce the amount of time

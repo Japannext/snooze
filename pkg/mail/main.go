@@ -3,15 +3,23 @@ package mail
 import (
 	"github.com/japannext/snooze/pkg/common/daemon"
 	"github.com/japannext/snooze/pkg/common/logging"
-	"github.com/japannext/snooze/pkg/common/rabbitmq"
+	"github.com/japannext/snooze/pkg/common/mq"
 	"github.com/japannext/snooze/pkg/common/notifier"
+	"github.com/japannext/snooze/pkg/models"
+)
+
+var (
+	notifyQ *mq.Sub
+	storeQ *mq.Pub
 )
 
 func Startup() *daemon.DaemonManager {
 	logging.Init()
 	initConfig()
 	loadProfiles()
-	rabbitmq.Init()
+
+	notifyQ = mq.NotifySub("mail")
+	storeQ = mq.StorePub().WithIndex(models.NOTIFICATION_INDEX)
 
 	dm := daemon.NewDaemonManager()
 

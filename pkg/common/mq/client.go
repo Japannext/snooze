@@ -19,11 +19,11 @@ func newClient() *Client {
 	initConfig()
 	conn, err := nats.Connect(config.URL)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to connect to nats: %s", err)
 	}
 	js, err := jetstream.New(conn)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to initialize jetstream: %s", err)
 	}
 	return &Client{conn: conn, js: js}
 }

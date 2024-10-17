@@ -52,6 +52,7 @@ func (c *Consumer) Run() error {
 			go func() {
 				defer pool.Release()
 				processLog(m.Context, unmarshalLog(msg))
+				msg.Ack()
 			}()
 		}
 	}
@@ -99,6 +100,9 @@ func bytesToLogs(msgs []jetstream.Msg) []*models.Log {
 */
 
 func processLog(ctx context.Context, item *models.Log) {
+	ctx, span := tracer.Start(ctx, "processLog")
+	defer span.End()
+
 	timestamp.Process(ctx, item)
 	transform.Process(ctx, item)
 	silence.Process(ctx, item)

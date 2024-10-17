@@ -7,7 +7,7 @@ import (
 	"github.com/japannext/snooze/pkg/common/opensearch"
 )
 
-var storeQ = mq.StoreSub()
+var storeQ *mq.Sub
 
 func Startup() *daemon.DaemonManager {
 
@@ -15,6 +15,8 @@ func Startup() *daemon.DaemonManager {
 	initConfig()
 	initMetrics()
 	opensearch.Init()
+
+	storeQ = mq.StoreSub()
 
 	dm := daemon.NewDaemonManager()
 	dm.AddDaemon("consumer", NewConsumer())

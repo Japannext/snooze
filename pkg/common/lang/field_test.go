@@ -15,12 +15,12 @@ func TestField(t *testing.T) {
 	}{
 		{
 			`source.Kind`,
-			&api.Log{Source: models.Source{Kind: "syslog", Name: "prod-syslog"}},
+			&models.Log{Source: models.Source{Kind: "syslog", Name: "prod-syslog"}},
 			"syslog",
 		},
 		{
 			`labels["host.name"]`,
-			&api.Log{Labels: map[string]string{"host.name": "host-1"}},
+			&models.Log{Labels: map[string]string{"host.name": "host-1"}},
 			"host-1",
 		},
 	}
@@ -47,13 +47,13 @@ func TestFieldMap(t *testing.T) {
 		{
 			name: "hostproc identity matching",
 			fields: []string{"identity.hostname", "identity.process"},
-			log: &api.Log{Identity: map[string]string{"hostname": "host01", "process": "sshd"}},
+			log: &models.Log{Identity: map[string]string{"hostname": "host01", "process": "sshd"}},
 			expected: map[string]string{"identity.hostname": "host01", "identity.process": "sshd"},
 		},
 		{
 			name: "source matching",
 			fields: []string{"source.Kind", "source.Name"},
-			log: &api.Log{Source: models.Source{Kind: "syslog", Name: "dev"}},
+			log: &models.Log{Source: models.Source{Kind: "syslog", Name: "dev"}},
 			expected: map[string]string{"source.Kind": "syslog", "source.Name": "dev"},
 		},
 	}

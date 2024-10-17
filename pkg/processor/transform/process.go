@@ -3,11 +3,8 @@ package transform
 import (
 	"context"
 
-	"github.com/japannext/snooze/pkg/common/tracing"
 	"github.com/japannext/snooze/pkg/models"
 )
-
-var tracer = tracing.Tracer("snooze-process")
 
 func Process(ctx context.Context, item *models.Log) error {
 	ctx, span := tracer.Start(ctx, "transform")

@@ -17,22 +17,22 @@ func TestCondition(t *testing.T) {
 	}{
 		{
 			`source.Kind == "syslog"`,
-			&api.Log{Source: models.Source{Kind: "syslog", Name: "prod-syslog"}},
+			&models.Log{Source: models.Source{Kind: "syslog", Name: "prod-syslog"}},
 			true,
 		},
 		{
 			`source.Kind == "otlp"`,
-			&api.Log{Source: models.Source{Kind: "syslog", Name: "prod-syslog"}},
+			&models.Log{Source: models.Source{Kind: "syslog", Name: "prod-syslog"}},
 			false,
 		},
 		{
 			`has(labels.a, labels.b)`,
-			&api.Log{Labels: map[string]string{"a": "1", "b": "2"}},
+			&models.Log{Labels: map[string]string{"a": "1", "b": "2"}},
 			true,
 		},
 		{
 			`has(labels["c"])`,
-			&api.Log{Labels: map[string]string{"a": "1", "b": "2"}},
+			&models.Log{Labels: map[string]string{"a": "1", "b": "2"}},
 			false,
 		},
 	}

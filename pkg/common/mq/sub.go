@@ -8,16 +8,14 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 )
 
-func (client *Client) Subscribe(stream jetstream.Stream, name string) *Sub {
+func (client *Client) Consumer(stream jetstream.Stream, cfg jetstream.ConsumerConfig) *Sub {
+	log.Debugf("subscribing consumer '%s'", cfg.Name)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	consumer, err := stream.CreateOrUpdateConsumer(ctx, jetstream.ConsumerConfig{
-		Name: name,
-		Durable: name,
-	})
+	consumer, err := stream.CreateOrUpdateConsumer(ctx, cfg)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to create/update consumer '%s': %s", cfg.Name, err)
 	}
 
 	return &Sub{

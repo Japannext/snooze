@@ -6,6 +6,8 @@ import (
 	"github.com/nats-io/nats.go/jetstream"
 )
 
+const X_SNOOZE_STORE_INDEX = "X-Snooze-Store-Index"
+
 var (
 	storeSubOnce, storePubOnce, storeStreamOnce sync.Once
 	storeStream jetstream.Stream
@@ -16,10 +18,10 @@ var (
 func getStoreStream() jetstream.Stream {
 	storeStreamOnce.Do(func() {
 		client := getClient()
-		client.setupStream(jetstream.StreamConfig{
+		storeStream = client.setupStream(jetstream.StreamConfig{
 			Name: "STORE",
 			Retention: jetstream.WorkQueuePolicy,
-			Subjects: []string{"STORE.*"},
+			Subjects: []string{"STORE.items"},
 		})
 	})
 	return storeStream
@@ -28,17 +30,20 @@ func getStoreStream() jetstream.Stream {
 func StoreSub() *Sub {
 	storeSubOnce.Do(func() {
 		client := getClient()
-		stream := getProcessStream()
-		storeSub = client.Subscribe(stream, "writer")
+		stream := getStoreStream()
+		storeSub = client.Consumer(stream, jetstream.ConsumerConfig{
+			Name: "writer",
+			Durable: "writer",
+		})
 	})
 	return storeSub
 }
 
-func StorePub(subject string) *Pub {
+func StorePub() *Pub {
 	storePubOnce.Do(func() {
 		client := getClient()
 		getProcessStream()
-		storePub = client.Pub(subject)
+		storePub = client.Pub().WithSubject("STORE.items")
 	})
 	return storePub
 }

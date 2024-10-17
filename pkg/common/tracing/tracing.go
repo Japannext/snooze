@@ -2,7 +2,6 @@ package tracing
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -15,27 +14,20 @@ import (
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
 )
 
-var once sync.Once
-var tracer trace.Tracer
-
-func Tracer(name string) trace.Tracer {
-	once.Do(func() {
-		ctx := context.Background()
-		exporter, err := otlptracegrpc.New(ctx)
-		if err != nil {
-			log.Fatal(err)
-		}
-		res := resource.NewWithAttributes(
-			semconv.SchemaURL,
-			semconv.ServiceNameKey.String(name),
-		)
-		provider := tracesdk.NewTracerProvider(
-			tracesdk.WithBatcher(exporter, tracesdk.WithBatchTimeout(time.Second)),
-			tracesdk.WithResource(res),
-		)
-		otel.SetTracerProvider(provider)
-		tracer = otel.Tracer(name)
-	})
-
-	return tracer
+func Init(serviceName string) trace.Tracer {
+	ctx := context.Background()
+	exporter, err := otlptracegrpc.New(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+	res := resource.NewWithAttributes(
+		semconv.SchemaURL,
+		semconv.ServiceNameKey.String(serviceName),
+	)
+	provider := tracesdk.NewTracerProvider(
+		tracesdk.WithBatcher(exporter, tracesdk.WithBatchTimeout(time.Second)),
+		tracesdk.WithResource(res),
+	)
+	otel.SetTracerProvider(provider)
+	return otel.Tracer("snooze")
 }

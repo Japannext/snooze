@@ -22,6 +22,7 @@ googlechat:
 
 writer:
   replicaCount: 2
+  batchSize: 500
 
 mail:
   replicaCount: 2

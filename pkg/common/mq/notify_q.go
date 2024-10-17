@@ -2,7 +2,6 @@ package mq
 
 import (
 	"fmt"
-	"strings"
 	"sync"
 
 	"github.com/nats-io/nats.go/jetstream"
@@ -18,24 +17,24 @@ var (
 func getNotifyStream() jetstream.Stream {
 	notifyStreamOnce.Do(func() {
 		client := getClient()
-		subjects := []string{}
-		for _, backend := range strings.Split(config.NotifyBackends, ",") {
-			subjects = append(subjects, fmt.Sprintf("NOTIFY.%s", backend))
-		}
-		client.setupStream(jetstream.StreamConfig{
+		notifyStream = client.setupStream(jetstream.StreamConfig{
 			Name: "NOTIFY",
 			Retention: jetstream.WorkQueuePolicy,
-			Subjects: subjects,
+			Subjects: []string{"NOTIFY.*"},
 		})
 	})
 	return notifyStream
 }
 
-func NotifySub(backend string) *Sub {
+func NotifySub(name string) *Sub {
 	notifySubOnce.Do(func() {
 		client := getClient()
 		stream := getNotifyStream()
-		notifySub = client.Subscribe(stream, backend)
+		notifySub = client.Consumer(stream, jetstream.ConsumerConfig{
+			Name: name,
+			Durable: name,
+			FilterSubject: fmt.Sprintf("NOTIFY.%s", name),
+		})
 	})
 	return notifySub
 }
@@ -44,7 +43,7 @@ func NotifyPub() *Pub {
 	notifyPubOnce.Do(func() {
 		client := getClient()
 		getNotifyStream()
-		notifyPub = client.Pub("PROCESS.logs")
+		notifyPub = client.Pub()
 	})
 	return notifyPub
 }

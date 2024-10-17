@@ -2,36 +2,29 @@ package notification
 
 import (
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/japannext/snooze/pkg/models"
-	"github.com/japannext/snooze/pkg/common/rabbitmq"
-	"github.com/japannext/snooze/pkg/common/utils"
+	"github.com/japannext/snooze/pkg/common/mq"
 )
 
 var notifications []*Notification
 var defaultDestinations []models.Destination
 var log *logrus.Entry
-var producers = map[string]*rabbitmq.Producer{}
+var tracer trace.Tracer
+var notifyQ *mq.Pub
+
 
 func Startup(notifs []*Notification, defaults []models.Destination) {
 	log = logrus.WithFields(logrus.Fields{"module": "notification"})
+	tracer = otel.Tracer("snooze")
+
+	notifyQ = mq.NotifyPub()
 
 	defaultDestinations = defaults
 
-	var queues = utils.NewOrderedSet[string]()
-
 	for _, notif := range notifs {
 		notif.Load()
-		notifications = append(notifications, notif)
-		for _, dest := range notif.Destinations {
-			if dest.Queue == "dummy" {
-				continue
-			}
-			queues.Append(dest.Queue)
-		}
-	}
-
-	for _, queue := range queues.Items() {
-		producers[queue] = rabbitmq.NewNotificationProducer(queue)
 	}
 }

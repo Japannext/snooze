@@ -10,28 +10,34 @@ import (
 	"gopkg.in/mcuadros/go-syslog.v2/format"
 )
 
-var receiveQueue = make(syslog.LogPartsChannel)
-
 type SyslogServer struct {
 	srv *syslog.Server
 }
 
-type Handler struct {}
+type Handler struct {
+}
 func (h *Handler) Handle(record format.LogParts, msgLength int64, err error) {
+	log.Debugf("received log: %s", record)
 	ctx := context.TODO()
+	ctx, span := tracer.Start(ctx, "syslog")
+	defer span.End()
 	if err != nil {
 		log.Warnf("error handling log: %s", err)
 		return
 	}
 	item := parseLog(ctx, record)
-	processQ.Publish(ctx, item)
+	if err := processQ.Publish(ctx, item); err != nil {
+		log.Warnf("failed to publish log: %+v", err)
+		return
+	}
+	ingestedLogs.WithLabelValues("syslog", config.InstanceName).Inc()
+	log.Debugf("published log")
 }
 
 func NewSyslogServer() *SyslogServer {
 	srv := syslog.NewServer()
 	srv.SetFormat(syslog.RFC5424)
-	handler := syslog.NewChannelHandler(receiveQueue)
-	srv.SetHandler(handler)
+	srv.SetHandler(&Handler{})
 	addr := fmt.Sprintf("%s:%d", config.ListenAddress, config.ListenPort)
 	srv.ListenUDP(addr)
 	srv.ListenTCP(addr)
@@ -47,6 +53,5 @@ func (s *SyslogServer) Run() error {
 }
 
 func (s *SyslogServer) Stop() {
-	close(receiveQueue)
 	s.srv.Kill()
 }

@@ -6,13 +6,8 @@ import (
 	"fmt"
 
 	"github.com/japannext/snooze/pkg/models"
-	"github.com/japannext/snooze/pkg/common/mq"
 	"github.com/japannext/snooze/pkg/common/utils"
-	"github.com/japannext/snooze/pkg/common/tracing"
 )
-
-var tracer = tracing.Tracer("snooze-process")
-var notifyQ = mq.NotifyPub()
 
 func Process(ctx context.Context, item *models.Log) error {
 	ctx, span := tracer.Start(ctx, "notification")
@@ -62,12 +57,9 @@ func Process(ctx context.Context, item *models.Log) error {
 		}
 		subject := fmt.Sprintf("NOTIFY.%s", dest.Queue)
 		if dest.Queue != "dummy" {
-			if err := notifyQ.PublishWithSubject(ctx, subject, notification); err != nil {
+			if err := notifyQ.WithSubject(subject).Publish(ctx, notification); err != nil {
 				log.Warnf("failed to notify: %s", err)
 			}
-		}
-		if err := notifyQ.PublishWithSubject(ctx, subject, notification); err != nil {
-			log.Warnf("failed to notify: %s", err)
 		}
 	}
 

@@ -11,9 +11,9 @@ func (client *Client) setupStream(cfg jetstream.StreamConfig) jetstream.Stream {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	stream, err := client.js.CreateStream(ctx, cfg)
+	stream, err := client.js.CreateOrUpdateStream(ctx, cfg)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to create stream '%s': %s", cfg.Name, err)
 	}
 
 	return stream

@@ -57,24 +57,29 @@ func extractBulkError(resp opensearchapi.BulkRespItem) error {
 	return fmt.Errorf("%s", builder.String())
 }
 
+func bulkHeader(action, index string) []byte {
+	m := map[string]map[string]string{
+		action: map[string]string{
+			"_index": index,
+		},
+	}
+	b, _ := json.Marshal(m)
+	return b
+}
+
 func bulkWrite(ctx context.Context, msgs []mq.MsgWithContext) {
 	var buf bytes.Buffer
 	var inserting = map[int]jetstream.Msg{}
 	for i, m := range msgs {
 		msg, _ := m.Extract()
-		splits := strings.Split(msg.Subject(), ".")
-		if len(splits) < 1 {
-			log.Warnf("cannot extract index from subject '%s'", msg.Subject())
-			errorItems.WithLabelValues("unknown").Inc()
+		index := msg.Headers().Get(mq.X_SNOOZE_STORE_INDEX)
+		if index == "" {
+			log.Warnf("no index specified for writing for item: `%s`", msg.Data())
 			continue
 		}
-		indexString, err := json.Marshal(splits[1])
-		if err != nil {
-			log.Warnf("cannot marshal index '%s'", splits[1])
-			errorItems.WithLabelValues("unknown").Inc()
-			continue
-		}
-		fmt.Fprintf(&buf, `{"create": {"_index": %s}}`+"\n", indexString)
+		// fmt.Fprintf(&buf, `{"create": {"_index": %s}}`+"\n", indexString)
+		buf.Write(bulkHeader("create", index))
+		buf.WriteString("\n")
 		buf.Write(msg.Data())
 		buf.WriteString("\n")
 		inserting[i] = msg
@@ -108,12 +113,16 @@ func bulkWrite(ctx context.Context, msgs []mq.MsgWithContext) {
 			log.Warnf("failed to write item to '%s': %s", res.Index, extractBulkError(res))
 			if msg, ok := inserting[i]; ok {
 				msg.Term()
+			} else {
+				log.Warnf("failed to term!")
 			}
 			errorItems.WithLabelValues(res.Index).Inc()
 		} else {
 			writeItems.WithLabelValues(res.Index).Inc()
 			if msg, ok := inserting[i]; ok {
 				msg.Ack()
+			} else {
+				log.Warnf("failed to ack!")
 			}
 		}
 	}

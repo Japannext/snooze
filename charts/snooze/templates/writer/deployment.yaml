@@ -10,7 +10,7 @@ metadata:
     app.kubernetes.io/component: writer
     app.kubernetes.io/part-of: "{{ .Values.partOf }}"
 spec:
-  replicas: {{ .Values.writer.replicas }}
+  replicas: {{ .Values.writer.replicaCount }}
   revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
   selector:
     matchLabels:
@@ -47,6 +47,8 @@ spec:
         env:
         {{- include "snooze.opensearch.env" . | nindent 8 }}
         {{- include "snooze.nats.env" . | nindent 8 }}
+        - name: BATCH_SIZE
+          value: "{{ .Values.writer.batchSize }}"
         envFrom:
         - configMapRef:
             name: "{{ .Release.Name }}-common"

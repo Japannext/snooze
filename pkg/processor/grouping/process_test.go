@@ -25,7 +25,7 @@ func TestProcess(t *testing.T) {
 	}{
 		{
 			"syslog hash",
-			&api.Log{
+			&models.Log{
 				Source:         models.Source{Kind: "syslog", Name: "prod-syslog-1.example.com"},
 				SeverityText:   "error",
 				SeverityNumber: 13,

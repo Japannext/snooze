@@ -16,7 +16,7 @@ var (
 func getProcessStream() jetstream.Stream {
 	processStreamOnce.Do(func() {
 		client := getClient()
-		client.setupStream(jetstream.StreamConfig{
+		processStream = client.setupStream(jetstream.StreamConfig{
 			Name: "PROCESS",
 			Retention: jetstream.WorkQueuePolicy,
 			Subjects: []string{"PROCESS.logs"},
@@ -29,7 +29,10 @@ func ProcessSub() *Sub {
 	processSubOnce.Do(func() {
 		client := getClient()
 		stream := getProcessStream()
-		processSub = client.Subscribe(stream, "processor")
+		processSub = client.Consumer(stream, jetstream.ConsumerConfig{
+			Name: "process",
+			Durable: "process",
+		})
 	})
 	return processSub
 }
@@ -38,7 +41,7 @@ func ProcessPub() *Pub {
 	processPubOnce.Do(func() {
 		client := getClient()
 		getProcessStream()
-		processPub = client.Pub("PROCESS.logs")
+		processPub = client.Pub().WithSubject("PROCESS.logs")
 	})
 	return processPub
 }

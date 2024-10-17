@@ -1,4 +1,0 @@
-package snooze
-
-func Init() {
-}
