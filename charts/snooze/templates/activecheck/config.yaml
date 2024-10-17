@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: "{{ .Release.Name }}-activechecks"
+  name: "{{ .Release.Name }}-activecheck"
   namespace: "{{ .Release.Namespace }}"
 data:
   probes.yaml: |-

@@ -18,6 +18,8 @@ type Notification struct {
 	Labels map[string]string `json:"labels"`
 	DocumentationURL string `json:"documentationURL"`
 	SnoozeURL string `json:"snoozeURL"`
+
+	ActiveCheckURL string `json:"activeCheckURL"`
 }
 
 func (item *Notification) GetID() string { return item.ID }

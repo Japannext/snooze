@@ -1,13 +1,18 @@
 package writer
 
 import (
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
+
 	"github.com/japannext/snooze/pkg/common/daemon"
 	"github.com/japannext/snooze/pkg/common/logging"
 	"github.com/japannext/snooze/pkg/common/mq"
 	"github.com/japannext/snooze/pkg/common/opensearch"
+	"github.com/japannext/snooze/pkg/common/tracing"
 )
 
 var storeQ *mq.Sub
+var tracer, osTracer trace.Tracer
 
 func Startup() *daemon.DaemonManager {
 
@@ -15,8 +20,11 @@ func Startup() *daemon.DaemonManager {
 	initConfig()
 	initMetrics()
 	opensearch.Init()
+	tracing.Init("snooze-writer")
 
 	storeQ = mq.StoreSub()
+	tracer = otel.Tracer("snooze")
+	osTracer = tracing.NewTracerProvider("opensearch").Tracer("opensearch")
 
 	dm := daemon.NewDaemonManager()
 	dm.AddDaemon("consumer", NewConsumer())

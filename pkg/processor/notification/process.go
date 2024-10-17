@@ -13,10 +13,6 @@ func Process(ctx context.Context, item *models.Log) error {
 	ctx, span := tracer.Start(ctx, "notification")
 	defer span.End()
 
-	if item.ActiveCheckID != "" {
-		// TODO
-	}
-
 	if item.Mute.SkipNotification {
 		return nil
 	}

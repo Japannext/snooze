@@ -2,13 +2,21 @@ package googlechat
 
 import (
 	"bytes"
+	"context"
+	"encoding/json"
 	"fmt"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/japannext/snooze/pkg/models"
+	"github.com/nats-io/nats.go/jetstream"
 )
 
-func handler(notification *models.Notification) error {
+func handler(ctx context.Context, msg jetstream.Msg) error {
+
+    var notification *models.Notification
+    if err := json.Unmarshal(msg.Data(), &notification); err != nil {
+        return err
+    }
 	profileName := notification.Destination.Profile
 	profile, found := profiles[profileName]
 	if !found {

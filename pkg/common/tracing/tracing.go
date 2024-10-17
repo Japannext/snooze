@@ -14,7 +14,7 @@ import (
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
 )
 
-func Init(serviceName string) trace.Tracer {
+func NewTracerProvider(serviceName string) trace.TracerProvider {
 	ctx := context.Background()
 	exporter, err := otlptracegrpc.New(ctx)
 	if err != nil {
@@ -28,6 +28,11 @@ func Init(serviceName string) trace.Tracer {
 		tracesdk.WithBatcher(exporter, tracesdk.WithBatchTimeout(time.Second)),
 		tracesdk.WithResource(res),
 	)
+	return provider
+}
+
+// Initialize the default tracer
+func Init(serviceName string) {
+	provider := NewTracerProvider(serviceName)
 	otel.SetTracerProvider(provider)
-	return otel.Tracer("snooze")
 }

@@ -77,28 +77,6 @@ func unmarshalLog(msg jetstream.Msg) *models.Log {
 	return &item
 }
 
-/*
-func bytesToLogs(msgs []jetstream.Msg) []*models.Log {
-	var items []*models.Log
-	for _, msg := range msgs {
-		var item models.Log
-		data := msg.Data()
-		if err := json.Unmarshal(data, &item); err != nil {
-			log.Warnf("invalid JSON while parsing log: %s", err)
-			now := uint64(time.Now().UnixMilli())
-			item = models.Log{
-				Timestamp: models.Timestamp{Observed: now, Display: now},
-				Identity: map[string]string{"snooze.internal": "error"},
-				Message: string(data),
-				Error: err.Error(),
-			}
-		}
-		items = append(items, &item)
-	}
-	return items
-}
-*/
-
 func processLog(ctx context.Context, item *models.Log) {
 	ctx, span := tracer.Start(ctx, "processLog")
 	defer span.End()
@@ -112,32 +90,6 @@ func processLog(ctx context.Context, item *models.Log) {
 	// activecheck.Process(ctx, item)
 	notification.Process(ctx, item)
 	store.Process(ctx, item)
+
+	processedLogs.Inc()
 }
-
-/*
-func processBatch(msgs []mq.MsgWithContext) {
-	log.Debugf("processing %d logs", len(msgs))
-
-	items := bytesToLogs(msgs)
-
-	timestamp.Batch(ctx, items)
-	transform.Batch(ctx, items)
-	silence.Batch(ctx, items)
-	profile.Batch(ctx, items)
-	grouping.Batch(ctx, items)
-	ratelimit.Batch(ctx, items)
-	activecheck.Batch(ctx, items)
-	notification.Batch(ctx, items)
-	store.Batch(ctx, msgs, items)
-
-	log.Debugf("waiting for publish queue to be exhausted...")
-	<- mq.PublishAsyncComplete()
-	log.Debugf("done publishing")
-
-	for _, msg := range msgs {
-		msg.Ack()
-	}
-
-	processedLogs.Add(float64(len(msgs)))
-}
-*/

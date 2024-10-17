@@ -6,6 +6,7 @@ import (
 
 	"github.com/nats-io/nats.go/jetstream"
 	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func (client *Client) Consumer(stream jetstream.Stream, cfg jetstream.ConsumerConfig) *Sub {
@@ -18,15 +19,19 @@ func (client *Client) Consumer(stream jetstream.Stream, cfg jetstream.ConsumerCo
 		log.Fatalf("failed to create/update consumer '%s': %s", cfg.Name, err)
 	}
 
+	streamName := stream.CachedInfo().Config.Name
+
 	return &Sub{
 		client: client,
 		consumer: consumer,
+		streamName: streamName,
 	}
 }
 
 type Sub struct {
 	client *Client
 	consumer jetstream.Consumer
+	streamName string
 }
 
 type MsgWithContext struct {
@@ -38,25 +43,32 @@ func (msg MsgWithContext) Extract() (jetstream.Msg, context.Context) {
 	return msg.Msg, msg.Context
 }
 
-var propagator = propagation.TraceContext{}
-
 func (sub *Sub) Fetch(size int, opts... jetstream.FetchOpt) ([]MsgWithContext, error) {
+	ctx, fetchSpan := tracer.Start(context.Background(), "Fetch")
 	batch, err := sub.consumer.Fetch(size, opts...)
+	defer fetchSpan.End()
 	if err != nil {
 		return []MsgWithContext{}, err
 	}
 
 	var msgs = []MsgWithContext{}
 	for msg := range batch.Messages() {
-		ctx := context.Background()
 
 		// Opentelemetry trace context
-		propagator.Extract(ctx, propagation.HeaderCarrier(msg.Headers()))
+		propagator := propagation.TraceContext{}
+		msgCtx := propagator.Extract(context.Background(), propagation.HeaderCarrier(msg.Headers()))
+
+		// Opentelemetry msg-level span
+		msgCtx, span := tracer.Start(msgCtx, "Fetch", trace.WithLinks(trace.LinkFromContext(ctx)))
+		defer span.End()
 
 		// In-queue custom metric
-		observeDelay("", msg)
+		start, ok := getPublishedTime(msg)
+		if ok {
+			observeDelay(sub.streamName, start)
+		}
 
-		msgs = append(msgs, MsgWithContext{Msg: msg, Context: ctx})
+		msgs = append(msgs, MsgWithContext{Msg: msg, Context: msgCtx})
 	}
 	return msgs, nil
 }

@@ -4,7 +4,6 @@ import (
 	"github.com/japannext/snooze/pkg/common/daemon"
 	"github.com/japannext/snooze/pkg/common/logging"
 	"github.com/japannext/snooze/pkg/common/mq"
-	"github.com/japannext/snooze/pkg/common/notifier"
 	"github.com/japannext/snooze/pkg/models"
 )
 
@@ -23,9 +22,9 @@ func Startup() *daemon.DaemonManager {
 
 	dm := daemon.NewDaemonManager()
 
-	notifier := notifier.NewNotifier(config.Queue, handler)
-	dm.AddDaemon("notifier", notifier)
-	dm.AddReadyCheck(notifier.Consumer)
+	// Worker pool
+	wp := mq.NewWorkerPool(notifyQ, handler, 20)
+	dm.AddDaemon("worker_pool", wp)
 
 	return dm
 }

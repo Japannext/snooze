@@ -5,10 +5,19 @@ import (
 
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
+	"go.opentelemetry.io/otel/trace"
 	"github.com/sirupsen/logrus"
+
+	"github.com/japannext/snooze/pkg/common/tracing"
 )
 
-var log = logrus.WithFields(logrus.Fields{"module": "mq"})
+var log *logrus.Entry
+var tracer trace.Tracer
+
+func init() {
+	log = logrus.WithFields(logrus.Fields{"module": "mq"})
+	tracer = tracing.NewTracerProvider("nats").Tracer("nats")
+}
 
 type Client struct {
 	conn *nats.Conn
@@ -34,6 +43,7 @@ var clientOnce sync.Once
 func getClient() *Client {
 	clientOnce.Do(func() {
 		clientInstance = newClient()
+		initMetrics()
 	})
 	return clientInstance
 }

@@ -7,39 +7,22 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
-	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 )
 
 var config *Config
-var probes = map[string]ProbeHandler{}
+var checks = map[string]Check{}
 
 type Config struct {
 	CallbackAddress string `mapstructure:"CALLBACK_ADDRESS"`
 	CallbackPort int `mapstructure:"CALLBACK_PORT"`
 	SyslogAddress string `mapstructure:"SYSLOG_ADDRESS"`
 	SyslogPort int `mapstructure:"SYSLOG_PORT"`
-	ProbeConfigPath string `mapstructure:"PROBE_CONFIG_PATH"`
+	CheckConfigPath string `mapstructure:"CHECK_CONFIG_PATH"`
 }
 
-type ProbeConfig struct {
-	Probes []Probe `yaml:"probes"`
-}
-
-type Probe struct {
-	Name string `yaml:"name" validate:"required"`
-	Syslog *SyslogConfig `yaml:"syslog"`
-}
-
-type ProbeHandler interface {
-	ServeHTTP(*gin.Context)
-}
-
-type SyslogConfig struct {
-	Address string `yaml:"address" validate:"required"`
-	Port int `yaml:"port"`
-	// Valid values: rfc5424, rfc3164
-	Format string `yaml:"format" validate:"oneof=rfc5424 rfc3164"`
+type CheckConfig struct {
+	Checks []Check `yaml:"checks"`
 }
 
 func getOutboundIP() string {
@@ -68,22 +51,20 @@ func initConfig() {
 		log.Fatal(err)
 	}
 
-	data, err := os.ReadFile(config.ProbeConfigPath)
+	data, err := os.ReadFile(config.CheckConfigPath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	var probeConfig ProbeConfig
-	if err := yaml.Unmarshal(data, &probeConfig); err != nil {
+	var checkConfig CheckConfig
+	if err := yaml.Unmarshal(data, &checkConfig); err != nil {
 		log.Fatal(err)
 	}
 	validate := validator.New()
-	if err := validate.Struct(probeConfig); err != nil {
+	if err := validate.Struct(checkConfig); err != nil {
 		log.Fatal(err)
 	}
-	for _, probe := range probeConfig.Probes {
-		switch {
-		case probe.Syslog != nil:
-			probes[probe.Name] = NewSyslogRelay(probe.Name, probe.Syslog)
-		}
+	for _, check := range checkConfig.Checks {
+		check.Load()
+		checks[check.Name] = check
 	}
 }

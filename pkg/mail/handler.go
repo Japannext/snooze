@@ -2,15 +2,24 @@ package mail
 
 import (
 	"bytes"
+	"context"
+	"encoding/json"
 	"fmt"
 	gomail "gopkg.in/mail.v2"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/nats-io/nats.go/jetstream"
 
 	"github.com/japannext/snooze/pkg/models"
 )
 
-func handler(notification *models.Notification) error {
+func handler(ctx context.Context, msg jetstream.Msg) error {
+
+	var notification *models.Notification
+	if err := json.Unmarshal(msg.Data(), &notification); err != nil {
+		return err
+	}
+
 	log.Debug("Handing notification")
 	profile, found := profiles[notification.Destination.Profile]
 	if !found {
@@ -24,11 +33,11 @@ func handler(notification *models.Notification) error {
 	}
 
 	// Building email
-	msg := gomail.NewMessage()
-	msg.SetHeader("From", profile.From)
-	msg.SetHeader("To", profile.To)
-	msg.SetHeader("Subject", fmt.Sprintf("[Snooze] Alert %s", profile.Name))
-	msg.SetBody("text/plain", string(body))
+	mail := gomail.NewMessage()
+	mail.SetHeader("From", profile.From)
+	mail.SetHeader("To", profile.To)
+	mail.SetHeader("Subject", fmt.Sprintf("[Snooze] Alert %s", profile.Name))
+	mail.SetBody("text/plain", string(body))
 
 	tlsConfig := config.TLS.Config()
 	tlsConfig.ServerName = profile.Server
@@ -39,7 +48,7 @@ func handler(notification *models.Notification) error {
 	}
 
 	log.Debugf("Sending mail to %s...", profile.To)
-	err = sender.Send(profile.From, []string{profile.To}, msg)
+	err = sender.Send(profile.From, []string{profile.To}, mail)
 	if err != nil {
 		return err
 	}

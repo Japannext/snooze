@@ -44,8 +44,9 @@ type Log struct {
 	Process *Process `json:"process,omitempty"`
 
 	// Indicate that this message is part of an active check, and that
-	// this is the ID of a unique active check.
-	ActiveCheckID string `json:"activeCheckID,omitempty"`
+	// this is the URL of the callback
+	ActiveCheckURL string `json:"activeCheckURL,omitempty"`
+
 	// In case the log encountered a live error during processing, this
 	// can be indicated here.
 	Error string `json:"error,omitempty"`

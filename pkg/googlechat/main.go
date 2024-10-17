@@ -3,22 +3,28 @@ package googlechat
 import (
     "github.com/japannext/snooze/pkg/common/daemon"
     "github.com/japannext/snooze/pkg/common/logging"
-    "github.com/japannext/snooze/pkg/common/rabbitmq"
-    "github.com/japannext/snooze/pkg/common/notifier"
+    "github.com/japannext/snooze/pkg/common/mq"
+    "github.com/japannext/snooze/pkg/models"
+)
+
+var (
+	notifyQ *mq.Sub
+	storeQ *mq.Pub
 )
 
 func Startup() *daemon.DaemonManager {
     logging.Init()
     initConfig()
     loadProfiles()
-    rabbitmq.Init()
 	initGooglechat()
+
+	notifyQ = mq.NotifySub("googlechat")
+	storeQ = mq.StorePub().WithIndex(models.NOTIFICATION_INDEX)
 
     dm := daemon.NewDaemonManager()
 
-    notifier := notifier.NewNotifier("googlechat", handler)
-    dm.AddDaemon("notifier", notifier)
-    dm.AddReadyCheck(notifier.Consumer)
+	wp := mq.NewWorkerPool(notifyQ, handler, 20)
+    dm.AddDaemon("notifier", wp)
 
     return dm
 }

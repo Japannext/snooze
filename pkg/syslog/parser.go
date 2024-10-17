@@ -74,7 +74,7 @@ func parseLog(ctx context.Context, record format.LogParts) *models.Log {
 
 	// Active-check
 	if item.Identity["process"] == "snooze.activecheck" {
-		item.ActiveCheckID = item.Message
+		item.ActiveCheckURL = item.Message
 	}
 
 	return item

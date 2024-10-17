@@ -11,7 +11,7 @@ func Startup() *daemon.DaemonManager {
 	// initSyslogMetrics()
 	dm := daemon.NewDaemonManager()
 	srv := daemon.NewHttpDaemon()
-	srv.Engine.POST("/webhook/:uid", webhookHandler)
+	srv.Engine.POST("/webhook/:uid", callbackHandler)
 	srv.Engine.GET("/probe/:name", probeHandler)
 	dm.AddDaemon("http", srv)
 	return dm

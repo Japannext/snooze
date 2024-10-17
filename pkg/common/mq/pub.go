@@ -43,19 +43,23 @@ func (pub *Pub) WithIndex(index string) *Pub {
 }
 
 func (pub *Pub) Publish(ctx context.Context, item interface{}) error {
+	ctx, span := tracer.Start(ctx, "Publish")
+	defer span.End()
 	data, err := json.Marshal(item)
 	if err != nil {
 		return err
 	}
-	header := nats.Header(map[string][]string{})
+	header := make(nats.Header)
 	for k, v := range pub.headers {
 		header.Add(k, v)
 	}
 	// Metrics
 	injectPublishTime(&header)
 	// Opentelemetry
+	propagator := propagation.TraceContext{}
 	propagator.Inject(ctx, propagation.HeaderCarrier(header))
 	msg := &nats.Msg{Subject: pub.subject, Data: data, Header: header}
+
 	if _, err := pub.client.js.PublishMsg(ctx, msg); err != nil {
 		return err
 	}

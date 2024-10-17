@@ -10,6 +10,7 @@ import (
 
 	"github.com/nats-io/nats.go/jetstream"
 	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
+	"go.opentelemetry.io/otel/trace"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/japannext/snooze/pkg/common/opensearch"
@@ -68,16 +69,24 @@ func bulkHeader(action, index string) []byte {
 }
 
 func bulkWrite(ctx context.Context, msgs []mq.MsgWithContext) {
+	ctx, bulkSpan := tracer.Start(ctx, "bulkWrite")
+	defer bulkSpan.End()
 	var buf bytes.Buffer
 	var inserting = map[int]jetstream.Msg{}
 	for i, m := range msgs {
-		msg, _ := m.Extract()
+		msg, msgCtx := m.Extract()
+
+		// Tracing
+		msgCtx, span := tracer.Start(msgCtx, "bulkWrite", trace.WithLinks(trace.LinkFromContext(ctx)))
+		defer span.End()
+
+		// Extract index
 		index := msg.Headers().Get(mq.X_SNOOZE_STORE_INDEX)
 		if index == "" {
 			log.Warnf("no index specified for writing for item: `%s`", msg.Data())
 			continue
 		}
-		// fmt.Fprintf(&buf, `{"create": {"_index": %s}}`+"\n", indexString)
+
 		buf.Write(bulkHeader("create", index))
 		buf.WriteString("\n")
 		buf.Write(msg.Data())
@@ -92,7 +101,9 @@ func bulkWrite(ctx context.Context, msgs []mq.MsgWithContext) {
 		Params: params,
 	}
 	log.Debugf("Inserting bulk into opensearch...")
+	ctx, osSpan := osTracer.Start(ctx, "Bulk")
 	resp, err := opensearch.Bulk(ctx, req)
+	osSpan.End()
 	if err != nil {
 		log.Errorf("failed to send bulk message: %s", err)
 		for _, m := range msgs {
