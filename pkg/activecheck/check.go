@@ -100,19 +100,13 @@ func (check *Check) Handle(c *gin.Context) {
 
 func callbackHandler(c *gin.Context) {
     key := c.Param("uid")
-    var callback models.ActiveCheck
+    var callback models.SourceActiveCheck
     c.BindJSON(&callback)
 
     waiter.Insert(key, callback)
 }
 
-func (check *Check) CheckCallback(callback models.ActiveCheck) bool {
-    if check.Notification.ExpectedQueue != callback.Destination.Queue {
-        return false
-    }
-    if check.Notification.ExpectedProfile != callback.Destination.Profile {
-        return false
-    }
+func (check *Check) CheckCallback(callback models.SourceActiveCheck) bool {
     if callback.Error != "" {
         return false
     }

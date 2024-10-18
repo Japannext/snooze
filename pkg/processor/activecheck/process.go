@@ -13,34 +13,25 @@ import (
 )
 
 func Process(ctx context.Context, item *models.Log) error {
-	url, ok := item.Labels["activecheck.url"]
-	if !ok {
+	url := item.ActiveCheckURL
+	if url == "" {
 		return nil
 	}
 
 	// Making sure the log is dropped no matter what
 	item.Mute.Drop("active check")
 
-	delayMillis := uint64(time.Now().UnixMilli()) - item.Timestamp.Actual
-
-	if delayMillis > uint64((30 * time.Second).Milliseconds()) {
-		// skipping
-		return nil
-	}
-
-	data, err := json.Marshal(models.ActiveCheckCallback{
-		DelayMillis: delayMillis,
+	data, err := json.Marshal(models.SourceActiveCheck{
 		Error: item.Error,
 	})
 	if err != nil {
 		log.Warnf("failed to marshal response: %s", err)
 		return err
 	}
-	go func() {
-		if _, err := http.Post(url, "application/json", bytes.NewBuffer(data)); err != nil {
-			log.Warnf("active check failed to be sent back to %s: %s", url, err)
-		}
-	}()
+	client := http.Client{Timeout: 1*time.Second}
+	if _, err := client.Post(url, "application/json", bytes.NewBuffer(data)); err != nil {
+		log.Warnf("active check failed to be sent back to %s: %s", url, err)
+	}
 
 	return nil
 }

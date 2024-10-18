@@ -3,7 +3,7 @@
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
-  name: "{{ .Release.Name }}-exporter"
+  name: "{{ .Release.Name }}-activecheck"
   namespace: "{{ .Release.Namespace }}"
   {{- with .Values.podMonitor.extraLabels }}
   labels:
@@ -20,5 +20,5 @@ spec:
     matchLabels:
       app.kubernetes.io/name: snooze
       app.kubernetes.io/instance: "{{ .Release.Name }}"
-      app.kubernetes.io/component: exporter
+      app.kubernetes.io/component: activecheck
 {{- end }}

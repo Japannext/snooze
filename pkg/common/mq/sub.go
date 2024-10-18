@@ -48,7 +48,7 @@ func (sub *Sub) Fetch(size int, opts... jetstream.FetchOpt) ([]MsgWithContext, e
 	batch, err := sub.consumer.Fetch(size, opts...)
 	defer fetchSpan.End()
 	if err != nil {
-		return []MsgWithContext{}, err
+		return nil, err
 	}
 
 	var msgs = []MsgWithContext{}

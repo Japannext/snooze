@@ -44,6 +44,9 @@ spec:
           requests:
             cpu: 100m
             memory: 100Mi
+        env:
+        - name: CHECK_CONFIG_PATH
+          value: /etc/snooze/activechecks.yaml
         envFrom:
         - configMapRef:
             name: "{{ .Release.Name }}-common"
@@ -74,9 +77,9 @@ spec:
           seccompProfile:
             type: RuntimeDefault
         volumeMounts:
-        - name: activecheck
+        - name: activechecks
           mountPath: /etc/snooze
       volumes:
-      - name: activecheck
+      - name: activechecks
         configMap:
-          name: "{{ .Release.Name }}-activecheck"
+          name: "{{ .Release.Name }}-activechecks"

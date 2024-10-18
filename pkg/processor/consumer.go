@@ -10,6 +10,7 @@ import (
 
 	"github.com/japannext/snooze/pkg/models"
 
+	"github.com/japannext/snooze/pkg/processor/activecheck"
 	"github.com/japannext/snooze/pkg/processor/grouping"
 	"github.com/japannext/snooze/pkg/processor/profile"
 	"github.com/japannext/snooze/pkg/processor/notification"
@@ -87,7 +88,7 @@ func processLog(ctx context.Context, item *models.Log) {
 	profile.Process(ctx, item)
 	grouping.Process(ctx, item)
 	ratelimit.Process(ctx, item)
-	// activecheck.Process(ctx, item)
+	activecheck.Process(ctx, item)
 	notification.Process(ctx, item)
 	store.Process(ctx, item)
 

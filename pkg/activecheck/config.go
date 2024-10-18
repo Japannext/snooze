@@ -44,7 +44,7 @@ func initConfig() {
 	viper.SetDefault("SYSLOG_PORT", 1514)
 	viper.SetDefault("CALLBACK_ADDRESS", getOutboundIP())
 	viper.SetDefault("CALLBACK_PORT", 8080)
-	viper.SetDefault("PROBE_CONFIG_PATH", "/etc/snooze/probes.yaml")
+	viper.SetDefault("CHECK_CONFIG_PATH", "/etc/snooze/activechecks.yaml")
 
 	viper.AutomaticEnv()
 	if err := viper.Unmarshal(&config); err != nil {
@@ -53,11 +53,11 @@ func initConfig() {
 
 	data, err := os.ReadFile(config.CheckConfigPath)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed while reading '%s': %s", config.CheckConfigPath, err)
 	}
 	var checkConfig CheckConfig
 	if err := yaml.Unmarshal(data, &checkConfig); err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed while unmarshaling %s: %s", config.CheckConfigPath, err)
 	}
 	validate := validator.New()
 	if err := validate.Struct(checkConfig); err != nil {

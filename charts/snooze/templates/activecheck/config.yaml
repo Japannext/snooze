@@ -2,14 +2,15 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: "{{ .Release.Name }}-activecheck"
+  name: "{{ .Release.Name }}-activechecks"
   namespace: "{{ .Release.Namespace }}"
 data:
-  probes.yaml: |-
+  activechecks.yaml: |-
     # Active checks configuration
-    probes:
+    checks:
     - name: snooze-syslog
-      syslog:
-        address: snooze-syslog
-        port: 514
-        format: rfc5424
+      source:
+        syslog:
+          address: snooze-syslog
+          port: 514
+          format: rfc5424
