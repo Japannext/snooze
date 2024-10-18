@@ -1,10 +1,7 @@
 package opensearch
 
 import (
-	"crypto/tls"
-	"net/http"
 
-	"github.com/opensearch-project/opensearch-go/v4"
 	"github.com/spf13/viper"
 )
 
@@ -15,7 +12,9 @@ type Config struct {
 	InsecureSkipVerify bool     `mapstructure:"OPENSEARCH_INSECURE_SKIP_VERIFY"`
 }
 
-func initConfig() (opensearch.Config, error) {
+var config *Config
+
+func initConfig() {
 	v := viper.New()
 
 	// Defaults
@@ -25,22 +24,7 @@ func initConfig() (opensearch.Config, error) {
 	v.BindEnv("OPENSEARCH_PASSWORD", "")
 
 	v.AutomaticEnv()
-	cfg := &Config{}
-	if err := v.Unmarshal(&cfg); err != nil {
-		return opensearch.Config{}, err
+	if err := v.Unmarshal(&config); err != nil {
+		log.Fatalf("failed to load opensearch config: %s", err)
 	}
-	config := opensearch.Config{
-		Addresses: cfg.Addresses,
-		Username:  cfg.Username,
-		Password:  cfg.Password,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: cfg.InsecureSkipVerify,
-			},
-		},
-	}
-	log.Debugf("OPENSEARCH_ADDRESSES: %s", cfg.Addresses)
-	log.Debugf("OPENSEARCH_USERNAME: %s", cfg.Username)
-	log.Debugf("OPENSEARCH_PASSWORD: **** (size=%d)", len(cfg.Password))
-	return config, nil
 }

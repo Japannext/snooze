@@ -3,10 +3,13 @@ package syslog
 import (
 	"context"
 	"time"
+	"strconv"
 
+	"go.opentelemetry.io/otel/trace"
 	"gopkg.in/mcuadros/go-syslog.v2/format"
 
 	"github.com/japannext/snooze/pkg/models"
+	"github.com/japannext/snooze/pkg/common/tracing"
 )
 
 var SEVERITY_TEXTS = []string{"emergency", "alert", "critical", "error", "warning", "notice", "informational", "debug"}
@@ -72,12 +75,31 @@ func parseLog(ctx context.Context, record format.LogParts) *models.Log {
 		item.SeverityNumber = SEVERITY_NUMBERS[severity]
 	}
 
+	setSpanLog(span, record)
+
 	// Active-check
 	if item.Identity["process"] == "snooze.activecheck" {
 		item.ActiveCheckURL = item.Message
 	}
 
+
 	return item
+}
+
+const TRACE_TIME_FORMAT = "2006-01-02T15:04:05 -07:00"
+
+func setSpanLog(span trace.Span, record format.LogParts) {
+	tracing.SetAttribute(span, "syslog.priority", strconv.Itoa(record["priority"].(int)))
+	tracing.SetAttribute(span, "syslog.facility", strconv.Itoa(record["facility"].(int)))
+	tracing.SetAttribute(span, "syslog.severity", strconv.Itoa(record["severity"].(int)))
+	tracing.SetAttribute(span, "syslog.severity", strconv.Itoa(record["version"].(int)))
+	tracing.SetAttribute(span, "syslog.timestamp", record["timestamp"].(time.Time).Format(TRACE_TIME_FORMAT))
+	tracing.SetAttribute(span, "syslog.hostname", record["hostname"].(string))
+	tracing.SetAttribute(span, "syslog.app_name", record["app_name"].(string))
+	tracing.SetAttribute(span, "syslog.proc_id", record["proc_id"].(string))
+	tracing.SetAttribute(span, "syslog.msg_id", record["msg_id"].(string))
+	tracing.SetAttribute(span, "syslog.structured_data", record["structured_data"].(string))
+	tracing.SetAttribute(span, "syslog.message", record["message"].(string))
 }
 
 func extract(record format.LogParts, key string) (string, bool) {

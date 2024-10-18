@@ -9,6 +9,7 @@ import (
 	"github.com/nats-io/nats.go/jetstream"
 
 	"github.com/japannext/snooze/pkg/models"
+	"github.com/japannext/snooze/pkg/common/tracing"
 
 	"github.com/japannext/snooze/pkg/processor/activecheck"
 	"github.com/japannext/snooze/pkg/processor/grouping"
@@ -32,7 +33,7 @@ func (c *Consumer) Run() error {
 		log.Debugf("Waiting for a worker to be ready...")
 		size := pool.Ready()
 		log.Debugf("%d workers are ready", size)
-		msgs, err := processQ.Fetch(size, jetstream.FetchMaxWait(time.Duration(config.BatchTimeoutSeconds) * time.Second))
+		msgs, err := processQ.Fetch(size)
 		if err != nil {
 			log.Warnf("failed to fetch items: %s", err)
 			continue
@@ -81,6 +82,8 @@ func unmarshalLog(msg jetstream.Msg) *models.Log {
 func processLog(ctx context.Context, item *models.Log) {
 	ctx, span := tracer.Start(ctx, "processLog")
 	defer span.End()
+
+	tracing.SetLog(span, item)
 
 	timestamp.Process(ctx, item)
 	transform.Process(ctx, item)

@@ -1,11 +1,19 @@
 package alertmanager
 
 import (
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
+
     "github.com/japannext/snooze/pkg/common/daemon"
     "github.com/japannext/snooze/pkg/common/logging"
     "github.com/japannext/snooze/pkg/common/redis"
-    "github.com/japannext/snooze/pkg/common/opensearch"
+	"github.com/japannext/snooze/pkg/common/mq"
+	"github.com/japannext/snooze/pkg/models"
+	"github.com/japannext/snooze/pkg/common/tracing"
 )
+
+var storeQ *mq.Pub
+var tracer trace.Tracer
 
 func Startup() *daemon.DaemonManager {
 
@@ -13,7 +21,11 @@ func Startup() *daemon.DaemonManager {
     initConfig()
     initMetrics()
 	redis.Init()
-	opensearch.Init()
+
+	tracing.Init("snooze-alertmanager")
+	tracer = otel.Tracer("snooze")
+
+	storeQ = mq.StorePub().WithIndex(models.ALERT_INDEX)
 
     dm := daemon.NewDaemonManager()
 	srv := daemon.NewHttpDaemon()

@@ -26,7 +26,7 @@ func NewConsumer() *Consumer {
 func (c *Consumer) Run() error {
 	for {
 		log.Debugf("Ready to fetch items...")
-		msgs, err := storeQ.Fetch(config.BatchSize, jetstream.FetchMaxWait(5*time.Second))
+		msgs, err := storeQ.Fetch(config.BatchSize)
 		if err != nil {
 			log.Warnf("failed to fetch items: %s", err)
 			continue
@@ -50,9 +50,9 @@ func extractBulkError(resp opensearchapi.BulkRespItem) error {
 	if err.Cause.Type != "" {
 		cause := err.Cause
 		fmt.Fprintf(&builder, ": [%s] %s", cause.Type, cause.Reason)
-		if cause.Cause.Reason != nil {
-			cause2 := cause.Cause
-			fmt.Fprintf(&builder, ": [%s] %s", cause2.Type, *cause2.Reason)
+		realCause := cause.Cause
+		if realCause != nil && realCause.Reason != nil {
+			fmt.Fprintf(&builder, ": [%s] %s", realCause.Type, *realCause.Reason)
 		}
 	}
 	return fmt.Errorf("%s", builder.String())
@@ -101,9 +101,7 @@ func bulkWrite(ctx context.Context, msgs []mq.MsgWithContext) {
 		Params: params,
 	}
 	log.Debugf("Inserting bulk into opensearch...")
-	ctx, osSpan := osTracer.Start(ctx, "Bulk")
 	resp, err := opensearch.Bulk(ctx, req)
-	osSpan.End()
 	if err != nil {
 		log.Errorf("failed to send bulk message: %s", err)
 		for _, m := range msgs {
@@ -112,8 +110,8 @@ func bulkWrite(ctx context.Context, msgs []mq.MsgWithContext) {
 	}
 	if resp.Errors {
 		log.Debugf("Query: %s", buf.Bytes())
+		log.Debugf("Result: %+v", resp.Items)
 	}
-	log.Debugf("opensearch returned result")
 	for i, result := range resp.Items {
 		res, ok := result["create"]
 		if !ok {

@@ -16,6 +16,7 @@ type SyslogServer struct {
 
 type Handler struct {
 }
+
 func (h *Handler) Handle(record format.LogParts, msgLength int64, err error) {
 	log.Debugf("received log: %s", record)
 	ctx := context.TODO()

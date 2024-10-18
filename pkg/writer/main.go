@@ -12,7 +12,7 @@ import (
 )
 
 var storeQ *mq.Sub
-var tracer, osTracer trace.Tracer
+var tracer trace.Tracer
 
 func Startup() *daemon.DaemonManager {
 
@@ -24,7 +24,6 @@ func Startup() *daemon.DaemonManager {
 
 	storeQ = mq.StoreSub()
 	tracer = otel.Tracer("snooze")
-	osTracer = tracing.NewTracerProvider("opensearch").Tracer("opensearch")
 
 	dm := daemon.NewDaemonManager()
 	dm.AddDaemon("consumer", NewConsumer())

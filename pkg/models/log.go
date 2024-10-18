@@ -1,9 +1,5 @@
 package models
 
-import (
-	"time"
-)
-
 const LOG_INDEX = "v2-logs"
 
 type Log struct {
@@ -70,21 +66,6 @@ func (item *Log) Context() map[string]interface{} {
 		"identity": item.Identity,
 		"labels": item.Labels,
 		"message": item.Message,
-	}
-}
-
-func (item *Log) Reformat(body []byte, err error) *Log {
-	now := uint64(time.Now().UnixMilli())
-	return &Log{
-		Timestamp: Timestamp{
-			Observed: now,
-			Display: now,
-		},
-		Identity: map[string]string{
-			"snooze.internal": "error",
-		},
-		Message: string(body),
-		Error: err.Error(),
 	}
 }
 

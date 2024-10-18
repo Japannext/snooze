@@ -34,6 +34,6 @@ func postAlert(c *gin.Context) {
 	}
 
 	for _, alert := range alerts {
-		Process(alert)
+		alertHandler(alert)
 	}
 }
