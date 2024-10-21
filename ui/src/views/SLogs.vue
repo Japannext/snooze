@@ -76,9 +76,9 @@ function render(component: Component, attr: string) {
 const columns = [
   {type: 'expand', renderExpand: renderExpand},
   {
-    key: 'timestamp.display',
+    key: 'timestamp',
     title: () => h(STimestampTitle),
-    render: (row) => h(STimestamp, {value: row.timestamp}),
+    render: (row) => h(STimestamp, {ts: row.timestamp}),
     width: 150,
   },
   {title: 'Attributes', render: (row) => h(SLogAttributes, {row: row}), width: 300},

@@ -2,7 +2,6 @@ package notification
 
 import (
 	"context"
-	"time"
 	"fmt"
 
 	"github.com/japannext/snooze/pkg/models"
@@ -44,7 +43,7 @@ func Process(ctx context.Context, item *models.Log) error {
 	for _, dest := range destinations.Items() {
 		log.Debugf("sending to destination `%s`", dest)
 		notification := &models.Notification{
-			TimestampMillis: uint64(time.Now().UnixMilli()),
+			Timestamp: item.Timestamp,
 			Destination: dest,
 			LogUID: item.ID,
 			Body: map[string]string{

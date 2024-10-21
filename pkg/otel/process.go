@@ -33,7 +33,7 @@ func (s *server) Export(ctx context.Context, in *collectorv1.ExportLogsServiceRe
 					failedItems++
 					continue
 				}
-				if err := producer.Publish(item); err != nil {
+				if err := processQ.Publish(ctx, item); err != nil {
 					// TODO
 					log.Warnf("Failed to publish log to process channel: %s", err)
 					failedItems++

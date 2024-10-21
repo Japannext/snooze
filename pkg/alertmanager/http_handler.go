@@ -1,6 +1,7 @@
 package alertmanager
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"encoding/json"
@@ -34,6 +35,7 @@ func postAlert(c *gin.Context) {
 	}
 
 	for _, alert := range alerts {
-		alertHandler(alert)
+		ctx := context.TODO()
+		alertHandler(ctx, alert)
 	}
 }

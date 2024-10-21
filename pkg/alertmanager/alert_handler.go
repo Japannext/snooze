@@ -21,8 +21,7 @@ func pop(m map[string]string, key string) string {
 	return v
 }
 
-func alertHandler(alert PostableAlert) {
-	ctx := context.Background()
+func alertHandler(ctx context.Context, alert PostableAlert) {
 	ctx, span := tracer.Start(ctx, "alertHandler")
 	defer span.End()
 

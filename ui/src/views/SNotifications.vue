@@ -65,9 +65,9 @@ function renderExpand(row) {
 const columns = [
   {type: 'expand', renderExpand: renderExpand},
   {
-    key: 'timestampMillis',
+    key: 'timestamp.display',
     title: () => h(STimestampTitle),
-    render: (row) => h(STimestamp, {timestampMillis: row.timestampMillis}),
+    render: (row) => h(STimestamp, {timestamp: row.timestamp}),
     width: 150,
   },
   {title: 'Destination', render: (row) => h(SDestination, {destination: row.destination})},

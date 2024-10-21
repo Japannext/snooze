@@ -1,12 +1,14 @@
 package models
 
+const RATELIMIT_INDEX = "v2-ratelimits"
+
 // A rate limit object. Represent the start or end of rate limiting.
 type Ratelimit struct {
 	ID string `json:"id"`
-	// Valid values: "start"|"end"
-	Kind string `json:"kind"`
-	// Time when the entries were ratelimited or allowed back
-	TimestampMillis uint64 `yaml:"timestampMillis"`
+	// Time when the entries were rate-limited or allowed back
+	StartsAt uint64 `yaml:"startsAt"`
+	// Time when the concerned entries stopped being rate-limited
+	EndsAt uint64 `yaml:"endsAt"`
 	// The name of the ratelimit rule that was applied
 	Rule string `json:"name"`
 	// The fields that are concerned by the rate limiting

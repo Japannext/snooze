@@ -17,6 +17,8 @@ type Search struct {
 }
 
 func searchLogs(c *gin.Context) {
+	ctx, span := tracer.Start(c.Request.Context(), "searchLogs")
+	defer span.End()
 	var (
 		start = time.Now()
 		pagination = models.NewPagination()
@@ -31,13 +33,13 @@ func searchLogs(c *gin.Context) {
 	params := &opensearchapi.SearchParams{}
 
 	if pagination.OrderBy == "" {
-		pagination.OrderBy = "timestampMillis"
+		pagination.OrderBy = "timestamp.display"
 	}
 	opensearch.AddTimeRange(doc, timerange)
 	opensearch.AddPagination(doc, params, pagination)
 	opensearch.AddSearch(doc, search.Text)
 
-	items, err := opensearch.Search[*models.Log](c, models.LOG_INDEX, params, doc)
+	items, err := opensearch.Search[*models.Log](ctx, models.LOG_INDEX, params, doc)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error getting logs for search='%s': %s", search.Text, err)
 		return

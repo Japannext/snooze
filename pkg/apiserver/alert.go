@@ -13,6 +13,8 @@ import (
 )
 
 func listAlerts(c *gin.Context) {
+	ctx, span := tracer.Start(c.Request.Context(), "listAlerts")
+	defer span.End()
 
 	var pagination = models.NewPagination()
 	c.BindQuery(&pagination)
@@ -26,7 +28,7 @@ func listAlerts(c *gin.Context) {
 	// opensearch.AddTimeRange(doc, timerange)
 	opensearch.AddPagination(doc, params, pagination)
 
-	res, err := opensearch.Search[*models.Alert](c, models.ALERT_INDEX, params, doc)
+	res, err := opensearch.Search[*models.Alert](ctx, models.ALERT_INDEX, params, doc)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error getting alerts for : %s", err)
 		return

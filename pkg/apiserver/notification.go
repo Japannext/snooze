@@ -43,7 +43,7 @@ func searchNotifications(c *gin.Context) {
 	var params = &opensearchapi.SearchParams{}
 	var doc = &dsl.QueryDoc{}
 	if pagination.OrderBy == "" {
-		pagination.OrderBy = "timestampMillis"
+		pagination.OrderBy = "timestamp.display"
 	}
 	opensearch.AddTimeRange(doc, timerange)
 	opensearch.AddPagination(doc, params, pagination)

@@ -42,7 +42,7 @@ export type AlertResults = {
 
 export type Notification = {
   id?: string;
-  timestampMillis: number;
+  timestamp: Timestamp;
   destination: Destination;
   Acknowledged: boolean;
   alertUID?: string;

@@ -59,7 +59,7 @@ func init() {
 	index := IndexTemplate{
 		Version: 0,
 		IndexPatterns: []string{ALERT_INDEX},
-		DataStream: map[string]map[string]string{"timestamp_field": {"name": "timestampMillis"}},
+		DataStream: map[string]map[string]string{"timestamp_field": {"name": "startsAt"}},
 		Template: Indice{
 			Settings: IndexSettings{1, 2},
 			Mappings: IndexMapping{

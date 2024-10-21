@@ -8,7 +8,7 @@ const NOTIFICATION_INDEX = "v2-notifications"
 
 type Notification struct {
 	ID string `json:"id,omitempty"`
-	TimestampMillis   uint64 `json:"timestampMillis"`
+	Timestamp Timestamp `json:"timestamp"`
 	Destination Destination `json:"destination"`
 	Acknowledged bool `json:"acknowledged"`
 	AlertUID string `json:"alertUID,omitempty"`
@@ -41,12 +41,16 @@ func init() {
 	index := IndexTemplate{
 		Version: 0,
 		IndexPatterns: []string{NOTIFICATION_INDEX},
-		DataStream: map[string]map[string]string{"timestamp_field": {"name": "timestampMillis"}},
+		DataStream: map[string]map[string]string{"timestamp_field": {"name": "timestamp.display"}},
 		Template: Indice{
 			Settings: IndexSettings{1, 2},
 			Mappings: IndexMapping{
 				Properties: map[string]MappingProps{
-					"timestampMillis": {Type: "date", Format: "epoch_millis"},
+					"timestamp.display": {Type: "date", Format: "epoch_millis"},
+					"timestamp.actual": {Type: "date", Format: "epoch_millis"},
+					"timestamp.observed": {Type: "date", Format: "epoch_millis"},
+					"timestamp.processed": {Type: "date", Format: "epoch_millis"},
+					"timestamp.warning": {Type: "keyword"},
 					"destination.kind": {Type: "keyword"},
 					"destination.name": {Type: "keyword"},
 				},

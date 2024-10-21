@@ -11,8 +11,6 @@ const props = defineProps<{
 }>()
 
 const date = computed(() => {
-    console.log(`s-timestamp`)
-    console.log(props.ts)
     return DateTime.fromMillis(props.ts.display, {zone: "system"})
 })
 

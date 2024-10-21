@@ -7,6 +7,7 @@ import {NModal, NSpace, NTabs, NTab, NCard, NDataTable, NInputGroup, useLoadingB
 import SAlertAttributes from '@/components/SAlertAttributes.vue'
 import STimeRange from '@/components/STimeRange.vue'
 import STimestamp from '@/components/STimestamp.vue'
+import STimestampTitle from '@/components/STimestampTitle.vue'
 import SIdentity from '@/components/SIdentity.vue'
 import type { Alert, AlertResults } from '@/api/types'
 import { usePagination } from '@/utils/pagination'
@@ -71,8 +72,8 @@ function renderExpand(row) {
 const columns = [
   {type: 'expand', renderExpand: renderExpand},
   {
-    title: "Since",
-    render: (row) => h(STimestamp, {value: row.startsAt}),
+    title: () => h(STimestampTitle),
+    render: (row) => h(STimestamp, {ts: {display: row.startsAt}}),
     width: 150,
   },
   {

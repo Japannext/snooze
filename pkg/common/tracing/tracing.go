@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 	"strconv"
+	"net/http"
 
 	log "github.com/sirupsen/logrus"
 
@@ -60,6 +61,15 @@ func SetLog(span trace.Span, item *models.Log) {
 	SetAttribute(span, "log.severityText", item.SeverityText)
 	SetAttribute(span, "log.severityNumber", strconv.Itoa(int(item.SeverityNumber)))
 	SetAttribute(span, "log.message", item.Message)
+}
+
+func HTTPFilter(req *http.Request) bool {
+	if req.URL.Path == "/livez" ||
+		req.URL.Path == "/readyz" ||
+		req.URL.Path == "/metrics" {
+		return false
+	}
+	return true
 }
 
 // Initialize the default tracer

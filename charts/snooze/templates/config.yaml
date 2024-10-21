@@ -12,8 +12,6 @@ data:
   OPENSEARCH_INSECURE_SKIP_VERIFY: 'true'
   # redis
   REDIS_ADDRESS: "{{ .Release.Name }}-redis:6379"
-  # rabbitmq
-  AMQP_ADDRESS: "amqp://{{ .Release.Name }}-rabbitmq:5672/"
   # samples
   SYSLOG_SERVER_ADDR: "{{ .Release.Name }}-syslog:514"
   {{- if .Values.tracing.enabled }}

@@ -3,19 +3,19 @@ package otel
 import (
 	"github.com/japannext/snooze/pkg/common/daemon"
 	"github.com/japannext/snooze/pkg/common/logging"
-	"github.com/japannext/snooze/pkg/common/rabbitmq"
+	"github.com/japannext/snooze/pkg/common/mq"
 )
 
 var (
-	producer *rabbitmq.Producer
+	processQ *mq.Pub
 )
 
 func Startup() *daemon.DaemonManager {
 
 	logging.Init()
 	initConfig()
-	rabbitmq.Init()
-	producer = rabbitmq.NewLogProducer()
+
+	processQ = mq.ProcessPub()
 
 	dm := daemon.NewDaemonManager()
 	dm.AddDaemon("otel-grpc", NewOtelGrpcServer())

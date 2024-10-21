@@ -36,7 +36,7 @@ func AddTimeRange(doc *dsl.QueryDoc, timerange *models.TimeRange) {
 		r.Lte = &timerange.End
 	}
 	if timerange.Start > 0 || timerange.End > 0 {
-		item := dsl.QueryItem{Type: dsl.Range, Field: "timestampMillis", Value: r}
+		item := dsl.QueryItem{Type: dsl.Range, Field: "timestamp.display", Value: r}
 		doc.And = append(doc.And, item)
 	}
 }
