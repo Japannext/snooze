@@ -13,9 +13,8 @@ type RateLimit struct {
 	// An optional condition to only apply the rate limit if the condition match
 	If		 string		   `yaml:"if"`
 
-	// Fields that will be used to compute a hash for the rate limit
-	// Example: ['log.Identity.hostname', 'log.Identity.process']
-	Fields []string `yaml:"fields"`
+	// The group to group by
+	Group string `yaml:"group"`
 
 	// The amount of authorized logs during the period
 	Burst    uint64         `yaml:"burst"`
@@ -26,7 +25,6 @@ type RateLimit struct {
 	internal struct {
 		condition *lang.Condition
 		key string
-		fields []*lang.Field
 	}
 }
 
@@ -42,12 +40,6 @@ func (rate *RateLimit) Load() *RateLimit {
 		}
 		rate.internal.condition = condition
 	}
-
-	fields, err := lang.NewFields(rate.Fields)
-	if err != nil {
-		log.Fatal(err)
-	}
-	rate.internal.fields = fields
 
 	if int64(rate.Period.Seconds()) == 0 {
 		log.Fatalf("period should be at least 1 second for rate `%s`", rate.Name)

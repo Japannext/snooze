@@ -1,4 +1,4 @@
-package samples
+package tester
 
 func Run() error {
 	if err := runSyslogSamples(); err != nil {

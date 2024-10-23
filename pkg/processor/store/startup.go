@@ -6,7 +6,6 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/japannext/snooze/pkg/common/mq"
-	"github.com/japannext/snooze/pkg/models"
 )
 
 var log *logrus.Entry
@@ -16,7 +15,7 @@ var storeQ *mq.Pub
 func Startup() {
 	log = logrus.WithFields(logrus.Fields{"module": "store"})
 	tracer = otel.Tracer("snooze")
-	storeQ = mq.StorePub().WithIndex(models.LOG_INDEX)
+	storeQ = mq.StorePub()
 
 	initMetrics()
 }

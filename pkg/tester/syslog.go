@@ -1,4 +1,4 @@
-package samples
+package tester
 
 import (
 	"os"

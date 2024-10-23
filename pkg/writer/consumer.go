@@ -72,26 +72,32 @@ func bulkWrite(ctx context.Context, msgs []mq.MsgWithContext) {
 	ctx, bulkSpan := tracer.Start(ctx, "bulkWrite")
 	defer bulkSpan.End()
 	var buf bytes.Buffer
-	var inserting = map[int]jetstream.Msg{}
+	var messages = map[int]jetstream.Msg{}
 	for i, m := range msgs {
 		msg, msgCtx := m.Extract()
+		messages[i] = msg
 
 		// Tracing
 		msgCtx, span := tracer.Start(msgCtx, "bulkWrite", trace.WithLinks(trace.LinkFromContext(ctx)))
 		defer span.End()
 
 		// Extract index
+		/*
 		index := msg.Headers().Get(mq.X_SNOOZE_STORE_INDEX)
 		if index == "" {
 			log.Warnf("no index specified for writing for item: `%s`", msg.Data())
 			continue
 		}
 
-		buf.Write(bulkHeader("create", index))
-		buf.WriteString("\n")
+		action := m.Msg.Headers().Get(mq.X_SNOOZE_WRITER_ACTION)
+		if action == "" {
+			log.Warnf("no action found for item: `%s`", msg.Data())
+			continue
+		}
+		*/
+
 		buf.Write(msg.Data())
 		buf.WriteString("\n")
-		inserting[i] = msg
 	}
 	params := opensearchapi.BulkParams{
 		Timeout: 10 * time.Second,
@@ -104,6 +110,8 @@ func bulkWrite(ctx context.Context, msgs []mq.MsgWithContext) {
 	resp, err := opensearch.Bulk(ctx, req)
 	if err != nil {
 		log.Errorf("failed to send bulk message: %s", err)
+		log.Debugf("Query: %s", buf.Bytes())
+		log.Debugf("Result: %+v", resp.Items)
 		for _, m := range msgs {
 			m.Msg.NakWithDelay(1*time.Minute)
 		}
@@ -120,7 +128,7 @@ func bulkWrite(ctx context.Context, msgs []mq.MsgWithContext) {
 		}
 		if res.Error != nil {
 			log.Warnf("failed to write item to '%s': %s", res.Index, extractBulkError(res))
-			if msg, ok := inserting[i]; ok {
+			if msg, ok := messages[i]; ok {
 				msg.Term()
 			} else {
 				log.Warnf("failed to term!")
@@ -128,7 +136,33 @@ func bulkWrite(ctx context.Context, msgs []mq.MsgWithContext) {
 			errorItems.WithLabelValues(res.Index).Inc()
 		} else {
 			writeItems.WithLabelValues(res.Index).Inc()
-			if msg, ok := inserting[i]; ok {
+			if msg, ok := messages[i]; ok {
+				msg.Ack()
+			} else {
+				log.Warnf("failed to ack!")
+			}
+		}
+	}
+}
+
+func handleResponse(resp opensearchapi.BulkResp, messages map[int]jetstream.Msg) {
+	for i, result := range resp.Items {
+		res, ok := result["create"]
+		if !ok {
+			log.Warnf("cannot find action `index` in error response: %+v", result)
+			continue
+		}
+		if res.Error != nil {
+			log.Warnf("failed to write item to '%s': %s", res.Index, extractBulkError(res))
+			if msg, ok := messages[i]; ok {
+				msg.Term()
+			} else {
+				log.Warnf("failed to term!")
+			}
+			errorItems.WithLabelValues(res.Index).Inc()
+		} else {
+			writeItems.WithLabelValues(res.Index).Inc()
+			if msg, ok := messages[i]; ok {
 				msg.Ack()
 			} else {
 				log.Warnf("failed to ack!")

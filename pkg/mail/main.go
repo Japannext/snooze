@@ -16,6 +16,7 @@ func Startup() *daemon.DaemonManager {
 	logging.Init()
 	initConfig()
 	loadProfiles()
+	mq.Init()
 
 	notifyQ = mq.NotifySub("mail")
 	storeQ = mq.StorePub().WithIndex(models.NOTIFICATION_INDEX)

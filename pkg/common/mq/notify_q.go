@@ -16,7 +16,6 @@ var (
 
 func getNotifyStream() jetstream.Stream {
 	notifyStreamOnce.Do(func() {
-		client := getClient()
 		notifyStream = client.setupStream(jetstream.StreamConfig{
 			Name: "NOTIFY",
 			Retention: jetstream.WorkQueuePolicy,
@@ -28,7 +27,6 @@ func getNotifyStream() jetstream.Stream {
 
 func NotifySub(name string) *Sub {
 	notifySubOnce.Do(func() {
-		client := getClient()
 		stream := getNotifyStream()
 		notifySub = client.Consumer(stream, jetstream.ConsumerConfig{
 			Name: name,
@@ -41,7 +39,6 @@ func NotifySub(name string) *Sub {
 
 func NotifyPub() *Pub {
 	notifyPubOnce.Do(func() {
-		client := getClient()
 		getNotifyStream()
 		notifyPub = client.Pub()
 	})

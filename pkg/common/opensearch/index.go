@@ -31,30 +31,40 @@ func createIndex(ctx context.Context, name string, tpl models.IndexTemplate) err
 	return nil
 }
 
-func hasIndex(ctx context.Context, name string) (bool, error) {
+func hasIndex(ctx context.Context, name string) (bool, int, error) {
 	resp, err := client.IndexTemplate.Exists(ctx, opensearchapi.IndexTemplateExistsReq{
 		IndexTemplate: name,
 	})
 	if resp.StatusCode == 200 {
-		return true, nil
+		r, err := client.IndexTemplate.Get(ctx, &opensearchapi.IndexTemplateGetReq{
+			IndexTemplates: []string{name},
+		})
+		if err != nil {
+			return true, 0, err
+		}
+
+		details := r.IndexTemplates[0]
+		version := details.IndexTemplate.Version
+		return true, version, nil
 	}
 	if resp.StatusCode == 404 {
-		return false, nil
+		return false, 0, nil
 	}
 	if err != nil {
-		return false, err
+		return false, 0, err
 	}
 	var buf bytes.Buffer
 	buf.ReadFrom(resp.Body)
-	return false, fmt.Errorf("Unexpected status code %d when checking index %s: %s", resp.StatusCode, name, buf.Bytes())
+	return false, 0, fmt.Errorf("Unexpected status code %d when checking index %s: %s", resp.StatusCode, name, buf.Bytes())
 }
 
 func ensureIndex(ctx context.Context, name string, tpl models.IndexTemplate) {
-	found, err := hasIndex(ctx, name)
+	found, version, err := hasIndex(ctx, name)
 	if err != nil {
 		log.Fatal(err)
 	}
-	if found {
+	if found && tpl.Version <= version {
+		log.Debugf("index '%s' (version=%d) already exist", name, version)
 		return
 	}
 	if err := createIndex(ctx, name, tpl); err != nil {

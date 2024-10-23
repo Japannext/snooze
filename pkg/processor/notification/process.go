@@ -6,6 +6,7 @@ import (
 
 	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/common/utils"
+	"github.com/japannext/snooze/pkg/common/opensearch"
 )
 
 func Process(ctx context.Context, item *models.Log) error {
@@ -52,7 +53,8 @@ func Process(ctx context.Context, item *models.Log) error {
 		}
 		subject := fmt.Sprintf("NOTIFY.%s", dest.Queue)
 		if dest.Queue != "dummy" {
-			if err := notifyQ.WithSubject(subject).Publish(ctx, notification); err != nil {
+			data := opensearch.Create(models.NOTIFICATION_INDEX, notification)
+			if err := notifyQ.WithSubject(subject).Publish(ctx, data); err != nil {
 				log.Warnf("failed to notify: %s", err)
 			}
 		}

@@ -22,3 +22,23 @@ type RatelimitResults struct {
 	Total int `json:"total"`
 	More bool `json:"more"`
 }
+
+func init() {
+	index := IndexTemplate{
+		Version: 0,
+		IndexPatterns: []string{RATELIMIT_INDEX},
+		DataStream: map[string]map[string]string{"timestamp_field": {"name": "startsAt"}},
+		Template: Indice{
+			Settings: IndexSettings{1, 2},
+			Mappings: IndexMapping{
+				Properties: map[string]MappingProps{
+					"startsAt": {Type: "date", Format: "epoch_millis"},
+					"endsAt": {Type: "date", Format: "epoch_millis"},
+					"hash": {Type: "keyword"},
+					"rule": {Type: "keyword"},
+				},
+			},
+		},
+	}
+	INDEXES = append(INDEXES, index)
+}

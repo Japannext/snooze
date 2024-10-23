@@ -4,12 +4,14 @@ import (
 	"context"
 	"fmt"
 	"time"
+	"encoding/json"
 
 	redisv9 "github.com/redis/go-redis/v9"
+	"github.com/google/uuid"
 
 	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/common/redis"
-	"github.com/japannext/snooze/pkg/common/lang"
+	"github.com/japannext/snooze/pkg/common/opensearch"
 	"github.com/japannext/snooze/pkg/common/utils"
 )
 
@@ -20,7 +22,7 @@ type result struct {
 	i1 counter
 	i2 counter
 
-	create *models.Ratelimit
+	lock lock
 }
 
 // Used to represent a counter used for rate limiting
@@ -73,6 +75,9 @@ func Process(ctx context.Context, item *models.Log) error {
 				continue
 			}
 		}
+		if _, ok := utils.GetGroup(item, rate.Group); !ok {
+			continue
+		}
 		rr = append(rr, rate)
 	}
 
@@ -84,13 +89,9 @@ func Process(ctx context.Context, item *models.Log) error {
 		res := result{}
 
 		period := time.Now().Unix() / int64(rate.Period.Seconds())
-		fields, err := lang.ExtractFields(item, rate.internal.fields)
-		if err != nil {
-			log.Warnf("Error extracting fields: %s", err)
-			// skipping[rate.Name] = true
-			continue
-		}
-		hash := utils.ComputeHash(fields)
+		group, _ := utils.GetGroup(item, rate.Group)
+		hash := group.Hash
+		fields := group.Labels
 
 		res.i0 = counter{
 			key: fmt.Sprintf("ratelimits/%s:%s/period:%d", rate.Name, hash, period),
@@ -107,10 +108,14 @@ func Process(ctx context.Context, item *models.Log) error {
 			hash: hash,
 			fields: fields,
 		}
+		res.lock = lock{
+			key: fmt.Sprintf("ratelimits/%s:%s/lock", rate.Name, hash),
+		}
 
 		res.i0.cmd = pipe.Get(ctx, res.i0.key)
 		res.i1.cmd = pipe.Get(ctx, res.i1.key)
 		res.i2.cmd = pipe.Get(ctx, res.i2.key)
+		res.lock.cmd = pipe.SetArgs(ctx, res.lock.key, uuid.NewString(), redisv9.SetArgs{Get: true, Mode: "NX"})
 
 		results[rate.Name] = res
 	}
@@ -124,7 +129,7 @@ func Process(ctx context.Context, item *models.Log) error {
 	pipe = redis.Client.Pipeline()
 	for _, rate := range rr {
 		res := results[rate.Name]
-		i0, i1, i2 := res.i0, res.i1, res.i2
+		i0, i1, i2, lock := res.i0, res.i1, res.i2, res.lock
 
 		if err := res.i0.extract(); err != nil {
 			log.Warnf("unexpected error while getting i0 value: %s", err)
@@ -147,27 +152,34 @@ func Process(ctx context.Context, item *models.Log) error {
 			rateLimitedLogs.WithLabelValues(rate.Name).Inc()
 		}
 
+		id := lock.cmd.String()
+
 		// Rate-limit start case
-		if i0.value == limit {
-			err := storeQ.Publish(ctx, &models.Ratelimit{
+		if i0.value >= limit || id == "" {
+			item := &models.Ratelimit{
 				StartsAt: now(),
 				Rule: rate.Name,
 				Hash: i0.hash,
 				Fields: i0.fields,
-			})
+			}
+			err := storeQ.PublishData(ctx, opensearch.Create(models.RATELIMIT_INDEX, item))
 			if err != nil {
 				log.Warnf("failed to publish ratelimit '%s'", rate.Name)
 			}
 		}
 
 		// Rate-limit stop
-		if i2.value > limit && i1.value < limit && i0.value == 0 {
-			err := storeQ.WithHeader("action", "update").Publish(ctx, &models.Ratelimit{
-				EndsAt: now(),
-				Rule: rate.Name,
-				Hash: i0.hash,
-				Fields: i0.fields,
-			})
+		if i2.value > limit && i1.value < limit && i0.value == 0 && lock.cmd.String() != "" {
+			id := lock.cmd.String()
+
+			doc, err := json.Marshal(&models.Ratelimit{EndsAt: now()})
+			if err != nil {
+				// TODO
+			}
+			update := opensearch.UpdateWrapper{
+				Doc: doc,
+			}
+			err = storeQ.PublishData(ctx, opensearch.Update(models.RATELIMIT_INDEX, id, update))
 			if err != nil {
 				log.Warnf("failed to update ratelimit '%s'", rate.Name)
 			}

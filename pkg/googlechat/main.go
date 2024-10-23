@@ -17,6 +17,7 @@ func Startup() *daemon.DaemonManager {
     initConfig()
     loadProfiles()
 	initGooglechat()
+	mq.Init()
 
 	notifyQ = mq.NotifySub("googlechat")
 	storeQ = mq.StorePub().WithIndex(models.NOTIFICATION_INDEX)

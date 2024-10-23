@@ -35,6 +35,7 @@ func Startup() *daemon.DaemonManager {
 	initMetrics()
 	redis.Init()
 	tracing.Init("snooze-process")
+	mq.Init()
 
 	processQ = mq.ProcessSub()
 	pool = utils.NewPool(config.MaxWorkers)

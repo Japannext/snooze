@@ -7,6 +7,7 @@ import (
 
 	"github.com/japannext/snooze/pkg/common/mq"
 	"github.com/japannext/snooze/pkg/common/utils"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 var log *logrus.Entry

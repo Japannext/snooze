@@ -2,6 +2,7 @@ package grouping
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/sirupsen/logrus"
 
@@ -13,27 +14,47 @@ import (
 func Process(ctx context.Context, item *models.Log) error {
 	ctx, span := tracer.Start(ctx, "grouping")
 	defer span.End()
-	if len(item.Group.Labels) != 0 { // existing grouping
-		item.Group.Hash = utils.ComputeHash(item.Group.Labels)
-		return nil
-	}
+
 	for _, group := range groupings {
-		match, err := group.internal.condition.MatchLog(ctx, item)
-		if err != nil {
-			return err
+		if group.internal.condition != nil {
+			match, err := group.internal.condition.MatchLog(ctx, item)
+			if err != nil {
+				return err
+			}
+			if !match {
+				continue
+			}
 		}
-		if match {
-			item.Group.Labels = make(map[string]string)
+
+		var gr = &models.Group{Name: group.Name, Labels: make(map[string]string)}
+		if len(group.GroupBy) > 0 {
 			for _, field := range group.internal.fields {
 				value, err := lang.ExtractField(item, field)
 				if err != nil {
 					logrus.Warnf("Failed to match %s: %s", field, err)
 					continue
 				}
-				item.Group.Labels[field.String()] = value
+				gr.Labels[field.String()] = value
 			}
-			item.Group.Hash = utils.ComputeHash(item.Group.Labels)
+
+		} else if group.GroupByMap != "" {
+			switch group.GroupByMap {
+				case "source":
+					gr.Labels["source.kind"] = item.Source.Kind
+					gr.Labels["source.name"] = item.Source.Name
+				case "identity":
+					for k, v := range item.Identity {
+						gr.Labels[fmt.Sprintf("identity.%s", k)] = v
+					}
+				case "gr.Labels":
+					for k, v := range item.Labels {
+						gr.Labels[fmt.Sprintf("gr.Labels.%s", k)] = v
+					}
+			}
+
 		}
+		gr.Hash = utils.ComputeHash(gr.Labels)
+		item.Groups = append(item.Groups, gr)
 	}
 
 	return nil

@@ -18,6 +18,7 @@ func Startup() *daemon.DaemonManager {
 	logging.Init()
 	initConfig()
 	initMetrics()
+	mq.Init()
 
 	processQ = mq.ProcessPub()
 	tracing.Init("snooze-syslog")

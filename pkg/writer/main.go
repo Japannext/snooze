@@ -21,6 +21,7 @@ func Startup() *daemon.DaemonManager {
 	initMetrics()
 	opensearch.Init()
 	tracing.Init("snooze-writer")
+	mq.Init()
 
 	storeQ = mq.StoreSub()
 	tracer = otel.Tracer("snooze")

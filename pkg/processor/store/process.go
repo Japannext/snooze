@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/japannext/snooze/pkg/models"
+	"github.com/japannext/snooze/pkg/common/opensearch"
+	"github.com/japannext/snooze/pkg/common/tracing"
 )
 
 func Process(ctx context.Context, item *models.Log) error {
@@ -11,8 +13,12 @@ func Process(ctx context.Context, item *models.Log) error {
 	defer span.End()
 
 	if item.Mute.SkipStorage {
+		log.Debugf("skipping storage")
+		tracing.SetAttribute(span, "mute.skipStorage", "true")
+		tracing.SetAttribute(span, "mute", item.Mute.Reason)
 		return nil
 	}
+	tracing.SetAttribute(span, "mute.skipStorage", "false")
 
-	return storeQ.Publish(ctx, item)
+	return storeQ.PublishData(ctx, opensearch.Create(models.LOG_INDEX, item))
 }

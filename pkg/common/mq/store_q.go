@@ -17,7 +17,6 @@ var (
 
 func getStoreStream() jetstream.Stream {
 	storeStreamOnce.Do(func() {
-		client := getClient()
 		storeStream = client.setupStream(jetstream.StreamConfig{
 			Name: "STORE",
 			Retention: jetstream.WorkQueuePolicy,
@@ -29,7 +28,6 @@ func getStoreStream() jetstream.Stream {
 
 func StoreSub() *Sub {
 	storeSubOnce.Do(func() {
-		client := getClient()
 		stream := getStoreStream()
 		storeSub = client.Consumer(stream, jetstream.ConsumerConfig{
 			Name: "writer",
@@ -41,7 +39,6 @@ func StoreSub() *Sub {
 
 func StorePub() *Pub {
 	storePubOnce.Do(func() {
-		client := getClient()
 		getProcessStream()
 		storePub = client.Pub().WithSubject("STORE.items")
 	})

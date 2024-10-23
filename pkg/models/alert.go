@@ -3,7 +3,7 @@ package models
 const ALERT_INDEX = "v2-alerts"
 
 type Alert struct {
-	ID string `json:"id,omitempty"`
+	ID string `json:"_id,omitempty"`
 
 	Hash string `json:"hash"`
 

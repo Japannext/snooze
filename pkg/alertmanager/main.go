@@ -22,6 +22,7 @@ func Startup() *daemon.DaemonManager {
     initConfig()
     initMetrics()
 	redis.Init()
+	mq.Init()
 
 	tracing.Init("snooze-alertmanager")
 	tracer = otel.Tracer("snooze")

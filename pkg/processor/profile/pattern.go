@@ -7,6 +7,7 @@ import (
 
 	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/common/lang"
+	"github.com/japannext/snooze/pkg/common/utils"
 )
 
 type Pattern struct {
@@ -113,17 +114,20 @@ func (p *Pattern) Process(ctx context.Context, item *models.Log) (match, reject 
 	}
 
 	// Group By
-	var groupByLabels = map[string]string{}
-	for label, tpl := range p.internal.groupBy {
-		value, err := tpl.Execute(ctx, item)
-		if err != nil {
-			log.Warnf("failed to execute template `%s`", p.GroupBy[label])
-			return
+	if len(p.internal.groupBy) > 0 {
+		var gr = &models.Group{Name: p.Name, Labels: make(map[string]string)}
+		for key, tpl := range p.internal.groupBy {
+			value, err := tpl.Execute(ctx, item)
+			if err != nil {
+				log.Warnf("failed to execute template `%s`", p.GroupBy[key])
+				return
+			}
+			log.Debugf("Adding groupBy: %s=%s", key, value)
+			gr.Labels[key] = value
 		}
-		log.Debugf("Adding groupBy: %s=%s", label, value)
-		groupByLabels[label] = value
+		gr.Hash = utils.ComputeHash(gr.Labels)
+		item.Groups = append(item.Groups, gr)
 	}
-	item.Group.Labels = groupByLabels
 
 	// Identity override
 	if len(p.internal.identityOverride) > 0 {

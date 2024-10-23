@@ -7,6 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/google/uuid"
 
+	"github.com/japannext/snooze/pkg/common/opensearch"
 	"github.com/japannext/snooze/pkg/common/utils"
 	"github.com/japannext/snooze/pkg/models"
 )
@@ -66,7 +67,7 @@ func alertHandler(ctx context.Context, alert PostableAlert) {
 			Description: description,
 			Summary: summary,
 		}
-		if err := storeQ.Publish(ctx, item); err != nil {
+		if err := storeQ.PublishData(ctx, opensearch.Create(models.ALERT_INDEX, item)); err != nil {
 			log.Warnf("failed to insert alert: %s", err)
 			return
 		}
