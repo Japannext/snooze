@@ -11,11 +11,13 @@ import (
 
 const X_SNOOZE_PUBLISHED_TIME = "X-Snooze-Published-Time"
 
-var inQueue = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-	Namespace: "snooze",
-	Name: "mq_inqueue",
-	Help: "time spent in-queue",
-}, []string{"stream_name"})
+var (
+	inQueue = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: "snooze",
+		Name: "mq_inqueue",
+		Help: "time spent in-queue",
+	}, []string{"stream_name"})
+)
 
 // Inject the publication time into the message header
 func injectPublishTime(header *nats.Header) {

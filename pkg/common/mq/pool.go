@@ -20,14 +20,24 @@ type WorkerPool struct {
 	done chan struct{}
 }
 
-func NewWorkerPool(wp *Sub, handler MessageHandler, workers int) *WorkerPool {
-	return &WorkerPool{
-		q: wp,
+func NewWorkerPool(sub *Sub, handler MessageHandler, workers int) *WorkerPool {
+	wp := &WorkerPool{
+		q: sub,
 		handler: handler,
 		pool: utils.NewPool(workers),
 		stopping: false,
 		done: make(chan struct{}),
 	}
+
+	return wp
+}
+
+var RETRY = &Retry{}
+
+type Retry struct {}
+
+func (r *Retry) Error() string {
+	return "retry"
 }
 
 func (wp *WorkerPool) Run() error {
@@ -52,7 +62,15 @@ func (wp *WorkerPool) Run() error {
 			}
 			go func() {
 				defer wp.pool.Release()
-				wp.handler(m.Context, m.Msg)
+				err := wp.handler(m.Context, m.Msg)
+				if err == RETRY {
+					m.Msg.Nak()
+					return
+				}
+				if err != nil {
+					m.Msg.Term()
+					return
+				}
 				m.Msg.Ack()
 			}()
 		}

@@ -15,6 +15,10 @@ import (
 var SEVERITY_TEXTS = []string{"emergency", "alert", "critical", "error", "warning", "notice", "informational", "debug"}
 var SEVERITY_NUMBERS = []int32{21, 19, 18, 17, 13, 10, 9, 5}
 
+var FACILITY_TEXTS = []string{"kern", "user", "mail", "daemon", "auth", "syslog", "lpr", "news",
+	"uupc", "cron", "authpriv", "ftp", "ntp", "security", "console", "solaris-cron",
+	"local0", "local1", "local2", "local3", "local4", "local5", "local6", "local7"}
+
 const (
 	SOURCE_KIND = "syslog"
 )
@@ -26,15 +30,16 @@ func parseLog(ctx context.Context, record format.LogParts) *models.Log {
 	item := &models.Log{}
 	item.Identity = make(map[string]string)
 	item.Labels = make(map[string]string)
+	item.TraceID = tracing.GetTraceID(ctx)
 
 	timestamp := record["timestamp"].(time.Time)
-	observedTimestamp := time.Now()
-	item.Timestamp.Actual = uint64(timestamp.UnixMilli())
-	item.Timestamp.Observed = uint64(observedTimestamp.UnixMilli())
-	if item.Timestamp.Actual == 0 {
+	observed := models.TimeNow()
+	item.Timestamp.Actual = models.Time{Time: timestamp}
+	item.Timestamp.Observed = observed
+	if item.Timestamp.Actual.IsZero() {
 		emptyTimestamp.WithLabelValues(SOURCE_KIND, config.InstanceName).Inc()
 	} else {
-		delay := observedTimestamp.Sub(timestamp).Seconds()
+		delay := observed.Sub(timestamp).Seconds()
 		sourceDelay.WithLabelValues(SOURCE_KIND, config.InstanceName).Observe(delay)
 	}
 
@@ -58,6 +63,11 @@ func parseLog(ctx context.Context, record format.LogParts) *models.Log {
 	item.Labels["syslog.client_ip"] = clientIP
 	if value, ok := extract(record, "tls_peer"); ok {
 		item.Labels["syslog.tls_peer"] = value
+	}
+
+	facilityNumber :=  record["facility"].(int)
+	if 0 <= facilityNumber && facilityNumber < len(FACILITY_TEXTS) {
+		item.Labels["syslog.facility"] = FACILITY_TEXTS[facilityNumber]
 	}
 
 	if value, ok := extract(record, "proc_id"); ok {

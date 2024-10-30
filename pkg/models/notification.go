@@ -11,9 +11,15 @@ type Notification struct {
 	Timestamp Timestamp `json:"timestamp"`
 	Destination Destination `json:"destination"`
 	Acknowledged bool `json:"acknowledged"`
-	AlertUID string `json:"alertUID,omitempty"`
-	LogUID string `json:"logUID,omitempty"`
-	Body map[string]string `json:"body"`
+
+	// The type of notification. Supported: "log", "alert"
+	Type string `json:"type"`
+	// The UID of the log of alert referenced by the notification
+	ItemID string `json:"itemID,omitempty"`
+	// The identity of the log/alert
+	Identity map[string]string `json:"identity,omitempty"`
+	// The message contained in the log or the summary of the alert
+	Message string `json:"message,omitempty"`
 
 	Labels map[string]string `json:"labels"`
 	DocumentationURL string `json:"documentationURL"`

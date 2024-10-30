@@ -16,6 +16,9 @@ type Grouping struct {
 	// Mutually exclusive with `group_by`.
 	GroupByMap string `yaml:"group_by_map"`
 
+	// A string to help formatting the group.
+	FormatLabels string `yaml:"format_labels"`
+
 	internal struct {
 		condition *lang.Condition
 		fields []*lang.Field

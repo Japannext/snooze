@@ -7,6 +7,9 @@ image:
 
 auth_backends: {}
 
+proxy: ""
+noProxy: ""
+
 cacertConfigMap: ""
 
 process:

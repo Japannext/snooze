@@ -70,7 +70,7 @@ func (pub *Pub) publish(ctx context.Context, span trace.Span, data []byte) error
 	tracing.SetAttribute(span, "nats.data", string(data))
 
 	if _, err := pub.client.js.PublishMsg(ctx, msg); err != nil {
-		span.RecordError(err)
+		tracing.Error(span, err)
 		return err
 	}
 	return nil
@@ -82,7 +82,7 @@ func (pub *Pub) PublishData(ctx context.Context, item Serializable) error {
 
 	data, err := item.Serialize()
 	if err != nil {
-		span.RecordError(err)
+		tracing.Error(span, err)
 		return err
 	}
 
@@ -99,7 +99,7 @@ func (pub *Pub) Publish(ctx context.Context, item interface{}) error {
 
 	data, err := json.Marshal(item)
 	if err != nil {
-		span.RecordError(err)
+		tracing.Error(span, err)
 		return err
 	}
 

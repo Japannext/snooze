@@ -16,6 +16,17 @@
   value: "http://nats:4222"
 {{- end }}
 
+{{- define "snooze.proxy.env" }}
+{{- if .Values.proxy }}
+- name: HTTP_PROXY
+  value: "{{ .Values.proxy }}"
+- name: HTTPS_PROXY
+  value: "{{ .Values.proxy }}"
+- name: NO_PROXY
+  value: "{{ .Values.noProxy }}"
+{{- end }}
+{{- end }}
+
 {{- define "snooze.image" }}
 {{- if .Values.image.digest }}
 {{ .Values.image.repo }}/snooze@{{ .Values.image.digest }}

@@ -7,14 +7,20 @@ import (
 	"fmt"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/japannext/snooze/pkg/models"
 	"github.com/nats-io/nats.go/jetstream"
+
+	"github.com/japannext/snooze/pkg/models"
+	"github.com/japannext/snooze/pkg/common/tracing"
+	"github.com/japannext/snooze/pkg/common/opensearch"
 )
 
-func handler(ctx context.Context, msg jetstream.Msg) error {
+func notificationHandler(ctx context.Context, msg jetstream.Msg) error {
+	ctx, span := tracer.Start(ctx, "handler")
+	defer span.End()
 
     var notification *models.Notification
     if err := json.Unmarshal(msg.Data(), &notification); err != nil {
+		tracing.Error(span, err)
         return err
     }
 	profileName := notification.Destination.Profile
@@ -22,13 +28,25 @@ func handler(ctx context.Context, msg jetstream.Msg) error {
 	if !found {
 		return fmt.Errorf("Failed to find profile '%s'", profileName)
 	}
+	/*
 	text, err := computeTemplate(profile, notification)
 	if err != nil {
 		log.Warnf("error computing template: %s", err)
+		tracing.Error(span, err)
 		return err
 	}
-	if err := client.SendNewMessage(profile.Space, string(text)); err != nil {
+	*/
+
+	msgCard := GetCard(notification)
+	if err := client.SendMessage(ctx, profile.Space, msgCard); err != nil {
 		log.Warnf("error sending message: %s", err)
+		tracing.Error(span, err)
+		return err
+	}
+
+	if err := storeQ.PublishData(ctx, opensearch.Create(models.NOTIFICATION_INDEX, notification)); err != nil {
+		log.Warnf("failed to publish notification")
+		tracing.Error(span, err)
 		return err
 	}
 	return nil

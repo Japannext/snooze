@@ -6,7 +6,8 @@ import (
 )
 
 type Notification struct {
-	If       string   `yaml:"if"`
+	Name string	`yaml:"name"`
+	If string `yaml:"if"`
 	Destinations []models.Destination `yaml:"destinations"`
 
 	internal struct {
@@ -16,6 +17,7 @@ type Notification struct {
 
 func (notif *Notification) Load() {
 	var err error
+	log.Debugf("Loading notification '%s'", notif.Name)
 	if notif.If != "" {
 		notif.internal.condition, err = lang.NewCondition(notif.If)
 		if err != nil {

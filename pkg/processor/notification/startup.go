@@ -13,7 +13,7 @@ var notifications []*Notification
 var defaultDestinations []models.Destination
 var log *logrus.Entry
 var tracer trace.Tracer
-var notifyQ *mq.Pub
+var notifyQ, storeQ *mq.Pub
 
 
 func Startup(notifs []*Notification, defaults []models.Destination) {
@@ -21,10 +21,12 @@ func Startup(notifs []*Notification, defaults []models.Destination) {
 	tracer = otel.Tracer("snooze")
 
 	notifyQ = mq.NotifyPub()
+	storeQ = mq.StorePub().WithIndex(models.NOTIFICATION_INDEX)
 
 	defaultDestinations = defaults
 
 	for _, notif := range notifs {
 		notif.Load()
+		notifications = append(notifications, notif)
 	}
 }

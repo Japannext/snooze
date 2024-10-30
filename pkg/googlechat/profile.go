@@ -9,8 +9,8 @@ import (
 )
 
 const DEFAULT_TEMPLATE_TEXT = `
-At @{{ .TimestampMillis }}:
-{{ .Body }}
+{{ .Timestamp.Display }}:
+{{ .Body.message }}
 {{ if .DocumentationURL }}Doc: {{ .DocumentationURL }}{{ end }}
 `
 

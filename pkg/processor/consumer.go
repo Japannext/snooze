@@ -68,9 +68,11 @@ func unmarshalLog(msg jetstream.Msg) *models.Log {
 	data := msg.Data()
 	if err := json.Unmarshal(data, &item); err != nil {
 		log.Warnf("invalid JSON while parsing log: %s", err)
-		now := uint64(time.Now().UnixMilli())
 		item = models.Log{
-			Timestamp: models.Timestamp{Observed: now, Display: now},
+			Timestamp: models.Timestamp{
+				Observed: models.TimeNow(),
+				Display: models.TimeNow(),
+			},
 			Identity: map[string]string{"snooze.internal": "error"},
 			Message: string(data),
 			Error: err.Error(),
@@ -82,6 +84,8 @@ func unmarshalLog(msg jetstream.Msg) *models.Log {
 func processLog(ctx context.Context, item *models.Log) {
 	ctx, span := tracer.Start(ctx, "processLog")
 	defer span.End()
+
+	start := time.Now()
 
 	tracing.SetLog(span, item)
 
@@ -96,4 +100,5 @@ func processLog(ctx context.Context, item *models.Log) {
 	store.Process(ctx, item)
 
 	processedLogs.Inc()
+	processTime.Observe(time.Since(start).Seconds())
 }

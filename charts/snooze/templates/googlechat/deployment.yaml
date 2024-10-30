@@ -41,11 +41,14 @@ spec:
             memory: 100Mi
         env:
         {{- include "snooze.nats.env" . | nindent 8 }}
+        {{- include "snooze.proxy.env" . | nindent 8 }}
         {{- if .Values.cacertConfigMap }}
         - name: SNOOZE_CACERT
           value: "/cacert/ca.crt"
         - name: GOOGLECHAT_SA_PATH
           value: /sa/sa.json
+        #- name: GOOGLE_APPLICATION_CREDENTIALS
+        #  value: /sa/sa.json
         {{- end }}
         envFrom:
         - configMapRef:
@@ -55,6 +58,9 @@ spec:
           mountPath: /config
         - name: sa
           mountPath: /sa
+        - name: cacert
+          mountPath: /etc/ssl/certs/ca-certificates.crt
+          subPath: ca.crt
         {{- if .Values.cacertConfigMap }}
         - name: cacert
           mountPath: /cacert
@@ -95,5 +101,5 @@ spec:
       {{- with .Values.cacertConfigMap }}
       - name: cacert
         configMap:
-          name: "{{ . }}"
+          name: "my-ca"
       {{- end }}

@@ -24,6 +24,9 @@ type Config struct {
 	AuthConfig string `mapstructure:"APISERVER_AUTH_CONFIG"`
 	// Path to a CORS configuration
 	CorsConfig string `mapstructure:"APISERVER_CORS_CONFIG"`
+
+	// A URL for Jaeger/tracing app, so long as it reacts to /trace/<traceID>
+	TraceURL string `mapstructure:"TRACE_URL"`
 }
 
 type AuthConfig struct {

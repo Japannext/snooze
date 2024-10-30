@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 	"encoding/json"
+	"strconv"
 
 	redisv9 "github.com/redis/go-redis/v9"
 	"github.com/google/uuid"
@@ -12,6 +13,7 @@ import (
 	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/common/redis"
 	"github.com/japannext/snooze/pkg/common/opensearch"
+	"github.com/japannext/snooze/pkg/common/tracing"
 	"github.com/japannext/snooze/pkg/common/utils"
 )
 
@@ -43,7 +45,7 @@ type lock struct {
 
 func (c *counter) extract() error {
 	if c.cmd == nil {
-		return nil
+		return fmt.Errorf("No cmd provided (nil) for '%s'", c.key)
 	}
 	value, err := c.cmd.Uint64()
 	if err == redis.Nil {
@@ -122,6 +124,7 @@ func Process(ctx context.Context, item *models.Log) error {
 	_, err := pipe.Exec(ctx)
 	if err != nil && err != redis.Nil {
 		log.Warnf("failed to get ratelimits: %s", err)
+		tracing.Error(span, err)
 		return err
 	}
 
@@ -133,23 +136,33 @@ func Process(ctx context.Context, item *models.Log) error {
 
 		if err := res.i0.extract(); err != nil {
 			log.Warnf("unexpected error while getting i0 value: %s", err)
+			tracing.Error(span, err)
 			continue
 		}
 		if err := res.i1.extract(); err != nil {
 			log.Warnf("unexpected error while getting i1 value: %s", err)
+			tracing.Error(span, err)
 			continue
 		}
 		if err := res.i2.extract(); err != nil {
 			log.Warnf("unexpected error while getting i2 value: %s", err)
+			tracing.Error(span, err)
 			continue
 		}
+
+		tracing.SetAttribute(span, fmt.Sprintf("ratelimit.%s.i2", rate.Name), strconv.Itoa(int(i2.value)))
+		tracing.SetAttribute(span, fmt.Sprintf("ratelimit.%s.i1", rate.Name), strconv.Itoa(int(i1.value)))
+		tracing.SetAttribute(span, fmt.Sprintf("ratelimit.%s.i0", rate.Name), strconv.Itoa(int(i0.value)))
 
 		limit := rate.Burst
 
 		// Rate-limit case
 		if i0.value >= limit || i1.value >= limit { // rate limiting
+			tracing.SetAttribute(span, fmt.Sprintf("ratelimit.%s.decision", rate.Name), "drop")
 			item.Mute.Drop(fmt.Sprintf("Dropped by ratelimit '%s'", rate.Name))
 			rateLimitedLogs.WithLabelValues(rate.Name).Inc()
+		} else {
+			tracing.SetAttribute(span, fmt.Sprintf("ratelimit.%s.decision", rate.Name), "store")
 		}
 
 		id := lock.cmd.String()
@@ -165,6 +178,7 @@ func Process(ctx context.Context, item *models.Log) error {
 			err := storeQ.PublishData(ctx, opensearch.Create(models.RATELIMIT_INDEX, item))
 			if err != nil {
 				log.Warnf("failed to publish ratelimit '%s'", rate.Name)
+				tracing.Error(span, err)
 			}
 		}
 
@@ -175,6 +189,7 @@ func Process(ctx context.Context, item *models.Log) error {
 			doc, err := json.Marshal(&models.Ratelimit{EndsAt: now()})
 			if err != nil {
 				// TODO
+				tracing.Error(span, err)
 			}
 			update := opensearch.UpdateWrapper{
 				Doc: doc,
@@ -182,21 +197,39 @@ func Process(ctx context.Context, item *models.Log) error {
 			err = storeQ.PublishData(ctx, opensearch.Update(models.RATELIMIT_INDEX, id, update))
 			if err != nil {
 				log.Warnf("failed to update ratelimit '%s'", rate.Name)
+				tracing.Error(span, err)
 			}
 		}
 	}
 
 	// 4. Increment value for rate
+	var incrCmds []*redisv9.IntCmd
+	var expireCmds []*redisv9.BoolCmd
 	for _, rate := range rr {
-		res := results[rate.Name]
-		i0 := res.i0
+		i0 := results[rate.Name].i0
 
-		pipe.Incr(ctx, i0.key)
-		pipe.ExpireNX(ctx, i0.key, rate.Period*3)
+		incrCmd := pipe.Incr(ctx, i0.key)
+		expireCmd := pipe.ExpireNX(ctx, i0.key, rate.Period*3)
+		incrCmds = append(incrCmds, incrCmd)
+		expireCmds = append(expireCmds, expireCmd)
+		tracing.SetAttribute(span, fmt.Sprintf("ratelimit.%s.incr_key", rate.Name), i0.key)
 	}
 	if _, err := pipe.Exec(ctx); err != nil {
 		log.Warnf("failed to increment ratelimits: %s", err)
+		tracing.Error(span, err)
 		return err
+	}
+	for _, incrCmd := range incrCmds {
+		if err := incrCmd.Err(); err != nil {
+			tracing.Error(span, err)
+			log.Warnf("failed to increment in redis: %s", err)
+		}
+	}
+	for _, expireCmd := range expireCmds {
+		if err := expireCmd.Err(); err != nil {
+			tracing.Error(span, err)
+			log.Warnf("failed to set expire in redis: %s", err)
+		}
 	}
 
 	return nil

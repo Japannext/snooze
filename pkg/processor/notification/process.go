@@ -3,10 +3,10 @@ package notification
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/japannext/snooze/pkg/models"
-	"github.com/japannext/snooze/pkg/common/utils"
-	"github.com/japannext/snooze/pkg/common/opensearch"
+	"github.com/japannext/snooze/pkg/common/tracing"
 )
 
 func Process(ctx context.Context, item *models.Log) error {
@@ -14,54 +14,61 @@ func Process(ctx context.Context, item *models.Log) error {
 	defer span.End()
 
 	if item.Mute.SkipNotification {
+		tracing.SetAttribute(span, "notification.decision", "mute")
 		return nil
 	}
 
 	// A set is necessary to avoid sending duplicates when 2 rules match
 	// the same destination.
-	var destinations = utils.NewOrderedSet[models.Destination]()
-	var merr = utils.NewMultiError("Failed to notify item trace_id=%s.")
+	// var destinations = utils.NewOrderedSet[models.Destination]()
+	var destinations = make(map[models.Destination]bool)
+
+	tracing.SetAttribute(span, "notifications.number", strconv.Itoa(len(notifications)))
 
 	for _, notif := range notifications {
 		if notif.internal.condition != nil {
 			match, err := notif.internal.condition.MatchLog(ctx, item)
 			if err != nil {
+				tracing.Error(span, err)
 				return err
 			}
 			if !match {
+				tracing.SetAttribute(span, fmt.Sprintf("notification.%s.match", notif.Name), "false")
 				continue
 			}
-			log.Debugf("Matched notif '%s', destination(s): %s", notif.If, notif.Destinations)
+			log.Debugf("Matched notif '%s', destination(s): %s", notif.Name, notif.Destinations)
 		}
-		destinations.AppendMany(notif.Destinations)
-	}
-	// Defaults
-	if len(destinations.Items()) == 0 {
-		log.Debugf("Match no notif, default destinations: %s", defaultDestinations)
-		destinations.AppendMany(defaultDestinations)
-	}
+		tracing.SetAttribute(span, fmt.Sprintf("notification.%s.match", notif.Name), "true")
 
-	for _, dest := range destinations.Items() {
-		log.Debugf("sending to destination `%s`", dest)
-		notification := &models.Notification{
-			Timestamp: item.Timestamp,
-			Destination: dest,
-			LogUID: item.ID,
-			Body: map[string]string{
-				"message": item.Message,
-			},
-		}
-		subject := fmt.Sprintf("NOTIFY.%s", dest.Queue)
-		if dest.Queue != "dummy" {
-			data := opensearch.Create(models.NOTIFICATION_INDEX, notification)
-			if err := notifyQ.WithSubject(subject).Publish(ctx, data); err != nil {
-				log.Warnf("failed to notify: %s", err)
+		for _, dest := range notif.Destinations {
+			if dest.Queue == "dummy" {
+				continue
 			}
-		}
-	}
+			// Mechanism to avoid send 2 notifications to the same destination
+			// if it matches multiple times
+			if _, found := destinations[dest]; found {
+				continue
+			}
+			destinations[dest] = true
 
-	if merr.HasErrors() {
-		return merr
+			notification := &models.Notification{
+				Type: "log",
+				Destination: dest,
+				Timestamp: item.Timestamp,
+				Identity: item.Identity,
+				ItemID: item.ID,
+				Message: item.Message,
+			}
+
+			// Send to notification queue
+			subject := fmt.Sprintf("NOTIFY.%s", dest.Queue)
+			if err := notifyQ.WithSubject(subject).Publish(ctx, notification); err != nil {
+				log.Warnf("failed to queue notification to '%s:%s'", dest.Queue, dest.Profile)
+				tracing.SetAttribute(span, fmt.Sprintf("notification.%s.%s:%s", notif.Name, dest.Queue, dest.Profile), "failed")
+				tracing.Error(span, err)
+			}
+			tracing.SetAttribute(span, fmt.Sprintf("notification.%s.%s:%s", notif.Name, dest.Queue, dest.Profile), "sent")
+		}
 	}
 
 	return nil
