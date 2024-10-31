@@ -16,6 +16,8 @@ type Notification struct {
 	Type string `json:"type"`
 	// The UID of the log of alert referenced by the notification
 	ItemID string `json:"itemID,omitempty"`
+	// The source of the notification (log/alert)
+	Source Source `json:"source"`
 	// The identity of the log/alert
 	Identity map[string]string `json:"identity,omitempty"`
 	// The message contained in the log or the summary of the alert
@@ -30,6 +32,19 @@ type Notification struct {
 
 func (item *Notification) GetID() string { return item.ID }
 func (item *Notification) SetID(id string) { item.ID = id }
+
+// Used by template systems in transforms/profiles/etc
+func (item *Notification) Context() map[string]interface{} {
+	return map[string]interface{}{
+		"type": item.Type,
+		"timestamp": item.Timestamp,
+		"source": item.Source,
+		"identity": item.Identity,
+		"labels": item.Labels,
+		"message": item.Message,
+		"destination": item.Destination,
+	}
+}
 
 type Destination struct {
 	// Name of the notification queue it will be sent to

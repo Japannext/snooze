@@ -6,10 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	dsl "github.com/mottaquikarim/esquerydsl"
 	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
 
-	"github.com/japannext/snooze/pkg/models"
+	"github.com/japannext/snooze/pkg/common/opensearch/dsl"
 )
 
 type AggregationResult struct {
@@ -23,7 +22,7 @@ type AggregationBucket struct {
 	DocCount int `json:"doc_count"`
 }
 
-func Aggregate[T models.HasID](ctx context.Context, index string, params *opensearchapi.SearchParams, doc *dsl.QueryDoc) (map[string]AggregationResult, error) {
+func Aggregate(ctx context.Context, index string, params *opensearchapi.SearchParams, doc *dsl.AggregationRequest) (*opensearchapi.SearchResp, error) {
     body, err := json.Marshal(doc)
     if err != nil {
         return nil, fmt.Errorf("invalid request body (%+v): %w", doc, err)
@@ -43,10 +42,12 @@ func Aggregate[T models.HasID](ctx context.Context, index string, params *opense
 	if len(resp.Aggregations) == 0 {
 		// TODO
 	}
-	var agg map[string]AggregationResult
+	/*
+	var agg dsl.AggregationResponse
 	if err := json.Unmarshal(resp.Aggregations, &agg); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal message %s: %w", resp.Aggregations, err)
 	}
-	return agg, nil
-}
+	*/
 
+	return resp, nil
+}

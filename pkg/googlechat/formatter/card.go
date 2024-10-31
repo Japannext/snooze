@@ -1,4 +1,4 @@
-package googlechat
+package formatter
 
 import (
 	"fmt"
@@ -8,8 +8,14 @@ import (
 	"github.com/japannext/snooze/pkg/models"
 )
 
-func GetCard(item *models.Notification) *chat.Message {
+// Format things within a googlechat CardV2
+type Card struct {}
 
+func NewCard() *Card {
+	return &Card{}
+}
+
+func (p *Card) Format(item *models.Notification) (*chat.Message, error) {
 	decoratedText := getDecoratedText(item)
 
 	footer := &chat.GoogleAppsCardV1CardFixedFooter{
@@ -17,6 +23,7 @@ func GetCard(item *models.Notification) *chat.Message {
 			Text: "Acknowledge",
 			AltText: "Acknowledge this notification",
 			Color: &chat.Color{Green: 0.8},
+			Icon: materialIcon("check"),
 		},
 		SecondaryButton: &chat.GoogleAppsCardV1Button{
 			Text: "Snooze",
@@ -39,13 +46,8 @@ func GetCard(item *models.Notification) *chat.Message {
 						{
 							DecoratedText: decoratedText,
 						},
-					},
-				},
-				{
-					Header: "Message",
-					Widgets: []*chat.GoogleAppsCardV1Widget{
 						{
-							TextParagraph: &chat.GoogleAppsCardV1TextParagraph{Text: item.Message},
+							TextParagraph: &chat.GoogleAppsCardV1TextParagraph{Text: fmt.Sprintf("<b>Message:</b> %s", item.Message)},
 						},
 					},
 				},
@@ -56,8 +58,7 @@ func GetCard(item *models.Notification) *chat.Message {
 
 	return &chat.Message{
 		CardsV2: []*chat.CardWithId{cardv2},
-	}
-
+	}, nil
 }
 
 // Use the "identity" of the notification to determine the decorated text labels
@@ -86,11 +87,14 @@ func getDecoratedText(item *models.Notification) *chat.GoogleAppsCardV1Decorated
 	icon, top, mid, bottom := getIdentityLabels(item.Identity)
 
 	return &chat.GoogleAppsCardV1DecoratedText{
-		Icon: &chat.GoogleAppsCardV1Icon{
-			MaterialIcon: &chat.GoogleAppsCardV1MaterialIcon{Name: icon},
-		},
+		Icon: materialIcon(icon),
 		TopLabel: top,
 		Text: mid,
 		BottomLabel: bottom,
 	}
 }
+
+func materialIcon(name string) *chat.GoogleAppsCardV1Icon {
+	return &chat.GoogleAppsCardV1Icon{MaterialIcon: &chat.GoogleAppsCardV1MaterialIcon{Name: name}}
+}
+

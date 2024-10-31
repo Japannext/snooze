@@ -1,5 +1,7 @@
 package models
 
+const GROUP_INDEX = "v2-groups"
+
 type Group struct {
 	Name string `json:"name"`
 	// Hash value of the key-value

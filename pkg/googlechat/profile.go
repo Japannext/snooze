@@ -2,19 +2,14 @@ package googlechat
 
 import (
     "os"
-    "text/template"
 
     log "github.com/sirupsen/logrus"
     "gopkg.in/yaml.v3"
+	chat "google.golang.org/api/chat/v1"
+
+	"github.com/japannext/snooze/pkg/googlechat/formatter"
+	"github.com/japannext/snooze/pkg/models"
 )
-
-const DEFAULT_TEMPLATE_TEXT = `
-{{ .Timestamp.Display }}:
-{{ .Body.message }}
-{{ if .DocumentationURL }}Doc: {{ .DocumentationURL }}{{ end }}
-`
-
-var defaultTemplate *template.Template
 
 type Profiles struct {
 	Profiles []*Profile `yaml:"profiles"`
@@ -23,26 +18,39 @@ type Profiles struct {
 type Profile struct {
     Name string `yaml:"name"`
 	Space string `yaml:"space"`
-	Template string `yaml:"template"`
+	Timezone string `yaml:"timezone"`
+
+	Format struct {
+		Kind string `yaml:"kind"`
+		TemplateOptions *formatter.TemplateOptions `yaml:"-,squash"`
+	} `yaml:"format"`
+
 	Batch bool `yaml:"batch"`
 
-    internal struct {
-		template *template.Template
-		isDefault bool
-    }
+	internal struct {
+		formatter formatter.Interface
+	}
 }
 
 func (p *Profile) Load() {
-	if p.Template != "" {
-		var err error
-		p.internal.template, err = template.New("template").Parse(p.Template)
-		if err != nil {
-			log.Fatalf("invalid template for profile '%s': %s", p.Name, err)
-		}
-	} else {
-		p.internal.template = defaultTemplate
-		p.internal.isDefault = true
+	switch p.Format.Kind {
+	case "v1":
+		p.internal.formatter = formatter.NewV1()
+	case "template":
+		p.internal.formatter = formatter.NewTemplate(p.Format.TemplateOptions)
+	case "card":
+		p.internal.formatter = formatter.NewCard()
+	default:
+		p.internal.formatter = formatter.NewV1()
 	}
+}
+
+func (p *Profile) FormatToMessage(item *models.Notification) *chat.Message {
+	msg, err := p.internal.formatter.Format(item)
+	if err != nil {
+		return formatter.FormatWithoutFail(item)
+	}
+	return msg
 }
 
 var profiles = map[string]*Profile{}
@@ -55,11 +63,6 @@ func loadProfiles() {
     var profileConfig Profiles
     if err := yaml.Unmarshal(data, &profileConfig); err != nil {
         log.Fatal(err)
-    }
-
-    defaultTemplate, err = template.New("default_template").Parse(DEFAULT_TEMPLATE_TEXT)
-    if err != nil {
-        log.Fatalf("default template failed to be parsed: %s", err)
     }
 
     for _, profile := range profileConfig.Profiles {

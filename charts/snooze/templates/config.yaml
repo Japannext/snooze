@@ -18,3 +18,7 @@ data:
   # Opentelemetry Tracing
   OTEL_EXPORTER_OTLP_ENDPOINT: "{{ .Values.tracing.endpoint }}"
   {{- end }}
+  {{- if .Values.timezone }}
+  # Timezone
+  TZ: "{{ .Values.timezone }}"
+  {{- end }}

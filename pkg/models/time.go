@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"strconv"
 	"time"
+
+	// Important for making timezone work as expected
+	_ "time/tzdata"
 )
 
 // Wrapper for marshal/unmarshal all times in the same way
@@ -21,7 +24,7 @@ func (t *Time) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("failed to unmarshal time `%s`: %s", data, err)
 	}
 	tt := time.UnixMilli(int64(i))
-	t.Time = tt
+	t.Time = tt.Local()
 	return nil
 }
 

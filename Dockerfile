@@ -29,4 +29,5 @@ RUN \
 FROM scratch AS snooze
 USER 1000
 COPY --from=build --chown=1000 --chmod=755 /build/snooze /snooze
+
 ENTRYPOINT ["/snooze"]

@@ -1,7 +1,6 @@
 package googlechat
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -28,17 +27,9 @@ func notificationHandler(ctx context.Context, msg jetstream.Msg) error {
 	if !found {
 		return fmt.Errorf("Failed to find profile '%s'", profileName)
 	}
-	/*
-	text, err := computeTemplate(profile, notification)
-	if err != nil {
-		log.Warnf("error computing template: %s", err)
-		tracing.Error(span, err)
-		return err
-	}
-	*/
 
-	msgCard := GetCard(notification)
-	if err := client.SendMessage(ctx, profile.Space, msgCard); err != nil {
+	chatMsg := profile.FormatToMessage(notification)
+	if err := client.SendMessage(ctx, profile.Space, chatMsg); err != nil {
 		log.Warnf("error sending message: %s", err)
 		tracing.Error(span, err)
 		return err
@@ -50,21 +41,4 @@ func notificationHandler(ctx context.Context, msg jetstream.Msg) error {
 		return err
 	}
 	return nil
-}
-
-func computeTemplate(profile *Profile, notification *models.Notification) ([]byte, error) {
-    var buf bytes.Buffer
-    err := profile.internal.template.Execute(&buf, notification)
-    if err != nil {
-        if profile.internal.isDefault {
-            return []byte(""), err
-        } else {
-            log.Warnf("failed to execute template for profile '%s'. Fall-back to default template", profile.Name)
-            buf = bytes.Buffer{}
-            if err := defaultTemplate.Execute(&buf, notification); err != nil {
-                return []byte(""), err
-            }
-        }
-    }
-    return buf.Bytes(), nil
 }
