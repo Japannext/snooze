@@ -3,7 +3,7 @@ package models
 const ALERT_INDEX = "v2-alerts"
 
 type Alert struct {
-	ID string `json:"_id,omitempty"`
+	Base
 
 	Hash string `json:"hash"`
 
@@ -12,8 +12,8 @@ type Alert struct {
 	Identity map[string]string `json:"identity"`
 
 	// Timestamps
-	StartsAt uint64 `json:"startsAt"`
-	EndsAt uint64 `json:"endsAt"`
+	StartAt Time `json:"startAt"`
+	EndAt Time `json:"endAt"`
 
 	// Name of the alert
 	AlertName string `json:"alertName"`
@@ -41,13 +41,10 @@ type Alert struct {
 	Mute Mute `json:"mute"`
 }
 
-func (item *Alert) GetID() string { return item.ID }
-func (item *Alert) SetID(id string) { item.ID = id }
-
 type AlertStatus struct {
 	ID string `json:"id"`
-	LastCheck uint64 `json:"lastCheck"`
-	NextCheck uint64 `json:"nextCheck"`
+	LastCheck Time `json:"lastCheck"`
+	NextCheck Time `json:"nextCheck"`
 }
 
 type AlertUpdate struct {

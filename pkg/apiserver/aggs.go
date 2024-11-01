@@ -29,7 +29,9 @@ func getLogGroups(c *gin.Context) {
 	c.BindQuery(&timerange)
 	c.BindQuery(&groupBy)
 
-	filter := dsl.NewTermQuery("groups.name.keyword", groupBy.Group)
+	filter := &dsl.Query{}
+	filter.WithTerm("groups.name.keyword", groupBy.Group)
+
 	doc := dsl.NewAggregationQuery("groups.hash.keyword", filter)
 	params := &opensearchapi.SearchParams{}
 

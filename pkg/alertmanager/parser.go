@@ -8,6 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/japannext/snooze/pkg/common/utils"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 const IDENTITY_PREFIX = "identity__"
@@ -46,14 +47,11 @@ func parseSeverity(labels map[string]string) (string, int32) {
 	return text, number
 }
 
-func timeTextToMillis(text string) uint64 {
-	var millis uint64
-	if text != "" {
-		t, err := time.Parse(TIME_LAYOUT, text)
-		if err != nil {
-			log.Warnf("failed to parse time format `%s`: %s", text, err)
-		}
-		millis = uint64(t.UnixMilli())
+func parseTime(text string) models.Time {
+	t, err := time.Parse(TIME_LAYOUT, text)
+	if err != nil {
+		log.Warnf("failed to parse time format `%s`: %s", text, err)
+		return models.Time{}
 	}
-	return millis
+	return models.Time{Time: t}
 }

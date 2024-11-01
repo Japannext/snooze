@@ -32,8 +32,8 @@ func alertHandler(ctx context.Context, alert PostableAlert) {
 		alertGroup = pop(labels, "alertgroup")
 		hash = utils.ComputeHash(labels)
 		key = fmt.Sprintf("alertmanager/%s/%s/%s", alertGroup, alertName, hash)
-		startMillis = timeTextToMillis(alert.StartsAt)
-		endMillis = timeTextToMillis(alert.EndsAt)
+		startTime = parseTime(alert.StartsAt)
+		endTime = parseTime(alert.EndsAt)
 	)
 
 	status, err := getAlertStatus(ctx, key)
@@ -48,33 +48,33 @@ func alertHandler(ctx context.Context, alert PostableAlert) {
 			annotations = alert.Annotations
 			description = pop(annotations, "description")
 			summary = pop(annotations, "summary")
-			text, number = parseSeverity(labels)
 		)
 
 		id := uuid.NewString()
 
-		item := &models.Alert{
-			ID: id,
-			Hash: hash,
-			Source: models.Source{Kind: ALERTMANAGER_KIND, Name: config.InstanceName},
-			Identity: parseIdentity(labels),
-			StartsAt: startMillis,
-			AlertName: alertName,
-			AlertGroup: alertGroup,
-			SeverityText: text,
-			SeverityNumber: number,
-			Labels: alert.Labels,
-			Description: description,
-			Summary: summary,
-		}
+		item := &models.Alert{}
+
+		item.SetID(id)
+		item.Hash = hash
+		item.Source.Kind = ALERTMANAGER_KIND
+		item.Source.Name = config.InstanceName
+		item.Identity = parseIdentity(labels)
+		item.StartAt = startTime
+		item.AlertName = alertName
+		item.AlertGroup = alertGroup
+		item.SeverityText, item.SeverityNumber = parseSeverity(labels)
+		item.Labels = alert.Labels
+		item.Description = description
+		item.Summary = summary
+
 		if err := storeQ.PublishData(ctx, opensearch.Create(models.ALERT_INDEX, item)); err != nil {
 			log.Warnf("failed to insert alert: %s", err)
 			return
 		}
 		status = &models.AlertStatus{
 			ID: id,
-			LastCheck: startMillis,
-			NextCheck: endMillis,
+			LastCheck: startTime,
+			NextCheck: endTime,
 		}
 		if err := setAlertStatus(ctx, key, status); err != nil {
 			log.Warnf("failed to set alert status")
@@ -87,8 +87,8 @@ func alertHandler(ctx context.Context, alert PostableAlert) {
 	// Update status
 	newStatus := &models.AlertStatus{
 		ID: status.ID,
-		LastCheck: startMillis,
-		NextCheck: endMillis,
+		LastCheck: startTime,
+		NextCheck: endTime,
 	}
 	if err := setAlertStatus(ctx, key, newStatus); err != nil {
 		log.Warnf("failed to set alert status")

@@ -3,7 +3,7 @@ package models
 const LOG_INDEX = "v2-logs"
 
 type Log struct {
-	ID string `json:"_id,omitempty"`
+	Base
 
 	// Several timestamps important to the log.
 	Timestamp Timestamp `json:"timestamp"`
@@ -49,9 +49,6 @@ type Log struct {
 	// Mute the alert. This may skip notifications, or skip even display
 	Mute Mute `json:"mute,omitempty"`
 }
-
-func (item *Log) GetID() string { return item.ID }
-func (item *Log) SetID(id string) { item.ID = id }
 
 type HasContext interface {
 	Context() map[string]interface{}

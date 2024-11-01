@@ -9,6 +9,7 @@ import (
 	"github.com/japannext/snooze/pkg/common/logging"
 	"github.com/japannext/snooze/pkg/common/opensearch"
 	"github.com/japannext/snooze/pkg/common/redis"
+	"github.com/japannext/snooze/pkg/common/mq"
 	"github.com/japannext/snooze/pkg/common/tracing"
 
 	"github.com/gin-gonic/gin"
@@ -16,6 +17,7 @@ import (
 )
 
 var tracer trace.Tracer
+var storeQ *mq.Pub
 
 // We use a route registration array so that we can
 // declare routes in the same file as the route, and avoid
@@ -31,9 +33,11 @@ func Startup() *daemon.DaemonManager {
 	initMetrics()
 	opensearch.Init()
 	redis.Init()
+	mq.Init()
 
 	tracing.Init("snooze-apiserver")
 	tracer = otel.Tracer("snooze")
+	storeQ = mq.StorePub()
 
 	dm := daemon.NewDaemonManager()
 	srv := daemon.NewHttpDaemon()

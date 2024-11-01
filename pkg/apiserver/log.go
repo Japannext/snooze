@@ -5,52 +5,50 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
-	dsl "github.com/mottaquikarim/esquerydsl"
 
 	"github.com/japannext/snooze/pkg/common/opensearch"
 	"github.com/japannext/snooze/pkg/models"
 )
 
-type Search struct {
-	Text string `form:"search"`
-}
-
-func searchLogs(c *gin.Context) {
-	ctx, span := tracer.Start(c.Request.Context(), "searchLogs")
+func getLogs(c *gin.Context) {
+	ctx, span := tracer.Start(c.Request.Context(), "getLogs")
 	defer span.End()
-	var (
-		start = time.Now()
-		pagination = models.NewPagination()
-		timerange *models.TimeRange
-		search Search
-	)
-	c.BindQuery(&pagination)
-	c.BindQuery(&timerange)
-	c.BindQuery(&search)
 
-	doc := &dsl.QueryDoc{}
-	params := &opensearchapi.SearchParams{}
+	start := time.Now()
 
-	if pagination.OrderBy == "" {
-		pagination.OrderBy = "timestamp.display"
-	}
-	opensearch.AddTimeRange(doc, timerange)
-	opensearch.AddPagination(doc, params, pagination)
-	opensearch.AddSearch(doc, search.Text)
+    var req *opensearch.SearchRequest[*models.Log]
+    req.Index = models.LOG_INDEX
 
-	items, err := opensearch.Search[*models.Log](ctx, models.LOG_INDEX, params, doc)
-	if err != nil {
-		c.String(http.StatusInternalServerError, "Error getting logs for search='%s': %s", search.Text, err)
-		return
-	}
+    // Pagination
+    pagination := models.NewPagination()
+    c.BindQuery(&pagination)
+    if pagination.OrderBy == "" {
+        pagination.OrderBy = "timestamp.display"
+    }
+    req.WithPagination(pagination)
 
-	c.JSON(http.StatusOK, items)
+    // Timerange
+    timerange := &models.TimeRange{}
+    c.BindQuery(&timerange)
+    req.WithTimeRange("timestamp.display", timerange)
+
+    // Search
+    search := &models.Search{}
+    c.BindQuery(&search)
+    req.WithSearch(search.Text)
+
+    items, err := req.Do(ctx)
+    if err != nil {
+        c.String(http.StatusInternalServerError, "Error getting log: %s", err)
+        return
+    }
+
+    c.JSON(http.StatusOK, items)
 	logSearchDuration.Observe(time.Since(start).Seconds())
 }
 
 func init() {
 	routes = append(routes, func(r *gin.Engine) {
-		r.GET("/api/logs", searchLogs)
+		r.GET("/api/logs", getLogs)
 	})
 }

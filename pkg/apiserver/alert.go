@@ -4,37 +4,44 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
-	dsl "github.com/mottaquikarim/esquerydsl"
 
 	"github.com/japannext/snooze/pkg/common/opensearch"
 	"github.com/japannext/snooze/pkg/common/redis"
 	"github.com/japannext/snooze/pkg/models"
 )
 
-func listAlerts(c *gin.Context) {
-	ctx, span := tracer.Start(c.Request.Context(), "listAlerts")
+func getAlerts(c *gin.Context) {
+	ctx, span := tracer.Start(c.Request.Context(), "getAlerts")
 	defer span.End()
 
-	var pagination = models.NewPagination()
+	var req *opensearch.SearchRequest[*models.Alert]
+	req.Index = models.ALERT_INDEX
+
+	// Pagination
+	pagination := models.NewPagination()
 	c.BindQuery(&pagination)
-
-	doc := &dsl.QueryDoc{}
-	params := &opensearchapi.SearchParams{}
-
 	if pagination.OrderBy == "" {
 		pagination.OrderBy = "startsAt"
 	}
-	// opensearch.AddTimeRange(doc, timerange)
-	opensearch.AddPagination(doc, params, pagination)
+	req.WithPagination(pagination)
 
-	res, err := opensearch.Search[*models.Alert](ctx, models.ALERT_INDEX, params, doc)
+    // Timerange
+    timerange := &models.TimeRange{}
+    c.BindQuery(&timerange)
+	req.WithTimeRange("startAt", timerange)
+
+	// Search
+    search := &models.Search{}
+	c.BindQuery(&search)
+	req.WithSearch(search.Text)
+
+	items, err := req.Do(ctx)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error getting alerts for : %s", err)
 		return
 	}
 
-	c.JSON(http.StatusOK, res)
+	c.JSON(http.StatusOK, items)
 }
 
 type AlertKeys struct {
@@ -61,6 +68,6 @@ func getLiveStatus(c *gin.Context) {
 
 func init() {
 	routes = append(routes, func(r *gin.Engine) {
-		r.GET("/api/alerts", listAlerts)
+		r.GET("/api/alerts", getAlerts)
 	})
 }
