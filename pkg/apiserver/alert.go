@@ -10,32 +10,38 @@ import (
 	"github.com/japannext/snooze/pkg/models"
 )
 
+func init() {
+	routes = append(routes, func(r *gin.Engine) {
+		r.GET("/api/alerts", getAlerts)
+	})
+}
+
+type getAlertsParams struct {
+	*models.Pagination
+	*models.TimeRange
+	*models.Search
+	filter string `form:"filter"`
+}
+
 func getAlerts(c *gin.Context) {
 	ctx, span := tracer.Start(c.Request.Context(), "getAlerts")
 	defer span.End()
 
-	var req *opensearch.SearchRequest[*models.Alert]
-	req.Index = models.ALERT_INDEX
+	req := &opensearch.SearchReq{Index: models.ALERT_INDEX}
 
-	// Pagination
-	pagination := models.NewPagination()
-	c.BindQuery(&pagination)
-	if pagination.OrderBy == "" {
-		pagination.OrderBy = "startsAt"
+    params := getLogsParams{Pagination: models.NewPagination()}
+    c.BindQuery(&params)
+    if params.Pagination.OrderBy == "" {
+        params.Pagination.OrderBy = "startsAt"
+    }
+    req.WithPagination(params.Pagination)
+    req.WithTimeRange("startsAt", params.TimeRange)
+    req.WithSearch(params.Search)
+
+	switch params.filter {
 	}
-	req.WithPagination(pagination)
 
-    // Timerange
-    timerange := &models.TimeRange{}
-    c.BindQuery(&timerange)
-	req.WithTimeRange("startAt", timerange)
-
-	// Search
-    search := &models.Search{}
-	c.BindQuery(&search)
-	req.WithSearch(search.Text)
-
-	items, err := req.Do(ctx)
+	items, err := opensearch.Search[*models.Alert](ctx, req)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error getting alerts for : %s", err)
 		return
@@ -66,8 +72,3 @@ func getLiveStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, items)
 }
 
-func init() {
-	routes = append(routes, func(r *gin.Engine) {
-		r.GET("/api/alerts", getAlerts)
-	})
-}

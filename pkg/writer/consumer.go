@@ -121,11 +121,10 @@ func bulkWrite(ctx context.Context, msgs []mq.MsgWithContext) {
 		log.Debugf("Result: %+v", resp.Items)
 	}
 	for i, result := range resp.Items {
-		res, ok := result["create"]
-		if !ok {
-			log.Warnf("cannot find action `index` in error response: %+v", result)
+		if len(result) == 0 {
 			continue
 		}
+		_, res := getActionAndResult(result)
 		if res.Error != nil {
 			log.Warnf("failed to write item to '%s': %s", res.Index, extractBulkError(res))
 			if msg, ok := messages[i]; ok {
@@ -143,6 +142,13 @@ func bulkWrite(ctx context.Context, msgs []mq.MsgWithContext) {
 			}
 		}
 	}
+}
+
+func getActionAndResult(results map[string]opensearchapi.BulkRespItem) (string, opensearchapi.BulkRespItem) {
+	for key, value := range results {
+		return key, value
+	}
+	return "", opensearchapi.BulkRespItem{}
 }
 
 func handleResponse(resp opensearchapi.BulkResp, messages map[int]jetstream.Msg) {

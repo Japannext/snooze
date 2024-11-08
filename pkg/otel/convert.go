@@ -22,11 +22,11 @@ func convertLog(resource *resv1.Resource, scope *commonv1.InstrumentationScope, 
 	item.Source = models.Source{Kind: SOURCE_KIND, Name: config.SourceName}
 
 	// Timestamps
-	item.Timestamp.Actual = models.Time{Time: time.Unix(0, int64(lr.TimeUnixNano))}
+	item.ActualTime = models.Time{Time: time.Unix(0, int64(lr.TimeUnixNano))}
 	if lr.ObservedTimeUnixNano == 0 {
-		item.Timestamp.Observed = models.TimeNow()
+		item.ObservedTime = models.TimeNow()
 	} else {
-		item.Timestamp.Observed = models.Time{Time: time.Unix(0, int64(lr.ObservedTimeUnixNano))}
+		item.ObservedTime = models.Time{Time: time.Unix(0, int64(lr.ObservedTimeUnixNano))}
 	}
 
 	item.SeverityText = lr.SeverityText

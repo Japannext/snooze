@@ -18,7 +18,7 @@ func NewV1() *V1 {
 func FormatWithoutFail(item *models.Notification) *chat.Message {
 	var builder strings.Builder
 
-	fmt.Fprintf(&builder, "*Date:* %s\n", item.Timestamp.Display)
+	fmt.Fprintf(&builder, "*Date:* %s\n", item.NotificationTime)
 	if value, ok := item.Identity["host"]; ok {
 		fmt.Fprintf(&builder, "*Host:* %s\n", value)
 	}

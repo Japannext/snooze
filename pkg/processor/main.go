@@ -51,6 +51,9 @@ func Startup() *daemon.DaemonManager {
 	store.Startup()
 
 	dm := daemon.NewDaemonManager()
+	srv := daemon.NewHttpDaemon()
+	// TODO /api/group-configs
+	dm.AddDaemon("http", srv)
 	dm.AddDaemon("consumer", NewConsumer())
 
 	return dm

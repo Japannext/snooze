@@ -9,32 +9,29 @@ import (
 	"github.com/japannext/snooze/pkg/models"
 )
 
+type getNotificationsParams struct {
+	*models.Pagination
+	*models.TimeRange
+	*models.Search
+}
+
 func getNotifications(c *gin.Context) {
 	ctx, span := tracer.Start(c.Request.Context(), "getNotifications")
 	defer span.End()
 
-	var req *opensearch.SearchRequest[*models.Notification]
-	req.Index = models.NOTIFICATION_INDEX
+	req := &opensearch.SearchReq{Index: models.NOTIFICATION_INDEX}
 
-	// Pagination
-	pagination := models.NewPagination()
-	c.BindQuery(&pagination)
-	if pagination.OrderBy == "" {
-		pagination.OrderBy = "timestamp.display"
-	}
-	req.WithPagination(pagination)
+    // Params
+    params := getNotificationsParams{Pagination: models.NewPagination()}
+    c.BindQuery(&params)
+    if params.Pagination.OrderBy == "" {
+        params.Pagination.OrderBy = "notificationTime"
+    }
+    req.WithPagination(params.Pagination)
+    req.WithTimeRange("notificationTime", params.TimeRange)
+    req.WithSearch(params.Search)
 
-    // Timerange
-    timerange := &models.TimeRange{}
-    c.BindQuery(&timerange)
-	req.WithTimeRange("timestamp.display", timerange)
-
-	// Search
-    search := &models.Search{}
-	c.BindQuery(&search)
-	req.WithSearch(search.Text)
-
-	items, err := req.Do(ctx)
+	items, err := opensearch.Search[*models.Notification](ctx, req)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error getting notification: %s", err)
 		return

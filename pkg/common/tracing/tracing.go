@@ -62,6 +62,9 @@ func SetLog(span trace.Span, item *models.Log) {
 	SetAttribute(span, "log.severityText", item.SeverityText)
 	SetAttribute(span, "log.severityNumber", strconv.Itoa(int(item.SeverityNumber)))
 	SetAttribute(span, "log.message", item.Message)
+	SetAttribute(span, "log.actualTime", item.ActualTime.Time.Format(time.RFC3339))
+	SetAttribute(span, "log.observedTime", item.ObservedTime.Time.Format(time.RFC3339))
+	SetAttribute(span, "log.displayTime", item.DisplayTime.Time.Format(time.RFC3339))
 }
 
 func HTTPFilter(req *http.Request) bool {

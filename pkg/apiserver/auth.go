@@ -9,6 +9,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func init() {
+	routes = append(routes, registerAuthRoutes)
+}
+
 type AuthButton struct {
     DisplayName string `json:"displayName"`
     Icon string `json:"icon"`
@@ -47,8 +51,4 @@ func registerAuthRoutes(r *gin.Engine) {
 		}
 	}
 	r.GET("/api/auth/buttons", listAuthButtons)
-}
-
-func init() {
-	routes = append(routes, registerAuthRoutes)
 }

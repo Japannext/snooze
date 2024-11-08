@@ -28,13 +28,15 @@ func Process(ctx context.Context, item *models.Log) error {
 
 		// Schedule
 		if s.Schedule != nil {
-			match = s.Schedule.Match(&item.Timestamp.Actual.Time)
+			match = s.Schedule.Match(&item.ActualTime.Time)
 			if !match {
 				continue
 			}
 		}
 
-		item.Mute.Silence(fmt.Sprintf("Silenced by rule %s", s))
+		item.Status.Kind = "silenced"
+		item.Status.Reason = fmt.Sprintf("Silenced by '%s'", s.Name)
+		item.Status.SkipNotification = true
 	}
 
 	return nil

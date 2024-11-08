@@ -7,8 +7,10 @@ import (
 const NOTIFICATION_INDEX = "v2-notifications"
 
 type Notification struct {
-	ID string `json:"id,omitempty"`
-	Timestamp Timestamp `json:"timestamp"`
+	Base
+
+	// Time when the notification was sent
+	NotificationTime Time `json:"notificationTime,omitempty"`
 	Destination Destination `json:"destination"`
 	Acknowledged bool `json:"acknowledged"`
 
@@ -30,14 +32,11 @@ type Notification struct {
 	ActiveCheckURL string `json:"activeCheckURL"`
 }
 
-func (item *Notification) GetID() string { return item.ID }
-func (item *Notification) SetID(id string) { item.ID = id }
-
 // Used by template systems in transforms/profiles/etc
 func (item *Notification) Context() map[string]interface{} {
 	return map[string]interface{}{
 		"type": item.Type,
-		"timestamp": item.Timestamp,
+		"notificationTime": item.NotificationTime,
 		"source": item.Source,
 		"identity": item.Identity,
 		"labels": item.Labels,
@@ -60,18 +59,14 @@ func (dest *Destination) String() string {
 
 func init() {
 	index := IndexTemplate{
-		Version: 0,
+		Version: 2,
 		IndexPatterns: []string{NOTIFICATION_INDEX},
-		DataStream: map[string]map[string]string{"timestamp_field": {"name": "timestamp.display"}},
+		DataStream: map[string]map[string]string{"timestamp_field": {"name": "notificationTime"}},
 		Template: Indice{
 			Settings: IndexSettings{1, 2},
 			Mappings: IndexMapping{
 				Properties: map[string]MappingProps{
-					"timestamp.display": {Type: "date", Format: "epoch_millis"},
-					"timestamp.actual": {Type: "date", Format: "epoch_millis"},
-					"timestamp.observed": {Type: "date", Format: "epoch_millis"},
-					"timestamp.processed": {Type: "date", Format: "epoch_millis"},
-					"timestamp.warning": {Type: "keyword"},
+					"notificationTime": {Type: "date", Format: "epoch_millis"},
 					"destination.kind": {Type: "keyword"},
 					"destination.name": {Type: "keyword"},
 				},

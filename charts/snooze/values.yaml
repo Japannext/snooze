@@ -17,6 +17,9 @@ process:
 
 apiserver:
   replicaCount: 2
+  secretKey:
+    secretName: ""
+    key: "secret_key"
 
 googlechat:
   replicaCount: 2

@@ -5,8 +5,13 @@ const LOG_INDEX = "v2-logs"
 type Log struct {
 	Base
 
-	// Several timestamps important to the log.
-	Timestamp Timestamp `json:"timestamp"`
+	// The timestamp when the event actually happened (when known)
+	ActualTime Time `json:"actualTime"`
+	// The timestamp when the event entered the system (snooze or otel)
+	ObservedTime Time `json:"observedTime,omitempty"`
+	// TIme used in web interfaces for sorting. Equals to the value
+	// that makes most sense between observedTime and actualTime.
+	DisplayTime Time `json:"displayTime"`
 
 	// Information regarding the source plugin that created the log.
 	Source Source `json:"source"`
@@ -46,18 +51,13 @@ type Log struct {
 	// can be indicated here.
 	Error string `json:"error,omitempty"`
 
-	// Mute the alert. This may skip notifications, or skip even display
-	Mute Mute `json:"mute,omitempty"`
-}
-
-type HasContext interface {
-	Context() map[string]interface{}
+	Status Status `json:"status"`
 }
 
 // Used by template systems in transforms/profiles/etc
 func (item *Log) Context() map[string]interface{} {
 	return map[string]interface{}{
-		"timestamp": item.Timestamp,
+		"actualTime": item.ActualTime,
 		"source": item.Source,
 		"identity": item.Identity,
 		"labels": item.Labels,
@@ -72,18 +72,16 @@ type Process struct {
 
 func init() {
 	index := IndexTemplate{
-		Version: 1,
+		Version: 2,
 		IndexPatterns: []string{LOG_INDEX},
-		DataStream: map[string]map[string]string{"timestamp_field": {"name": "timestamp.display"}},
+		DataStream: map[string]map[string]string{"timestamp_field": {"name": "displayTime"}},
 		Template: Indice{
 			Settings: IndexSettings{1, 2},
 			Mappings: IndexMapping{
 				Properties: map[string]MappingProps{
-					"timestamp.display": {Type: "date", Format: "epoch_millis"},
-					"timestamp.actual": {Type: "date", Format: "epoch_millis"},
-					"timestamp.observed": {Type: "date", Format: "epoch_millis"},
-					"timestamp.processed": {Type: "date", Format: "epoch_millis"},
-					"timestamp.warning": {Type: "keyword"},
+					"displayTime": {Type: "date", Format: "epoch_millis"},
+					"actualTime": {Type: "date", Format: "epoch_millis"},
+					"observedTime": {Type: "date", Format: "epoch_millis"},
 					"groups.name": {Type: "keyword"},
 					"groups.labels": {Type: "object"},
 					"groups.hash": {Type: "keyword"},

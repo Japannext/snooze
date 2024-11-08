@@ -35,6 +35,7 @@ func notificationHandler(ctx context.Context, msg jetstream.Msg) error {
 		return err
 	}
 
+	notification.NotificationTime = models.TimeNow()
 	if err := storeQ.PublishData(ctx, opensearch.Create(models.NOTIFICATION_INDEX, notification)); err != nil {
 		log.Warnf("failed to publish notification")
 		tracing.Error(span, err)

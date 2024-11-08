@@ -1,29 +1,36 @@
 <script setup lang="ts">
-import { h, ref, onMounted, onActivated, Component } from 'vue'
 import axios from 'axios'
-import type { AxiosResponse } from 'axios'
-import { NIcon, NTag, NCard, NTabs, NTab, NButton, NSpace, NDataTable, NInputGroup, NLoadingBarProvider, useLoadingBar, useMessage } from 'naive-ui'
-import { Refresh } from '@vicons/ionicons5'
+import { h, ref, onMounted, onActivated, Component } from 'vue'
+import { useLoadingBar, useMessage } from 'naive-ui'
+import { defaultRangeMillis } from '@/utils/timerange'
+import { usePagination } from '@/utils/pagination'
 
+// Components
+import { NRadioGroup, NRadioButton, NInputGroupLabel, NIcon, NTag, NCard, NTabs, NTab, NButton, NSpace, NDataTable, NInputGroup, NLoadingBarProvider } from 'naive-ui'
 import SSearch from '@/components/SSearch.vue'
 import STimeRange from '@/components/STimeRange.vue'
 import STimestamp from '@/components/STimestamp.vue'
 import STimestampTitle from '@/components/STimestampTitle.vue'
 import SLogAttributes from '@/components/SLogAttributes.vue'
+import SStatus from '@/components/SStatus.vue'
+import SFilter from '@/components/SFilter.vue'
+import { Refresh } from '@vicons/ionicons5'
+
+// Types
+import type { AxiosResponse } from 'axios'
 import type { Log, LogResults } from '@/api/types'
-import { defaultRangeMillis } from '@/utils/timerange'
-import { usePagination } from '@/utils/pagination'
 
 const search = ref<string>("")
 const items = ref<Array<Log>>()
 const rangeMillis = ref<[number, number]>(defaultRangeMillis())
 const stimerange = ref(null)
 const loading = useLoadingBar()
-const pagination = usePagination(getLogs)
+const pagination = usePagination(getItems)
 const table = ref<undefined|HTMLElement>(undefined)
 const message = useMessage()
+const filter = ref<string>("")
 
-function getLogs(): Promise {
+function getItems(): Promise {
   // loading.value = true
   loading.start()
   var timerange = stimerange.value.getTime()
@@ -32,7 +39,7 @@ function getLogs(): Promise {
     size: pagination.pageSize,
   }
   if (search.value) {
-    params.search = search
+    params.search = search.value
   }
   if (timerange[0] > 0) {
     params.start = timerange[0]
@@ -40,7 +47,10 @@ function getLogs(): Promise {
   if (timerange[1] > 0) {
     params.end = timerange[1]
   }
-  console.log(`getLogs(${JSON.stringify(params)})`)
+  if (filter.value) {
+    params.filter = filter.value
+  }
+  console.log(`getItems(${JSON.stringify(params)})`)
   return axios.get<Log>("/api/logs", {params: params})
     .then((resp: AxiosResponse<LogResults>) => {
       if (resp.data) {
@@ -74,29 +84,40 @@ function render(component: Component, attr: string) {
 }
 
 const columns = [
-  {type: 'expand', renderExpand: renderExpand},
+  {
+    type: 'expand',
+    renderExpand: renderExpand,
+  },
+  {
+    title: 'Status',
+    render: (row) => h(SStatus, {kind: row.status.kind}),
+    width: 90,
+  },
   {
     key: 'timestamp',
     title: () => h(STimestampTitle),
-    render: (row) => h(STimestamp, {ts: row.timestamp}),
+    render: (row) => h(STimestamp, {ts: row.displayTime}),
     width: 150,
   },
   {title: 'Attributes', render: (row) => h(SLogAttributes, {row: row}), width: 300},
-  {title: 'Message', key: 'message', ellipsis: {tooltip: {placement: "bottom-end", width: 500}}},
+  {title: 'Message', key: 'message', ellipsis: {
+    tooltip: {placement: "bottom-end", width: 500},
+    lineClamp: 2,
+  }},
 ]
 
 onMounted(() => {
-  getLogs()
+  getItems()
 })
 
 function onUpdateTimerange() {
   pagination.page = 1
-  getLogs()
+  getItems()
 }
 
 function onSearch(text: string) {
   search.value = text
-  getLogs()
+  getItems()
 }
 
 function rowProps(row: Log) {
@@ -108,26 +129,30 @@ function rowProps(row: Log) {
     },
   }
 }
+
+const filters = {
+  
+}
 </script>
 
 <template>
   <div>
-    <n-input-group>
-      <s-time-range ref="stimerange" v-model:rangeMillis="rangeMillis" @update="onUpdateTimerange" />
-      <s-search @search="onSearch" />
-      <n-button @click="getLogs()"><n-icon :component="Refresh" /></n-button>
-    </n-input-group>
-    <n-tabs type="bar" tabs-padding="20" :theme-overrides="tabsStyleOverrides">
-      <n-tab name="Active" />
-      <n-tab name="Snoozed" />
-      <n-tab name="Acknowledged" />
-      <n-tab name="Failed">
-        <n-space size="small">
-          <span>Failed</span>
-          <n-tag size="tiny" type="error" round>10</n-tag>
-        </n-space>
-      </n-tab>
-    </n-tabs>
+    <n-space>
+      <n-input-group>
+        <n-input-group-label>Filters</n-input-group-label>
+        <n-radio-group v-model:value="filter" v-on:change="getItems">
+          <n-radio-button label="Active" value="active" />
+          <n-radio-button label="Snoozed" value="snoozed" />
+          <n-radio-button label="Acked" value="acked" />
+          <n-radio-button label="Failed" value="failed" />
+        </n-radio-group>
+      </n-input-group>
+      <n-input-group>
+        <s-time-range ref="stimerange" v-model:rangeMillis="rangeMillis" @update="onUpdateTimerange" />
+        <s-search @search="onSearch" />
+        <n-button @click="getItems()"><n-icon :component="Refresh" /></n-button>
+      </n-input-group>
+    </n-space>
     <n-data-table
       ref="table"
       remote
@@ -138,7 +163,7 @@ function rowProps(row: Log) {
       :single-line="false"
       :columns="columns"
       :data="items"
-      :row-key="(row) => row.id"
+      :row-key="(row) => row._id"
       :pagination="pagination"
     />
   </div>

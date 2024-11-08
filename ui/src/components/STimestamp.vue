@@ -7,11 +7,11 @@ import type { Timestamp } from '@/api/types'
 const { timeRelative } = useTimeRelative()
 
 const props = defineProps<{
-  ts: Timestamp,
+  ts: number,
 }>()
 
 const date = computed(() => {
-    return DateTime.fromMillis(props.ts.display, {zone: "system"})
+    return DateTime.fromMillis(props.ts, {zone: "system"})
 })
 
 </script>

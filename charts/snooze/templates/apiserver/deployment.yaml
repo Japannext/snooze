@@ -46,12 +46,18 @@ spec:
             memory: 100Mi
         env:
         {{- include "snooze.opensearch.env" . | nindent 8 }}
+        {{- include "snooze.nats.env" . | nindent 8 }}
         - name: APISERVER_AUTH_CONFIG
           value: /config/auth_config.yaml
         {{- if .Values.apiserver.cors }}
         - name: APISERVER_CORS_CONFIG
           value: /config/cors.yaml
         {{- end }}
+        - name: APISERVER_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Values.apiserver.secretKey.secretName | default (printf "%s-apiserver-secret" .Release.Name) }}"
+              key: "{{ .Values.apiserver.secretKey.key }}"
         envFrom:
         - configMapRef:
             name: "{{ .Release.Name }}-common"

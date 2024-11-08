@@ -38,11 +38,11 @@ const { collapsed } = useSider()
         <s-menu />
       </n-layout-sider>
       -->
-        <n-layout-content content-style="padding: 10px;">
-          <router-view v-slot="{ Component }">
-            <component :is="Component" />
-          </router-view>
-        </n-layout-content>
+      <n-layout-content content-style="padding: 10px;">
+        <router-view v-slot="{ Component }">
+          <component :is="Component" />
+        </router-view>
+      </n-layout-content>
     </n-layout>
     <n-layout-footer
       bordered

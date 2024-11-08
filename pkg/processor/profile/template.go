@@ -35,7 +35,7 @@ func NewTemplateMap(rawMap map[string]string) (map[string]Template, error) {
 
 func (t *Template) Execute(item *models.Log, capture map[string]string) (string, error) {
 	data := map[string]interface{}{
-		"timestamp": item.Timestamp,
+		"actualTime": item.ActualTime,
 		"labels": item.Labels,
 		"identity": item.Identity,
 		"message": item.Message,

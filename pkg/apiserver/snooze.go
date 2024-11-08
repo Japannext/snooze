@@ -3,6 +3,7 @@ package apiserver
 import (
 	"fmt"
 	"net/http"
+	"encoding/json"
 
 	"github.com/gin-gonic/gin"
 
@@ -11,32 +12,36 @@ import (
 	"github.com/japannext/snooze/pkg/models"
 )
 
+func init() {
+	routes = append(routes, func(r *gin.Engine) {
+		r.GET("/api/snoozes", getSnoozes)
+		r.POST("/api/snooze", postSnooze)
+	})
+}
+
+type getSnoozesParams struct {
+	*models.Pagination
+	*models.TimeRange
+	*models.Search
+}
+
 func getSnoozes(c *gin.Context) {
     ctx, span := tracer.Start(c.Request.Context(), "getSnoozes")
     defer span.End()
 
-    var req *opensearch.SearchRequest[*models.Snooze]
-    req.Index = models.SNOOZE_INDEX
+	req := &opensearch.SearchReq{Index: models.SNOOZE_INDEX}
 
-    // Pagination
-    pagination := models.NewPagination()
-    c.BindQuery(&pagination)
-    if pagination.OrderBy == "" {
-        pagination.OrderBy = "startAt"
-    }
-    req.WithPagination(pagination)
+	// Params
+	params := getSnoozesParams{Pagination: models.NewPagination()}
+	c.BindQuery(&params)
+	if params.Pagination.OrderBy == "" {
+		params.Pagination.OrderBy = "startAt"
+	}
+	req.WithPagination(params.Pagination)
+	req.WithTimeRange("startAt", params.TimeRange)
+	req.WithSearch(params.Search)
 
-    // Timerange
-    timerange := &models.TimeRange{}
-    c.BindQuery(&timerange)
-    req.WithTimeRange("startAt", timerange)
-
-    // Search
-    search := &models.Search{}
-    c.BindQuery(&search)
-    req.WithSearch(search.Text)
-
-    items, err := req.Do(ctx)
+    items, err := opensearch.Search[*models.Snooze](ctx, req)
     if err != nil {
         c.String(http.StatusInternalServerError, "Error getting snoozes: %s", err)
         return
@@ -52,21 +57,25 @@ func postSnooze(c *gin.Context) {
 	var item models.Snooze
 	c.BindJSON(&item)
 
-	key := fmt.Sprintf("snooze/%s/%s", item.GroupName, item.Hash)
+	data, err := json.Marshal(item)
+	if err != nil {
+		c.String(http.StatusInternalServerError, "failed to marshal Snooze entry: %s", err)
+		return
+	}
+
 	pipe := redis.Client.Pipeline()
-	pipe.Set(ctx, key, item.Reason, 0)
-	pipe.ExpireAt(ctx, key, item.ExpireAt.Time)
+	for _, group := range item.Groups {
+		key := fmt.Sprintf("snooze/%s/%s", group.Name, group.Hash)
+		pipe.Set(ctx, key, data, 0)
+		pipe.ExpireAt(ctx, key, item.ExpireAt.Time)
+	}
 	if _, err := pipe.Exec(ctx); err != nil {
+		c.String(http.StatusInternalServerError, "failed to execute redis pipeline: %s", err)
+		return
 	}
 
 	if err := storeQ.PublishData(ctx, opensearch.Create(models.SNOOZE_INDEX, item)); err != nil {
-		// TODO
+		c.String(http.StatusInternalServerError, "failed to publish snooze entry: %s", err)
+		return
 	}
-}
-
-func init() {
-	routes = append(routes, func(r *gin.Engine) {
-		r.GET("/api/snoozes", getSnoozes)
-		r.POST("/api/snooze", postSnooze)
-	})
 }

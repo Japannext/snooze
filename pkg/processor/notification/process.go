@@ -13,7 +13,7 @@ func Process(ctx context.Context, item *models.Log) error {
 	ctx, span := tracer.Start(ctx, "notification")
 	defer span.End()
 
-	if item.Mute.SkipNotification {
+	if item.Status.SkipNotification {
 		tracing.SetAttribute(span, "notification.decision", "mute")
 		return nil
 	}
@@ -54,7 +54,6 @@ func Process(ctx context.Context, item *models.Log) error {
 			notification := &models.Notification{
 				Type: "log",
 				Destination: dest,
-				Timestamp: item.Timestamp,
 				Identity: item.Identity,
 				ItemID: item.ID,
 				Message: item.Message,

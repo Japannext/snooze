@@ -13,10 +13,11 @@ import (
 
 	"github.com/japannext/snooze/pkg/processor/activecheck"
 	"github.com/japannext/snooze/pkg/processor/grouping"
-	"github.com/japannext/snooze/pkg/processor/profile"
 	"github.com/japannext/snooze/pkg/processor/notification"
+	"github.com/japannext/snooze/pkg/processor/profile"
 	"github.com/japannext/snooze/pkg/processor/ratelimit"
 	"github.com/japannext/snooze/pkg/processor/silence"
+	"github.com/japannext/snooze/pkg/processor/snooze"
 	"github.com/japannext/snooze/pkg/processor/store"
 	"github.com/japannext/snooze/pkg/processor/timestamp"
 	"github.com/japannext/snooze/pkg/processor/transform"
@@ -69,10 +70,8 @@ func unmarshalLog(msg jetstream.Msg) *models.Log {
 	if err := json.Unmarshal(data, &item); err != nil {
 		log.Warnf("invalid JSON while parsing log: %s", err)
 		item = models.Log{
-			Timestamp: models.Timestamp{
-				Observed: models.TimeNow(),
-				Display: models.TimeNow(),
-			},
+			ActualTime: models.TimeNow(),
+			DisplayTime: models.TimeNow(),
 			Identity: map[string]string{"snooze.internal": "error"},
 			Message: string(data),
 			Error: err.Error(),
@@ -96,6 +95,7 @@ func processLog(ctx context.Context, item *models.Log) {
 	grouping.Process(ctx, item)
 	ratelimit.Process(ctx, item)
 	activecheck.Process(ctx, item)
+	snooze.Process(ctx, item)
 	notification.Process(ctx, item)
 	store.Process(ctx, item)
 

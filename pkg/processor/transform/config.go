@@ -9,13 +9,17 @@ type Transform struct {
 	Name	 string		`yaml:"name"`
 	If       string     `yaml:"if"`
 
-	Parent *ParentTransform `yaml:",inline"`
-	Set *SetTransform `yaml:"set,omitempty"`
+	// Transforms []transformConfig `yaml:"transforms"`
+	// Transform transformConfig `yaml:",inline"`
 
 	internal struct {
 		condition *lang.Condition
 		transform Transformation
 	}
+}
+
+type transformConfig struct {
+	Set *SetTransform `yaml:"set"`
 }
 
 func (tr *Transform) Load() {
@@ -27,6 +31,7 @@ func (tr *Transform) Load() {
 		tr.internal.condition = condition
 	}
 
+	/*
 	switch {
 		case tr.Parent != nil:
 			tr.Parent.Load()
@@ -37,6 +42,8 @@ func (tr *Transform) Load() {
 		default:
 			log.Fatalf("transform `%s` is empty", tr.Name)
 	}
+	*/
+	// TODO
 }
 
 type Transformation interface {

@@ -16,8 +16,8 @@ import (
 	"github.com/gin-contrib/cors"
 )
 
-var tracer trace.Tracer
 var storeQ *mq.Pub
+var tracer trace.Tracer
 
 // We use a route registration array so that we can
 // declare routes in the same file as the route, and avoid
@@ -35,9 +35,9 @@ func Startup() *daemon.DaemonManager {
 	redis.Init()
 	mq.Init()
 
+	storeQ = mq.StorePub()
 	tracing.Init("snooze-apiserver")
 	tracer = otel.Tracer("snooze")
-	storeQ = mq.StorePub()
 
 	dm := daemon.NewDaemonManager()
 	srv := daemon.NewHttpDaemon()

@@ -10,8 +10,8 @@ require (
 	github.com/gin-contrib/cors v1.7.2
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-playground/validator/v10 v10.22.1
+	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/google/uuid v1.6.0
-	github.com/mottaquikarim/esquerydsl v0.0.0-20230908215636-2a15c9ace5b9
 	github.com/nats-io/nats.go v1.36.0
 	github.com/opensearch-project/opensearch-go/v4 v4.1.0
 	github.com/prometheus/client_golang v1.20.2

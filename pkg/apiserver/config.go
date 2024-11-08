@@ -25,6 +25,9 @@ type Config struct {
 	// Path to a CORS configuration
 	CorsConfig string `mapstructure:"APISERVER_CORS_CONFIG"`
 
+	// A secret key used to encrypt/decrypt JWT tokens used for authentication
+	SecretKey string `mapstructure:"APISERVER_SECRET_KEY"`
+
 	// A URL for Jaeger/tracing app, so long as it reacts to /trace/<traceID>
 	TraceURL string `mapstructure:"TRACE_URL"`
 }
@@ -76,6 +79,8 @@ func initConfig() {
 	viper.SetDefault("APISERVER_STATIC_PATH", "/static")
 	viper.SetDefault("APISERVER_AUTH_CONFIG", "/etc/snooze-apiserver/auth_config.yaml")
 	viper.SetDefault("APISERVER_CORS_CONFIG", "")
+
+	viper.BindEnv("APISERVER_SECRET_KEY")
 
 	viper.AutomaticEnv()
 	if err := viper.Unmarshal(&config); err != nil {

@@ -8,6 +8,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type searchParams struct {
+	Search string `form:"search"`
+}
+
 func extractBase64(c *gin.Context, field string) ([]byte, error) {
 	str := c.Param(field)
 	if str == "" {

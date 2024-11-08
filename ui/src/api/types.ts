@@ -1,3 +1,5 @@
+import { DateTime } from 'luxon'
+
 export type Log = {
   id?: string;
 
@@ -5,7 +7,9 @@ export type Log = {
   identity?: object
   labels?: object;
 
-  timestamp: Timestamp;
+  actualTime: number;
+  observedTime: number;
+  displayTime: number;
 
   groupHash?: string;
   groupLabels?: any;
@@ -18,12 +22,18 @@ export type Log = {
   mute?: Mute;
 }
 
-export type Timestamp = {
-  actual: number;
-  observed: number;
-  processed: number;
-  display: number;
-  warning: string;
+export type Snooze = {
+  id?: string;
+  groupName: string;
+  hash: string;
+  reason: string;
+  startAt: DateTime;
+  expireAt: DateTime;
+}
+
+export type ListOf<Type> = {
+  items: Array<Type>;
+  total: number;
 }
 
 export type LogResults = {
@@ -42,7 +52,9 @@ export type AlertResults = {
 
 export type Notification = {
   id?: string;
-  timestamp: Timestamp;
+
+  notificationTime: number;
+
   destination: Destination;
   Acknowledged: boolean;
   alertUID?: string;

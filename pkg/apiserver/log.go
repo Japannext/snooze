@@ -10,34 +10,52 @@ import (
 	"github.com/japannext/snooze/pkg/models"
 )
 
+func init() {
+	routes = append(routes, func(r *gin.Engine) {
+		r.GET("/api/logs", getLogs)
+	})
+}
+
+type getLogsParams struct {
+	*models.Pagination
+	*models.TimeRange
+	*models.Search
+	filter string `form:"filter"`
+}
+
 func getLogs(c *gin.Context) {
 	ctx, span := tracer.Start(c.Request.Context(), "getLogs")
 	defer span.End()
 
 	start := time.Now()
 
-    var req *opensearch.SearchRequest[*models.Log]
-    req.Index = models.LOG_INDEX
+	req := &opensearch.SearchReq{Index: models.LOG_INDEX}
 
-    // Pagination
-    pagination := models.NewPagination()
-    c.BindQuery(&pagination)
-    if pagination.OrderBy == "" {
-        pagination.OrderBy = "timestamp.display"
-    }
-    req.WithPagination(pagination)
+	params := getLogsParams{Pagination: models.NewPagination()}
+	c.BindQuery(&params)
+	if params.Pagination.OrderBy == "" {
+		params.Pagination.OrderBy = "displayTime"
+	}
+	req.WithPagination(params.Pagination)
+	req.WithTimeRange("displayTime", params.TimeRange)
+	req.WithSearch(params.Search)
 
-    // Timerange
-    timerange := &models.TimeRange{}
-    c.BindQuery(&timerange)
-    req.WithTimeRange("timestamp.display", timerange)
+	// Log filters
+	switch params.filter {
+	case "active", "":
+		// No filter
+	case "snoozed":
+		req.Doc.WithExists("status.snoozed")
+	case "acked":
+		req.Doc.WithExists("status.acked")
+	case "failed":
+		// req.Doc.WithTerm("", "")
+	default:
+		c.String(http.StatusBadRequest, "unknown filter name `%s`", params.filter)
+		return
+	}
 
-    // Search
-    search := &models.Search{}
-    c.BindQuery(&search)
-    req.WithSearch(search.Text)
-
-    items, err := req.Do(ctx)
+	items, err := opensearch.Search[*models.Log](ctx, req)
     if err != nil {
         c.String(http.StatusInternalServerError, "Error getting log: %s", err)
         return
@@ -45,10 +63,4 @@ func getLogs(c *gin.Context) {
 
     c.JSON(http.StatusOK, items)
 	logSearchDuration.Observe(time.Since(start).Seconds())
-}
-
-func init() {
-	routes = append(routes, func(r *gin.Engine) {
-		r.GET("/api/logs", getLogs)
-	})
 }

@@ -7,14 +7,15 @@ import (
 )
 
 func Process(ctx context.Context, item *models.Log) {
-	actual, observed := item.Timestamp.Actual.Time, item.Timestamp.Observed.Time
+
+	actual, observed := item.ActualTime.Time, item.ObservedTime.Time
 	if actual.After(observed) {
-		item.Timestamp.Display = item.Timestamp.Observed
-		item.Timestamp.Warning = "future"
+		item.DisplayTime = item.ObservedTime
+		// item.WarningTime = "future"
 	} else if actual.IsZero() {
-		item.Timestamp.Display = item.Timestamp.Observed
-		item.Timestamp.Warning = "missing"
+		item.DisplayTime = item.ObservedTime
+		// item.Timestamp.Warning = "missing"
 	} else {
-		item.Timestamp.Display = item.Timestamp.Actual
+		item.DisplayTime = item.ActualTime
 	}
 }

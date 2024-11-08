@@ -19,7 +19,9 @@ func Process(ctx context.Context, item *models.Log) error {
 	}
 
 	// Making sure the log is dropped no matter what
-	item.Mute.Drop("active check")
+	item.Status.Kind = "activecheck"
+	item.Status.SkipNotification = true
+	item.Status.SkipStorage = true
 
 	data, err := json.Marshal(models.SourceActiveCheck{
 		Error: item.Error,

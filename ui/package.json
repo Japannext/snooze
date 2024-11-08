@@ -15,6 +15,7 @@
     "url": "https://github.com/japannext/snooze"
   },
   "dependencies": {
+    "@types/luxon": "^3.4.2",
     "@types/uuid": "^9.0.1",
     "@vicons/antd": "^0.12.0",
     "@vicons/carbon": "^0.12.0",

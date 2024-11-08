@@ -129,7 +129,6 @@ func Process(ctx context.Context, item *models.Log) error {
 	}
 
 	// 3. Compute rate info
-	pipe = redis.Client.Pipeline()
 	for _, rate := range rr {
 		res := results[rate.Name]
 		i0, i1, i2, lock := res.i0, res.i1, res.i2, res.lock
@@ -158,8 +157,11 @@ func Process(ctx context.Context, item *models.Log) error {
 
 		// Rate-limit case
 		if i0.value >= limit || i1.value >= limit { // rate limiting
+			item.Status.Kind = "ratelimited"
+			item.Status.Reason = fmt.Sprintf("ratelimited by '%s'", rate.Name)
+			item.Status.SkipNotification = true
+			item.Status.SkipStorage = true
 			tracing.SetAttribute(span, fmt.Sprintf("ratelimit.%s.decision", rate.Name), "drop")
-			item.Mute.Drop(fmt.Sprintf("Dropped by ratelimit '%s'", rate.Name))
 			rateLimitedLogs.WithLabelValues(rate.Name).Inc()
 		} else {
 			tracing.SetAttribute(span, fmt.Sprintf("ratelimit.%s.decision", rate.Name), "store")
@@ -186,15 +188,19 @@ func Process(ctx context.Context, item *models.Log) error {
 		if i2.value > limit && i1.value < limit && i0.value == 0 && lock.cmd.String() != "" {
 			id := lock.cmd.String()
 
-			doc, err := json.Marshal(&models.Ratelimit{EndsAt: now()})
+			rt := &models.Ratelimit{EndsAt: now()}
+			data, err := json.Marshal(rt)
 			if err != nil {
-				// TODO
+				log.Warnf("failed to marshal ratelimit %+v: %s", rt, err)
 				tracing.Error(span, err)
+				continue
 			}
-			update := opensearch.UpdateWrapper{
-				Doc: doc,
+			update := &opensearch.UpdateAction{
+				Index: models.RATELIMIT_INDEX,
+				ID: id,
+				Doc: data,
 			}
-			err = storeQ.PublishData(ctx, opensearch.Update(models.RATELIMIT_INDEX, id, update))
+			err = storeQ.PublishData(ctx, update)
 			if err != nil {
 				log.Warnf("failed to update ratelimit '%s'", rate.Name)
 				tracing.Error(span, err)
@@ -205,6 +211,7 @@ func Process(ctx context.Context, item *models.Log) error {
 	// 4. Increment value for rate
 	var incrCmds []*redisv9.IntCmd
 	var expireCmds []*redisv9.BoolCmd
+	pipe = redis.Client.Pipeline()
 	for _, rate := range rr {
 		i0 := results[rate.Name].i0
 
@@ -214,7 +221,8 @@ func Process(ctx context.Context, item *models.Log) error {
 		expireCmds = append(expireCmds, expireCmd)
 		tracing.SetAttribute(span, fmt.Sprintf("ratelimit.%s.incr_key", rate.Name), i0.key)
 	}
-	if _, err := pipe.Exec(ctx); err != nil {
+	_, err = pipe.Exec(ctx)
+	if err != nil && err != redis.Nil {
 		log.Warnf("failed to increment ratelimits: %s", err)
 		tracing.Error(span, err)
 		return err

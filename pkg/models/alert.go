@@ -36,9 +36,6 @@ type Alert struct {
 	// Key-value representing the main resource identifiers.
 	// Examples: host, pod, disk name, IP address
 	Labels map[string]string `json:"labels,omitempty"`
-
-	// Mute the alert. This may skip notifications, or skip even display
-	Mute Mute `json:"mute"`
 }
 
 type AlertStatus struct {

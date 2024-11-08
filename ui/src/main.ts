@@ -24,6 +24,7 @@ const pinia = createPinia()
 if (import.meta.env.VITE_BASE_URL) {
   axios.defaults.baseURL = import.meta.env.VITE_BASE_URL
 }
+axios.defaults.headers.post['Content-Type'] = 'application/json'
 
 const app = createApp(App)
 app.use(router)

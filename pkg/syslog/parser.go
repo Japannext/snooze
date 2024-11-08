@@ -32,11 +32,12 @@ func parseLog(ctx context.Context, record format.LogParts) *models.Log {
 	item.Labels = make(map[string]string)
 	item.TraceID = tracing.GetTraceID(ctx)
 
+	// Time
 	timestamp := record["timestamp"].(time.Time)
 	observed := models.TimeNow()
-	item.Timestamp.Actual = models.Time{Time: timestamp}
-	item.Timestamp.Observed = observed
-	if item.Timestamp.Actual.IsZero() {
+	item.ActualTime = models.Time{Time: timestamp}
+	item.ObservedTime = observed
+	if item.ActualTime.IsZero() {
 		emptyTimestamp.WithLabelValues(SOURCE_KIND, config.InstanceName).Inc()
 	} else {
 		delay := observed.Sub(timestamp).Seconds()

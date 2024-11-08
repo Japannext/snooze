@@ -5,10 +5,14 @@ import (
 	"fmt"
 
 	"github.com/sirupsen/logrus"
+	redisv9 "github.com/redis/go-redis/v9"
 
 	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/common/lang"
+	"github.com/japannext/snooze/pkg/common/opensearch"
+	"github.com/japannext/snooze/pkg/common/redis"
 	"github.com/japannext/snooze/pkg/common/utils"
+	"github.com/japannext/snooze/pkg/common/tracing"
 )
 
 func Process(ctx context.Context, item *models.Log) error {
@@ -26,7 +30,7 @@ func Process(ctx context.Context, item *models.Log) error {
 			}
 		}
 
-		var gr = &models.Group{Name: group.Name, Labels: make(map[string]string)}
+		var gr = &models.Group{Name: group.Name, Labels: make(map[string]string), LastInsert: models.TimeNow()}
 		if len(group.GroupBy) > 0 {
 			for _, field := range group.internal.fields {
 				value, err := lang.ExtractField(item, field)
@@ -55,6 +59,51 @@ func Process(ctx context.Context, item *models.Log) error {
 		}
 		gr.Hash = utils.ComputeHash(gr.Labels)
 		item.Groups = append(item.Groups, gr)
+	}
+
+	pipe := redis.Client.Pipeline()
+	exists := make(map[string]*redisv9.IntCmd)
+	for _, gr := range item.Groups {
+		key := fmt.Sprintf("group/%s:%s", gr.Name, gr.Hash)
+		exists[key] = pipe.Exists(ctx, key)
+	}
+	_, err := pipe.Exec(ctx)
+	if err != nil && err != redis.Nil {
+		log.Warnf("failed to get groups from redis: %s", err)
+		tracing.Error(span, err)
+		return err
+	}
+
+	for _, gr := range item.Groups {
+		key := fmt.Sprintf("group/%s:%s", gr.Name, gr.Hash)
+		if _, ok := exists[key]; ok {
+			// Group already exists in opensearch (redis says so)
+			continue
+		}
+		update := &opensearch.UpdateAction{
+			Index: models.GROUP_INDEX,
+			ID: gr.Hash,
+			Doc: struct{LastInsert models.Time `json:"lastInsert"`}{
+				LastInsert: gr.LastInsert,
+			},
+			Upsert: gr,
+		}
+		if err := storeQ.PublishData(ctx, update); err != nil {
+			log.Warnf("failed to publish group: %+v", gr)
+			continue
+		}
+	}
+
+	pipe = redis.Client.Pipeline()
+	for _, gr := range item.Groups {
+		key := fmt.Sprintf("group/%s:%s", gr.Name, gr.Hash)
+		pipe.Set(ctx, key, "1", 0)
+	}
+	_, err = pipe.Exec(ctx)
+	if err != nil && err != redis.Nil {
+		log.Warnf("failed to set groups to redis: %s", err)
+		tracing.Error(span, err)
+		return err
 	}
 
 	return nil
