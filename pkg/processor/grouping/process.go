@@ -9,7 +9,7 @@ import (
 
 	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/common/lang"
-	"github.com/japannext/snooze/pkg/common/opensearch"
+	"github.com/japannext/snooze/pkg/common/opensearch/format"
 	"github.com/japannext/snooze/pkg/common/redis"
 	"github.com/japannext/snooze/pkg/common/utils"
 	"github.com/japannext/snooze/pkg/common/tracing"
@@ -30,7 +30,7 @@ func Process(ctx context.Context, item *models.Log) error {
 			}
 		}
 
-		var gr = &models.Group{Name: group.Name, Labels: make(map[string]string), LastInsert: models.TimeNow()}
+		var gr = &models.Group{Name: group.Name, Labels: make(map[string]string)}
 		if len(group.GroupBy) > 0 {
 			for _, field := range group.internal.fields {
 				value, err := lang.ExtractField(item, field)
@@ -76,19 +76,15 @@ func Process(ctx context.Context, item *models.Log) error {
 
 	for _, gr := range item.Groups {
 		key := fmt.Sprintf("group/%s:%s", gr.Name, gr.Hash)
-		if _, ok := exists[key]; ok {
+		if cmd, ok := exists[key]; ok && cmd.Val() > 0 {
 			// Group already exists in opensearch (redis says so)
 			continue
 		}
-		update := &opensearch.UpdateAction{
+		err := storeQ.PublishData(ctx, &format.Index{
 			Index: models.GROUP_INDEX,
-			ID: gr.Hash,
-			Doc: struct{LastInsert models.Time `json:"lastInsert"`}{
-				LastInsert: gr.LastInsert,
-			},
-			Upsert: gr,
-		}
-		if err := storeQ.PublishData(ctx, update); err != nil {
+			Item: gr,
+		})
+		if err != nil {
 			log.Warnf("failed to publish group: %+v", gr)
 			continue
 		}

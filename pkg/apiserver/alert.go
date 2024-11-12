@@ -38,9 +38,6 @@ func getAlerts(c *gin.Context) {
     req.WithTimeRange("startsAt", params.TimeRange)
     req.WithSearch(params.Search)
 
-	switch params.filter {
-	}
-
 	items, err := opensearch.Search[*models.Alert](ctx, req)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error getting alerts for : %s", err)

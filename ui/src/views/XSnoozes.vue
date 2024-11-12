@@ -1,20 +1,20 @@
 <script setup lang="ts">
-import { h, ref, onMounted, onActivated, Component } from 'vue'
 import axios from 'axios'
-import type { AxiosResponse } from 'axios'
-import { NIcon, NTag, NCard, NTabs, NTab, NButton, NSpace, NDataTable, NInputGroup, NLoadingBarProvider, useLoadingBar, useMessage, useModal } from 'naive-ui'
-import { Refresh, Add } from '@vicons/ionicons5'
+import { h, ref, onMounted, onActivated, Component } from 'vue'
 import { DateTime } from 'luxon'
-
-import SSearch from '@/components/SSearch.vue'
-import STimeRange from '@/components/STimeRange.vue'
-import STimestamp from '@/components/STimestamp.vue'
-import STimestampTitle from '@/components/STimestampTitle.vue'
-import SLogAttributes from '@/components/SLogAttributes.vue'
-import SSnoozeCreateModal from '@/components/modal/SSnoozeCreateModal.vue'
-import type { Snooze, ListOf } from '@/api/types'
 import { defaultRangeMillis } from '@/utils/timerange'
 import { usePagination } from '@/utils/pagination'
+
+// Components
+import { NIcon, NTag, NCard, NTabs, NTab, NButton, NSpace, NDataTable, NInputGroup, NLoadingBarProvider, useLoadingBar, useMessage, useModal } from 'naive-ui'
+import { XSearch, XTimeRange, XTimestampTitle } from '@/components/interface'
+import { XTime } from '@/components/attributes'
+import { XSnoozeCreateModal } from '@/components/modal'
+import { Refresh, Add } from '@/icons'
+
+// Types
+import type { AxiosResponse } from 'axios'
+import type { Snooze, ListOf } from '@/api/types'
 
 const search = ref<string>("")
 const items = ref<Array<Snooze>>()
@@ -76,11 +76,10 @@ const columns = [
   {type: 'expand', renderExpand: renderExpand},
   {
     key: 'timestamp',
-    title: () => h(STimestampTitle),
-    render: (row) => h(STimestamp, {ts: row.startAt}),
+    title: () => h(XTimestampTitle),
+    render: (row) => h(XTime, {ts: row.startAt}),
     width: 150,
   },
-  {title: 'Attributes', render: (row) => h(SLogAttributes, {row: row}), width: 300},
   {title: 'Message', key: 'message', ellipsis: {tooltip: {placement: "bottom-end", width: 500}}},
 ]
 
@@ -107,29 +106,17 @@ function rowProps(row: Log) {
     },
   }
 }
-
 </script>
 
 <template>
   <div>
     <n-input-group>
-      <s-time-range ref="stimerange" v-model:rangeMillis="rangeMillis" @update="onUpdateTimerange" />
-      <s-search @search="onSearch" />
+      <x-time-range ref="stimerange" v-model:rangeMillis="rangeMillis" @update="onUpdateTimerange" />
+      <x-search @search="onSearch" />
       <n-button @click="showCreateModal = true"><n-icon :component="Add" /></n-button>
       <n-button @click="getItems()"><n-icon :component="Refresh" /></n-button>
     </n-input-group>
-    <s-snooze-create-modal v-model:show="showCreateModal" />
-    <n-tabs type="bar" tabs-padding="20" :theme-overrides="tabsStyleOverrides">
-      <n-tab name="Active" />
-      <n-tab name="Snoozed" />
-      <n-tab name="Acknowledged" />
-      <n-tab name="Failed">
-        <n-space size="small">
-          <span>Failed</span>
-          <n-tag size="tiny" type="error" round>10</n-tag>
-        </n-space>
-      </n-tab>
-    </n-tabs>
+    <x-snooze-create-modal v-model:show="showCreateModal" />
     <n-data-table
       ref="table"
       remote

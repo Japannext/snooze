@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { defineProps, computed } from 'vue'
+import { NPopover } from 'naive-ui'
 import { DateTime } from 'luxon'
 import { useTimeRelative } from '@/stores'
-import type { Timestamp } from '@/api/types'
 
 const { timeRelative } = useTimeRelative()
 
@@ -22,9 +22,14 @@ const date = computed(() => {
       <span v-if="timeRelative">
         {{ date.toRelative() }}
       </span>
-      <span v-else>
-        {{ date.toFormat("yyyy-MM-dd HH:mm:ss") }} ({{ date.zoneName }})
-      </span>
+      <n-popover v-else>
+        <template #trigger>
+          <span>
+            {{ date.toFormat("yyyy-MM-dd HH:mm:ss") }}
+          </span>
+        </template>
+        <span>Timezone: {{ date.zoneName }}</span>
+      </n-popover>
     </template>
     <template v-else>
       Undefined

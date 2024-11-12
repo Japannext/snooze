@@ -81,21 +81,6 @@ func bulkWrite(ctx context.Context, msgs []mq.MsgWithContext) {
 		msgCtx, span := tracer.Start(msgCtx, "bulkWrite", trace.WithLinks(trace.LinkFromContext(ctx)))
 		defer span.End()
 
-		// Extract index
-		/*
-		index := msg.Headers().Get(mq.X_SNOOZE_STORE_INDEX)
-		if index == "" {
-			log.Warnf("no index specified for writing for item: `%s`", msg.Data())
-			continue
-		}
-
-		action := m.Msg.Headers().Get(mq.X_SNOOZE_WRITER_ACTION)
-		if action == "" {
-			log.Warnf("no action found for item: `%s`", msg.Data())
-			continue
-		}
-		*/
-
 		buf.Write(msg.Data())
 		buf.WriteString("\n")
 	}

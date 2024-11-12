@@ -1,7 +1,7 @@
 <script setup lang="ts">
 
 // Functions / Libraries
-import { ref, h, computed, onMounted, defineProps, defineModel } from 'vue'
+import { ref, h, computed, onActivated, onMounted, defineProps, defineModel } from 'vue'
 import { useMessage, useLoadingBar } from 'naive-ui'
 import axios from 'axios'
 
@@ -31,7 +31,7 @@ defineProps<{
 
 
 onMounted(() => {
-  getGroupOptions("")
+  // getGroupOptions("")
 })
 
 async function searchGroup(query: string) {
@@ -91,6 +91,7 @@ function cancel() {
   <n-modal
     v-model:show="show"
     style="width: 800px"
+    @after-enter="getGroupOptions('')"
   >
     <n-card title="Add snooze">
       <n-form size="small">

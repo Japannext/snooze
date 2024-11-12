@@ -1,5 +1,9 @@
 package dsl
 
+import (
+	"fmt"
+)
+
 type QueryReq struct {
 	Query `json:"query"`
 	Sort []map[string]Sort `json:"sort,omitempty"`
@@ -14,8 +18,25 @@ type QueryRequest struct {
 }
 */
 
+const EMPTY_MAP = "{}"
+
+type EmptyMap struct {}
+
+func (m *EmptyMap) MarshalJSON() ([]byte, error) {
+	return []byte(EMPTY_MAP), nil
+}
+
+func (m *EmptyMap) UnmarshalJSON(data []byte) error {
+	if string(data) == EMPTY_MAP {
+		m = &EmptyMap{}
+		return nil
+	}
+	return fmt.Errorf("`%s` is not {}", data)
+}
+
 type Query struct {
 	Bool *Bool `json:"bool,omitempty"`
+	MatchAll *EmptyMap `json:"match_all,omitempty"`
 }
 
 type Sort struct {
@@ -100,6 +121,11 @@ func (query *Query) WithQueryString(text string) *Query {
 	item := QueryItem{QueryString: &QueryString{Query: text}}
 	query.And(item)
 	return query
+}
+
+func (req *QueryReq) MatchAll() *QueryReq {
+	req.Query.MatchAll = &EmptyMap{}
+	return req
 }
 
 func (req *QueryReq) WithSort(field string, ascending bool) *QueryReq {

@@ -9,8 +9,9 @@ import SAlertName from '@/components/attributes/SAlertName.vue'
 import SHostname from '@/components/attributes/SHostname.vue'
 import SProcess from '@/components/attributes/SProcess.vue'
 import SLogPattern from '@/components/attributes/SLogPattern.vue'
-import SSeverity from '@/components/attributes/SSeverity.vue'
 import SIdentity from '@/components/attributes/SIdentity.vue'
+
+import { XSeverity } from '.'
 
 // props
 defineProps<{
@@ -24,6 +25,6 @@ defineProps<{
     <!-- <s-alert-group v-if="row.alertGroup" :value="row.alertGroup" /> -->
     <s-identity v-if="row.identity" :identity="row.identity" />
     <s-alert-name v-if="row.alertName" :value="row.alertName" />
-    <s-severity :text="row.severityText" :number="row.severityNumber" />
+    <x-severity :text="row.severityText" :number="row.severityNumber" />
   </n-space>
 </template>

@@ -93,6 +93,7 @@ func parseLog(ctx context.Context, record format.LogParts) *models.Log {
 		item.ActiveCheckURL = item.Message
 	}
 
+	item.Status.Kind = "active"
 
 	return item
 }

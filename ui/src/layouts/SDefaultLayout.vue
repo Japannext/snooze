@@ -1,14 +1,10 @@
 <script setup lang="ts">
-import {
-  NLayout, NLayoutContent,
-  NLayoutHeader, NLayoutFooter, NLayoutSider,
-  NLoadingBarProvider,
-} from 'naive-ui'
 
 import { useSider } from '@/stores'
-import SHeader from '@/components/SHeader.vue'
-import SMenu from '@/components/SMenu.vue'
-import SFooter from '@/components/SFooter.vue'
+
+// Components
+import { NLayout, NLayoutContent, NLayoutHeader, NLayoutFooter } from 'naive-ui'
+import { XHeader, XFooter } from '@/components/layout'
 
 const { collapsed } = useSider()
 
@@ -21,23 +17,12 @@ const { collapsed } = useSider()
       position="absolute"
       style="height: 48px; padding: 3px"
     >
-      <s-header />
+      <x-header />
     </n-layout-header>
     <n-layout
       position="absolute"
       style="top: 48px; bottom: 48px"
     >
-      <!--
-      <n-layout-sider
-        v-model:collapsed="collapsed"
-        bordered
-        collapse-mode="width"
-        show-trigger
-        :width="240"
-      >
-        <s-menu />
-      </n-layout-sider>
-      -->
       <n-layout-content content-style="padding: 10px;">
         <router-view v-slot="{ Component }">
           <component :is="Component" />
@@ -49,7 +34,7 @@ const { collapsed } = useSider()
       position="absolute"
       style="height: 48px; padding: 12px"
     >
-      <s-footer />
+      <x-footer />
     </n-layout-footer>
   </n-layout>
 </template>

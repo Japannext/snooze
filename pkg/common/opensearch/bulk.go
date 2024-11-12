@@ -1,10 +1,32 @@
 package opensearch
 
 import (
+	"context"
 	"bytes"
 	"encoding/json"
 	"fmt"
+
+	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
 )
+
+func Bulk(ctx context.Context, req opensearchapi.BulkReq) (*opensearchapi.BulkResp, error) {
+       return client.Bulk(ctx, req)
+}
+
+/*
+func bulkRespToError(resp *opensearchapi.BulkResp) error {
+       var buf strings.Builder
+       for i, v := range resp.Items {
+               for k, r := range v {
+                       if r.Error != nil {
+                               msg := fmt.Sprintf("[#%d:%s] type='%s' reason='%s'\n", i, k, r.Error.Type, r.Error.Reason)
+                               buf.WriteString(msg)
+                       }
+               }
+       }
+       return fmt.Errorf("error in bulk log:\n%s", buf.String())
+}
+*/
 
 type Action = string
 
@@ -56,6 +78,30 @@ func Create(index string, item interface{}) *CreateAction {
 	}
 }
 
+type IndexAction struct {
+	Index string
+	Item interface{}
+}
+func (a *IndexAction) Serialize() ([]byte, error) {
+	var buf bytes.Buffer
+	header := BulkHeader(map[Action]Metadata{
+		INDEX_ACTION: {Index: a.Index},
+	})
+	data, err := json.Marshal(header)
+	if err != nil {
+		return []byte{}, fmt.Errorf("error marshalling `%+v`: %s", header, err)
+	}
+	buf.Write(data)
+	buf.WriteString("\n")
+	body, err := json.Marshal(a.Item)
+	if err != nil {
+		return []byte{}, fmt.Errorf("error marshalling `%+v`: %s", a.Item, err)
+	}
+	buf.Write(body)
+	buf.WriteString("\n")
+	return buf.Bytes(), nil
+}
+
 // UPDATE action
 
 type UpdateAction struct {
@@ -84,14 +130,15 @@ func (a *UpdateAction) Serialize() ([]byte, error) {
 	buf.Write(headerData)
 	buf.WriteString("\n")
 
-	doc, err := json.Marshal(a.Doc)
-	if err != nil {
-		return []byte{}, fmt.Errorf("error marhsalling `%+v`: %s", a.Doc, err)
-	}
 
 	w := &updateWrapper{
-		Doc: doc,
 		DocAsUpsert: a.DocAsUpsert,
+	}
+	if a.Doc != nil {
+		w.Doc, err = json.Marshal(a.Doc)
+		if err != nil {
+			return []byte{}, fmt.Errorf("error marhsalling `%+v`: %s", a.Doc, err)
+		}
 	}
 
 	if a.Upsert != nil {

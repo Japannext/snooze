@@ -9,6 +9,7 @@ import (
 
 	"github.com/japannext/snooze/pkg/common/redis"
 	"github.com/japannext/snooze/pkg/common/opensearch"
+	"github.com/japannext/snooze/pkg/common/opensearch/format"
 	"github.com/japannext/snooze/pkg/models"
 )
 
@@ -74,7 +75,11 @@ func postSnooze(c *gin.Context) {
 		return
 	}
 
-	if err := storeQ.PublishData(ctx, opensearch.Create(models.SNOOZE_INDEX, item)); err != nil {
+	err = storeQ.PublishData(ctx, &format.Create{
+		Index: models.SNOOZE_INDEX,
+		Item: item,
+	})
+	if err != nil {
 		c.String(http.StatusInternalServerError, "failed to publish snooze entry: %s", err)
 		return
 	}

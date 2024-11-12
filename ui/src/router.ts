@@ -8,13 +8,13 @@ import { Dashboard, Megaphone, List, AlertSnooze20Regular, Notifications, PhoneA
 import { renderIcon } from '@/utils/render'
 
 export const menuRoutes: RouteRecordRaw[] = [
-  {name: 'dashboard',     path: '/dashboard',     component: () => import('@/views/SDashboard.vue') },
-  {name: 'alerts',        path: '/alerts',        component: () => import('@/views/SAlerts.vue')},
-  {name: 'logs',          path: '/logs',          component: () => import('@/views/SLogs.vue')},
-  {name: 'snooze',        path: '/snooze',        component: () => import('@/views/SSnoozes.vue')},
-  {name: 'notifications', path: '/notifications', component: () => import('@/views/SNotifications.vue')},
-  {name: 'escalations',   path: '/escalations',   component: () => import('@/views/SEscalations.vue')},
-  {name: 'admin',         path: 'admin',          component: () => import('@/views/SAdmin.vue')}
+  {name: 'dashboard',     path: '/dashboard',     component: () => import('@/views/XDashboard.vue') },
+  {name: 'alerts',        path: '/alerts',        component: () => import('@/views/XAlerts.vue')},
+  {name: 'logs',          path: '/logs',          component: () => import('@/views/XLogs.vue')},
+  {name: 'snooze',        path: '/snooze',        component: () => import('@/views/XSnoozes.vue')},
+  {name: 'notifications', path: '/notifications', component: () => import('@/views/XNotifications.vue')},
+  {name: 'escalations',   path: '/escalations',   component: () => import('@/views/XEscalations.vue')},
+  {name: 'admin',         path: 'admin',          component: () => import('@/views/XAdmin.vue')}
 ]
 
 export const menuOptions: MenuOption[] = [

@@ -2,6 +2,7 @@ package apiserver
 
 import (
 	"net/http"
+	"encoding/json"
 
 	"github.com/gin-gonic/gin"
 
@@ -35,6 +36,8 @@ func getGroups(c *gin.Context) {
     if err != nil {
         c.String(http.StatusInternalServerError, "Error getting log: %s", err)
 		tracing.Error(span, err)
+		data, _ := json.Marshal(req.Doc)
+		tracing.SetAttribute(span, "opensearch.query", string(data))
         return
     }
 

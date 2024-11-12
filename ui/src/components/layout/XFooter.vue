@@ -1,15 +1,23 @@
 <script setup lang="ts">
-import {
-  NSpace, NP, NButton, NIcon,
-} from 'naive-ui'
 import { LogoGithub, Book } from '@vicons/ionicons5'
-import { version, homepage, repository } from '../../package'
+import { version, homepage, repository } from '../../../package'
+
+// Components
+import { NSpace, NP, NButton, NIcon, NButtonGroup, NPopover } from 'naive-ui'
+import { XPatlite } from '@/components/interface'
 </script>
 
 <template>
   <n-space justify="space-between" align="center">
     <!-- Left -->
-    <span />
+    <n-button-group>
+      <n-popover trigger="click">
+        <template #trigger>
+          <n-button>Patlite</n-button>
+        </template>
+        <x-patlite />
+      </n-popover>
+    </n-button-group>
 
     <!-- Center -->
     <n-p>Snooze {{ version }}</n-p>

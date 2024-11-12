@@ -1,20 +1,16 @@
 <script setup lang="ts">
 import axios from 'axios'
-import { h, ref, onMounted, onActivated, Component } from 'vue'
+import { h, ref, onMounted, computed, Component } from 'vue'
 import { useLoadingBar, useMessage } from 'naive-ui'
 import { defaultRangeMillis } from '@/utils/timerange'
 import { usePagination } from '@/utils/pagination'
 
 // Components
 import { NRadioGroup, NRadioButton, NInputGroupLabel, NIcon, NTag, NCard, NTabs, NTab, NButton, NSpace, NDataTable, NInputGroup, NLoadingBarProvider } from 'naive-ui'
-import SSearch from '@/components/SSearch.vue'
-import STimeRange from '@/components/STimeRange.vue'
-import STimestamp from '@/components/STimestamp.vue'
-import STimestampTitle from '@/components/STimestampTitle.vue'
-import SLogAttributes from '@/components/SLogAttributes.vue'
-import SStatus from '@/components/SStatus.vue'
-import SFilter from '@/components/SFilter.vue'
-import { Refresh } from '@vicons/ionicons5'
+import { XSearch, XFilter, XTimeRange, XTimestampTitle } from '@/components/interface'
+import { XStatus, XTime, XLogAttributes } from '@/components/attributes'
+import { XAckModal } from '@/components/modal'
+import { Refresh } from '@/icons'
 
 // Types
 import type { AxiosResponse } from 'axios'
@@ -28,7 +24,17 @@ const loading = useLoadingBar()
 const pagination = usePagination(getItems)
 const table = ref<undefined|HTMLElement>(undefined)
 const message = useMessage()
-const filter = ref<string>("")
+const filter = ref<string>("active")
+const selectedItems = ref<Array<Log>>([])
+const showAckModal = ref<Boolean>(false)
+
+function ack() {
+  showAckModal.value = true
+}
+
+const selectedIDs = computed(() => {
+  return selectedItems.value.map((e) => e.ID)
+})
 
 function getItems(): Promise {
   // loading.value = true
@@ -85,25 +91,29 @@ function render(component: Component, attr: string) {
 
 const columns = [
   {
-    type: 'expand',
-    renderExpand: renderExpand,
+    type: 'selection',
+    // options: ['all', 'none'],
   },
   {
     title: 'Status',
-    render: (row) => h(SStatus, {kind: row.status.kind}),
+    render: (row) => h(XStatus, {kind: row.status.kind}),
     width: 90,
   },
   {
     key: 'timestamp',
-    title: () => h(STimestampTitle),
-    render: (row) => h(STimestamp, {ts: row.displayTime}),
+    title: () => h(XTimestampTitle),
+    render: (row) => h(XTime, {ts: row.displayTime}),
     width: 150,
   },
-  {title: 'Attributes', render: (row) => h(SLogAttributes, {row: row}), width: 300},
+  {title: 'Attributes', render: (row) => h(XLogAttributes, {row: row}), width: 300},
   {title: 'Message', key: 'message', ellipsis: {
     tooltip: {placement: "bottom-end", width: 500},
     lineClamp: 2,
   }},
+  {
+    type: 'expand',
+    renderExpand: renderExpand,
+  },
 ]
 
 onMounted(() => {
@@ -126,35 +136,39 @@ function rowProps(row: Log) {
       console.log("right click supported!")
       e.preventDefault()
       return false
-    },
+    }
   }
 }
 
-const filters = {
-  
-}
+const filters = [
+  {label: "Active", value: "active"},
+  {label: "Snoozed", value: "snoozed"},
+  {label: "Acked", value: "acked"},
+  {label: "All", value: "all"},
+]
+
 </script>
 
 <template>
   <div>
-    <n-space>
+    <n-space style="padding: 5px; margin-bottom: 10px;">
+      <x-filter v-model:value="filter" :filters="filters" @change="getItems" />
       <n-input-group>
-        <n-input-group-label>Filters</n-input-group-label>
-        <n-radio-group v-model:value="filter" v-on:change="getItems">
-          <n-radio-button label="Active" value="active" />
-          <n-radio-button label="Snoozed" value="snoozed" />
-          <n-radio-button label="Acked" value="acked" />
-          <n-radio-button label="Failed" value="failed" />
-        </n-radio-group>
+        <x-time-range ref="stimerange" v-model:rangeMillis="rangeMillis" @update="onUpdateTimerange" />
+        <x-search @search="onSearch" />
+        <n-button @click="getItems()"><n-icon :component="Refresh" /></n-button>
       </n-input-group>
       <n-input-group>
-        <s-time-range ref="stimerange" v-model:rangeMillis="rangeMillis" @update="onUpdateTimerange" />
-        <s-search @search="onSearch" />
-        <n-button @click="getItems()"><n-icon :component="Refresh" /></n-button>
+        <template v-if="selectedItems.length > 0">
+          <n-button type="primary" @click="ack()">Ack ({{ selectedItems.length }})</n-button>
+          <n-button type="warning" @click="ack()">Escalate ({{ selectedItems.length }})</n-button>
+          <x-ack-modal v-model:show="showAckModal" :ids="selectedIDs" />
+        </template>
       </n-input-group>
     </n-space>
     <n-data-table
       ref="table"
+      v-model:checked-row-keys="selectedItems"
       remote
       striped
       bordered

@@ -10,7 +10,7 @@ import (
 
 	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/common/tracing"
-	"github.com/japannext/snooze/pkg/common/opensearch"
+	"github.com/japannext/snooze/pkg/common/opensearch/format"
 )
 
 func notificationHandler(ctx context.Context, msg jetstream.Msg) error {
@@ -36,7 +36,11 @@ func notificationHandler(ctx context.Context, msg jetstream.Msg) error {
 	}
 
 	notification.NotificationTime = models.TimeNow()
-	if err := storeQ.PublishData(ctx, opensearch.Create(models.NOTIFICATION_INDEX, notification)); err != nil {
+	err := storeQ.PublishData(ctx, &format.Create{
+		Index: models.NOTIFICATION_INDEX,
+		Item: notification,
+	})
+	if err != nil {
 		log.Warnf("failed to publish notification")
 		tracing.Error(span, err)
 		return err

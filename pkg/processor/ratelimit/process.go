@@ -12,7 +12,7 @@ import (
 
 	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/common/redis"
-	"github.com/japannext/snooze/pkg/common/opensearch"
+	"github.com/japannext/snooze/pkg/common/opensearch/format"
 	"github.com/japannext/snooze/pkg/common/tracing"
 	"github.com/japannext/snooze/pkg/common/utils"
 )
@@ -177,7 +177,10 @@ func Process(ctx context.Context, item *models.Log) error {
 				Hash: i0.hash,
 				Fields: i0.fields,
 			}
-			err := storeQ.PublishData(ctx, opensearch.Create(models.RATELIMIT_INDEX, item))
+			err := storeQ.PublishData(ctx, &format.Create{
+				Index: models.RATELIMIT_INDEX,
+				Item: item,
+			})
 			if err != nil {
 				log.Warnf("failed to publish ratelimit '%s'", rate.Name)
 				tracing.Error(span, err)
@@ -195,12 +198,11 @@ func Process(ctx context.Context, item *models.Log) error {
 				tracing.Error(span, err)
 				continue
 			}
-			update := &opensearch.UpdateAction{
+			err = storeQ.PublishData(ctx, &format.Update{
 				Index: models.RATELIMIT_INDEX,
 				ID: id,
 				Doc: data,
-			}
-			err = storeQ.PublishData(ctx, update)
+			})
 			if err != nil {
 				log.Warnf("failed to update ratelimit '%s'", rate.Name)
 				tracing.Error(span, err)

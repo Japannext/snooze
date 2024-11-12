@@ -1,18 +1,12 @@
 <script setup lang="ts">
-import { defineProps, defineExpose } from 'vue'
+import { defineModel } from 'vue'
+import { useMouse } from '@vueuse/core'
+// Components
 import { NDropdown } from 'naive-ui'
 
-const props = defineProps<{
-  x: number,
-  y: number,
-  show: boolean
-}>()
+const {x, y } = useMouse()
 
-defineExpose([show])
-
-function show() {
-
-}
+const show = defineModel<boolean>('show', {default: false})
 
 </script>
 

@@ -72,7 +72,7 @@ type Process struct {
 
 func init() {
 	index := IndexTemplate{
-		Version: 2,
+		Version: 3,
 		IndexPatterns: []string{LOG_INDEX},
 		DataStream: map[string]map[string]string{"timestamp_field": {"name": "displayTime"}},
 		Template: Indice{
@@ -92,9 +92,10 @@ func init() {
 					"pattern": {Type: "keyword"},
 					"labels":      {Type: "object"},
 					"message":        {Type: "text"},
-					"mute.skipNotification": {Type: "boolean"},
-					"mute.skipStorage": {Type: "boolean"},
-					"mute.reason": {Type: "keyword"},
+					"status.skipNotification": {Type: "boolean"},
+					"status.skipStorage": {Type: "boolean"},
+					"status.reason": {Type: "text"},
+					"status.kind": {Type: "keyword"},
 				},
 			},
 		},

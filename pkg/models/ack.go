@@ -1,5 +1,7 @@
 package models
 
+const ACK_INDEX = "v2-ack"
+
 // An acknowledgement given to a log or
 // group of logs.
 type Ack struct {

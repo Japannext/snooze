@@ -48,6 +48,9 @@ func (req *SearchReq) WithPagination(pagination *models.Pagination) *SearchReq {
 
 func (req *SearchReq) WithSearch(s *models.Search) *SearchReq {
 	if s == nil || s.Text == "" {
+		if req.Doc.Bool == nil {
+			req.Doc.MatchAll()
+		}
 		return req
 	}
 	req.Doc.WithQueryString(s.Text)
@@ -86,27 +89,3 @@ func Search[T models.HasID](ctx context.Context, req *SearchReq) (*models.ListOf
 	}
     return &list, nil
 }
-
-/*
-func (req *SearchRequest[T]) WithTerm(field, value string) *SearchRequest[T] {
-	item := dsl.QueryItem{Term: kv(field, value)}
-	req.Doc.Query.Bool.And = append(req.Doc.Query.Bool.And, item)
-	return req
-}
-*/
-
-/*
-// A wrapper to wrap all the single-value maps used by opensearch
-func kv[T any](field string, value T) map[string]T {
-	return map[string]T{field: value}
-}
-*/
-
-/*
-func (req *SearchReq) WithGroupSearch(groupBy, search string) *SearchReq {
-	item := dsl.QueryItem{QueryString: &dsl.QueryString{Query: ""}}
-	req.Doc.Query.Bool.And = append(req.Doc.Query.Bool.And, item)
-
-	return req
-}
-*/

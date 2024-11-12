@@ -10,10 +10,6 @@ type Group struct {
 	Hash string `json:"hash"`
 	// Human readable information about the group
 	Labels map[string]string `json:"labels,omitempty"`
-
-	// Last time a new hit of this group was inserted.
-	// This is mainly used to curate the index
-	LastInsert Time `json:"lastInsert"`
 }
 
 func init() {
@@ -27,7 +23,6 @@ func init() {
 					"name": {Type: "keyword"},
 					"labels": {Type: "object"},
 					"hash": {Type: "keyword"},
-					"lastInsert": {Type: "date", Format: "epoch_millis"},
 				},
 			},
 		},

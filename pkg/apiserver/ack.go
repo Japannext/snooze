@@ -32,10 +32,22 @@ func postAck(c *gin.Context) {
 	}
 
 	req.Doc.WithTerms("logIDs", item.LogIDs)
+	req.Doc.WithPainlessScript("ctx._source.status.kind = params.kind", map[string]interface{}{
+		"kind": "acked",
+	})
 
 	_, err := opensearch.UpdateByQuery(ctx, req)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "failed to update in opensearch: %s", err)
+		return
+	}
+
+	err = opensearch.IndexDocument(ctx, &opensearch.IndexReq{
+		Index: models.ACK_INDEX,
+		Item: item,
+	})
+	if err != nil {
+		c.String(http.StatusInternalServerError, "failed to save ack to opensearch: %s", err)
 		return
 	}
 }

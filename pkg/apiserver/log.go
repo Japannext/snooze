@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/japannext/snooze/pkg/common/opensearch"
 	"github.com/japannext/snooze/pkg/models"
@@ -16,11 +17,15 @@ func init() {
 	})
 }
 
+type Filter struct {
+	Text string `form:"filter"`
+}
+
 type getLogsParams struct {
 	*models.Pagination
 	*models.TimeRange
 	*models.Search
-	filter string `form:"filter"`
+	*Filter
 }
 
 func getLogs(c *gin.Context) {
@@ -40,19 +45,34 @@ func getLogs(c *gin.Context) {
 	req.WithTimeRange("displayTime", params.TimeRange)
 	req.WithSearch(params.Search)
 
-	// Log filters
-	switch params.filter {
-	case "active", "":
-		// No filter
-	case "snoozed":
-		req.Doc.WithExists("status.snoozed")
-	case "acked":
-		req.Doc.WithExists("status.acked")
-	case "failed":
-		// req.Doc.WithTerm("", "")
-	default:
-		c.String(http.StatusBadRequest, "unknown filter name `%s`", params.filter)
-		return
+	if params.Filter != nil {
+		log.Debugf("params.filter: %s", params.Filter.Text)
+	}
+	if params.Search != nil {
+		log.Debugf("params.search: %s", params.Search.Text)
+	}
+	log.Debugf("params.timerange.start: %d", params.TimeRange.Start)
+	log.Debugf("params.timerange.end: %d", params.TimeRange.End)
+	log.Debugf("params.pagination.page: %d", params.Pagination.Page)
+	log.Debugf("params.pagination.size: %d", params.Pagination.Size)
+
+	// Filters
+	if params.Filter != nil {
+		switch params.Filter.Text {
+		case "active", "":
+			req.Doc.WithTerm("status.kind.keyword", "active")
+		case "snoozed":
+			req.Doc.WithTerm("status.kind.keyword", "snoozed")
+		case "acked":
+			req.Doc.WithTerm("status.kind.keyword", "acked")
+		case "failed":
+			// req.Doc.WithTerm("", "")
+		case "all":
+			// no filter
+		default:
+			c.String(http.StatusBadRequest, "unknown filter name `%s`", params.Filter.Text)
+			return
+		}
 	}
 
 	items, err := opensearch.Search[*models.Log](ctx, req)

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/japannext/snooze/pkg/models"
-	"github.com/japannext/snooze/pkg/common/opensearch"
+	"github.com/japannext/snooze/pkg/common/opensearch/format"
 	"github.com/japannext/snooze/pkg/common/tracing"
 )
 
@@ -19,5 +19,8 @@ func Process(ctx context.Context, item *models.Log) error {
 	}
 	tracing.SetAttribute(span, "mute.skipStorage", "false")
 
-	return storeQ.PublishData(ctx, opensearch.Create(models.LOG_INDEX, item))
+	return storeQ.PublishData(ctx, &format.Create{
+		Index: models.LOG_INDEX,
+		Item: item,
+	})
 }
