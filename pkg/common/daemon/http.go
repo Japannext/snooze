@@ -13,12 +13,17 @@ type HttpDaemon struct {
 	srv    *http.Server
 }
 
-func NewHttpDaemon() *HttpDaemon {
+type Register = func(*gin.Engine)
+
+func NewHttpDaemon(registers... Register) *HttpDaemon {
 	router := gin.New()
 	router.Use(gin.LoggerWithConfig(gin.LoggerConfig{
 		SkipPaths: []string{"/livez", "/readyz", "/metrics"},
 	}))
 	router.Use(gin.Recovery())
+	for _, register := range registers {
+		register(router)
+	}
 	return &HttpDaemon{
 		Engine: router,
 		srv: &http.Server{

@@ -1,21 +1,22 @@
 package processor
 
 import (
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
+	"github.com/gin-gonic/gin"
+
 	"github.com/japannext/snooze/pkg/common/daemon"
 	"github.com/japannext/snooze/pkg/common/logging"
 	"github.com/japannext/snooze/pkg/common/mq"
 	"github.com/japannext/snooze/pkg/common/redis"
 	"github.com/japannext/snooze/pkg/common/utils"
 	"github.com/japannext/snooze/pkg/common/tracing"
-
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/trace"
-
 	// Sub-Processors
+	"github.com/japannext/snooze/pkg/processor/grouping"
+	"github.com/japannext/snooze/pkg/processor/mapping"
 	"github.com/japannext/snooze/pkg/processor/notification"
 	"github.com/japannext/snooze/pkg/processor/profile"
 	"github.com/japannext/snooze/pkg/processor/ratelimit"
-	"github.com/japannext/snooze/pkg/processor/grouping"
 	"github.com/japannext/snooze/pkg/processor/silence"
 	"github.com/japannext/snooze/pkg/processor/snooze"
 	"github.com/japannext/snooze/pkg/processor/store"
@@ -25,6 +26,8 @@ import (
 var processQ *mq.Sub
 var pool *utils.Pool
 var tracer trace.Tracer
+
+var routes []func(*gin.Engine)
 
 // Logic done only at the application startup.
 // All errors are fatal.
@@ -41,6 +44,7 @@ func Startup() *daemon.DaemonManager {
 	pool = utils.NewPool(config.MaxWorkers)
 	tracer = otel.Tracer("snooze")
 
+	mapping.Startup(pipeline.Mappings)
 	transform.Startup(pipeline.Transforms)
 	grouping.Startup(pipeline.Grouping)
 	silence.Startup(pipeline.Silences)
@@ -51,8 +55,7 @@ func Startup() *daemon.DaemonManager {
 	store.Startup()
 
 	dm := daemon.NewDaemonManager()
-	srv := daemon.NewHttpDaemon()
-	// TODO /api/group-configs
+	srv := daemon.NewHttpDaemon(routes...)
 	dm.AddDaemon("http", srv)
 	dm.AddDaemon("consumer", NewConsumer())
 

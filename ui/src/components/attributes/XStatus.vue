@@ -11,6 +11,7 @@ const KINDS = {
   "active": {type: "", value: "active"},
   "snoozed": {type: "warning", value: "snoozed"},
   "silenced": {type: "info", value: "silenced"},
+  "acked": {type: "success", value: "acked"},
 }
 
 const tag = computed(() => {

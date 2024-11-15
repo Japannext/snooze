@@ -65,9 +65,9 @@ func (pub *Pub) publish(ctx context.Context, span trace.Span, data []byte) error
 	msg := &nats.Msg{Subject: pub.subject, Data: data, Header: header}
 
 	for key, _ := range header {
-		tracing.SetAttribute(span, fmt.Sprintf("nats.header.%s", key), header.Get(key))
+		tracing.SetString(span, fmt.Sprintf("nats.header.%s", key), header.Get(key))
 	}
-	tracing.SetAttribute(span, "nats.data", string(data))
+	tracing.SetString(span, "nats.data", string(data))
 
 	if _, err := pub.client.js.PublishMsg(ctx, msg); err != nil {
 		tracing.Error(span, err)

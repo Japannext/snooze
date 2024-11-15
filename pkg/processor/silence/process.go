@@ -37,6 +37,9 @@ func Process(ctx context.Context, item *models.Log) error {
 		item.Status.Kind = "silenced"
 		item.Status.Reason = fmt.Sprintf("Silenced by '%s'", s.Name)
 		item.Status.SkipNotification = true
+		if s.Drop {
+			item.Status.SkipStorage = true
+		}
 	}
 
 	return nil

@@ -3,7 +3,6 @@ package notification
 import (
 	"context"
 	"fmt"
-	"strconv"
 
 	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/common/tracing"
@@ -14,7 +13,7 @@ func Process(ctx context.Context, item *models.Log) error {
 	defer span.End()
 
 	if item.Status.SkipNotification {
-		tracing.SetAttribute(span, "notification.decision", "mute")
+		tracing.SetString(span, "notification.decision", "skipNotification")
 		return nil
 	}
 
@@ -23,7 +22,7 @@ func Process(ctx context.Context, item *models.Log) error {
 	// var destinations = utils.NewOrderedSet[models.Destination]()
 	var destinations = make(map[models.Destination]bool)
 
-	tracing.SetAttribute(span, "notifications.number", strconv.Itoa(len(notifications)))
+	tracing.SetInt(span, "notifications.number", len(notifications))
 
 	for _, notif := range notifications {
 		if notif.internal.condition != nil {
@@ -33,12 +32,12 @@ func Process(ctx context.Context, item *models.Log) error {
 				return err
 			}
 			if !match {
-				tracing.SetAttribute(span, fmt.Sprintf("notification.%s.match", notif.Name), "false")
+				tracing.SetBool(span, fmt.Sprintf("notification.%s.match", notif.Name), false)
 				continue
 			}
 			log.Debugf("Matched notif '%s', destination(s): %s", notif.Name, notif.Destinations)
 		}
-		tracing.SetAttribute(span, fmt.Sprintf("notification.%s.match", notif.Name), "true")
+		tracing.SetBool(span, fmt.Sprintf("notification.%s.match", notif.Name), true)
 
 		for _, dest := range notif.Destinations {
 			if dest.Queue == "dummy" {
@@ -63,10 +62,10 @@ func Process(ctx context.Context, item *models.Log) error {
 			subject := fmt.Sprintf("NOTIFY.%s", dest.Queue)
 			if err := notifyQ.WithSubject(subject).Publish(ctx, notification); err != nil {
 				log.Warnf("failed to queue notification to '%s:%s'", dest.Queue, dest.Profile)
-				tracing.SetAttribute(span, fmt.Sprintf("notification.%s.%s:%s", notif.Name, dest.Queue, dest.Profile), "failed")
+				tracing.SetString(span, fmt.Sprintf("notification.%s.%s:%s", notif.Name, dest.Queue, dest.Profile), "failed")
 				tracing.Error(span, err)
 			}
-			tracing.SetAttribute(span, fmt.Sprintf("notification.%s.%s:%s", notif.Name, dest.Queue, dest.Profile), "sent")
+			tracing.SetString(span, fmt.Sprintf("notification.%s.%s:%s", notif.Name, dest.Queue, dest.Profile), "sent")
 		}
 	}
 

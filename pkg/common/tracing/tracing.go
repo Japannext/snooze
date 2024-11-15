@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"time"
-	"strconv"
 	"net/http"
 
 	log "github.com/sirupsen/logrus"
@@ -38,33 +37,65 @@ func NewTracerProvider(serviceName string) trace.TracerProvider {
 	return provider
 }
 
-func SetAttribute(span trace.Span, key, value string) {
-	if value == "" {
-		return
-	}
+func SetString(span trace.Span, key, value string) {
 	span.SetAttributes(attribute.KeyValue{
 		Key: attribute.Key(key),
 		Value: attribute.StringValue(value),
 	})
 }
 
+func SetInt(span trace.Span, key string, value int) {
+	span.SetAttributes(attribute.KeyValue{
+		Key: attribute.Key(key),
+		Value: attribute.IntValue(value),
+	})
+}
+
+func SetInt64(span trace.Span, key string, value int64) {
+	span.SetAttributes(attribute.KeyValue{
+		Key: attribute.Key(key),
+		Value: attribute.Int64Value(value),
+	})
+}
+
+func SetFloat64(span trace.Span, key string, value float64) {
+	span.SetAttributes(attribute.KeyValue{
+		Key: attribute.Key(key),
+		Value: attribute.Float64Value(value),
+	})
+}
+
+func SetBool(span trace.Span, key string, value bool) {
+	span.SetAttributes(attribute.KeyValue{
+		Key: attribute.Key(key),
+		Value: attribute.BoolValue(value),
+	})
+}
+
+func SetTime(span trace.Span, key string, value time.Time) {
+	span.SetAttributes(attribute.KeyValue{
+		Key: attribute.Key(key),
+		Value: attribute.StringValue(value.Format(time.RFC3339)),
+	})
+}
+
 func SetMap(span trace.Span, prefix string, kv map[string]string) {
 	for key, value := range kv {
-		SetAttribute(span, fmt.Sprintf("%s.%s", prefix, key), value)
+		SetString(span, fmt.Sprintf("%s.%s", prefix, key), value)
 	}
 }
 
 func SetLog(span trace.Span, item *models.Log) {
-	SetAttribute(span, "log.source.kind", item.Source.Kind)
-	SetAttribute(span, "log.source.name", item.Source.Name)
+	SetString(span, "log.source.kind", item.Source.Kind)
+	SetString(span, "log.source.name", item.Source.Name)
 	SetMap(span, "log.identity", item.Identity)
 	SetMap(span, "log.labels", item.Labels)
-	SetAttribute(span, "log.severityText", item.SeverityText)
-	SetAttribute(span, "log.severityNumber", strconv.Itoa(int(item.SeverityNumber)))
-	SetAttribute(span, "log.message", item.Message)
-	SetAttribute(span, "log.actualTime", item.ActualTime.Time.Format(time.RFC3339))
-	SetAttribute(span, "log.observedTime", item.ObservedTime.Time.Format(time.RFC3339))
-	SetAttribute(span, "log.displayTime", item.DisplayTime.Time.Format(time.RFC3339))
+	SetString(span, "log.severityText", item.SeverityText)
+	SetInt(span, "log.severityNumber", int(item.SeverityNumber))
+	SetString(span, "log.message", item.Message)
+	SetTime(span, "log.actualTime", item.ActualTime.Time)
+	SetTime(span, "log.observedTime", item.ObservedTime.Time)
+	SetTime(span, "log.displayTime", item.DisplayTime.Time)
 }
 
 func HTTPFilter(req *http.Request) bool {

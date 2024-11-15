@@ -65,6 +65,11 @@ func (item *Log) Context() map[string]interface{} {
 	}
 }
 
+type switchPair struct {
+	field string
+	value interface{}
+}
+
 type Process struct {
 	Profile string `json:"profile,omitempty"`
 	Pattern string `json:"pattern,omitempty"`

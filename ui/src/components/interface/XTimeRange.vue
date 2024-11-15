@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import { ref, onMounted, defineExpose, defineModel } from 'vue'
 import { NIcon, NButton, NPopover, NDatePicker, NRadioGroup, NRadioButton, NTabs, NTabPane } from 'naive-ui'
-import { ref, onMounted, defineExpose } from 'vue'
 import { ClockRegular } from '@vicons/fa'
 import { DateTime } from 'luxon'
 import { useRouteQuery } from '@vueuse/router'
+import type { TimeRangeParams } from '@/api'
 
 const day = (24 * 3600 * 1000)
 const hour = 3600 * 1000
@@ -22,7 +23,7 @@ const end = useRouteQuery('end', 0, {transform: Number})
 const showPopover = ref<Boolean>(false)
 const displayText = ref<string>(Preset.Last24Hours)
 
-const emit = defineEmits(['update'])
+const emit = defineEmits(['change'])
 defineExpose({getTime})
 
 onMounted(() => {
@@ -57,30 +58,34 @@ function setDateRange() {
 
 // Method to call from outside to return the
 // current timerange
-function getTime(): [number, number] {
+function getTime(): TimeRangeParams {
+  var params: TimeRangeParams = {}
   if (preset.value) {
     var now = DateTime.now().toMillis()
     switch(preset.value) {
       case Preset.Last24Hours: {
-        return [now - day, 0]
+        params.start = now - day
+        params.end = 0
+        break
       }
       case Preset.Last7Days: {
-        return [now - 7*day, 0]
+        params.start = now = 7 * day
+        params.end = 0
+        break
       }
       case Preset.Last1Hour: {
-        return [now - 1*hour, 0]
+        params.start = now - 1 * hour
+        params.end = 0
+        break
       }
     }
   }
-  if (start.value || end.value) {
-    return [start.value, end.value]
-  }
-  return [null, null]
+  return params
 }
 
 function ok() {
   showPopover.value = false
-  emit('update')
+  emit('change')
 }
 
 function exit() {

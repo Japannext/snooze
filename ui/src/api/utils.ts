@@ -3,3 +3,8 @@ export type ListOf<T> = {
   total: number;
   more: boolean;
 }
+
+export type Destination = {
+  queue: string
+  profile: string
+}

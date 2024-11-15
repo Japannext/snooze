@@ -19,8 +19,14 @@ func Process(ctx context.Context, item *models.Log) error {
 				continue
 			}
 		}
-		if err := tr.internal.transform.Process(item); err != nil {
-			return err
+
+		ctx = context.WithValue(ctx, "capture", map[string]string{})
+		for _, action := range tr.internal.actions {
+			var err error
+			ctx, err = action.Process(ctx, item)
+			if err != nil {
+				return err
+			}
 		}
 	}
 

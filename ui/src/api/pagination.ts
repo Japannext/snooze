@@ -1,10 +1,44 @@
-export type Pagination = {
-  index: number;
-  perPage: number;
-  orderBy?: string;
-  direction?: number;
+import { reactive, ref } from 'vue'
+import { useRouteQuery } from '@vueuse/router'
+
+export interface Pagination {
+  page: number
+  pageSize: number
+  itemCount: number
 }
 
-export function newPagination(): Pagination {
-  return {index: 0, perPage: 20}
+// Return a pagination reactive object compatible with
+// naive-ui `n-data-table`
+export function usePagination(refresh: Function): Pagination {
+  const page = useRouteQuery('page', 1, {transform: Number})
+  const size = useRouteQuery('size', 20, {transform: Number})
+  const more = ref<boolean>(false)
+  const pagination = reactive({
+    page: page,
+    pageSize: size,
+    showSizePicker: true,
+    pageSizes: [5, 10, 20, 30, 50, 100],
+    itemCount: 0,
+    prefix(p: Pagination) {
+      console.log(p)
+      if (more.value) {
+        return `${p.itemCount}+ objects`
+      } else {
+        return `${p.itemCount} objects`
+      }
+    },
+    onUpdatePage(currentPage: number) {
+      page.value = currentPage
+      refresh()
+    },
+    onUpdatePageSize(pageSize: number) {
+      size.value = pageSize
+      page.value = 1
+      refresh()
+    },
+    setMore(m: boolean) {
+      more.value = m
+    },
+  })
+  return pagination
 }

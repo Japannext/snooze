@@ -23,8 +23,7 @@ var tracer trace.Tracer
 // declare routes in the same file as the route, and avoid
 // having to list them all in one place.
 // Routes can be listed easily enough with `git grep 'r[.].*/api/' pkg/apiserver`
-type RouteRegistration = func(*gin.Engine)
-var routes []RouteRegistration
+var routes []func(*gin.Engine)
 
 func Startup() *daemon.DaemonManager {
 	// Init components
@@ -40,7 +39,7 @@ func Startup() *daemon.DaemonManager {
 	tracer = otel.Tracer("snooze")
 
 	dm := daemon.NewDaemonManager()
-	srv := daemon.NewHttpDaemon()
+	srv := daemon.NewHttpDaemon(routes...)
 	srv.Engine.Use(otelgin.Middleware("snooze-alertmanager", otelgin.WithFilter(tracing.HTTPFilter)))
 
 	// Static routes
@@ -50,10 +49,6 @@ func Startup() *daemon.DaemonManager {
 		srv.Engine.Use(cors.New(*corsConfig))
 	}
 
-	// Registering routes
-	for _, register := range routes {
-		register(srv.Engine)
-	}
 	dm.AddDaemon("http", srv)
 
 	return dm

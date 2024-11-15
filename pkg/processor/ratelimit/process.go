@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 	"encoding/json"
-	"strconv"
 
 	redisv9 "github.com/redis/go-redis/v9"
 	"github.com/google/uuid"
@@ -149,9 +148,9 @@ func Process(ctx context.Context, item *models.Log) error {
 			continue
 		}
 
-		tracing.SetAttribute(span, fmt.Sprintf("ratelimit.%s.i2", rate.Name), strconv.Itoa(int(i2.value)))
-		tracing.SetAttribute(span, fmt.Sprintf("ratelimit.%s.i1", rate.Name), strconv.Itoa(int(i1.value)))
-		tracing.SetAttribute(span, fmt.Sprintf("ratelimit.%s.i0", rate.Name), strconv.Itoa(int(i0.value)))
+		tracing.SetInt(span, fmt.Sprintf("ratelimit.%s.i2", rate.Name), int(i2.value))
+		tracing.SetInt(span, fmt.Sprintf("ratelimit.%s.i1", rate.Name), int(i1.value))
+		tracing.SetInt(span, fmt.Sprintf("ratelimit.%s.i0", rate.Name), int(i0.value))
 
 		limit := rate.Burst
 
@@ -161,10 +160,10 @@ func Process(ctx context.Context, item *models.Log) error {
 			item.Status.Reason = fmt.Sprintf("ratelimited by '%s'", rate.Name)
 			item.Status.SkipNotification = true
 			item.Status.SkipStorage = true
-			tracing.SetAttribute(span, fmt.Sprintf("ratelimit.%s.decision", rate.Name), "drop")
+			tracing.SetString(span, fmt.Sprintf("ratelimit.%s.decision", rate.Name), "drop")
 			rateLimitedLogs.WithLabelValues(rate.Name).Inc()
 		} else {
-			tracing.SetAttribute(span, fmt.Sprintf("ratelimit.%s.decision", rate.Name), "store")
+			tracing.SetString(span, fmt.Sprintf("ratelimit.%s.decision", rate.Name), "store")
 		}
 
 		id := lock.cmd.String()
@@ -221,7 +220,7 @@ func Process(ctx context.Context, item *models.Log) error {
 		expireCmd := pipe.ExpireNX(ctx, i0.key, rate.Period*3)
 		incrCmds = append(incrCmds, incrCmd)
 		expireCmds = append(expireCmds, expireCmd)
-		tracing.SetAttribute(span, fmt.Sprintf("ratelimit.%s.incr_key", rate.Name), i0.key)
+		tracing.SetString(span, fmt.Sprintf("ratelimit.%s.incr_key", rate.Name), i0.key)
 	}
 	_, err = pipe.Exec(ctx)
 	if err != nil && err != redis.Nil {

@@ -3,9 +3,9 @@ import { defineProps } from 'vue'
 import { NTag, NIcon } from 'naive-ui'
 import { Mail, LogoGoogle, BuildingLighthouse20Filled, Box24Regular, Browser } from '@/icons'
 
-import type { Destination } from '@/api/types'
+import type { Destination } from '@/api'
 
-const props = defineProps<{
+defineProps<{
   destination: Destination,
 }>()
 

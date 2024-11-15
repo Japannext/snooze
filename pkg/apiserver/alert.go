@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/japannext/snooze/pkg/common/opensearch"
+	"github.com/japannext/snooze/pkg/common/opensearch/dsl"
 	"github.com/japannext/snooze/pkg/common/redis"
 	"github.com/japannext/snooze/pkg/models"
 )
@@ -20,8 +21,10 @@ type getAlertsParams struct {
 	*models.Pagination
 	*models.TimeRange
 	*models.Search
-	filter string `form:"filter"`
+	*models.Filter
 }
+
+var zero uint64 = 0
 
 func getAlerts(c *gin.Context) {
 	ctx, span := tracer.Start(c.Request.Context(), "getAlerts")
@@ -37,6 +40,20 @@ func getAlerts(c *gin.Context) {
     req.WithPagination(params.Pagination)
     req.WithTimeRange("startsAt", params.TimeRange)
     req.WithSearch(params.Search)
+
+	if params.Filter != nil {
+		switch params.Filter.Text {
+		case "active":
+			req.Doc.WithTerm("endsAt", 0)
+		case "history":
+			req.Doc.WithRange("endsAt", dsl.Range{Gt: &zero})
+		case "all":
+			// no filter
+		default:
+			c.String(http.StatusBadRequest, "unknown filter name `%s`", params.Filter.Text)
+			return
+		}
+	}
 
 	items, err := opensearch.Search[*models.Alert](ctx, req)
 	if err != nil {

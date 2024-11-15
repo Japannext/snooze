@@ -2,20 +2,13 @@
 import { defineProps } from 'vue'
 import { NSpace } from 'naive-ui'
 
-import type { Log } from '@/api/types'
+import type { Alert } from '@/api'
 
-import SAlertGroup from '@/components/attributes/SAlertGroup.vue'
-import SAlertName from '@/components/attributes/SAlertName.vue'
-import SHostname from '@/components/attributes/SHostname.vue'
-import SProcess from '@/components/attributes/SProcess.vue'
-import SLogPattern from '@/components/attributes/SLogPattern.vue'
-import SIdentity from '@/components/attributes/SIdentity.vue'
-
-import { XSeverity } from '.'
+import { XAlertGroup, XAlertName, XHostname, XProcess, XIdentity, XSeverity } from '@/components/attributes'
 
 // props
 defineProps<{
-  row: Log,
+  row: Alert,
 }>()
 
 </script>

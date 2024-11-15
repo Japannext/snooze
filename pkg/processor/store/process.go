@@ -12,12 +12,11 @@ func Process(ctx context.Context, item *models.Log) error {
 	ctx, span := tracer.Start(ctx, "store")
 	defer span.End()
 
+	tracing.SetBool(span, "status.skipStorage", item.Status.SkipStorage)
 	if item.Status.SkipStorage {
 		log.Debugf("skipping storage")
-		tracing.SetAttribute(span, "mute.skipStorage", "true")
 		return nil
 	}
-	tracing.SetAttribute(span, "mute.skipStorage", "false")
 
 	return storeQ.PublishData(ctx, &format.Create{
 		Index: models.LOG_INDEX,

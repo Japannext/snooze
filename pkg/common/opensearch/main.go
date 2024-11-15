@@ -16,7 +16,10 @@ type BootstrapFunction = func(context.Context)
 
 var (
 	client *opensearchapi.Client
+	tracerProvider = tracing.NewTracerProvider("opensearch")
 )
+
+var tracer = tracerProvider.Tracer("opensearch")
 
 var log *logrus.Entry
 
@@ -31,7 +34,6 @@ func Init() {
 			InsecureSkipVerify: config.InsecureSkipVerify,
 		},
 	}
-	tracerProvider := tracing.NewTracerProvider("opensearch")
 	cfg := opensearch.Config{
 		Addresses: config.Addresses,
 		Username:  config.Username,

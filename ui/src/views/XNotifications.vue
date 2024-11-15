@@ -1,105 +1,111 @@
 <script setup lang="ts">
 import { h, ref, onMounted } from 'vue'
-import axios from 'axios'
-import type { AxiosResponse } from 'axios'
-import { NTag, NIcon, NButton, NDataTable, NInputGroup } from 'naive-ui'
-import { useLoadingBar } from 'naive-ui'
-import { Refresh } from '@vicons/ionicons5'
+import { useLoadingBar, useMessage } from 'naive-ui'
+import { usePagination } from '@/api'
 
-import SSearch from '@/components/SSearch.vue'
-import STimeRange from '@/components/STimeRange.vue'
-import STimestamp from '@/components/STimestamp.vue'
-import STimestampTitle from '@/components/STimestampTitle.vue'
-import SDestination from '@/components/SDestination.vue'
-import type { Notification, NotificationResults } from '@/api/types'
-import { defaultRangeMillis } from '@/utils/timerange'
-import { usePagination } from '@/utils/pagination'
+// Components
+import { NButton, NSpace, NIcon, NDataTable, NInputGroup } from 'naive-ui'
+import { XSearch, XFilter, XTimeRange, XTimestampTitle } from '@/components/interface'
+import { XDestination, XTime  } from '@/components/attributes'
+import { XAckModal } from '@/components/modal'
+import { Refresh } from '@/icons'
 
-const search = ref<string>("")
-const items = ref<Array<Notification>>()
+import { getNotifications, type GetNotificationsParams, type Notification } from '@/api'
+
+const selected = ref<Notification>(null)
+const showDetails = ref<boolean>(false)
+
+// Utils
 const loading = useLoadingBar()
-const rangeMillis = ref<[number, number]>(defaultRangeMillis())
-const stimerange = ref(null)
-const pagination = usePagination(getItems)
+const message = useMessage()
 
-function getItems(): Promise {
+const items = ref<Array<Notification>>([])
+const selectedItems = ref<Array<string>>([])
+const xTimerange = ref(null)
+
+const showAckModal = ref<boolean>(false)
+const showEscalateModal = ref<boolean>(false)
+
+const params = ref<GetNotificationsParams>({
+  search: "",
+  filter: "active",
+  pagination: usePagination(refresh)
+})
+
+const filters = [
+  {label: "Active", value: "active"},
+  {label: "History", value: "history"},
+]
+
+const columns = [
+  {type: 'selection'},
+  {
+    title: () => h(XTimestampTitle),
+    render: (row) => h(XTime, {ts: row.notificationTime}),
+    width: 150,
+  },
+  {title: 'Destination', render: (row) => h(XDestination, {destination: row.destination})},
+  {type: 'expand', renderExpand: renderExpand},
+]
+
+function refresh(): Promise {
   loading.start()
-  var timerange = stimerange.value.getTime()
-  var params = {
-    page: pagination.page,
-    size: pagination.pageSize,
-  }
-  if (search.value) {
-    params.search = search
-  }
-  if (timerange[0] > 0) {
-    params.start = timerange[0]
-  }
-  if (timerange[1] > 0) {
-    params.end = timerange[1]
-  }
-  console.log(`getItems(${JSON.stringify(params)})`)
-  return axios.get("/api/notifications", {params: params})
-    .then((resp: AxiosResponse<NotificationResults>) => {
-      if (resp.data) {
-        items.value = resp.data.items
-        pagination.itemCount = resp.data.total
-        pagination.setMore(resp.data.more)
-      } else {
-        console.log("Notifications not found")
-      }
+  params.value.timerange = xTimerange.value.getTime()
+  getNotifications(params.value)
+    .then((list) => {
+      items.value = list.items
+      params.value.pagination.itemCount = list.total
+      params.value.pagination.setMore(list.more)
       loading.finish()
     })
     .catch((err) => {
-      // items.value = []
+      items.value = []
+      message.error(`failed to load alerts: ${err}`)
       loading.error()
     })
 }
 
+onMounted(() => {
+  refresh()
+})
+
+function unselect() {
+  selectedItems.value = []
+}
+
+function select(item: Notification) {
+  selected.value = item
+  showDetails.value = true
+}
+
+function reset() {
+  params.value.pagination.page = 1
+  refresh()
+}
+
 function renderExpand(row) {
-  console.log(`renderExpand: ${row}`)
-  console.log(row)
   return h("pre", null, JSON.stringify(row, null, 2))
 }
 
-const columns = [
-  {type: 'expand', renderExpand: renderExpand},
-  {
-    key: 'timestamp.display',
-    title: () => h(STimestampTitle),
-    render: (row) => h(STimestamp, {timestamp: row.timestamp}),
-    width: 150,
-  },
-  {title: 'Destination', render: (row) => h(SDestination, {destination: row.destination})},
-  {title: 'Body', key: 'body', ellipsis: {tooltip: {placement: "bottom-end", width: 500}}},
-  {title: 'Action', width: 200},
-]
-
-onMounted(() => {
-  getItems()
-})
-
-function onUpdateTimerange() {
-  pagination.page = 1
-  getItems()
-}
-
-function onSearch(text: string) {
-  search.value = text
-  getItems()
-}
-
-//    @update:page="onPageChange"
-//    @update:page-size="onPageSizeChange"
 </script>
 
 <template>
-  <n-input-group>
-    <s-time-range ref="stimerange" v-model:rangeMillis="rangeMillis" @update="onUpdateTimerange" />
-    <s-search @search="onSearch" />
-    <n-button @click="getItems()"><n-icon :component="Refresh" /></n-button>
-  </n-input-group>
+  <n-space :size="100" justify="center" style="padding: 5px; margin-bottom: 10px;">
+    <x-filter v-model:value="params.filter" :filters="filters" @change="reset" />
+    <n-input-group>
+      <x-time-range ref="xTimerange" @change="reset" />
+      <x-search v-model:value="params.search" @change="reset" />
+      <n-button @click="refresh"><n-icon :component="Refresh" /></n-button>
+    </n-input-group>
+    <n-input-group>
+      <n-button type="primary" :disabled="selectedItems.length == 0" @click="showAckModal = true">Ack ({{ selectedItems.length }})</n-button>
+      <x-ack-modal v-model:show="showAckModal" :ids="selectedItems" @success="unselect" />
+
+      <n-button type="warning" :disabled="selectedItems.length == 0">Escalate ({{ selectedItems.length }})</n-button>
+    </n-input-group>
+  </n-space>
   <n-data-table
+    ref="table"
     remote
     striped
     bordered
@@ -108,7 +114,7 @@ function onSearch(text: string) {
     :single-line="false"
     :columns="columns"
     :data="items"
-    :row-key="(row) => row.id"
-    :pagination="pagination"
+    :row-key="(row) => row._id"
+    :pagination="params.pagination"
   />
 </template>

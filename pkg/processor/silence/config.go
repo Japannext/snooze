@@ -8,9 +8,10 @@ import (
 )
 
 type Silence struct {
-	Name     string             `yaml:"name"`
-	If       string             `yaml:"if"`
+	Name     string             `yaml:"name" json:"name"`
+	If       string             `yaml:"if" json:"if"`
 	Schedule *schedule.Schedule `yaml:",inline"`
+	Drop bool `yaml:"drop" json:"drop"`
 
 	internal struct {
 		condition *lang.Condition

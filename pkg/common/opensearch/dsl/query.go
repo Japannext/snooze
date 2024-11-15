@@ -83,6 +83,8 @@ type Exists struct {
 type Range struct {
 	Gte *uint64 `json:"gte,omitempty"`
 	Lte *uint64 `json:"lte,omitempty"`
+	Gt *uint64 `json:"gt,omitempty"`
+	Lt *uint64 `json:"lt,omitempty"`
 }
 
 func (query *Query) WithTerm(key string, value interface{}) *Query {
@@ -92,6 +94,11 @@ func (query *Query) WithTerm(key string, value interface{}) *Query {
 
 func (query *Query) WithTerms(key string, values []string) *Query {
 	item := QueryItem{Terms: map[string][]string{key: values}}
+	return query.And(item)
+}
+
+func (query *Query) WithRange(field string, rg Range) *Query {
+	item := QueryItem{Range: map[string]Range{field: rg}}
 	return query.And(item)
 }
 

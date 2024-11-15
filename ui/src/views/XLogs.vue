@@ -1,99 +1,42 @@
 <script setup lang="ts">
-import axios from 'axios'
-import { h, ref, onMounted, computed, Component } from 'vue'
+import { h, ref, onMounted } from 'vue'
 import { useLoadingBar, useMessage } from 'naive-ui'
-import { defaultRangeMillis } from '@/utils/timerange'
-import { usePagination } from '@/utils/pagination'
+import { usePagination } from '@/api'
 
 // Components
-import { NRadioGroup, NRadioButton, NInputGroupLabel, NIcon, NTag, NCard, NTabs, NTab, NButton, NSpace, NDataTable, NInputGroup, NLoadingBarProvider } from 'naive-ui'
+import { NIcon, NButton, NSpace, NDataTable, NInputGroup } from 'naive-ui'
 import { XSearch, XFilter, XTimeRange, XTimestampTitle } from '@/components/interface'
 import { XStatus, XTime, XLogAttributes } from '@/components/attributes'
 import { XAckModal } from '@/components/modal'
 import { Refresh } from '@/icons'
 
-// Types
-import type { AxiosResponse } from 'axios'
-import type { Log, LogResults } from '@/api/types'
+import { getLogs, type Log, type GetLogsParams } from '@/api'
 
-const search = ref<string>("")
 const items = ref<Array<Log>>()
-const rangeMillis = ref<[number, number]>(defaultRangeMillis())
-const stimerange = ref(null)
+const xTimerange = ref(null)
 const loading = useLoadingBar()
-const pagination = usePagination(getItems)
 const table = ref<undefined|HTMLElement>(undefined)
 const message = useMessage()
-const filter = ref<string>("active")
-const selectedItems = ref<Array<Log>>([])
-const showAckModal = ref<Boolean>(false)
+const selectedItems = ref<Array<string>>([])
 
-function ack() {
-  showAckModal.value = true
-}
+const showAckModal = ref<boolean>(false)
+const showEscalateModal = ref<boolean>(false)
 
-const selectedIDs = computed(() => {
-  return selectedItems.value.map((e) => e.ID)
+const params = ref<GetLogsParams>({
+  search: "",
+  filter: "active",
+  pagination: usePagination(refresh)
 })
 
-function getItems(): Promise {
-  // loading.value = true
-  loading.start()
-  var timerange = stimerange.value.getTime()
-  var params = {
-    page: pagination.page,
-    size: pagination.pageSize,
-  }
-  if (search.value) {
-    params.search = search.value
-  }
-  if (timerange[0] > 0) {
-    params.start = timerange[0]
-  }
-  if (timerange[1] > 0) {
-    params.end = timerange[1]
-  }
-  if (filter.value) {
-    params.filter = filter.value
-  }
-  console.log(`getItems(${JSON.stringify(params)})`)
-  return axios.get<Log>("/api/logs", {params: params})
-    .then((resp: AxiosResponse<LogResults>) => {
-      if (resp.data) {
-        items.value = resp.data.items
-        pagination.itemCount = resp.data.total
-        pagination.setMore(resp.data.more)
-      } else {
-        console.log("Logs not found")
-      }
-      // loading.value = false
-      loading.finish()
-    })
-    .catch(err => {
-      // items.value = []
-      // loading.value = false
-      message.error(`failed to load logs: ${err}`)
-      loading.error()
-    })
-}
-
-function renderExpand(row) {
-  return h("pre", null, JSON.stringify(row, null, 2))
-}
-
-function render(component: Component, attr: string) {
-  return (row) => {
-    var options = {}
-    options[attr] = row[attr]
-    return h(component, options)
-  }
-}
+const filters = [
+  {label: "Active", value: "active"},
+  {label: "Snoozed", value: "snoozed"},
+  {label: "Acked", value: "acked"},
+  {label: "All", value: "all"},
+]
 
 const columns = [
-  {
-    type: 'selection',
-    // options: ['all', 'none'],
-  },
+  {type: 'selection'},
   {
     title: 'Status',
     render: (row) => h(XStatus, {kind: row.status.kind}),
@@ -106,28 +49,52 @@ const columns = [
     width: 150,
   },
   {title: 'Attributes', render: (row) => h(XLogAttributes, {row: row}), width: 300},
-  {title: 'Message', key: 'message', ellipsis: {
-    tooltip: {placement: "bottom-end", width: 500},
-    lineClamp: 2,
-  }},
+  {
+    title: () => 'Message',
+    key: 'message',
+    ellipsis: {
+      tooltip: {placement: "bottom-end", width: 500},
+      lineClamp: 2,
+    }
+  },
   {
     type: 'expand',
     renderExpand: renderExpand,
   },
 ]
 
-onMounted(() => {
-  getItems()
-})
-
-function onUpdateTimerange() {
-  pagination.page = 1
-  getItems()
+function refresh(): Promise {
+  loading.start()
+  params.value.timerange = xTimerange.value.getTime()
+  getLogs(params.value)
+    .then((list) => {
+      items.value = list.items
+      params.value.pagination.itemCount = list.total
+      params.value.pagination.setMore(list.more)
+      loading.finish()
+    })
+    .catch((err) => {
+      items.value = []
+      message.error(`failed to load logs: ${err}`)
+      loading.error()
+    })
 }
 
-function onSearch(text: string) {
-  search.value = text
-  getItems()
+function unselect() {
+  selectedItems.value = []
+}
+
+function renderExpand(row) {
+  return h("pre", null, JSON.stringify(row, null, 2))
+}
+
+onMounted(() => {
+  refresh()
+})
+
+function reset() {
+  params.value.pagination.page = 1
+  refresh()
 }
 
 function rowProps(row: Log) {
@@ -140,30 +107,22 @@ function rowProps(row: Log) {
   }
 }
 
-const filters = [
-  {label: "Active", value: "active"},
-  {label: "Snoozed", value: "snoozed"},
-  {label: "Acked", value: "acked"},
-  {label: "All", value: "all"},
-]
-
 </script>
 
 <template>
   <div>
-    <n-space style="padding: 5px; margin-bottom: 10px;">
-      <x-filter v-model:value="filter" :filters="filters" @change="getItems" />
+    <n-space :size="100" justify="center" style="padding: 5px; margin-bottom: 10px;">
+      <x-filter v-model:value="params.filter" :filters="filters" @change="reset" />
       <n-input-group>
-        <x-time-range ref="stimerange" v-model:rangeMillis="rangeMillis" @update="onUpdateTimerange" />
-        <x-search @search="onSearch" />
-        <n-button @click="getItems()"><n-icon :component="Refresh" /></n-button>
+        <x-time-range ref="xTimerange" @change="reset" />
+        <x-search v-model:value="params.search" @change="reset" />
+        <n-button @click="refresh"><n-icon :component="Refresh" /></n-button>
       </n-input-group>
       <n-input-group>
-        <template v-if="selectedItems.length > 0">
-          <n-button type="primary" @click="ack()">Ack ({{ selectedItems.length }})</n-button>
-          <n-button type="warning" @click="ack()">Escalate ({{ selectedItems.length }})</n-button>
-          <x-ack-modal v-model:show="showAckModal" :ids="selectedIDs" />
-        </template>
+        <n-button type="primary" :disabled="selectedItems.length == 0" @click="showAckModal = true">Ack ({{ selectedItems.length }})</n-button>
+        <x-ack-modal v-model:show="showAckModal" :ids="selectedItems" @success="unselect" />
+
+        <n-button type="warning" :disabled="selectedItems.length == 0">Escalate ({{ selectedItems.length }})</n-button>
       </n-input-group>
     </n-space>
     <n-data-table
@@ -178,7 +137,14 @@ const filters = [
       :columns="columns"
       :data="items"
       :row-key="(row) => row._id"
-      :pagination="pagination"
+      :pagination="params.pagination"
     />
   </div>
 </template>
+
+<style>
+th.n-data-table-th {
+  padding: 0px;
+  background: red;
+}
+</style>

@@ -51,7 +51,7 @@ func Process(ctx context.Context, item *models.Log) error {
 		}
 		now := time.Now()
 		if now.After(sz.ExpireAt.Time) || now.Before(sz.StartAt.Time) {
-			tracing.SetAttribute(span, fmt.Sprintf("snooze.%s:%s", groupName, hashes[groupName]), "ignoring because out of range")
+			tracing.SetString(span, fmt.Sprintf("snooze.%s:%s", groupName, hashes[groupName]), "ignoring because out of range")
 			continue
 		}
 		item.Status.Kind = "snoozed"

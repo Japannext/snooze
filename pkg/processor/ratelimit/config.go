@@ -8,19 +8,19 @@ import (
 
 type RateLimit struct {
 	// Name of the rate limit. Must be unique (used for key)
-	Name string `yaml:"name"`
+	Name string `yaml:"name" json:"name"`
 
 	// An optional condition to only apply the rate limit if the condition match
-	If		 string		   `yaml:"if"`
+	If		 string		   `yaml:"if" json:"if,omitempty"`
 
 	// The group to group by
-	Group string `yaml:"group"`
+	Group string `yaml:"group" json:"group"`
 
 	// The amount of authorized logs during the period
-	Burst    uint64         `yaml:"burst"`
+	Burst    uint64         `yaml:"burst" json:"burst"`
 
 	// The period used to measure the rate
-	Period   time.Duration `yaml:"period"`
+	Period   time.Duration `yaml:"period" json:"period"`
 
 	internal struct {
 		condition *lang.Condition

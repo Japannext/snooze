@@ -24,6 +24,11 @@ type HasID interface {
 	SetID(string)
 }
 
+type Settable interface {
+	Set(string, string) error
+	VerifyField(string) error
+}
+
 type ListOf[T HasID] struct {
 	Items []T `json:"items"`
 	Total int `json:"total"`

@@ -1,7 +1,9 @@
 // A list of all attribute exports. Manually maintained.
 
+export {default as XAlertAttributes } from './XAlertAttributes.vue'
 export {default as XAlertGroup } from './XAlertGroup.vue'
 export {default as XAlertName } from './XAlertName.vue'
+export {default as XDestination } from './XDestination.vue'
 export {default as XHostname } from './XHostname.vue'
 export {default as XIdentity } from './XIdentity.vue'
 export {default as XLogAttributes } from './XLogAttributes.vue'

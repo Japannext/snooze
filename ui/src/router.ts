@@ -3,7 +3,7 @@ import {createRouter, createWebHashHistory, RouterLink } from 'vue-router'
 import type {RouteRecordRaw} from 'vue-router'
 import type { MenuOption } from 'naive-ui'
 
-import { Dashboard, Megaphone, List, AlertSnooze20Regular, Notifications, PhoneAlt, Wrench } from '@/icons'
+import { Dashboard, Megaphone, List, AlertSnooze20Regular, Notifications, TaskSettings, PhoneAlt, Wrench } from '@/icons'
 
 import { renderIcon } from '@/utils/render'
 
@@ -14,7 +14,7 @@ export const menuRoutes: RouteRecordRaw[] = [
   {name: 'snooze',        path: '/snooze',        component: () => import('@/views/XSnoozes.vue')},
   {name: 'notifications', path: '/notifications', component: () => import('@/views/XNotifications.vue')},
   {name: 'escalations',   path: '/escalations',   component: () => import('@/views/XEscalations.vue')},
-  {name: 'admin',         path: 'admin',          component: () => import('@/views/XAdmin.vue')}
+  {name: 'process-config', path: '/process-config', component: () => import('@/views/XProcessConfig.vue')}
 ]
 
 export const menuOptions: MenuOption[] = [
@@ -24,7 +24,7 @@ export const menuOptions: MenuOption[] = [
   {key: 'snooze',        label: renderLink("snooze", "Snooze"),               icon: renderIcon(AlertSnooze20Regular)},
   {key: 'notifications', label: renderLink("notifications", "Notifications"), icon: renderIcon(Notifications)},
   {key: 'escalations',   label: renderLink("escalations", "Escalations"),     icon: renderIcon(PhoneAlt)},
-  {key: 'admin',         label: renderLink("admin", "Admin"),                 icon: renderIcon(Wrench)},
+  {key: "process-config", label: renderLink("process-config", "Process Config"), icon: renderIcon(TaskSettings)},
 ]
 
 function renderLink(name: string, label: string): () => VNodeChild {

@@ -8,13 +8,13 @@ import (
 
 type Profile struct {
 	// Name of the profile group
-	Name string `yaml:"name"`
+	Name string `yaml:"name" json:"name"`
 	// The main condition for a log to match this rule. Used to
 	// reduce the amount of processing by the use of maps.
 	// Examples: process=sshd, service.name=keycloak, k8s.statefulset.name=postgresql
-	Switch Kv `yaml:"switch"`
+	Switch Kv `yaml:"switch" json:"switch"`
 	// Patterns and actions to apply to logs matching this pattern
-	Patterns []*Pattern `yaml:"patterns"`
+	Patterns []*Pattern `yaml:"patterns" json:"patterns"`
 }
 
 func (prf *Profile) Load() {

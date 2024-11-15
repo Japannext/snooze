@@ -21,6 +21,7 @@ import (
 	"github.com/japannext/snooze/pkg/processor/store"
 	"github.com/japannext/snooze/pkg/processor/timestamp"
 	"github.com/japannext/snooze/pkg/processor/transform"
+	"github.com/japannext/snooze/pkg/processor/mapping"
 )
 
 type Consumer struct {}
@@ -88,6 +89,7 @@ func processLog(ctx context.Context, item *models.Log) {
 
 	tracing.SetLog(span, item)
 
+	ctx = mapping.WithMappings(ctx)
 	timestamp.Process(ctx, item)
 	transform.Process(ctx, item)
 	silence.Process(ctx, item)

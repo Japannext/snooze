@@ -9,15 +9,15 @@ import (
 // Group logs by fields. Groups can then be used
 // for rate-limiting, snooze, and UI search.
 type Grouping struct {
-	Name	string   `yaml:"name"`
-	If      string   `yaml:"if"`
+	Name	string   `yaml:"name" json:"name"`
+	If      string   `yaml:"if" json:"if"`
 	// Mutually exclusive with `group_by_map`.
-	GroupBy []string `yaml:"group_by"`
+	GroupBy []string `yaml:"group_by" json:"groupBy"`
 	// Mutually exclusive with `group_by`.
-	GroupByMap string `yaml:"group_by_map"`
+	GroupByMap string `yaml:"group_by_map" json:"groupByMap"`
 
 	// A string to help formatting the group.
-	FormatLabels string `yaml:"format_labels"`
+	// FormatLabels string `yaml:"format_labels" json:"formatLabels"`
 
 	internal struct {
 		condition *lang.Condition

@@ -10,6 +10,7 @@ import (
 
 	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/common/opensearch/dsl"
+	"github.com/japannext/snooze/pkg/common/tracing"
 )
 
 type SearchReq struct {
@@ -48,9 +49,6 @@ func (req *SearchReq) WithPagination(pagination *models.Pagination) *SearchReq {
 
 func (req *SearchReq) WithSearch(s *models.Search) *SearchReq {
 	if s == nil || s.Text == "" {
-		if req.Doc.Bool == nil {
-			req.Doc.MatchAll()
-		}
 		return req
 	}
 	req.Doc.WithQueryString(s.Text)
@@ -58,22 +56,33 @@ func (req *SearchReq) WithSearch(s *models.Search) *SearchReq {
 }
 
 func Search[T models.HasID](ctx context.Context, req *SearchReq) (*models.ListOf[T], error) {
+	ctx, span := tracer.Start(ctx, "Search")
+	defer span.End()
+
+	// Default to match_all if no query
+	if req.Doc.Bool == nil {
+		req.Doc.MatchAll()
+	}
+
     body, err := json.Marshal(req.Doc)
     if err != nil {
         return nil, fmt.Errorf("invalid request body (%+v): %w", req.Doc, err)
     }
-	log.Debugf("req body: %s", body)
-	log.Debugf("req params: %+v", req.Params)
+	tracing.SetString(span, "query", string(body))
+	// tracing.SetInt(span, "params.size", params.Size)
     resp, err := client.Search(ctx, &opensearchapi.SearchReq{
         Indices: []string{req.Index},
         Params: req.Params,
         Body:  bytes.NewReader(body),
 	})
     if err != nil {
+		tracing.Error(span, err)
         return nil, err
     }
     if resp.Errors {
-        return nil, fmt.Errorf("opensearch returned an error: %s", "")
+		err := fmt.Errorf("opensearch returned an error: %s", "")
+		tracing.Error(span, err)
+        return nil, err
     }
 	list := models.ListOf[T]{}
 	list.Items = make([]T, len(resp.Hits.Hits))

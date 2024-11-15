@@ -32,6 +32,13 @@ spec:
         path: /api
         pathType: Prefix
       - backend:
+         service:
+           name: "{{ .Release.Name }}-process"
+           port:
+             number: 8080
+        path: /process
+        pathType: Prefix
+      - backend:
           service:
             name: "{{ .Release.Name }}-ui"
             port:

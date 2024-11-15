@@ -38,9 +38,10 @@ export {
 
 export {
   ContainerSoftware,
-  TypePattern,
-  TrafficFlow,
   Dashboard,
+  TaskSettings,
+  TrafficFlow,
+  TypePattern,
 } from '@vicons/carbon'
 
 export {

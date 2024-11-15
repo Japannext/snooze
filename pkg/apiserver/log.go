@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
 
 	"github.com/japannext/snooze/pkg/common/opensearch"
 	"github.com/japannext/snooze/pkg/models"
@@ -44,17 +43,6 @@ func getLogs(c *gin.Context) {
 	req.WithPagination(params.Pagination)
 	req.WithTimeRange("displayTime", params.TimeRange)
 	req.WithSearch(params.Search)
-
-	if params.Filter != nil {
-		log.Debugf("params.filter: %s", params.Filter.Text)
-	}
-	if params.Search != nil {
-		log.Debugf("params.search: %s", params.Search.Text)
-	}
-	log.Debugf("params.timerange.start: %d", params.TimeRange.Start)
-	log.Debugf("params.timerange.end: %d", params.TimeRange.End)
-	log.Debugf("params.pagination.page: %d", params.Pagination.Page)
-	log.Debugf("params.pagination.size: %d", params.Pagination.Size)
 
 	// Filters
 	if params.Filter != nil {

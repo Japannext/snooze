@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defineProps, defineModel, onActivated, ref} from 'vue'
+import { defineProps, defineEmits, defineModel, ref} from 'vue'
 import { NAlert, NModal, NCard, NForm, NGrid, NFormItemGi, NSpace, NButton, NInput, NSelect } from 'naive-ui'
 import { createAck, type Ack } from '@/api/ack'
 
@@ -7,6 +7,8 @@ const show = defineModel('show', {type: Boolean, default: false})
 const item = ref<Ack>({})
 const buttonLoading = ref<Boolean>(false)
 const alerts = ref<Array<String>>([])
+
+const emit = defineEmits(['success'])
 
 const props = defineProps<{
   ids: Array<string>,
@@ -20,10 +22,13 @@ const tagOptions = [
 async function create() {
   buttonLoading.value = true
   item.value.logIDs = props.ids
+  console.log(`props.ids: ${props.ids}`)
+  console.log(`POST /api/ack ${JSON.stringify(item.value)}`)
   createAck(item.value)
     .then(() => {
       show.value = false
       buttonLoading.value = false
+      emit('success')
     })
     .catch((err) => {
       buttonLoading.value = false
@@ -68,7 +73,7 @@ function cancel() {
       <template #action>
         <n-space justify="end">
           <n-button @click="cancel">Cancel</n-button>
-          <n-button type="primary" :loading="buttonLoading" @click="create">Snooze</n-button>
+          <n-button type="primary" :loading="buttonLoading" @click="create">Acknowledge</n-button>
         </n-space>
       </template>
     </n-card>

@@ -1,84 +1,52 @@
 <script setup lang="ts">
 import { h, ref, onMounted, Component } from 'vue'
-import axios from 'axios'
-import type { AxiosResponse } from 'axios'
-import {NModal, NSpace, NTabs, NTab, NCard, NDataTable, NInputGroup, useLoadingBar, useModal, useMessage } from 'naive-ui'
+import { useLoadingBar, useMessage } from 'naive-ui'
+import { usePagination } from '@/api'
 
-import SAlertAttributes from '@/components/SAlertAttributes.vue'
-import STimeRange from '@/components/STimeRange.vue'
-import STimestamp from '@/components/STimestamp.vue'
-import STimestampTitle from '@/components/STimestampTitle.vue'
-import SIdentity from '@/components/SIdentity.vue'
-import type { Alert, AlertResults } from '@/api/types'
-import { usePagination } from '@/utils/pagination'
+// Components
+import {NModal, NButton, NSpace, NIcon, NDataTable, NInputGroup } from 'naive-ui'
+import { XSearch, XFilter, XTimeRange, XTimestampTitle } from '@/components/interface'
+import { XAlertAttributes, XTime  } from '@/components/attributes'
+import { XAckModal } from '@/components/modal'
+import { Refresh } from '@/icons'
 
-const items = ref<Array<Alert>>([])
-const loading = useLoadingBar()
-const stimerange = ref(null)
-const pagination = usePagination(listAlerts)
-const message = useMessage()
+import { getAlerts, type GetAlertsParams, type Alert } from '@/api'
+
 const selected = ref<Alert>(null)
 const showDetails = ref<boolean>(false)
 
-function listAlerts(): Promise {
-  loading.start()
-  var timerange = stimerange.value.getTime()
-  var params = {
-    page: pagination.page,
-    size: pagination.pageSize,
-  }
-  if (timerange[0] > 0) {
-    params.start = timerange[0]
-  }
-  if (timerange[1] > 0) {
-    params.end = timerange[1]
-  }
-  console.log(`listAlerts()`)
-  return axios.get<Alert>("/api/alerts", {params: params})
-    .then((resp: AxiosResponse<AlertResults>) => {
-      if (resp.data) {
-        items.value = resp.data.items
-        pagination.itemCount = resp.data.total
-        pagination.setMore(resp.data.more)
-      } else {
-        console.log("alerts not found")
-      }
-      loading.finish()
-    })
-    .catch(err => {
-      message.error(`failed to load alerts: ${err}`)
-      loading.error()
-    })
-}
+// Utils
+const loading = useLoadingBar()
+const message = useMessage()
 
-function onUpdateTimerange() {
-  pagination.page = 1
-  listAlerts()
-}
+const items = ref<Array<Alert>>([])
+const selectedItems = ref<Array<string>>([])
+const xTimerange = ref(null)
 
-onMounted(() => {
-  listAlerts()
+const showAckModal = ref<boolean>(false)
+const showEscalateModal = ref<boolean>(false)
+
+const params = ref<GetAlertsParams>({
+  search: "",
+  filter: "active",
+  pagination: usePagination(refresh)
 })
 
-function select(item: Alert) {
-  selected.value = item
-  showDetails.value = true
-}
-
-function renderExpand(row) {
-  return h("pre", null, JSON.stringify(row, null, 2))
-}
+const filters = [
+  {label: "Active", value: "active"},
+  {label: "History", value: "history"},
+]
 
 const columns = [
   {type: 'expand', renderExpand: renderExpand},
   {
-    title: () => h(STimestampTitle),
-    render: (row) => h(STimestamp, {ts: {display: row.startsAt}}),
+    title: () => h(XTimestampTitle),
+    render: (row) => h(XTime, {ts: {display: row.startsAt}}),
     width: 150,
   },
   {
     title: 'Attributes',
-    render: (row) => h(SAlertAttributes, {row: row}),
+    render: (row) => h(XAlertAttributes, {row: row}),
   },
   {
     title: 'Summary',
@@ -87,15 +55,61 @@ const columns = [
   },
 ]
 
+function refresh(): Promise {
+  loading.start()
+  params.value.timerange = xTimerange.value.getTime()
+  getAlerts(params.value)
+    .then((list) => {
+      items.value = list.items
+      params.value.pagination.itemCount = list.total
+      params.value.pagination.setMore(list.more)
+      loading.finish()
+    })
+    .catch((err) => {
+      items.value = []
+      message.error(`failed to load alerts: ${err}`)
+      loading.error()
+    })
+}
+
+onMounted(() => {
+  refresh()
+})
+
+function unselect() {
+  selectedItems.value = []
+}
+
+function select(item: Alert) {
+  selected.value = item
+  showDetails.value = true
+}
+
+function reset() {
+  params.value.pagination.page = 1
+  refresh()
+}
+
+function renderExpand(row) {
+  return h("pre", null, JSON.stringify(row, null, 2))
+}
+
 </script>
 
 <template>
   <n-space>
-    <s-time-range ref="stimerange" @update="onUpdateTimerange" />
-    <n-tabs type="line">
-      <n-tab name="Active" />
-      <n-tab name="History" />
-    </n-tabs>
+    <x-filter v-model:value="params.filter" :filters="filters" @change="reset" />
+    <n-input-group>
+      <x-time-range ref="xTimerange" @change="reset" />
+      <x-search v-model:value="params.search" @change="reset" />
+      <n-button @click="refresh"><n-icon :component="Refresh" /></n-button>
+    </n-input-group>
+    <n-input-group>
+      <n-button type="primary" :disabled="selectedItems.length == 0" @click="showAckModal = true">Ack ({{ selectedItems.length }})</n-button>
+      <x-ack-modal v-model:show="showAckModal" :ids="selectedItems" @success="unselect" />
+
+      <n-button type="warning" :disabled="selectedItems.length == 0">Escalate ({{ selectedItems.length }})</n-button>
+    </n-input-group>
   </n-space>
   <n-data-table
     ref="table"
@@ -107,7 +121,7 @@ const columns = [
     :single-line="false"
     :columns="columns"
     :data="items"
-    :row-key="(row) => row.id"
-    :pagination="pagination"
+    :row-key="(row) => row._id"
+    :pagination="params.pagination"
   />
 </template>

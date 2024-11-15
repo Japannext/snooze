@@ -14,7 +14,7 @@ import (
 	"github.com/japannext/snooze/pkg/processor/notification"
 	"github.com/japannext/snooze/pkg/processor/ratelimit"
 	"github.com/japannext/snooze/pkg/processor/silence"
-	// "github.com/japannext/snooze/pkg/processor/snooze"
+	"github.com/japannext/snooze/pkg/processor/mapping"
 	"github.com/japannext/snooze/pkg/processor/transform"
 	"github.com/japannext/snooze/pkg/processor/profile"
 )
@@ -43,13 +43,14 @@ var config *Config
 var pipeline *Pipeline
 
 type Pipeline struct {
-	Transforms	        []*transform.Transform		 `yaml:"transforms"`
-	Grouping	        []*grouping.Grouping		 `yaml:"groupings"`
-	Profiles			[]*profile.Profile			 `yaml:"profiles"`
-	Silences	        []*silence.Silence			 `yaml:"silences"`
-	RateLimits			[]*ratelimit.RateLimit		 `yaml:"ratelimits"`
-	Notifications       []*notification.Notification `yaml:"notifications"`
-	DefaultDestinations []models.Destination		 `yaml:"default_destinations"`
+	Mappings			[]*mapping.Mapping			 `yaml:"mappings" json:"mappings"`
+	Transforms	        []*transform.Transform		 `yaml:"transforms" json:"transforms"`
+	Grouping	        []*grouping.Grouping		 `yaml:"groupings" json:"groupings"`
+	Profiles			[]*profile.Profile			 `yaml:"profiles" json:"profiles"`
+	Silences	        []*silence.Silence			 `yaml:"silences" json:"silences"`
+	RateLimits			[]*ratelimit.RateLimit		 `yaml:"ratelimits" json:"ratelimits"`
+	Notifications       []*notification.Notification `yaml:"notifications" json:"notifications"`
+	DefaultDestinations []models.Destination		 `yaml:"default_destinations" json:"default_destinations"`
 }
 
 func initConfig() {

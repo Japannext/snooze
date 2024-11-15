@@ -1,25 +1,46 @@
 package transform
 
 import (
+	"context"
+
 	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/common/lang"
 )
 
 type Transform struct {
-	Name	 string		`yaml:"name"`
-	If       string     `yaml:"if"`
+	Name	 string		`yaml:"name" json:"name"`
+	If       string     `yaml:"if" json:"if,omitempty"`
 
-	// Transforms []transformConfig `yaml:"transforms"`
-	// Transform transformConfig `yaml:",inline"`
+	Actions []Action `yaml:"actions" json:"actions"`
 
 	internal struct {
 		condition *lang.Condition
-		transform Transformation
+		actions []Transformation
 	}
 }
 
-type transformConfig struct {
-	Set *SetTransform `yaml:"set"`
+type Transformation interface {
+	Process(context.Context, *models.Log) (context.Context, error)
+}
+
+type Action struct {
+	Set *SetAction `yaml:"set" json:"set,omitempty"`
+	Regex *RegexAction `yaml:"regex" json:"regex,omitempty"`
+}
+
+func LoadActions(actions []Action) []Transformation {
+	var transforms []Transformation
+	for _, action := range actions {
+		switch {
+		case action.Set != nil:
+			transforms = append(transforms, action.Set.Load())
+		case action.Regex != nil:
+			transforms = append(transforms, action.Regex.Load())
+		default:
+			log.Fatalf("action is empty")
+		}
+	}
+	return transforms
 }
 
 func (tr *Transform) Load() {
@@ -31,22 +52,6 @@ func (tr *Transform) Load() {
 		tr.internal.condition = condition
 	}
 
-	/*
-	switch {
-		case tr.Parent != nil:
-			tr.Parent.Load()
-			tr.internal.transform = tr.Parent
-		case tr.Set != nil:
-			tr.Set.Load()
-			tr.internal.transform = tr.Set
-		default:
-			log.Fatalf("transform `%s` is empty", tr.Name)
-	}
-	*/
-	// TODO
+	tr.internal.actions = LoadActions(tr.Actions)
 }
 
-type Transformation interface {
-	Load()
-	Process(*models.Log) error
-}

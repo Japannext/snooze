@@ -37,7 +37,7 @@ func getGroups(c *gin.Context) {
         c.String(http.StatusInternalServerError, "Error getting log: %s", err)
 		tracing.Error(span, err)
 		data, _ := json.Marshal(req.Doc)
-		tracing.SetAttribute(span, "opensearch.query", string(data))
+		tracing.SetString(span, "opensearch.query", string(data))
         return
     }
 
