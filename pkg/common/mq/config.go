@@ -6,7 +6,7 @@ import (
 
 type Config struct {
 	URL string `mapstructure:"NATS_URL"`
-	NotifyBackends string `mapstructure:"NOTIFY_BACKENDS"`
+	Replicas int `mapstructure:"NATS_REPLICAS"`
 }
 
 var config Config
@@ -16,7 +16,7 @@ func initConfig() {
 
     // Defaults
     v.BindEnv("NATS_URL")
-	v.BindEnv("NOTIFY_BACKENDS")
+	v.SetDefault("NATS_REPLICAS", "3")
 
     v.AutomaticEnv()
     err := v.Unmarshal(&config)

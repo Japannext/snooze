@@ -19,6 +19,7 @@ func getProcessStream() jetstream.Stream {
 			Name: "PROCESS",
 			Retention: jetstream.WorkQueuePolicy,
 			Subjects: []string{"PROCESS.logs"},
+			Replicas: config.Replicas,
 		})
 	})
 	return processStream

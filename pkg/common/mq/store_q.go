@@ -21,6 +21,7 @@ func getStoreStream() jetstream.Stream {
 			Name: "STORE",
 			Retention: jetstream.WorkQueuePolicy,
 			Subjects: []string{"STORE.items"},
+			Replicas: config.Replicas,
 		})
 	})
 	return storeStream

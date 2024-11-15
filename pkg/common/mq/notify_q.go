@@ -20,6 +20,7 @@ func getNotifyStream() jetstream.Stream {
 			Name: "NOTIFY",
 			Retention: jetstream.WorkQueuePolicy,
 			Subjects: []string{"NOTIFY.*"},
+			Replicas: config.Replicas,
 		})
 	})
 	return notifyStream
