@@ -19,7 +19,7 @@ func Process(ctx context.Context, item *models.Log) error {
 	}
 
 	// Making sure the log is dropped no matter what
-	item.Status.Kind = "activecheck"
+	item.Status.Kind = models.LogActiveCheck
 	item.Status.SkipNotification = true
 	item.Status.SkipStorage = true
 

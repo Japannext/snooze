@@ -8,8 +8,8 @@ import (
 
 type Schedule struct {
 	Always bool            `yaml:"always" json:"always"`
-	Weekly *WeeklySchedule `yaml:"weekly" json:"weekly"`
-	Daily *DailySchedule  `yaml:"daily" json:"daily"`
+	Weekly *WeeklySchedule `yaml:"weekly" json:"weekly,omitempty"`
+	Daily *DailySchedule  `yaml:"daily" json:"daily,omitempty"`
 
 	internal struct {
 		schedule ScheduleInterface

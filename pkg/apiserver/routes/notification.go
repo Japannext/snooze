@@ -1,4 +1,4 @@
-package apiserver
+package routes
 
 import (
 	"net/http"
@@ -8,6 +8,12 @@ import (
 	"github.com/japannext/snooze/pkg/common/opensearch"
 	"github.com/japannext/snooze/pkg/models"
 )
+
+func init() {
+	registers = append(registers, func(r *gin.Engine) {
+		r.GET("/api/notifications", getNotifications)
+	})
+}
 
 type getNotificationsParams struct {
 	*models.Pagination
@@ -38,11 +44,4 @@ func getNotifications(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, items)
-}
-
-
-func init() {
-	routes = append(routes, func(r *gin.Engine) {
-		r.GET("/api/notifications", getNotifications)
-	})
 }

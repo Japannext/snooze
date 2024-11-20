@@ -7,13 +7,24 @@ type Snooze struct {
 	// Groups that will be snoozed
 	Groups []Group `json:"groups"`
 	Reason string `json:"reason"`
+	Tags []Tag `json:"tags"`
 	StartAt Time `json:"startAt"`
 	ExpireAt Time `json:"expireAt"`
+	Cancelled *SnoozeCancel `json:"cancelled,omitempty"`
+}
+
+type SnoozeCancel struct {
+	// The user that cancelled the snooze
+	By string `json:"by"`
+	// The time the snooze was cancelled
+	At Time `json:"cancelledAt"`
+	// The reason why the snooze was cancelled
+	Reason string `json:"reason"`
 }
 
 func init() {
 	index := IndexTemplate{
-		Version: 1,
+		Version: 2,
 		IndexPatterns: []string{SNOOZE_INDEX},
 		DataStream: map[string]map[string]string{"timestamp_field": {"name": "startAt"}},
 		Template: Indice{
@@ -25,6 +36,10 @@ func init() {
 					"reason": {Type: "text"},
 					"startAt": {Type: "date", Format: "epoch_millis"},
 					"expireAt": {Type: "date", Format: "epoch_millis"},
+					"tags.name": {Type: "keyword"},
+					"cancelled.at": {Type: "date", Format: "epoch_millis"},
+					"cancelled.by": {Type: "keyword"},
+					"cancelled.reason": {Type: "text"},
 				},
 			},
 		},

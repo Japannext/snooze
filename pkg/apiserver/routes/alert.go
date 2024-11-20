@@ -1,4 +1,4 @@
-package apiserver
+package routes
 
 import (
 	"net/http"
@@ -12,8 +12,9 @@ import (
 )
 
 func init() {
-	routes = append(routes, func(r *gin.Engine) {
+	registers = append(registers, func(r *gin.Engine) {
 		r.GET("/api/alerts", getAlerts)
+		r.POST("/api/alert", postAlert)
 	})
 }
 
@@ -62,6 +63,10 @@ func getAlerts(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, items)
+}
+
+func postAlert(c *gin.Context) {
+	// TODO
 }
 
 type AlertKeys struct {

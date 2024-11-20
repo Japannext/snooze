@@ -40,9 +40,6 @@ type Log struct {
 	// The main message of the log
 	Message string `json:"message"`
 
-	// Details written during snooze-process
-	Process *Process `json:"process,omitempty"`
-
 	// Indicate that this message is part of an active check, and that
 	// this is the URL of the callback
 	ActiveCheckURL string `json:"activeCheckURL,omitempty"`
@@ -51,28 +48,17 @@ type Log struct {
 	// can be indicated here.
 	Error string `json:"error,omitempty"`
 
-	Status Status `json:"status"`
+	Status LogStatus `json:"status"`
 }
 
 // Used by template systems in transforms/profiles/etc
 func (item *Log) Context() map[string]interface{} {
 	return map[string]interface{}{
-		"actualTime": item.ActualTime,
-		"source": item.Source,
+		"source": map[string]string{"kind": item.Source.Kind, "name": item.Source.Name},
 		"identity": item.Identity,
 		"labels": item.Labels,
 		"message": item.Message,
 	}
-}
-
-type switchPair struct {
-	field string
-	value interface{}
-}
-
-type Process struct {
-	Profile string `json:"profile,omitempty"`
-	Pattern string `json:"pattern,omitempty"`
 }
 
 func init() {

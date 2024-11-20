@@ -118,16 +118,27 @@ func (query *Query) Or(item QueryItem) *Query {
 	return query
 }
 
+func (query *Query) AndNot(item QueryItem) *Query {
+	if query.Bool == nil {
+		query.Bool = &Bool{}
+	}
+	query.Bool.MustNot = append(query.Bool.MustNot, item)
+	return query
+}
+
 func (query *Query) WithExists(field string) *Query {
 	item := QueryItem{Exists: &Exists{Field: field}}
-	query.And(item)
-	return query
+	return query.And(item)
+}
+
+func (query *Query) WithNotExists(field string) *Query {
+	item := QueryItem{Exists: &Exists{Field: field}}
+	return query.AndNot(item)
 }
 
 func (query *Query) WithQueryString(text string) *Query {
 	item := QueryItem{QueryString: &QueryString{Query: text}}
-	query.And(item)
-	return query
+	return query.And(item)
 }
 
 func (req *QueryReq) MatchAll() *QueryReq {

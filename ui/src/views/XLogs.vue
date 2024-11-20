@@ -13,12 +13,11 @@ import { Refresh } from '@/icons'
 import { getLogs, type Log, type GetLogsParams } from '@/api'
 
 const items = ref<Array<Log>>()
-const xTimerange = ref(null)
-const loading = useLoadingBar()
-const table = ref<undefined|HTMLElement>(undefined)
-const message = useMessage()
 const selectedItems = ref<Array<string>>([])
+const xTimerange = ref(null)
 
+const loading = useLoadingBar()
+const message = useMessage()
 const showAckModal = ref<boolean>(false)
 const showEscalateModal = ref<boolean>(false)
 
@@ -37,6 +36,10 @@ const filters = [
 
 const columns = [
   {type: 'selection'},
+  {
+    type: 'expand',
+    renderExpand: renderExpand,
+  },
   {
     title: 'Status',
     render: (row) => h(XStatus, {kind: row.status.kind}),
@@ -57,11 +60,11 @@ const columns = [
       lineClamp: 2,
     }
   },
-  {
-    type: 'expand',
-    renderExpand: renderExpand,
-  },
 ]
+
+onMounted(() => {
+  refresh()
+})
 
 function refresh(): Promise {
   loading.start()
@@ -88,10 +91,6 @@ function renderExpand(row) {
   return h("pre", null, JSON.stringify(row, null, 2))
 }
 
-onMounted(() => {
-  refresh()
-})
-
 function reset() {
   params.value.pagination.page = 1
   refresh()
@@ -111,13 +110,13 @@ function rowProps(row: Log) {
 
 <template>
   <div>
-    <n-space :size="100" justify="center" style="padding: 5px; margin-bottom: 10px;">
-      <x-filter v-model:value="params.filter" :filters="filters" @change="reset" />
+    <n-space :size="100" justify="start" style="padding: 5px; margin-bottom: 10px;">
       <n-input-group>
         <x-time-range ref="xTimerange" @change="reset" />
         <x-search v-model:value="params.search" @change="reset" />
         <n-button @click="refresh"><n-icon :component="Refresh" /></n-button>
       </n-input-group>
+      <x-filter v-model:value="params.filter" :filters="filters" @change="reset" />
       <n-input-group>
         <n-button type="primary" :disabled="selectedItems.length == 0" @click="showAckModal = true">Ack ({{ selectedItems.length }})</n-button>
         <x-ack-modal v-model:show="showAckModal" :ids="selectedItems" @success="unselect" />
@@ -126,7 +125,6 @@ function rowProps(row: Log) {
       </n-input-group>
     </n-space>
     <n-data-table
-      ref="table"
       v-model:checked-row-keys="selectedItems"
       remote
       striped
@@ -142,9 +140,8 @@ function rowProps(row: Log) {
   </div>
 </template>
 
-<style>
+<style scoped>
 th.n-data-table-th {
   padding: 0px;
-  background: red;
 }
 </style>

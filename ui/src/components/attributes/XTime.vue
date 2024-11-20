@@ -8,10 +8,21 @@ const { timeRelative } = useTimeRelative()
 
 const props = defineProps<{
   ts: number,
+  format?: string,
 }>()
 
 const date = computed(() => {
     return DateTime.fromMillis(props.ts, {zone: "system"})
+})
+
+const isRelative = computed<boolean>(() => {
+  switch (props.format) {
+    case "relative":
+      return true
+    case "absolute":
+      return false
+  }
+  return timeRelative.value
 })
 
 </script>
@@ -19,7 +30,7 @@ const date = computed(() => {
 <template>
   <div>
     <template v-if="ts">
-      <span v-if="timeRelative">
+      <span v-if="isRelative">
         {{ date.toRelative() }}
       </span>
       <n-popover v-else>

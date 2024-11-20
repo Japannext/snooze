@@ -25,6 +25,7 @@ type Transformation interface {
 
 type Action struct {
 	Set *SetAction `yaml:"set" json:"set,omitempty"`
+	Unset *UnsetAction `yaml:"unset" json:"unset,omitempty"`
 	Regex *RegexAction `yaml:"regex" json:"regex,omitempty"`
 }
 
@@ -34,6 +35,8 @@ func LoadActions(actions []Action) []Transformation {
 		switch {
 		case action.Set != nil:
 			transforms = append(transforms, action.Set.Load())
+		case action.Unset != nil:
+			transforms = append(transforms, action.Unset.Load())
 		case action.Regex != nil:
 			transforms = append(transforms, action.Regex.Load())
 		default:

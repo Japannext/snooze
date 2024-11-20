@@ -79,20 +79,20 @@ func (p *Pattern) Process(ctx context.Context, item *models.Log) (match, reject 
 
 	// Drop
 	if p.Drop {
-		log.Debugf("Dropping the log")
-		item.Status.Kind = "dropped"
-		item.Status.Reason = fmt.Sprintf("dropped by pattern '%s'", p.Name)
-		item.Status.SkipNotification = true
-		item.Status.SkipStorage = true
+		if ok := item.Status.Change(models.LogDropped); ok {
+			item.Status.Reason = fmt.Sprintf("dropped by pattern '%s'", p.Name)
+			item.Status.SkipNotification = true
+			item.Status.SkipStorage = true
+		}
 		return
 	}
 
 	// Silence
 	if p.Silence {
-		log.Debugf("Silencing log")
-		item.Status.Kind = "silenced"
-		item.Status.Reason = fmt.Sprintf("silenced by pattern '%s'", p.Name)
-		item.Status.SkipNotification = true
+		if ok := item.Status.Change(models.LogSilenced); ok {
+			item.Status.Reason = fmt.Sprintf("silenced by pattern '%s'", p.Name)
+			item.Status.SkipNotification = true
+		}
 	}
 
 	for _, action := range p.internal.actions {

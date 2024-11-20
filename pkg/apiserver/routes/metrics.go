@@ -1,4 +1,4 @@
-package apiserver
+package routes
 
 import (
     "github.com/prometheus/client_golang/prometheus"
@@ -15,7 +15,7 @@ var (
 	})
 )
 
-func initMetrics() {
+func InitMetrics() {
 	prometheus.MustRegister(
 		logSearchDuration,
 	)

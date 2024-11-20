@@ -54,10 +54,11 @@ func Process(ctx context.Context, item *models.Log) error {
 			tracing.SetString(span, fmt.Sprintf("snooze.%s:%s", groupName, hashes[groupName]), "ignoring because out of range")
 			continue
 		}
-		item.Status.Kind = "snoozed"
-		item.Status.SkipNotification = true
-		item.Status.ObjectID = sz.ID
-		snoozedLogs.Inc()
+		if ok := item.Status.Change(models.LogSnoozed); ok {
+			item.Status.SkipNotification = true
+			item.Status.ObjectID = sz.ID
+			snoozedLogs.Inc()
+		}
 	}
 
 	return nil

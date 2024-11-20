@@ -2,15 +2,18 @@
 export {
   Add,
   Alert,
-  Mail,
-  LogoGoogle,
-  MailUnread,
   Construct,
-  ListSharp,
   List,
+  ListSharp,
+  LogoGoogle,
+  Mail,
+  MailUnread,
   Megaphone,
   Notifications,
+  Pricetag,
   Refresh,
+  Trash,
+  ArrowForwardSharp,
 } from '@vicons/ionicons5'
 
 export {
@@ -49,6 +52,7 @@ export {
   Box24Regular,
   AlertOff20Filled,
   AlertSnooze20Regular,
+  TagDismiss16Regular,
 } from '@vicons/fluent'
 
 export {

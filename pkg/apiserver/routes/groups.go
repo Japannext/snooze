@@ -1,4 +1,4 @@
-package apiserver
+package routes
 
 import (
 	"net/http"
@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	routes = append(routes, func(r *gin.Engine) {
+	registers = append(registers, func(r *gin.Engine) {
 		r.GET("/api/groups", getGroups)
 	})
 }
@@ -26,7 +26,7 @@ func getGroups(c *gin.Context) {
 	defer span.End()
 
 	req := &opensearch.SearchReq{Index: models.GROUP_INDEX}
-
+	req.WithSize(1000)
 	// Search related to group
 	params := getGroupParams{}
 	c.BindQuery(&params)

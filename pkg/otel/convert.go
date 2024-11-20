@@ -46,7 +46,5 @@ func convertLog(resource *resv1.Resource, scope *commonv1.InstrumentationScope, 
 		}
 	}
 
-	item.Status.Kind = "active"
-
 	return item
 }

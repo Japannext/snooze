@@ -1,4 +1,4 @@
-package apiserver
+package routes
 
 import (
     "net/http"
@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-    routes = append(routes, func(r *gin.Engine) {
+    registers = append(registers, func(r *gin.Engine) {
 		r.GET("/api/acks", getAcks)
         r.POST("/api/ack", postAck)
     })
@@ -24,7 +24,7 @@ func postAck(c *gin.Context) {
 	ctx, span := tracer.Start(c.Request.Context(), "postAck")
 	defer span.End()
 
-	var item models.Ack
+	var item *models.Ack
 	c.BindJSON(&item)
 
 	item.Time = models.TimeNow()
@@ -48,7 +48,7 @@ func postAck(c *gin.Context) {
 		return
 	}
 
-	err = opensearch.IndexDocument(ctx, &opensearch.IndexReq{
+	err = opensearch.Index(ctx, &opensearch.IndexReq{
 		Index: models.ACK_INDEX,
 		Item: item,
 	})

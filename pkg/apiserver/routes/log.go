@@ -1,4 +1,4 @@
-package apiserver
+package routes
 
 import (
 	"net/http"
@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	routes = append(routes, func(r *gin.Engine) {
+	registers = append(registers, func(r *gin.Engine) {
 		r.GET("/api/logs", getLogs)
 	})
 }

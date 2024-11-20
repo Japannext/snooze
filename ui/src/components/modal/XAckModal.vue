@@ -22,8 +22,6 @@ const tagOptions = [
 async function create() {
   buttonLoading.value = true
   item.value.logIDs = props.ids
-  console.log(`props.ids: ${props.ids}`)
-  console.log(`POST /api/ack ${JSON.stringify(item.value)}`)
   createAck(item.value)
     .then(() => {
       show.value = false

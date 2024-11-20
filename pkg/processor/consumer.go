@@ -81,6 +81,30 @@ func unmarshalLog(msg jetstream.Msg) *models.Log {
 	return &item
 }
 
+/*
+type ProcessDecision int
+const (
+	CONTINUE ProcessDecision = iota
+	SILENCE
+	DROP
+)
+
+type ProcessFunc = func(context.Context, *models.Log)
+
+var processes = []ProcessFunc{
+	timestamp.Process,
+	transform.Process,
+	silence.Process,
+	profile.Process,
+	grouping.Process,
+	ratelimit.Process,
+	activecheck.Process,
+	snooze.Process,
+	notification.Process,
+	store.Process,
+}
+*/
+
 func processLog(ctx context.Context, item *models.Log) {
 	ctx, span := tracer.Start(ctx, "processLog")
 	defer span.End()
@@ -90,14 +114,24 @@ func processLog(ctx context.Context, item *models.Log) {
 	tracing.SetLog(span, item)
 
 	ctx = mapping.WithMappings(ctx)
+
+	// Transformative
 	timestamp.Process(ctx, item)
 	transform.Process(ctx, item)
-	silence.Process(ctx, item)
 	profile.Process(ctx, item)
 	grouping.Process(ctx, item)
+
+	// Traffic control
+	silence.Process(ctx, item)
 	ratelimit.Process(ctx, item)
-	activecheck.Process(ctx, item)
+
+	// Snooze
 	snooze.Process(ctx, item)
+
+	// Monitoring
+	activecheck.Process(ctx, item)
+
+	// Notification + Storage
 	notification.Process(ctx, item)
 	store.Process(ctx, item)
 

@@ -156,12 +156,13 @@ func Process(ctx context.Context, item *models.Log) error {
 
 		// Rate-limit case
 		if i0.value >= limit || i1.value >= limit { // rate limiting
-			item.Status.Kind = "ratelimited"
-			item.Status.Reason = fmt.Sprintf("ratelimited by '%s'", rate.Name)
-			item.Status.SkipNotification = true
-			item.Status.SkipStorage = true
+			if ok := item.Status.Change(models.LogRatelimited); ok {
+				item.Status.Reason = fmt.Sprintf("ratelimited by '%s'", rate.Name)
+				item.Status.SkipNotification = true
+				item.Status.SkipStorage = true
+				rateLimitedLogs.WithLabelValues(rate.Name).Inc()
+			}
 			tracing.SetString(span, fmt.Sprintf("ratelimit.%s.decision", rate.Name), "drop")
-			rateLimitedLogs.WithLabelValues(rate.Name).Inc()
 		} else {
 			tracing.SetString(span, fmt.Sprintf("ratelimit.%s.decision", rate.Name), "store")
 		}

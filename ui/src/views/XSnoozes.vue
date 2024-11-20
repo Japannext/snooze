@@ -1,124 +1,123 @@
 <script setup lang="ts">
-import axios from 'axios'
-import { h, ref, onMounted, onActivated, Component } from 'vue'
-import { DateTime } from 'luxon'
-import { defaultRangeMillis } from '@/utils/timerange'
-import { usePagination } from '@/utils/pagination'
+import { h, ref, onMounted } from 'vue'
+import { useLoadingBar, useMessage } from 'naive-ui'
+import { usePagination } from '@/api'
 
 // Components
-import { NIcon, NTag, NCard, NTabs, NTab, NButton, NSpace, NDataTable, NInputGroup, NLoadingBarProvider, useLoadingBar, useMessage, useModal } from 'naive-ui'
-import { XSearch, XTimeRange, XTimestampTitle } from '@/components/interface'
-import { XTime } from '@/components/attributes'
-import { XSnoozeCreateModal } from '@/components/modal'
+import { NIcon, NButton, NButtonGroup, NSpace, NDataTable, NInputGroup } from 'naive-ui'
+import { XSearch, XFilter, XTimeRange, XTimestampTitle } from '@/components/interface'
+import { XTime, XDuration, XTagList, XSnoozeTime } from '@/components/attributes'
+import { XNewSnoozeModal, XCancelSnoozeModal } from '@/components/modal'
 import { Refresh, Add } from '@/icons'
 
-// Types
-import type { AxiosResponse } from 'axios'
-import type { Snooze, ListOf } from '@/api/types'
+import { getSnoozes, type Snooze, type GetSnoozesParams } from '@/api'
 
-const search = ref<string>("")
-const items = ref<Array<Snooze>>()
-const rangeMillis = ref<[number, number]>(defaultRangeMillis())
-const stimerange = ref(null)
+const items = ref<Snooze[]>()
+const selectedItems = ref<string[]>([])
+const xTimerange = ref(null)
+
 const loading = useLoadingBar()
-const pagination = usePagination(getItems)
-const table = ref<undefined|HTMLElement>(undefined)
 const message = useMessage()
+const showNewSnoozeModal = ref<boolean>(false)
+const showCancelSnoozeModal = ref<boolean>(false)
 
-const showCreateModal = ref<Boolean>(false)
+const params = ref<GetSnoozesParams>({
+  search: "",
+  pagination: usePagination(refresh),
+  filter: "active",
+})
 
-function getItems(): Promise {
+const filters = [
+  {label: "Active", value: "active"},
+  {label: "Upcoming", value: "upcoming"},
+  {label: "Expired", value: "expired"},
+  {label: "Cancelled", value: "cancelled"},
+  {label: "All", value: "all"},
+]
+
+const columns = [
+  {type: 'selection'},
+  {type: 'expand', renderExpand: renderExpand},
+  {
+    key: 'time',
+    title: 'Time constraint',
+    render: (row) => h(XSnoozeTime, {start: row.startAt, end: row.expireAt, cancelled: new Boolean(row.cancelled)}),
+  },
+  {
+    key: 'duration',
+    title: 'Duration',
+    render: (row) => h(XDuration, {duration: (row.expireAt - row.startAt)}),
+    width: 150,
+  },
+  {
+    title: 'Tags',
+    render: (row) => h(XTagList, {tags: row.tags}),
+  },
+  {title: 'Reason', key: 'reason', ellipsis: {tooltip: {placement: "bottom-end", width: 500}}},
+]
+
+onMounted(() => {
+  refresh()
+})
+
+function refresh(): Promise {
+  console.log(`refresh()`)
   loading.start()
-  var timerange = stimerange.value.getTime()
-  var params = {
-    page: pagination.page,
-    size: pagination.pageSize,
-  }
-  if (search.value) {
-    params.search = search
-  }
-  if (timerange[0] > 0) {
-    params.start = timerange[0]
-  }
-  if (timerange[1] > 0) {
-    params.end = timerange[1]
-  }
-  return axios.get<Snooze>("/api/snoozes", {params: params})
-    .then((resp: AxiosResponse) => {
-      // error handling
-      return resp.data
-    })
-    .then((res: ListOf<object>) => {
-      items.value = res.items
-      pagination.itemCount = res.total
-      pagination.setMore(res.more)
+  params.value.timerange = xTimerange.value.getTime()
+  getSnoozes(params.value)
+    .then((list) => {
+      items.value = list.items
+      params.value.pagination.itemCount = list.total
+      params.value.pagination.setMore(list.more)
       loading.finish()
     })
-    .catch(err => {
+    .catch((err) => {
+      items.value = []
       message.error(`failed to load snoozes: ${err}`)
       loading.error()
     })
+}
+
+const delayMillis = 300
+
+function refreshWithDelay() {
+  setTimeout(refresh, delayMillis)
+}
+
+function reset() {
+  params.value.pagination.page = 1
+  refresh()
 }
 
 function renderExpand(row) {
   return h("pre", null, JSON.stringify(row, null, 2))
 }
 
-function render(component: Component, attr: string) {
-  return (row) => {
-    var options = {}
-    options[attr] = row[attr]
-    return h(component, options)
-  }
-}
-
-const columns = [
-  {type: 'expand', renderExpand: renderExpand},
-  {
-    key: 'timestamp',
-    title: () => h(XTimestampTitle),
-    render: (row) => h(XTime, {ts: row.startAt}),
-    width: 150,
-  },
-  {title: 'Message', key: 'message', ellipsis: {tooltip: {placement: "bottom-end", width: 500}}},
-]
-
-onMounted(() => {
-  getItems()
-})
-
-function onUpdateTimerange() {
-  pagination.page = 1
-  getItems()
-}
-
-function onSearch(text: string) {
-  search.value = text
-  getItems()
-}
-
-function rowProps(row: Log) {
-  return {
-    onContextmenu: (e) =>{
-      console.log("right click supported!")
-      e.preventDefault()
-      return false
-    },
-  }
-}
 </script>
 
 <template>
   <div>
-    <n-input-group>
-      <x-time-range ref="stimerange" v-model:rangeMillis="rangeMillis" @update="onUpdateTimerange" />
-      <x-search @search="onSearch" />
-      <n-button @click="showCreateModal = true"><n-icon :component="Add" /></n-button>
-      <n-button @click="getItems()"><n-icon :component="Refresh" /></n-button>
-    </n-input-group>
-    <x-snooze-create-modal v-model:show="showCreateModal" />
+    <n-space :size="100" justify="start" style="padding: 5px; margin-bottom: 10px;">
+      <n-input-group>
+        <x-time-range ref="xTimerange" @change="reset" />
+        <x-search v-model:value="params.search" @change="reset" />
+        <n-button @click="refresh"><n-icon :component="Refresh" /></n-button>
+      </n-input-group>
+      <x-filter v-model:value="params.filter" :filters="filters" @change="reset" />
+      <n-button-group>
+        <n-button type="warning" icon-placement="right" @click="showNewSnoozeModal = true">
+          <template #icon><n-icon :component="Add" /></template>
+          New Snooze
+        </n-button>
+        <n-button type="error" :disabled="selectedItems.length == 0" @click="showCancelSnoozeModal = true">
+          Cancel ({{ selectedItems.length }})
+        </n-button>
+      </n-button-group>
+    </n-space>
+    <x-new-snooze-modal v-model:show="showNewSnoozeModal" @success="refreshWithDelay" />
+    <x-cancel-snooze-modal v-model:show="showCancelSnoozeModal" :ids="selectedItems" @success="refreshWithDelay" />
     <n-data-table
-      ref="table"
+      v-model:checked-row-keys="selectedItems"
       remote
       striped
       bordered
@@ -127,8 +126,8 @@ function rowProps(row: Log) {
       :single-line="false"
       :columns="columns"
       :data="items"
-      :row-key="(row) => row.id"
-      :pagination="pagination"
+      :row-key="(row) => row._id"
+      :pagination="params.pagination"
     />
   </div>
 </template>

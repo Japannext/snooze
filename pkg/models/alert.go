@@ -38,6 +38,18 @@ type Alert struct {
 	Labels map[string]string `json:"labels,omitempty"`
 }
 
+func (item *Alert) Context() map[string]interface{} {
+	return map[string]interface{}{
+		"source": map[string]string{"kind": item.Source.Kind, "name": item.Source.Name},
+		"identity": item.Identity,
+		"labels": item.Labels,
+		"summary": item.Summary,
+		"description": item.Description,
+		"alertName": item.AlertName,
+		"alertGroup": item.AlertGroup,
+	}
+}
+
 type AlertStatus struct {
 	ID string `json:"id"`
 	LastCheck Time `json:"lastCheck"`

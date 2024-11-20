@@ -1,17 +1,29 @@
 # Snooze v2
 
-# Design choices
+A reliable alerting system.
 
-* Backend in golang.
-* One DB call to write a log upon receiving it.
-* Backend in ScyllaDB, denormalized.
-* Limited support of search in the web UI (scylladb `LIKE` operator)
+## Features
 
-# Components
+Your alerts/logs:
+* syslog
+* opentelemetry logs
+* prometheus alerts
+* nagios/icinga alerts
 
-* Frontend (`snooze-apiserver`):
-  - `apiserver/`: Serve the API, expose it to the web interface. Mainly for human user/automation.
-  - `ui/`: The Javascript frontend, service by `snooze-apiserver`
-* [Alert sources](./sources)
-* [Notifiers](./notifiers)
-* `common/`: shared libraries / API
+Your notifications:
+* mails
+* googlechat
+* [patlite](https://www.patlite.com/) signal tower
+
+Features:
+* Snooze noisy alerts
+* Acknowledge alerts
+* Silence permanently some alerts
+* Tranform logs and use custom fields
+* Make personalized log profiles based on a regex
+* Ratelimit logs based on fields
+
+Others:
+* WebUI
+* High availability by default
+* OpenID Connect authn/authz

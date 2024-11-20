@@ -9,9 +9,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+/*
 func init() {
 	routes = append(routes, registerAuthRoutes)
 }
+*/
 
 type AuthButton struct {
     DisplayName string `json:"displayName"`

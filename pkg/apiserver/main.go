@@ -1,8 +1,6 @@
 package apiserver
 
 import (
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/trace"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 
 	"github.com/japannext/snooze/pkg/common/daemon"
@@ -12,34 +10,28 @@ import (
 	"github.com/japannext/snooze/pkg/common/mq"
 	"github.com/japannext/snooze/pkg/common/tracing"
 
-	"github.com/gin-gonic/gin"
+	"github.com/japannext/snooze/pkg/apiserver/routes"
+
 	"github.com/gin-contrib/cors"
 )
-
-var storeQ *mq.Pub
-var tracer trace.Tracer
 
 // We use a route registration array so that we can
 // declare routes in the same file as the route, and avoid
 // having to list them all in one place.
 // Routes can be listed easily enough with `git grep 'r[.].*/api/' pkg/apiserver`
-var routes []func(*gin.Engine)
+// var routes []func(*gin.Engine)
 
 func Startup() *daemon.DaemonManager {
 	// Init components
 	logging.Init()
 	initConfig()
-	initMetrics()
+	routes.InitMetrics()
 	opensearch.Init()
 	redis.Init()
 	mq.Init()
 
-	storeQ = mq.StorePub()
-	tracing.Init("snooze-apiserver")
-	tracer = otel.Tracer("snooze")
-
 	dm := daemon.NewDaemonManager()
-	srv := daemon.NewHttpDaemon(routes...)
+	srv := daemon.NewHttpDaemon(routes.Registers()...)
 	srv.Engine.Use(otelgin.Middleware("snooze-alertmanager", otelgin.WithFilter(tracing.HTTPFilter)))
 
 	// Static routes

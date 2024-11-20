@@ -80,6 +80,7 @@ func Process(ctx context.Context, item *models.Log) error {
 			// Group already exists in opensearch (redis says so)
 			continue
 		}
+		gr.ID = gr.Hash
 		err := storeQ.PublishData(ctx, &format.Index{
 			Index: models.GROUP_INDEX,
 			Item: gr,

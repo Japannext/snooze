@@ -37,6 +37,11 @@ func (req *SearchReq) WithTimeRange(field string, timerange *models.TimeRange) *
 	return req
 }
 
+func (req *SearchReq) WithSize(size int) *SearchReq {
+	req.Params.Size = &size
+	return req
+}
+
 func (req *SearchReq) WithPagination(pagination *models.Pagination) *SearchReq {
 	if pagination == nil {
 		pagination = models.NewPagination()

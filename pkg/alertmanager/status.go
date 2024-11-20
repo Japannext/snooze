@@ -34,4 +34,3 @@ func setAlertStatus(ctx context.Context, key string, status *models.AlertStatus)
 	}
 	return nil
 }
-

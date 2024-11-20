@@ -7,15 +7,17 @@ import (
 	"fmt"
 
 	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
+
+	"github.com/japannext/snooze/pkg/models"
 )
 
 type IndexReq struct {
 	Index string
 	Params opensearchapi.IndexParams
-	Item interface{}
+	Item models.HasID
 }
 
-func IndexDocument(ctx context.Context, req *IndexReq) error {
+func Index(ctx context.Context, req *IndexReq) error {
 	body, err := json.Marshal(req.Item)
 	if err != nil {
 		return fmt.Errorf("failed to marshal document (%+v): %s", req.Item, err)
