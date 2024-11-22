@@ -21,7 +21,25 @@ export type Log = {
 
   message: string;
 
-  status?: object;
+  status: LogStatus;
+}
+
+export type LogStatus = {
+  kind: LogStatusKind
+  reason?: string
+  objectID?: string
+  skipNotification: boolean
+  skipStorage: boolean
+}
+
+export enum LogStatusKind {
+  LogActive = 0,
+  LogSnoozed,
+  LogSilenced,
+  LogRatelimited,
+  LogDropped,
+  LogActiveCheck,
+  LogAcked,
 }
 
 export type GetLogsParams = {

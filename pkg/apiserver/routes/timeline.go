@@ -12,12 +12,6 @@ import (
     // "github.com/japannext/snooze/pkg/models"
 )
 
-func init() {
-	registers = append(registers, func(r *gin.Engine) {
-		r.GET("/api/timeline/log/:uid", logTimeline)
-		// r.GET("/api/timeline/alert/:uid", alertTimeline)
-	})
-}
 type Timeline struct {
 	Events []Event
 }

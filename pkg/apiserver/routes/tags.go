@@ -9,13 +9,6 @@ import (
     "github.com/japannext/snooze/pkg/models"
 )
 
-func init() {
-    registers = append(registers, func(r *gin.Engine) {
-        r.GET("/api/tags", getTags)
-        r.POST("/api/tag", postTag)
-    })
-}
-
 func getTags(c *gin.Context) {
     ctx, span := tracer.Start(c.Request.Context(), "getTags")
     defer span.End()

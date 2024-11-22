@@ -1,16 +1,7 @@
 package models
 
-type Status struct {
-	Kind string `json:"kind"`
-	ObjectID string `json:"objectID,omitempty"`
-	Reason string `json:"reason"`
-
-	SkipNotification bool `json:"skipNotification"`
-	SkipStorage bool `json:"skipStorage"`
-}
-
 type LogStatus struct {
-	Kind LogStatusKind `json:"kind"`
+	Kind int `json:"kind"`
 	ObjectID string `json:"objectID,omitempty"`
 	Reason string `json:"reason"`
 
@@ -21,7 +12,7 @@ type LogStatus struct {
 type LogStatusKind int
 
 const (
-	LogActive LogStatusKind = iota
+	LogActive int = iota
 	LogSnoozed
 	LogSilenced
 	LogRatelimited
@@ -30,19 +21,7 @@ const (
 	LogAcked
 )
 
-func (kind LogStatusKind) String() string {
-	return [...]string{
-		"Active",
-		"Snoozed",
-		"Silenced",
-		"Ratelimited",
-		"Dropped",
-		"ActiveCheck",
-		"Acked",
-	}[kind]
-}
-
-func (status *LogStatus) Change(kind LogStatusKind) bool {
+func (status *LogStatus) Change(kind int) bool {
 	// Either more important, or if same importance,
 	// the first wins
 	if kind > status.Kind {

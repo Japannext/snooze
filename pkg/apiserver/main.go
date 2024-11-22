@@ -2,17 +2,16 @@ package apiserver
 
 import (
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+	"github.com/gin-contrib/cors"
 
+	"github.com/japannext/snooze/pkg/apiserver/auth"
+	"github.com/japannext/snooze/pkg/apiserver/routes"
 	"github.com/japannext/snooze/pkg/common/daemon"
 	"github.com/japannext/snooze/pkg/common/logging"
+	"github.com/japannext/snooze/pkg/common/mq"
 	"github.com/japannext/snooze/pkg/common/opensearch"
 	"github.com/japannext/snooze/pkg/common/redis"
-	"github.com/japannext/snooze/pkg/common/mq"
 	"github.com/japannext/snooze/pkg/common/tracing"
-
-	"github.com/japannext/snooze/pkg/apiserver/routes"
-
-	"github.com/gin-contrib/cors"
 )
 
 // We use a route registration array so that we can
@@ -31,7 +30,9 @@ func Startup() *daemon.DaemonManager {
 	mq.Init()
 
 	dm := daemon.NewDaemonManager()
-	srv := daemon.NewHttpDaemon(routes.Registers()...)
+	srv := daemon.NewHttpDaemon()
+	auth.RegisterAuthRoutes(srv.Engine)
+	routes.Register(srv.Engine)
 	srv.Engine.Use(otelgin.Middleware("snooze-alertmanager", otelgin.WithFilter(tracing.HTTPFilter)))
 
 	// Static routes

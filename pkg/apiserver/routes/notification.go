@@ -9,12 +9,6 @@ import (
 	"github.com/japannext/snooze/pkg/models"
 )
 
-func init() {
-	registers = append(registers, func(r *gin.Engine) {
-		r.GET("/api/notifications", getNotifications)
-	})
-}
-
 type getNotificationsParams struct {
 	*models.Pagination
 	*models.TimeRange

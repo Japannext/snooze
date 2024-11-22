@@ -11,13 +11,6 @@ import (
 	"github.com/japannext/snooze/pkg/models"
 )
 
-func init() {
-	registers = append(registers, func(r *gin.Engine) {
-		r.GET("/api/alerts", getAlerts)
-		r.POST("/api/alert", postAlert)
-	})
-}
-
 type getAlertsParams struct {
 	*models.Pagination
 	*models.TimeRange

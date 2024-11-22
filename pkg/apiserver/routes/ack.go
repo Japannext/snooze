@@ -10,13 +10,6 @@ import (
     "github.com/japannext/snooze/pkg/models"
 )
 
-func init() {
-    registers = append(registers, func(r *gin.Engine) {
-		r.GET("/api/acks", getAcks)
-        r.POST("/api/ack", postAck)
-    })
-}
-
 func getAcks(c *gin.Context) {
 }
 

@@ -3,23 +3,31 @@ import { defineProps, computed } from 'vue'
 
 import { NTag } from 'naive-ui'
 
+import type { LogStatus, LogStatusKind } from '@/api'
+
 const props = defineProps<{
-  kind: string,
+  status: LogStatus,
 }>()
 
 const KINDS = {
-  "active": {type: "", value: "active"},
-  "snoozed": {type: "warning", value: "snoozed"},
-  "silenced": {type: "info", value: "silenced"},
-  "acked": {type: "success", value: "acked"},
+  0: {type: "", value: "active"},
+  1: {type: "warning", value: "snoozed"},
+  2: {type: "info", value: "silenced"},
+  3: {type: "error", value: "ratelimited"}, // SHOULD NOT HAPPEN
+  4: {type: "error", value: "dropped"},     // SHOULD NOT HAPPEN
+  5: {type: "error", value: "activecheck"}, // SHOULD NOT HAPPEN
+  6: {type: "success", value: "acked"},
 }
 
 const tag = computed(() => {
-  var k = KINDS[props.kind]
-  if (k) {
-    return k
+  if (props.status) {
+    var k = KINDS[props.status.kind]
+    if (k) {
+      return k
+    }
+    return {type: "", value: "???"}
   }
-  return {type: "", value: "-"}
+  return {type: "", value: "???"}
 })
 
 </script>

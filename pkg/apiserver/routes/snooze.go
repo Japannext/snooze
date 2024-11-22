@@ -16,12 +16,10 @@ import (
 	"github.com/japannext/snooze/pkg/models"
 )
 
-func init() {
-	registers = append(registers, func(r *gin.Engine) {
-		r.GET("/api/snoozes", getSnoozes)
-		r.POST("/api/snooze", postSnooze)
-		r.POST("/api/snooze/cancel", postSnoozeCancel)
-	})
+func registerSnoozeRoutes(r *gin.Engine) {
+	r.GET("/snoozes", getSnoozes)
+	r.POST("/snooze", postSnooze)
+	r.POST("/snooze/cancel", postSnoozeCancel)
 }
 
 type getSnoozesParams struct {

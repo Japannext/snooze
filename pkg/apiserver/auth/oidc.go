@@ -1,4 +1,4 @@
-package apiserver
+package auth
 
 import (
 	"context"
@@ -17,47 +17,47 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type OidcConfig struct {
+type OidcMethod struct {
 	URL string `yaml:"url"`
 	ClientID string `yaml:"client_id"`
 	ClientSecret string `yaml:"client_secret"`
 	RedirectURL string `yaml:"redirect_url"`
 	Scopes []string `yaml:"scopes"`
 	CaCert string `yaml:"cacert"`
+
+	internal struct {
+		provider *oidc.Provider
+		verifier *oidc.IDTokenVerifier
+		config oauth2.Config
+	}
 }
 
-type OidcBackend struct {
-	ID string
-	Provider *oidc.Provider
-	Verifier *oidc.IDTokenVerifier
-	Config oauth2.Config
-}
-
-func NewOidcBackend(ctx context.Context, id string, cfg *OidcConfig) (*OidcBackend, error) {
-	if cfg.CaCert != "" {
-		caCertData, err := ioutil.ReadFile(cfg.CaCert)
+func (m *OidcMethod) Load() error {
+	var err error
+	ctx := context.Background()
+	if m.CaCert != "" {
+		caCertData, err := ioutil.ReadFile(m.CaCert)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		caCertPool := x509.NewCertPool()
 		caCertPool.AppendCertsFromPEM(caCertData)
 		tlsConfig := &tls.Config{RootCAs: caCertPool}
 		ctx = oidc.ClientContext(ctx, &http.Client{Transport: &http.Transport{TLSClientConfig: tlsConfig}})
 	}
-	provider, err := oidc.NewProvider(ctx, cfg.URL)
+	m.internal.provider, err = oidc.NewProvider(ctx, m.URL)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	oauth2Config := oauth2.Config{
-		ClientID: cfg.ClientID,
-		ClientSecret: cfg.ClientSecret,
-		RedirectURL: cfg.RedirectURL,
-		Endpoint: provider.Endpoint(),
-		Scopes: cfg.Scopes,
+	m.internal.config = oauth2.Config{
+		ClientID: m.ClientID,
+		ClientSecret: m.ClientSecret,
+		RedirectURL: m.RedirectURL,
+		Endpoint: m.internal.provider.Endpoint(),
+		Scopes: m.Scopes,
 	}
-	oidcConfig := &oidc.Config{ClientID: cfg.ClientID}
-	verifier := provider.Verifier(oidcConfig)
-	return &OidcBackend{id, provider, verifier, oauth2Config}, nil
+	m.internal.verifier = m.internal.provider.Verifier(&oidc.Config{ClientID: m.ClientID})
+	return nil
 }
 
 // Generate a random 16 bit string in base64 format
@@ -69,7 +69,16 @@ func randString(nByte int) (string, error) {
 	return base64.RawURLEncoding.EncodeToString(b), nil
 }
 
-func (o *OidcBackend) Redirect(c *gin.Context) {
+func (m *OidcMethod) VerifyToken(tokenString string) (*oidc.IDToken, error) {
+	ctx := context.Background()
+	idToken, err := m.internal.verifier.Verify(ctx, tokenString)
+	if err != nil {
+		return nil, err
+	}
+	return idToken, nil
+}
+
+func (m *OidcMethod) Redirect(c *gin.Context) {
 	state, err := randString(16)
 	if err != nil {
 		log.Error(err)
@@ -82,17 +91,17 @@ func (o *OidcBackend) Redirect(c *gin.Context) {
 		c.String(http.StatusInternalServerError, "Error getting a random string for nonce: %w", err)
 		return
 	}
-	c.SetCookie("state", state, 3600, "/", "localhost", false, true)
-	c.SetCookie("nonce", nonce, 3600, "/", "localhost", false, true)
-	url := o.Config.AuthCodeURL(state, oidc.Nonce(nonce))
+	c.SetCookie("state", state, 3600, "/", "localhost", true, true)
+	c.SetCookie("nonce", nonce, 3600, "/", "localhost", true, true)
+	url := m.internal.config.AuthCodeURL(state, oidc.Nonce(nonce))
 	c.Redirect(http.StatusFound, url)
 }
 
-func (o *OidcBackend) Callback(c *gin.Context) {
+func (m *OidcMethod) Callback(c *gin.Context) {
 	state, err := c.Cookie("state")
 	if err != nil {
 		log.Error(err)
-		c.String(http.StatusBadRequest, "state cookie not found: %w", err)
+		c.String(http.StatusBadRequest, "state cookie not found: %s", err)
 		return
 	}
 	if c.Query("state") != state {
@@ -103,24 +112,24 @@ func (o *OidcBackend) Callback(c *gin.Context) {
 		c.String(http.StatusBadGateway, "OIDC callback returned error: %s | %s", c.Query("error"), c.Query("error_description"))
 		return
 	}
-	oauth2Token, err := o.Config.Exchange(c, c.Query("code"))
+	oauth2Token, err := m.internal.config.Exchange(c, c.Query("code"))
 	if err != nil {
-		c.String(http.StatusBadGateway, "Failed to exchange token: %w", err)
+		c.String(http.StatusBadGateway, "Failed to exchange token: %s", err)
 		return
 	}
 	rawIDToken, ok := oauth2Token.Extra("id_token").(string)
 	if !ok {
-		c.String(http.StatusBadGateway, "No id_token field in oauth2 token: %w", err)
+		c.String(http.StatusBadGateway, "No id_token field in oauth2 token: %s", err)
 		return
 	}
-	idToken, err := o.Verifier.Verify(c, rawIDToken)
+	idToken, err := m.internal.verifier.Verify(c, rawIDToken)
 	if err != nil {
-		c.String(http.StatusBadGateway, "Failed to verify ID token: %w", err)
+		c.String(http.StatusBadGateway, "Failed to verify ID token: %s", err)
 		return
 	}
 	nonce, err := c.Cookie("nonce")
 	if err != nil {
-		c.String(http.StatusBadGateway, "nonce not found: %w", err)
+		c.String(http.StatusBadGateway, "nonce not found: %s", err)
 		return
 	}
 	if idToken.Nonce != nonce {
@@ -134,8 +143,10 @@ func (o *OidcBackend) Callback(c *gin.Context) {
 	}{oauth2Token, new(json.RawMessage)}
 
 	if err := idToken.Claims(&resp.IDTokenClaims); err != nil {
-		c.String(http.StatusInternalServerError, "error verifying claims: %w", err)
+		c.String(http.StatusInternalServerError, "error verifying claims: %s", err)
 		return
 	}
+	c.SetCookie("id-token", rawIDToken, 3600, "/", "localhost", true, true)
+
 	c.JSON(http.StatusOK, resp)
 }

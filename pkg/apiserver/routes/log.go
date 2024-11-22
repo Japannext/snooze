@@ -10,12 +10,6 @@ import (
 	"github.com/japannext/snooze/pkg/models"
 )
 
-func init() {
-	registers = append(registers, func(r *gin.Engine) {
-		r.GET("/api/logs", getLogs)
-	})
-}
-
 type Filter struct {
 	Text string `form:"filter"`
 }
@@ -48,11 +42,11 @@ func getLogs(c *gin.Context) {
 	if params.Filter != nil {
 		switch params.Filter.Text {
 		case "active", "":
-			req.Doc.WithTerm("status.kind.keyword", "active")
+			req.Doc.WithTerm("status.kind.keyword", models.LogActive)
 		case "snoozed":
-			req.Doc.WithTerm("status.kind.keyword", "snoozed")
+			req.Doc.WithTerm("status.kind.keyword", models.LogSnoozed)
 		case "acked":
-			req.Doc.WithTerm("status.kind.keyword", "acked")
+			req.Doc.WithTerm("status.kind.keyword", models.LogAcked)
 		case "failed":
 			// req.Doc.WithTerm("", "")
 		case "all":

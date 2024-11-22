@@ -2,6 +2,16 @@
 version: v2beta1
 name: snooze
 
+vars:
+  LOCAL_REPO:
+    question: Specify the local repo that will be used
+  HTTP_PROXY:
+    question: Specify the address of an HTTP_PROXY/HTTPS_PROXY (if needed)
+    default: ""
+  NO_PROXY:
+    question: Specify the NO_PROXY variable (if needed)
+    default: ""
+
 # This is a list of `pipelines` that DevSpace can execute (you can define your own)
 pipelines:
   # This is the pipeline for the main command: `devspace dev` (or `devspace run-pipeline dev`)
@@ -9,74 +19,19 @@ pipelines:
     run: |-
       run_dependencies --all       # 1. Deploy any projects this project needs (see "dependencies")
       ensure_pull_secrets --all    # 2. Ensure pull secrets
-      #create_deployments --all     # 3. Deploy Helm charts and manifests specfied as "deployments"
       start_dev ui                # 4. Start dev mode "app" (see "dev" section)
-  # You can run this pipeline via `devspace deploy` (or `devspace run-pipeline deploy`)
-  deploy:
-    run: |-
-      run_dependencies --all                            # 1. Deploy any projects this project needs (see "dependencies")
-      ensure_pull_secrets --all                         # 2. Ensure pull secrets
-      build_images snooze -t develop
-      create_deployments --all                          # 4. Deploy Helm charts and manifests specfied as "deployments"
 
 # This is a list of `images` that DevSpace can build for this project
 # We recommend to skip image building during development (devspace dev) as much as possible
 images:
   snooze:
-    image: nexus.dc.japannext.co.jp:8083/unix/kubernetes/snooze
+    image: ${LOCAL_REPO}/snooze
     dockerfile: ./Dockerfile
   snooze-ui:
-    image: nexus.dc.japannext.co.jp:8083/unix/kubernetes/snooze-ui
+    image: ${LOCAL_REPO}/snooze-ui
     dockerfile: ./ui/Dockerfile
   snooze-ui-dev:
     image: ${LOCAL_REPO}
-
-# This is a list of `deployments` that DevSpace can create for this project
-deployments:
-  snooze:
-    # This deployment uses `helm` but you can also define `kubectl` deployments or kustomizations
-    helm:
-      # We are deploying this project with the Helm chart you provided
-      chart:
-        name: ./charts/snooze
-      values:
-        image:
-          repo: nexus.dc.japannext.co.jp:8442/unix/kubernetes
-          tag: develop
-          pullPolicy: Always
-        apiserver:
-          cacertConfigMap: ca-bundle
-          auth_backends:
-            keycloak:
-              display_name: Keycloak
-              icon: "Openid"
-              color: "#00a2cf"
-              oidc:
-                url: https://keycloak.mgmt.d8.japannext.co.jp/realms/japannext
-                client_id: snooze2
-                client_secret: "QKv0iaa2gUWb2xl5SDnzVAucawsXS6nN"
-                redirect_url: https://snooze2.d8.japannext.co.jp/oidc/keycloak/callback
-                scopes: [email, profile, roles]
-                cacert: /cacert/ca.crt
-          cors:
-            allow_all_origins: true
-            allow_credentials: true
-            allow_headers: ["Origin", "Content-Length", "Content-Type", "X-Snooze-Token"]
-        ingress:
-          enabled: true
-          host: snooze2.d8.japannext.co.jp
-          dashboardHost: snooze2-opensearch.d8.japannext.co.jp
-          certManager:
-            enabled: true
-            issuerKind: ClusterIssuer
-            issuerName: vault-x1
-        opensearch:
-          storageClass: openebs-lvm-sysvg
-          diksSize: 20Gi
-
-vars:
-  LOCAL_REPO:
-    question: Specify the local repo that will be used
 
 # This is a list of `dev` containers that are based on the containers created by your deployments
 dev:
@@ -87,11 +42,11 @@ dev:
     devImage: ${LOCAL_REPO}/snooze-ui-dev:develop
     env:
     - name: HTTP_PROXY
-      value: http://proxy.dc.japannext.co.jp:8080
+      value: ${HTTP_PROXY}
     - name: HTTPS_PROXY
-      value: http://proxy.dc.japannext.co.jp:8080
+      value: ${HTTP_PROXY}
     - name: NO_PROXY
-      value: japannext.co.jp
+      value: ${NO_PROXY}
     sync:
     - path: ./ui:/code
       excludePaths:

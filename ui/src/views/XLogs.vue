@@ -42,7 +42,7 @@ const columns = [
   },
   {
     title: 'Status',
-    render: (row) => h(XStatus, {kind: row.status.kind}),
+    render: (row) => h(XStatus, {status: row.status}),
     width: 90,
   },
   {

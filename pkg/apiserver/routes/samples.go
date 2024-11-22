@@ -7,12 +7,6 @@ import (
 	"github.com/japannext/snooze/pkg/tester"
 )
 
-func init() {
-	registers = append(registers, func(r *gin.Engine) {
-		r.POST("/api/sample", generateSamples)
-	})
-}
-
 func generateSamples(c *gin.Context) {
 
 	err := tester.Run()
