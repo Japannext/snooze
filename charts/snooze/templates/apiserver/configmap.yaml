@@ -5,11 +5,11 @@ metadata:
   name: "{{ .Release.Name }}-apiserver-config"
   namespace: "{{ .Release.Namespace }}"
 data:
-  auth_config.yaml: |
+  auth.yaml: |
     # Configuration of auth backend
     ---
-    backends:
-    {{- .Values.apiserver.auth_backends | toYaml | nindent 6 }}
+    methods:
+    {{- .Values.apiserver.authMethods | toYaml | nindent 6 }}
   {{- if .Values.apiserver.cors }}
   cors.yaml: |
     # CORS configuration

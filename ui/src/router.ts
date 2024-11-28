@@ -45,7 +45,9 @@ const routes: RouteRecordRaw[] = [
     path: '/',
     component: () => import('@/layouts/SCenteredLayout.vue'),
     children: [
-      {name: 'login', path: '/login', component: () => import('@/views/SLogin.vue')},
+      {name: 'login', path: '/login', component: () => import('@/views/auth/XLogin.vue')},
+      {name: 'oidc-callback', path: '/oidc/callback', component: () => import('@/views/auth/XOidcCallback.vue') },
+      {name: 'oidc-silent-callback', path: '/oidc/silent-callback', component: () => import('@/views/auth/XOidcSilentCallback.vue') },
     ],
   },
 ]

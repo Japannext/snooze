@@ -23,9 +23,6 @@ type Config struct {
 	// Path to a CORS configuration
 	CorsConfig string `mapstructure:"APISERVER_CORS_CONFIG"`
 
-	// A secret key used to encrypt/decrypt JWT tokens used for authentication
-	SecretKey string `mapstructure:"APISERVER_SECRET_KEY"`
-
 	// A URL for Jaeger/tracing app, so long as it reacts to /trace/<traceID>
 	TraceURL string `mapstructure:"TRACE_URL"`
 }

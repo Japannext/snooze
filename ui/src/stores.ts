@@ -26,4 +26,4 @@ export const useSider = defineRefStore('sider', () => {
   }
 })
 
-export const xSnoozeToken = useLocalStorage('x-snooze-token', null)
+export const xSnoozeToken = useLocalStorage('x-snooze-token', "")

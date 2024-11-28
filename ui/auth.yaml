@@ -1,0 +1,14 @@
+---
+methods:
+- name: keycloak
+  kind: oidc
+  display_name: Keycloak
+  icon: "Openid"
+  color: "#00a2cf"
+  oidc:
+    url: https://keycloak.mgmt.d8.japannext.co.jp/realms/japannext
+    client_id: snooze2
+    # redirect_url: https://snooze2.d8.japannext.co.jp/api/oidc/callback?method=keycloak
+    redirect_url: 'https://snooze2.d8.japannext.co.jp/#/oidc/callback?method=keycloak'
+    scopes: [openid, email, profile, roles]
+    cacert: /cacert/ca.crt

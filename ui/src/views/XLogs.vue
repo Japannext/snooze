@@ -78,7 +78,7 @@ function refresh(): Promise {
     })
     .catch((err) => {
       items.value = []
-      message.error(`failed to load logs: ${err}`)
+      message.error(`failed to load logs (status ${err.response.status}): ${err.response.data}`, {duration: 10000})
       loading.error()
     })
 }

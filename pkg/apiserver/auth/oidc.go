@@ -17,18 +17,39 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+type OidcConfig struct {
+	ClientID string `yaml:"client_id" json:"clientID"`
+	ClientSecret string `yaml:"client_secret" json:"-"`
+	RedirectURL string `yaml:"redirect_url" json:"redirectURL"`
+	Scopes []string `yaml:"scopes" json:"scopes"`
+	CaCert string `yaml:"cacert"`
+
+	// Cosmetics
+	DisplayName string `yaml:"name" json:"name"`
+	Icon string `yaml:"icon" json:"icon"`
+	Color string `yaml:"color" json:"color"`
+
+	internal struct {
+		provider *oidc.Provider
+		verifier *oidc.IDTokenVerifier
+		config oauth2.Config
+		tlsConfig *tls.Config
+	}
+}
+
 type OidcMethod struct {
-	URL string `yaml:"url"`
-	ClientID string `yaml:"client_id"`
-	ClientSecret string `yaml:"client_secret"`
-	RedirectURL string `yaml:"redirect_url"`
-	Scopes []string `yaml:"scopes"`
+	URL string `yaml:"url" json:"url"`
+	ClientID string `yaml:"client_id" json:"clientID"`
+	ClientSecret string `yaml:"client_secret" json:"-"`
+	RedirectURL string `yaml:"redirect_url" json:"redirectURL"`
+	Scopes []string `yaml:"scopes" json:"scopes"`
 	CaCert string `yaml:"cacert"`
 
 	internal struct {
 		provider *oidc.Provider
 		verifier *oidc.IDTokenVerifier
 		config oauth2.Config
+		tlsConfig *tls.Config
 	}
 }
 
@@ -43,6 +64,7 @@ func (m *OidcMethod) Load() error {
 		caCertPool := x509.NewCertPool()
 		caCertPool.AppendCertsFromPEM(caCertData)
 		tlsConfig := &tls.Config{RootCAs: caCertPool}
+		m.internal.tlsConfig = tlsConfig
 		ctx = oidc.ClientContext(ctx, &http.Client{Transport: &http.Transport{TLSClientConfig: tlsConfig}})
 	}
 	m.internal.provider, err = oidc.NewProvider(ctx, m.URL)
@@ -54,7 +76,7 @@ func (m *OidcMethod) Load() error {
 		ClientSecret: m.ClientSecret,
 		RedirectURL: m.RedirectURL,
 		Endpoint: m.internal.provider.Endpoint(),
-		Scopes: m.Scopes,
+		Scopes: []string{oidc.ScopeOpenID, "profile", "email", "roles"},
 	}
 	m.internal.verifier = m.internal.provider.Verifier(&oidc.Config{ClientID: m.ClientID})
 	return nil
@@ -91,8 +113,8 @@ func (m *OidcMethod) Redirect(c *gin.Context) {
 		c.String(http.StatusInternalServerError, "Error getting a random string for nonce: %w", err)
 		return
 	}
-	c.SetCookie("state", state, 3600, "/", "localhost", true, true)
-	c.SetCookie("nonce", nonce, 3600, "/", "localhost", true, true)
+	c.SetCookie("state", state, 3600, "/", cookieDomain, true, true)
+	c.SetCookie("nonce", nonce, 3600, "/", cookieDomain, true, true)
 	url := m.internal.config.AuthCodeURL(state, oidc.Nonce(nonce))
 	c.Redirect(http.StatusFound, url)
 }
@@ -112,14 +134,17 @@ func (m *OidcMethod) Callback(c *gin.Context) {
 		c.String(http.StatusBadGateway, "OIDC callback returned error: %s | %s", c.Query("error"), c.Query("error_description"))
 		return
 	}
-	oauth2Token, err := m.internal.config.Exchange(c, c.Query("code"))
+
+	ctx := c.Request.Context()
+	ctx = oidc.ClientContext(ctx, &http.Client{Transport: &http.Transport{TLSClientConfig: m.internal.tlsConfig}})
+	oauth2Token, err := m.internal.config.Exchange(ctx, c.Query("code"))
 	if err != nil {
 		c.String(http.StatusBadGateway, "Failed to exchange token: %s", err)
 		return
 	}
 	rawIDToken, ok := oauth2Token.Extra("id_token").(string)
 	if !ok {
-		c.String(http.StatusBadGateway, "No id_token field in oauth2 token: %s", err)
+		c.String(http.StatusBadGateway, "No id_token field in oauth2 token: %+v", oauth2Token)
 		return
 	}
 	idToken, err := m.internal.verifier.Verify(c, rawIDToken)
@@ -146,7 +171,9 @@ func (m *OidcMethod) Callback(c *gin.Context) {
 		c.String(http.StatusInternalServerError, "error verifying claims: %s", err)
 		return
 	}
-	c.SetCookie("id-token", rawIDToken, 3600, "/", "localhost", true, true)
+	c.SetCookie("token", rawIDToken, 3600, "/", cookieDomain, true, true)
+	c.SetCookie("username", "john.doe", 3600, "/", cookieDomain, false, false)
+	c.SetCookie("role", "admin", 3600, "/", cookieDomain, false, false)
 
 	c.JSON(http.StatusOK, resp)
 }

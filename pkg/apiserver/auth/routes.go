@@ -6,14 +6,19 @@ import (
 )
 
 func RegisterAuthRoutes(r *gin.Engine) {
-	r.POST("/api/oidc/login/:method", postLogin)
-	r.POST("/api/oidc/callback/:method", postLoginCallback)
+	initConfig()
+
+	// r.POST("/api/auth/login", postLogin)
+
+	// OIDC routes
+	r.GET("/api/oidc/redirect", getOIDCRedirect)
+	r.GET("/api/oidc/callback", getOIDCCallback)
 
 	r.GET("/api/auth/methods", getAuthMethods)
 }
 
-func postLogin(c *gin.Context) {
-	method := c.Param("method")
+func getOIDCRedirect(c *gin.Context) {
+	method := c.Query("method")
 	if method == "" {
 		c.String(http.StatusBadRequest, "parameters `method` is required")
 		return
@@ -27,8 +32,8 @@ func postLogin(c *gin.Context) {
 	backend.Redirect(c)
 }
 
-func postLoginCallback(c *gin.Context) {
-	method := c.Param("method")
+func getOIDCCallback(c *gin.Context) {
+	method := c.Query("method")
 	if method == "" {
 		c.String(http.StatusBadRequest, "parameters `method` is required")
 		return

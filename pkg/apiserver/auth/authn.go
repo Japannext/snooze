@@ -11,18 +11,14 @@ import (
 var parser = jwt.NewParser()
 
 func getISS(tokenString string) (string, error) {
-	claims := Claims{}
+	claims := jwt.MapClaims{}
 	token, _, err := parser.ParseUnverified(tokenString, claims)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("while parsing token header: %s", err)
 	}
-	issValue, ok := token.Header["iss"]
-	if !ok {
-		return "", fmt.Errorf("no field 'iss' found")
-	}
-	iss, ok := issValue.(string)
-	if !ok {
-		return "", fmt.Errorf("field 'iss' is not a string.")
+	iss, err := token.Claims.GetIssuer()
+	if err != nil {
+		return "", fmt.Errorf("no field 'iss' found: %s", err)
 	}
 	return iss, nil
 }
@@ -37,39 +33,45 @@ type Claims struct {
 func Authenticated() func(*gin.Context) {
 	return func(c *gin.Context) {
 
-		token, err := c.Cookie("token")
-		if err != nil {
-			c.AbortWithError(http.StatusUnauthorized, err)
+		token := c.GetHeader("X-Snooze-Token")
+		if token == "" {
+			c.String(http.StatusUnauthorized, "no token X-Snooze-Token found")
+			c.Abort()
 			return
 		}
 
 		iss, err := getISS(token)
 		if err != nil {
-			c.AbortWithError(http.StatusBadRequest, err)
+			c.String(http.StatusBadRequest, "issue finding iss: %s", err)
+			c.Abort()
 			return
 		}
 
 		var claims *Claims
 		// OIDC authentication
-		if m, ok := oidcMethods[iss]; ok {
+		if m, ok := oidcByUrl[iss]; ok {
 			idToken, err :=  m.VerifyToken(token)
 			if err != nil {
-				c.AbortWithError(http.StatusUnauthorized, err)
+				c.String(http.StatusUnauthorized, "error verifying token: %s", err)
+				c.Abort()
 				return
 			}
 			if err := idToken.Claims(&claims); err != nil {
-				c.AbortWithError(http.StatusUnauthorized, err)
+				c.String(http.StatusUnauthorized, "error verifying claims: %s", err)
+				c.Abort()
 				return
 			}
 		// Local token
 		} else if iss == "self" {
 			err := engine.Verify(token, claims)
 			if err == jwt.ErrSignatureInvalid {
-				c.AbortWithError(http.StatusUnauthorized, err)
+				c.String(http.StatusUnauthorized, "wrong JWT signature: %s", err)
+				c.Abort()
 				return
 			}
 			if err != nil {
-				c.AbortWithError(http.StatusBadRequest, err)
+				c.String(http.StatusBadRequest, "error in JWT token: %s", err)
+				c.Abort()
 				return
 			}
 		}

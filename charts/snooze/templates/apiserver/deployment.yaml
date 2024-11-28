@@ -48,7 +48,9 @@ spec:
         {{- include "snooze.opensearch.env" . | nindent 8 }}
         {{- include "snooze.nats.env" . | nindent 8 }}
         - name: APISERVER_AUTH_CONFIG
-          value: /config/auth_config.yaml
+          value: /config/auth.yaml
+        - name: APISERVER_EXTERNAL_URL
+          value: "https://{{ .Values.ingress.host }}"
         {{- if .Values.apiserver.cors }}
         - name: APISERVER_CORS_CONFIG
           value: /config/cors.yaml
@@ -101,5 +103,5 @@ spec:
       {{- with .Values.cacertConfigMap }}
       - name: cacert
         configMap:
-          name: "{{ . }}"
+          name: "ca-bundle"
       {{- end }}
