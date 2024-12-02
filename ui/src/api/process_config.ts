@@ -60,7 +60,7 @@ export type Ratelimit = {
   period: string
 }
 
-export type Notification = {
+type Notification = {
   name: string
   if?: string
   destinations: Destination[]

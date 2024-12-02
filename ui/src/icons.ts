@@ -17,20 +17,23 @@ export {
 } from '@vicons/ionicons5'
 
 export {
-  Server,
-  Terminal,
-  Hashtag,
-  Docker,
-  BookOpen,
-  Slack,
-  BalanceScale,
-  Sink,
-  Users,
   AddressBook,
+  BalanceScale,
+  BookOpen,
+  Docker,
+  Github,
+  Hashtag,
   Lightbulb,
   LuggageCart,
-  Wrench,
+  Openid,
   PhoneAlt,
+  Server,
+  SignInAlt,
+  Sink,
+  Slack,
+  Terminal,
+  Users,
+  Wrench,
 } from '@vicons/fa'
 
 export {

@@ -7,7 +7,16 @@ import (
 	"github.com/spf13/viper"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
+	"github.com/markbates/goth"
+	"github.com/markbates/goth/providers/github"
+	"github.com/markbates/goth/providers/openidConnect"
+
+	"github.com/japannext/snooze/pkg/common/utils"
 )
+
+var config *Config
+var authConfig *AuthConfig
+var cookieDomain string
 
 type Config struct {
 	// External URL used to expose the apiserver
@@ -18,25 +27,29 @@ type Config struct {
 }
 
 type AuthConfig struct {
-	GenericOidc *OidcConfig `yaml:"generic_oidc"`
-	Methods []AuthMethod `yaml:"methods"`
+	Oidc *OidcConfig `yaml:"oidc" json:"oidc,omitempty"`
+	Github *GithubConfig `yaml:"github" json:"github,omitempty"`
 }
 
-type AuthMethod struct {
-    Name string `yaml:"name" json:"name"`
-	Kind string `yaml:"kind" json:"kind"`
-    DisplayName string `yaml:"display_name" json:"displayName"`
-    Icon string `yaml:"icon" json:"icon"`
-    Color string `yaml:"color" json:"color"`
-	// Methods
-    Oidc *OidcMethod `yaml:"oidc" json:"oidc"`
+type OidcConfig struct {
+	URL string `yaml:"url" json:"url"`
+	ClientID string `yaml:"client_id" json:"clientID"`
+	ClientSecret string `yaml:"client_secret" json:"-"`
+	RedirectURL string `yaml:"redirect_url" json:"redirectURL"`
+	Scopes []string `yaml:"scopes" json:"scopes"`
+	TLSConfig *utils.TLSConfig
+
+	// Cosmetics
+	DisplayName string `yaml:"display_name" json:"displayName"`
+	Icon string `yaml:"icon" json:"icon"`
+	Color string `yaml:"color" json:"color"`
 }
 
-var config *Config
-var authConfig *AuthConfig
-var oidcMethods = make(map[string]*OidcMethod)
-var oidcByUrl = make(map[string]*OidcMethod)
-var cookieDomain string
+type GithubConfig struct {
+	ClientID string `yaml:"client_id" json:"clientID"`
+	ClientSecret string `yaml:"client_secret" json:"-"`
+	CallbackURL string `yaml:"callback_url" json:"callbackURL"`
+}
 
 func initConfig() {
 	v := viper.New()
@@ -59,25 +72,15 @@ func initConfig() {
 	}
 	cookieDomain = u.Hostname()
 
-	// To verify the uniqueness of names
-	var uniq = map[string]bool{}
-	for _, method := range authConfig.Methods {
-		if _, ok := uniq[method.Name]; ok {
-			log.Fatalf("Duplicate name `%s` found in auth config %s", method.Name, config.AuthConfig)
+	// Goth
+	if cfg := authConfig.Oidc; cfg != nil {
+		provider, err := openidConnect.New(cfg.ClientID, cfg.ClientSecret, cfg.RedirectURL, cfg.URL)
+		if err != nil {
+			log.Fatalf("error with oidc provider: %s", err)
 		}
-		switch(method.Kind) {
-		case "oidc":
-			if method.Oidc == nil {
-				log.Fatalf("oidc options not defined for '%s'", method.Name)
-			}
-			if err := method.Oidc.Load(); err != nil {
-				log.Fatalf("failed to load '%s' OIDC backend: %s", method.Name, err)
-			}
-			oidcMethods[method.Name] = method.Oidc
-			oidcByUrl[method.Oidc.URL] = method.Oidc
-		}
-		log.Infof("loaded auth method '%s'", method.Name)
+		goth.UseProviders(provider)
 	}
-
-	initTokenEngine(config.SecretKey)
+	if cfg := authConfig.Github; cfg != nil {
+		goth.UseProviders(github.New(cfg.ClientID, cfg.ClientSecret, cfg.CallbackURL, "openid", "profile", "email"))
+	}
 }

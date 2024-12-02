@@ -1,19 +1,19 @@
 <script setup lang="ts">
 import { ref, defineEmits, onMounted, VNodeChild } from 'vue'
 import { NIcon, NCard, NSpace, NLayout, NLayoutContent, NButton, NButtonGroup } from 'naive-ui'
-import { Openid, SignInAlt } from '@vicons/fa'
-import { Password16Regular } from '@vicons/fluent'
 import { router } from '@/router'
+import { useRouter } from 'vue-router'
+import { Github, Openid, SignInAlt } from '@/icons'
 
-import { getAuthMethods, type AuthMethod, oidcs } from '@/api'
+import { getAuthConfig, type AuthConfig } from '@/api'
 
-const methods = ref<AuthMethod[]>([])
+const router = useRouter()
+const authConfig = ref<AuthConfig>(null)
 
 onMounted(() => {
-  getAuthMethods()
-    .then((items) => {
-      methods.value = items
-      oidcs.init(items)
+  getAuthConfig()
+    .then((cfg) => {
+      authConfig.value = cfg
     })
 })
 
@@ -26,37 +26,42 @@ function getIcon(icon: string) {
   }
 }
 
-function oidcLogin(method: AuthMethod) {
-  var backend = oidcs.get(method.name)
-  if (backend === undefined) {
-    throw new Error(`could not find oidc backend ${method.name}`)
-  }
-  backend.login()
-  .then(() => {
-    console.log("logged in successfully")
-  })
+function githubLogin() {
+  window.location.href = `/api/auth/github/login`
+}
+
+function oidcLogin(provider: string) {
+  // router.push({path: `/api/auth/${provider}/login`})
+  window.location.href = `/api/auth/${provider}/login`
 }
 
 </script>
 
 <template>
-  <n-card size="huge" title="Login">
-    {{ methods }}
-    <n-space id="element" vertical>
-      <template v-for="method in methods" :key="method.name">
-        <template v-if="method.kind == 'oidc'">
-          <n-button :color="method.color" @click="oidcLogin(method)">
-            <template v-if="method.icon" #icon><n-icon :component="getIcon(method.icon)" /></template>
-            {{ method.displayName }}
-          </n-button>
-        </template>
-        <template v-else>
-          <n-button :color="method.color" @click="postLogin(method.name)">
-            <template v-if="method.icon" #icon><n-icon :component="getIcon(method.icon)" /></template>
-            {{ method.displayName }}
-          </n-button>
-        </template>
-      </template>
+  <n-card size="huge" title="Login" v-if="authConfig">
+    {{ authConfig }}
+
+    <n-space vertical>
+      <n-button
+        v-if="authConfig.oidc"
+        :color="authConfig.oidc.color"
+        @click="oidcLogin('openid-connect')"
+      >
+        <template #icon><n-icon :component="getIcon(authConfig.oidc.icon)" /></template>
+        {{ authConfig.oidc.displayName }}
+      </n-button>
+
+      <n-button
+        v-if="authConfig.github"
+        @click="githubLogin()"
+      >
+        <template #icon><n-icon :component="Github" /></template>
+        GitHub
+      </n-button>
     </n-space>
   </n-card>
+  <n-card v-else>
+    Could not get authConfig
+  </n-card>
+
 </template>

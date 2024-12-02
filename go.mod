@@ -8,13 +8,17 @@ require (
 	github.com/PaesslerAG/jsonpath v0.1.0
 	github.com/coreos/go-oidc/v3 v3.10.0
 	github.com/gin-contrib/cors v1.7.2
+	github.com/gin-contrib/sessions v1.0.1
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-playground/validator/v10 v10.22.1
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/google/uuid v1.6.0
+	github.com/gorilla/sessions v1.2.2
+	github.com/markbates/goth v1.80.0
 	github.com/nats-io/nats.go v1.36.0
 	github.com/opensearch-project/opensearch-go/v4 v4.1.0
 	github.com/prometheus/client_golang v1.20.2
+	github.com/rbcervilla/redisstore/v9 v9.0.0
 	github.com/redis/go-redis/extra/redisotel/v9 v9.7.0
 	github.com/redis/go-redis/v9 v9.7.0
 	github.com/sirupsen/logrus v1.9.3
@@ -66,6 +70,9 @@ require (
 	github.com/google/s2a-go v0.1.8 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.4 // indirect
 	github.com/googleapis/gax-go/v2 v2.13.0 // indirect
+	github.com/gorilla/context v1.1.2 // indirect
+	github.com/gorilla/mux v1.6.2 // indirect
+	github.com/gorilla/securecookie v1.1.2 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.22.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect

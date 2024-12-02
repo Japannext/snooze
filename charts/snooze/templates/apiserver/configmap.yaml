@@ -8,8 +8,7 @@ data:
   auth.yaml: |
     # Configuration of auth backend
     ---
-    methods:
-    {{- .Values.apiserver.authMethods | toYaml | nindent 6 }}
+    {{- .Values.apiserver.auth | toYaml | nindent 6 }}
   {{- if .Values.apiserver.cors }}
   cors.yaml: |
     # CORS configuration

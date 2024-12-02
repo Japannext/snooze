@@ -46,6 +46,7 @@ spec:
             memory: 100Mi
         env:
         {{- include "snooze.opensearch.env" . | nindent 8 }}
+        {{- include "snooze.proxy.env" . | nindent 8 }}
         {{- include "snooze.nats.env" . | nindent 8 }}
         - name: APISERVER_AUTH_CONFIG
           value: /config/auth.yaml
@@ -69,6 +70,9 @@ spec:
         {{- if .Values.cacertConfigMap }}
         - name: cacert
           mountPath: /cacert
+        - name: cacert
+          mountPath: /etc/ssl/certs/ca-certificates.crt
+          subPath: ca.crt
         {{- end }}
         readinessProbe:
           httpGet:
