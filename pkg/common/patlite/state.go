@@ -39,8 +39,8 @@ var (
 )
 
 type State struct {
-	Lights map[string]string `json:"lights"`
-	Sound string `json:"sound"`
+	Lights map[string]string `yaml:"lights" json:"lights"`
+	Sound string `yaml:"sound" json:"sound"`
 }
 
 func (s *State) Validate() error {
@@ -58,7 +58,7 @@ func (s *State) Validate() error {
 	return nil
 }
 
-func StateFromBytes(b []byte) (*State, error) {
+func newState(b []byte) (*State, error) {
 	if len(b) < 6 {
 		return nil, fmt.Errorf("unknown response: expected 6 bytes, got %d", len(b))
 	}
@@ -81,7 +81,7 @@ func StateFromBytes(b []byte) (*State, error) {
 	return s, nil
 }
 
-func (s *State) Bytes() []byte {
+func (s *State) bytes() []byte {
 	var res = make([]byte, 6)
 	for i, color := range COLORS {
 		light, ok := s.Lights[color]

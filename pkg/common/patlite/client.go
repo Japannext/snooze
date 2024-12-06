@@ -9,14 +9,14 @@ type Client struct {
 	conn net.Conn
 }
 
-func NewClient(host string, port int) *Client {
+func NewClient(host string, port int) (*Client, error) {
 	addr := fmt.Sprintf("%s:%d", host, port)
 	conn, err := net.Dial("tcp", addr, )
 	if err != nil {
-		// TODO
+		return nil, fmt.Errorf("failed to connect to patlite at %s: %s", addr, err)
 	}
 
-	return &Client{conn}
+	return &Client{conn}, nil
 }
 
 func (client *Client) GetState() (*State, error) {
@@ -27,7 +27,7 @@ func (client *Client) GetState() (*State, error) {
 	if _, err := client.conn.Read(resp); err != nil {
 		return nil, err
 	}
-	state, err := StateFromBytes(resp)
+	state, err := newState(resp)
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +35,7 @@ func (client *Client) GetState() (*State, error) {
 }
 
 func (client *Client) SetState(state State) error {
-	data := append(WRITE_HEADER, state.Bytes()...)
+	data := append(WRITE_HEADER, state.bytes()...)
 	if _, err := client.conn.Write(data); err != nil {
 		return err
 	}
