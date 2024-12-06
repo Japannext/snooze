@@ -15,6 +15,8 @@ import (
 	"github.com/japannext/snooze/pkg/common/tracing"
 )
 
+const GROUP_BLOOM_FILTER = "group:bloom_filter"
+
 func Process(ctx context.Context, item *models.Log) error {
 	ctx, span := tracer.Start(ctx, "grouping")
 	defer span.End()
@@ -62,10 +64,10 @@ func Process(ctx context.Context, item *models.Log) error {
 	}
 
 	pipe := redis.Client.Pipeline()
-	exists := make(map[string]*redisv9.IntCmd)
+	exists := make(map[string]*redisv9.BoolCmd)
 	for _, gr := range item.Groups {
-		key := fmt.Sprintf("group/%s:%s", gr.Name, gr.Hash)
-		exists[key] = pipe.Exists(ctx, key)
+		key := fmt.Sprintf("%s:%s", gr.Name, gr.Hash)
+		exists[key] = pipe.BFExists(ctx, GROUP_BLOOM_FILTER, key)
 	}
 	_, err := pipe.Exec(ctx)
 	if err != nil && err != redis.Nil {
@@ -76,7 +78,7 @@ func Process(ctx context.Context, item *models.Log) error {
 
 	for _, gr := range item.Groups {
 		key := fmt.Sprintf("group/%s:%s", gr.Name, gr.Hash)
-		if cmd, ok := exists[key]; ok && cmd.Val() > 0 {
+		if cmd, ok := exists[key]; ok && cmd.Val() {
 			// Group already exists in opensearch (redis says so)
 			continue
 		}
@@ -93,8 +95,8 @@ func Process(ctx context.Context, item *models.Log) error {
 
 	pipe = redis.Client.Pipeline()
 	for _, gr := range item.Groups {
-		key := fmt.Sprintf("group/%s:%s", gr.Name, gr.Hash)
-		pipe.Set(ctx, key, "1", 0)
+		key := fmt.Sprintf("%s:%s", gr.Name, gr.Hash)
+		pipe.BFAdd(ctx, GROUP_BLOOM_FILTER, key)
 	}
 	_, err = pipe.Exec(ctx)
 	if err != nil && err != redis.Nil {
