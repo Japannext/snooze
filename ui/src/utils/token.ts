@@ -3,22 +3,6 @@ import { AxiosError } from 'axios'
 import type { InternalAxiosRequestConfig } from 'axios'
 
 import { router } from '@/router'
-import { xSnoozeToken } from '@/stores'
-
-// Inject the token
-axios.interceptors.request.use(
-  (request: InternalAxiosRequestConfig<any>) => {
-    if (xSnoozeToken.value != "") {
-      request.headers.set('X-Snooze-Token', xSnoozeToken.value)
-    } else {
-      console.log("Could not find X-Snooze-Token in header: redirecting to /login route")
-      router.push({name: 'login'})
-    }
-    return request
-  },
-  (error) => { return Promise.reject(error) }
-
-)
 
 // Redirect 401 to /login
 axios.interceptors.response.use(

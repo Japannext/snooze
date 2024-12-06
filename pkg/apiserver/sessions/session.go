@@ -7,19 +7,13 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/trace"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/japannext/snooze/pkg/common/redis"
 )
 
-var tracer trace.Tracer
-
-func init() {
-	tracer = otel.Tracer("snooze")
-}
+const SNOOZE_SESSION = "snooze-session"
 
 type Session struct {
 	c *gin.Context `json:"-"`
@@ -28,15 +22,19 @@ type Session struct {
 	Username string `json:"username"`
 	Role string `json:"role"`
 	Expiration time.Duration `json:"expiration"`
-	AuthProvider string `json:"authProvider,omitempty"`
-	AuthSession json.RawMessage `json:"authSession,omitempty"`
+
+	// Provider specific values
+	OidcState string `json:"oidcState,omitempty"`
+}
+
+func sessionKey(id string) string {
+	return fmt.Sprintf("sessions/%s", id)
 }
 
 // Get the session from redis (if any)
 func getSession(c *gin.Context, id string) (*Session, error) {
 	ctx := c.Request.Context()
-	key := fmt.Sprintf("session/%s", id)
-	data, err := redis.Client.Get(ctx, key).Bytes()
+	data, err := redis.Client.Get(ctx, sessionKey(id)).Bytes()
 	if err != nil && err != redis.Nil {
 		return nil, fmt.Errorf("failed to get session from redis: %w", err)
 	}
@@ -53,20 +51,18 @@ func getSession(c *gin.Context, id string) (*Session, error) {
 
 // Set the session to redis
 func setSession(ctx context.Context, s *Session) error {
-	key := fmt.Sprintf("sessions/%s", s.ID)
 	data, err := json.Marshal(s)
 	if err != nil {
 		return fmt.Errorf("failed to marshal session: %w", err)
 	}
-	if err := redis.Client.Set(ctx, key, data, s.Expiration).Err(); err != nil {
+	if err := redis.Client.Set(ctx, sessionKey(s.ID), data, s.Expiration).Err(); err != nil {
 		return fmt.Errorf("failed to save session to redis: %w", err)
 	}
 	return nil
 }
 
 func deleteSession(ctx context.Context, id string) error {
-	key := fmt.Sprintf("sessions/%s", id)
-	if err := redis.Client.Del(ctx, key).Err(); err != nil {
+	if err := redis.Client.Del(ctx, sessionKey(id)).Err(); err != nil {
 		return fmt.Errorf("failed to delete session from redis: %w", err)
 	}
 	return nil
@@ -83,7 +79,7 @@ func newSession(c *gin.Context, ctx context.Context) *Session {
 	if err := setSession(ctx, s); err != nil {
 		log.Warnf("failed to set session: %s", err)
 	}
-	c.SetCookie("snooze-session", sessionID, 3600, "/", "localhost", true, true)
+	c.SetCookie(SNOOZE_SESSION, sessionID, 3600, "/", cookieDomain, true, true)
 	return s
 }
 
@@ -95,20 +91,17 @@ func (s *Session) Save() error {
 	return nil
 }
 
-func (s *Session) Delete() {
-	ctx := s.c.Request.Context()
+func (s *Session) Delete(ctx context.Context) {
 	if err := deleteSession(ctx, s.ID); err != nil {
 		log.Warnf("failed to delete session: %s", err)
 	}
-	s.c.SetCookie("snooze-session", "", 0, "/", "localhost", true, true)
+	s.c.SetCookie(SNOOZE_SESSION, "", 0, "/", cookieDomain, true, true)
 }
 
-func MySession(c *gin.Context) *Session {
-	ctx, span := tracer.Start(c.Request.Context(), "MySession")
-	defer span.End()
-
-	sessionID, err := c.Cookie("snooze-session")
+func MySession(c *gin.Context, ctx context.Context) *Session {
+	sessionID, err := c.Cookie(SNOOZE_SESSION)
 	if err != nil { // no session cookie
+		log.Warnf("error fetching cookie `%s`: %s", SNOOZE_SESSION, err)
 		return newSession(c, ctx)
 	}
 	s, _ := getSession(c, sessionID)

@@ -26,13 +26,8 @@ function getIcon(icon: string) {
   }
 }
 
-function githubLogin() {
-  window.location.href = `/api/auth/github/login`
-}
-
-function oidcLogin(provider: string) {
-  // router.push({path: `/api/auth/${provider}/login`})
-  window.location.href = `/api/auth/${provider}/login`
+function redirect(providerName: string) {
+  window.location.href = `/api/auth/${providerName}/login`
 }
 
 </script>
@@ -45,7 +40,7 @@ function oidcLogin(provider: string) {
       <n-button
         v-if="authConfig.oidc"
         :color="authConfig.oidc.color"
-        @click="oidcLogin('openid-connect')"
+        @click="redirect('oidc')"
       >
         <template #icon><n-icon :component="getIcon(authConfig.oidc.icon)" /></template>
         {{ authConfig.oidc.displayName }}
@@ -53,7 +48,7 @@ function oidcLogin(provider: string) {
 
       <n-button
         v-if="authConfig.github"
-        @click="githubLogin()"
+        @click="redirect('github')"
       >
         <template #icon><n-icon :component="Github" /></template>
         GitHub

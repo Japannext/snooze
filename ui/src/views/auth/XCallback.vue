@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useRouteParams, useRouteHash, useRouteQuery } from '@vueuse/router'
-import { useRoute } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { getAuthCallback } from '@/api'
-import { xSnoozeToken } from '@/stores'
 
+const router = useRouter()
 const provider = useRouteParams("provider")
 
 onMounted(() => {
@@ -16,9 +16,8 @@ onMounted(() => {
   console.log(`code: '${code}'`)
   console.log(`state: '${state}'`)
   getAuthCallback(provider.value, code, state)
-    .then(user => {
-      console.log(user)
-      xSnoozeToken.value = user.AccessToken
+    .then(() => {
+      router.push("logs")
     })
 })
 </script>

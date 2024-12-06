@@ -2,9 +2,9 @@ package apiserver
 
 import (
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
-	"github.com/gin-contrib/cors"
 
 	"github.com/japannext/snooze/pkg/apiserver/auth"
+	"github.com/japannext/snooze/pkg/apiserver/config"
 	"github.com/japannext/snooze/pkg/apiserver/routes"
 	"github.com/japannext/snooze/pkg/common/daemon"
 	"github.com/japannext/snooze/pkg/common/logging"
@@ -23,7 +23,8 @@ import (
 func Startup() *daemon.DaemonManager {
 	// Init components
 	logging.Init()
-	initConfig()
+	tracing.Init("snooze-apiserver")
+	config.Init()
 	routes.InitMetrics()
 	opensearch.Init()
 	redis.Init()
@@ -31,16 +32,9 @@ func Startup() *daemon.DaemonManager {
 
 	dm := daemon.NewDaemonManager()
 	srv := daemon.NewHttpDaemon()
-	auth.RegisterAuthRoutes(srv.Engine)
+	auth.RegisterRoutes(srv.Engine)
 	routes.Register(srv.Engine)
-	srv.Engine.Use(otelgin.Middleware("snooze-alertmanager", otelgin.WithFilter(tracing.HTTPFilter)))
-
-	// Static routes
-	// srv.Engine.Group("/static", eTagMiddleware()).Static("/", config.StaticPath)
-
-	if corsConfig != nil {
-		srv.Engine.Use(cors.New(*corsConfig))
-	}
+	srv.Engine.Use(otelgin.Middleware("snooze-apiserver", otelgin.WithFilter(tracing.HTTPFilter)))
 
 	dm.AddDaemon("http", srv)
 

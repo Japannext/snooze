@@ -9,6 +9,8 @@ metadata:
     app.kubernetes.io/name: snooze
     app.kubernetes.io/instance: "{{ .Release.Name }}"
     app.kubernetes.io/component: api
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
+    nginx.ingress.kubernetes.io/proxy-buffers-number: "4"
   annotations:
     {{- if .Values.ingress.certManager.enabled }}
     cert-manager.io/common-name: "{{ .Values.ingress.host }}"

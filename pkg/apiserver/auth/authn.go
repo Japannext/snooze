@@ -5,18 +5,28 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/japannext/snooze/pkg/apiserver/sessions"
+	"github.com/japannext/snooze/pkg/apiserver/token"
 )
 
 func Authenticate() func(*gin.Context) {
 	return func(c *gin.Context) {
-		session := sessions.MySession(c)
-		if session.Authenticated {
-			c.Next()
+		_, span := tracer.Start(c.Request.Context(), "Authenticate")
+		defer span.End()
+
+		snoozeToken, err := c.Cookie("snooze-token")
+		if err != nil {
+			c.String(http.StatusUnauthorized, "no snooze-token found: %s", err)
+			c.Abort()
 			return
 		}
 
-		c.String(http.StatusUnauthorized, "session not authenticated")
-		c.Abort()
+		claims, err := token.Verify(snoozeToken)
+		if err != nil {
+			c.String(http.StatusUnauthorized, "could not verify token: %s", err)
+			c.Abort()
+			return
+		}
+
+		c.Set("claims", claims)
 	}
 }

@@ -6,7 +6,6 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/japannext/snooze/pkg/common/mq"
-	"github.com/japannext/snooze/pkg/common/tracing"
 	"github.com/japannext/snooze/pkg/apiserver/auth"
 )
 
@@ -15,7 +14,6 @@ var tracer trace.Tracer
 
 func Register(r *gin.Engine) {
 	storeQ = mq.StorePub()
-	tracing.Init("snooze-apiserver")
 	tracer = otel.Tracer("snooze")
 
 	rr := r.Group("/api")
