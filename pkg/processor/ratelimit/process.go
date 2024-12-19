@@ -8,6 +8,7 @@ import (
 
 	redisv9 "github.com/redis/go-redis/v9"
 	"github.com/google/uuid"
+	// "github.com/go-redis/redis_rate/v10"
 
 	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/common/redis"
@@ -56,7 +57,6 @@ func (c *counter) extract() error {
 	c.value = value
 	return nil
 }
-
 
 
 func Process(ctx context.Context, item *models.Log) error {

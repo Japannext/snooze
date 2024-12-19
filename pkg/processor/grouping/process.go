@@ -3,6 +3,7 @@ package grouping
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	redisv9 "github.com/redis/go-redis/v9"
@@ -15,7 +16,11 @@ import (
 	"github.com/japannext/snooze/pkg/common/tracing"
 )
 
-const GROUP_BLOOM_FILTER = "group:bloom_filter"
+var expiration = time.Duration(6) * time.Hour
+
+func gkey(gr *models.Group) string {
+	return fmt.Sprintf("grouping:%s:%s", gr.Name, gr.Hash)
+}
 
 func Process(ctx context.Context, item *models.Log) error {
 	ctx, span := tracer.Start(ctx, "grouping")
@@ -64,45 +69,36 @@ func Process(ctx context.Context, item *models.Log) error {
 	}
 
 	pipe := redis.Client.Pipeline()
-	exists := make(map[string]*redisv9.BoolCmd)
+	exists := make(map[string]*redisv9.IntCmd)
 	for _, gr := range item.Groups {
-		key := fmt.Sprintf("%s:%s", gr.Name, gr.Hash)
-		exists[key] = pipe.BFExists(ctx, GROUP_BLOOM_FILTER, key)
+		key := gkey(gr)
+		exists[key] = pipe.Exists(ctx, key)
+		// Set afterward anyway
+		pipe.Set(ctx, key, "1", expiration)
 	}
 	_, err := pipe.Exec(ctx)
-	if err != nil && err != redis.Nil {
-		log.Warnf("failed to get groups from redis: %s", err)
+	if err != nil {
+		log.Warnf("failed to get/set groups from redis: %s", err)
 		tracing.Error(span, err)
 		return err
 	}
 
+	// Insert the groups in Opensearch only if it doesn't exists
 	for _, gr := range item.Groups {
-		key := fmt.Sprintf("group/%s:%s", gr.Name, gr.Hash)
-		if cmd, ok := exists[key]; ok && cmd.Val() {
-			// Group already exists in opensearch (redis says so)
+		if cmd, ok := exists[gkey(gr)]; ok && cmd.Val() > 0 {
+			// Skip insert due to LRU cache
 			continue
 		}
-		gr.ID = gr.Hash
+
 		err := storeQ.PublishData(ctx, &format.Index{
 			Index: models.GROUP_INDEX,
+			ID: gr.ID,
 			Item: gr,
 		})
 		if err != nil {
 			log.Warnf("failed to publish group: %+v", gr)
 			continue
 		}
-	}
-
-	pipe = redis.Client.Pipeline()
-	for _, gr := range item.Groups {
-		key := fmt.Sprintf("%s:%s", gr.Name, gr.Hash)
-		pipe.BFAdd(ctx, GROUP_BLOOM_FILTER, key)
-	}
-	_, err = pipe.Exec(ctx)
-	if err != nil && err != redis.Nil {
-		log.Warnf("failed to set groups to redis: %s", err)
-		tracing.Error(span, err)
-		return err
 	}
 
 	return nil

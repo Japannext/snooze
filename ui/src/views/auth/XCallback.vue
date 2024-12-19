@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
-import { useRouteParams, useRouteHash, useRouteQuery } from '@vueuse/router'
+import { useRouteParams } from '@vueuse/router'
 import { useRouter } from 'vue-router'
 import { getAuthCallback } from '@/api'
 
@@ -12,12 +12,10 @@ onMounted(() => {
   var query = new URLSearchParams(queryString)
   var code = query.get("code")
   var state = query.get("state")
-  console.log(`query: ${JSON.stringify(query)}`)
-  console.log(`code: '${code}'`)
-  console.log(`state: '${state}'`)
   getAuthCallback(provider.value, code, state)
     .then(() => {
-      router.push("logs")
+      window.history.pushState({},"", "/")
+      router.push({name: "logs", query: {}})
     })
 })
 </script>

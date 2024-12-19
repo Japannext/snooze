@@ -8,12 +8,17 @@ import (
 
 type Index struct {
 	Index string
+	ID string
 	Item interface{}
 }
 func (a *Index) Serialize() ([]byte, error) {
 	var buf bytes.Buffer
+	meta := Metadata{Index: a.Index}
+	if a.ID != "" {
+		meta.ID = a.ID
+	}
 	header := BulkHeader(map[Action]Metadata{
-		INDEX_ACTION: {Index: a.Index},
+		INDEX_ACTION: meta,
 	})
 	data, err := json.Marshal(header)
 	if err != nil {

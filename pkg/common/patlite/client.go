@@ -55,3 +55,7 @@ func (client *Client) SetState(state State) error {
 			return fmt.Errorf("unknown response '%s'", resp)
 	}
 }
+
+func (client *Client) Clear() error {
+	return client.SetState(State{})
+}

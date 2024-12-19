@@ -85,6 +85,7 @@ function refresh(): Promise {
 
 function unselect() {
   selectedItems.value = []
+  refresh()
 }
 
 function renderExpand(row) {

@@ -13,6 +13,7 @@ import (
 
 type IndexReq struct {
 	Index string
+	ID string
 	Params opensearchapi.IndexParams
 	Item models.HasID
 }
@@ -25,6 +26,7 @@ func Index(ctx context.Context, req *IndexReq) error {
 
 	resp, err := client.Index(ctx, opensearchapi.IndexReq{
 		Index: req.Index,
+		DocumentID: req.ID,
 		Params: req.Params,
 		Body: bytes.NewReader(body),
 	})

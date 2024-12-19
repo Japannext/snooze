@@ -46,6 +46,11 @@ tasks:
     - kubectl exec -it snooze-opensearch-masters-0 -- curl -k -u admin:admin https://localhost:9200/_index_template/v2-notifications -X DELETE
     - kubectl exec -it snooze-opensearch-masters-0 -- curl -k -u admin:admin https://localhost:9200/_index_template/v2-alerts -X DELETE
 
+  reset-groups:
+    cmds:
+    - kubectl exec -it svc/snooze-opensearch-masters -- curl -k -u admin:admin https://localhost:9200/_index_template/v2-groups -X DELETE
+    - kubectl exec -it svc/snooze-redis -- redis-cli del "group:bloom_filter"
+
   sync:
     cmds:
     # - docker inspect --format='{{"{{"}}index .RepoDigests 0{{"}}"}}' nexus.dc.japannext.co.jp:8083/unix/kubernetes/snooze:develop | cut -d@ -f2 > .digest

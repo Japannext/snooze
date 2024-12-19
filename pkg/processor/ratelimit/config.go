@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/japannext/snooze/pkg/common/lang"
+	// "github.com/japannext/snooze/pkg/common/redis"
 )
 
 type RateLimit struct {
@@ -40,6 +41,8 @@ func (rate *RateLimit) Load() *RateLimit {
 		}
 		rate.internal.condition = condition
 	}
+
+	// limiter := redis_rate.NewLimiter(redis.Client)
 
 	if int64(rate.Period.Seconds()) == 0 {
 		log.Fatalf("period should be at least 1 second for rate `%s`", rate.Name)
