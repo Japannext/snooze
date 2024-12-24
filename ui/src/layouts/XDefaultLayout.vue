@@ -1,12 +1,8 @@
 <script setup lang="ts">
 
-import { useSider } from '@/stores'
-
 // Components
 import { NLayout, NLayoutContent, NLayoutHeader, NLayoutFooter } from 'naive-ui'
 import { XHeader, XFooter } from '@/components/layout'
-
-const { collapsed } = useSider()
 
 </script>
 

@@ -4,9 +4,9 @@ import { useLoadingBar, useMessage } from 'naive-ui'
 import { usePagination } from '@/api'
 
 // Components
-import { NIcon, NButton, NButtonGroup, NSpace, NDataTable, NInputGroup } from 'naive-ui'
-import { XSearch, XFilter, XTimeRange, XTimestampTitle } from '@/components/interface'
-import { XTime, XDuration, XTag } from '@/components/attributes'
+import { NIcon, NButton, NButtonGroup, NSpace, NDataTable, NInputGroup, type DataTableColumn } from 'naive-ui'
+import { XSearch, XFilter, XTimeRange } from '@/components/interface'
+import { XTag } from '@/components/attributes'
 import { XNewTagModal } from '@/components/modal'
 import { Refresh, Add, Trash } from '@/icons'
 
@@ -14,7 +14,7 @@ import { getTags, type Tag, type GetTagsParams } from '@/api'
 
 const items = ref<Tag[]>()
 const selectedItems = ref<string[]>([])
-const xTimerange = ref(null)
+const xTimerange = ref()
 
 const loading = useLoadingBar()
 const message = useMessage()
@@ -24,17 +24,9 @@ const showDeleteTagModal = ref<boolean>(false)
 const params = ref<GetTagsParams>({
   search: "",
   pagination: usePagination(refresh),
-  filter: "active",
 })
 
-const filters = [
-  {label: "Active", value: "active"},
-  {label: "Upcoming", value: "upcoming"},
-  {label: "Expired", value: "expired"},
-  {label: "All", value: "all"},
-]
-
-const columns = [
+const columns: DataTableColumn<Tag>[] = [
   {type: 'selection'},
   {type: 'expand', renderExpand: renderExpand},
   {
@@ -49,6 +41,7 @@ const columns = [
   },
   {
     title: 'Actions',
+    key: 'actions',
   },
 ]
 
@@ -56,9 +49,8 @@ onMounted(() => {
   refresh()
 })
 
-function refresh(): Promise {
+function refresh() {
   loading.start()
-  params.value.timerange = xTimerange.value.getTime()
   getTags(params.value)
     .then((list) => {
       items.value = list.items
@@ -78,16 +70,8 @@ function reset() {
   refresh()
 }
 
-function renderExpand(row) {
+function renderExpand(row: Tag) {
   return h("pre", null, JSON.stringify(row, null, 2))
-}
-
-function render(component: Component, attr: string) {
-  return (row) => {
-    var options = {}
-    options[attr] = row[attr]
-    return h(component, options)
-  }
 }
 
 </script>
@@ -96,11 +80,9 @@ function render(component: Component, attr: string) {
   <div>
     <n-space :size="100" justify="center" style="padding: 5px; margin-bottom: 10px;">
       <n-input-group>
-        <x-time-range ref="xTimerange" @change="reset" />
         <x-search v-model:value="params.search" @change="reset" />
         <n-button @click="refresh"><n-icon :component="Refresh" /></n-button>
       </n-input-group>
-      <x-filter v-model:value="params.filter" :filters="filters" @change="reset" />
       <n-button-group>
         <n-button type="success" icon-placement="right" @click="showNewTagModal = true">
           <template #icon><n-icon :component="Add" /></template>

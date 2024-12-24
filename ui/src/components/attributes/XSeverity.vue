@@ -7,7 +7,7 @@ const props = defineProps<{
   number: number,
 }>()
 
-const color = ref<string>("")
+const color = ref<NaiveColor>("default")
 
 onMounted(() => {
   if (props.number == 0) { // Not set

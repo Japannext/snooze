@@ -1,6 +1,6 @@
 import axios from 'axios'
 export type AuthConfig = {
-  genericOidc?: OidcConfig
+  oidc?: OidcConfig
 }
 
 export type OidcConfig = {

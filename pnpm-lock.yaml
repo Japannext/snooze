@@ -1,0 +1,21 @@
+/tmp/X6hUe9DGSz/.ca-bundle/.keep:  zero sized file
+/tmp/X6hUe9DGSz/.dockerignore:  language unknown (#3)
+/tmp/X6hUe9DGSz/.env:  language unknown (#3)
+/tmp/X6hUe9DGSz/.gitignore:  listed in $Not_Code_Extension{gitignore}
+/tmp/X6hUe9DGSz/.token:  language unknown (#3)
+/tmp/X6hUe9DGSz/charts/snooze/.gitignore:  listed in $Not_Code_Extension{gitignore}
+/tmp/X6hUe9DGSz/charts/snooze/.helmignore:  language unknown (#3)
+/tmp/X6hUe9DGSz/devspace_start.sh:  duplicate of /tmp/X6hUe9DGSz/ui/devspace_start.sh
+/tmp/X6hUe9DGSz/go.mod:  language unknown (#3)
+/tmp/X6hUe9DGSz/go.sum:  language unknown (#3)
+/tmp/X6hUe9DGSz/test:  language unknown (#3)
+/tmp/X6hUe9DGSz/ui/.dockerignore:  language unknown (#3)
+/tmp/X6hUe9DGSz/ui/.gitignore:  listed in $Not_Code_Extension{gitignore}
+/tmp/X6hUe9DGSz/ui/.nvmrc:  language unknown (#3)
+/tmp/X6hUe9DGSz/ui/.token:  language unknown (#3)
+/tmp/X6hUe9DGSz/ui/public/img/logo-symbol.png:  binary file
+/tmp/X6hUe9DGSz/ui/public/img/logo.png:  binary file
+/tmp/X6hUe9DGSz/ui/public/img/logo_white.png:  binary file
+/tmp/X6hUe9DGSz/ui/src/api/fetch.ts:  zero sized file
+/tmp/X6hUe9DGSz/ui/src/components/attributes/XAlertGroup.vue:  duplicate of /tmp/X6hUe9DGSz/ui/src/components/attributes/XAlertName.vue
+/tmp/X6hUe9DGSz/ui/src/views/XAdmin.vue:  duplicate of /tmp/X6hUe9DGSz/ui/src/views/XEscalations.vue

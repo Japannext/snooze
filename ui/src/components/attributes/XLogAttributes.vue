@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, defineProps, onMounted } from 'vue'
+import { defineProps } from 'vue'
 import { NSpace } from 'naive-ui'
 
-import type { Log } from '@/api/types'
+import type { Log } from '@/api'
 import { XLogPattern, XIdentity, XSeverity } from '@/components/attributes'
 
 defineProps<{

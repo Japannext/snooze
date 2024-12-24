@@ -20,7 +20,7 @@ const kind = computed(() => {
   switch(true) {
   case (props.cancelled):
     return "cancelled"
-  case (startDate.value <= now <= endDate.value):
+  case (startDate.value <= now && now <= endDate.value):
     return "active"
   case (endDate.value < now):
     return "expired"

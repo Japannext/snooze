@@ -4,7 +4,13 @@ export type ListOf<T> = {
   more: boolean;
 }
 
+export type KeyValue = {
+  [key: string]: string
+}
+
 export type Destination = {
   queue: string
   profile: string
 }
+
+export type NaiveColor = "default" | "error" | "primary" | "info" | "success" | "warning"

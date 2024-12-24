@@ -3,7 +3,7 @@ import { defineProps, withDefaults } from 'vue'
 import { NSwitch, NSpace } from 'naive-ui'
 import { useTimeRelative } from '@/stores'
 
-const { timeRelative } = useTimeRelative()
+const timeRelative = useTimeRelative()
 
 interface Props {
   title?: string

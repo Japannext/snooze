@@ -23,6 +23,8 @@ function renderLink(name: string, label: string): () => VNodeChild {
   return () => h(RouterLink, {to: {name: name}}, {default: () => label})
 }
 
+const XCallback = () => import('./views/auth/XCallback.vue')
+
 const routes: RouteRecordRaw[] = [
   {
     name: 'menu',
@@ -45,8 +47,7 @@ const routes: RouteRecordRaw[] = [
     component: XCenteredLayout,
     children: [
       {name: 'login', path: '/login', component: () => import('@/views/auth/XLogin.vue')},
-      {name: 'login2', path: '/login2', component: () => import('@/views/auth/XLogin2.vue')},
-      {name: 'callback', path: '/callback/:provider', component: () => import('@/views/auth/XCallback.vue')},
+      {name: 'callback', path: '/callback/:provider', component: XCallback},
       //{name: 'oidc-callback', path: '/oidc/callback', component: () => import('@/views/auth/XOidcCallback.vue') },
       //{name: 'oidc-silent-callback', path: '/oidc/silent-callback', component: () => import('@/views/auth/XOidcSilentCallback.vue') },
     ],

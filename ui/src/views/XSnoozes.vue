@@ -4,17 +4,17 @@ import { useLoadingBar, useMessage } from 'naive-ui'
 import { usePagination } from '@/api'
 
 // Components
-import { NIcon, NButton, NButtonGroup, NSpace, NDataTable, NInputGroup } from 'naive-ui'
+import { NIcon, NButton, NButtonGroup, NSpace, NDataTable, NInputGroup, type DataTableColumn, type SelectOption, type RadioButtonProps } from 'naive-ui'
 import { XSearch, XFilter, XTimeRange, XTimestampTitle } from '@/components/interface'
 import { XTime, XDuration, XTagList, XSnoozeTime } from '@/components/attributes'
 import { XNewSnoozeModal, XCancelSnoozeModal } from '@/components/modal'
 import { Refresh, Add } from '@/icons'
 
-import { getSnoozes, type Snooze, type GetSnoozesParams } from '@/api'
+import { getSnoozes, type Snooze, type GetSnoozesParams, type Filter } from '@/api'
 
 const items = ref<Snooze[]>()
 const selectedItems = ref<string[]>([])
-const xTimerange = ref(null)
+const xTimerange = ref()
 
 const loading = useLoadingBar()
 const message = useMessage()
@@ -25,9 +25,10 @@ const params = ref<GetSnoozesParams>({
   search: "",
   pagination: usePagination(refresh),
   filter: "active",
+  timerange: {},
 })
 
-const filters = [
+const filters: Filter[] = [
   {label: "Active", value: "active"},
   {label: "Upcoming", value: "upcoming"},
   {label: "Expired", value: "expired"},
@@ -35,13 +36,13 @@ const filters = [
   {label: "All", value: "all"},
 ]
 
-const columns = [
+const columns: DataTableColumn<Snooze>[] = [
   {type: 'selection'},
   {type: 'expand', renderExpand: renderExpand},
   {
     key: 'time',
     title: 'Time constraint',
-    render: (row) => h(XSnoozeTime, {start: row.startAt, end: row.expireAt, cancelled: new Boolean(row.cancelled)}),
+    render: renderSnoozeTime,
   },
   {
     key: 'duration',
@@ -51,7 +52,8 @@ const columns = [
   },
   {
     title: 'Tags',
-    render: (row) => h(XTagList, {tags: row.tags}),
+    key: 'tags',
+    render: renderTags,
   },
   {title: 'Reason', key: 'reason', ellipsis: {tooltip: {placement: "bottom-end", width: 500}}},
 ]
@@ -60,7 +62,7 @@ onMounted(() => {
   refresh()
 })
 
-function refresh(): Promise {
+function refresh() {
   console.log(`refresh()`)
   loading.start()
   params.value.timerange = xTimerange.value.getTime()
@@ -80,6 +82,18 @@ function refresh(): Promise {
 
 const delayMillis = 300
 
+function renderSnoozeTime(row: Snooze) {
+  var isCancelled: boolean = false
+  if (row.cancelled !== undefined || row.cancelled != null) {
+    isCancelled = true
+  }
+  return h(XSnoozeTime, {
+    start: row.startAt,
+    end: row.expireAt,
+    cancelled: isCancelled,
+  })
+}
+
 function refreshWithDelay() {
   setTimeout(refresh, delayMillis)
 }
@@ -89,7 +103,14 @@ function reset() {
   refresh()
 }
 
-function renderExpand(row) {
+function renderTags(row: Snooze) {
+  const tags = row.tags.map(x => {
+    return {name: x, description: "", color: ""}
+  })
+  return h(XTagList, {tags: tags})
+}
+
+function renderExpand(row: Snooze) {
   return h("pre", null, JSON.stringify(row, null, 2))
 }
 

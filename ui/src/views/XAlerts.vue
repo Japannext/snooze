@@ -4,15 +4,15 @@ import { useLoadingBar, useMessage } from 'naive-ui'
 import { usePagination } from '@/api'
 
 // Components
-import {NModal, NButton, NSpace, NIcon, NDataTable, NInputGroup } from 'naive-ui'
+import {NModal, NButton, NSpace, NIcon, NDataTable, NInputGroup, type DataTableColumn, type SelectOption, type RadioButtonProps } from 'naive-ui'
 import { XSearch, XFilter, XTimeRange, XTimestampTitle } from '@/components/interface'
 import { XAlertAttributes, XTime  } from '@/components/attributes'
 import { XAckModal } from '@/components/modal'
 import { Refresh } from '@/icons'
 
-import { getAlerts, type GetAlertsParams, type Alert } from '@/api'
+import { getAlerts, type GetAlertsParams, type Alert, type Filter } from '@/api'
 
-const selected = ref<Alert>(null)
+const selected = ref<Alert|null>(null)
 const showDetails = ref<boolean>(false)
 
 // Utils
@@ -21,7 +21,7 @@ const message = useMessage()
 
 const items = ref<Array<Alert>>([])
 const selectedItems = ref<Array<string>>([])
-const xTimerange = ref(null)
+const xTimerange = ref()
 
 const showAckModal = ref<boolean>(false)
 const showEscalateModal = ref<boolean>(false)
@@ -29,24 +29,27 @@ const showEscalateModal = ref<boolean>(false)
 const params = ref<GetAlertsParams>({
   search: "",
   filter: "active",
-  pagination: usePagination(refresh)
+  pagination: usePagination(refresh),
+  timerange: {},
 })
 
-const filters = [
+const filters: Filter[] = [
   {label: "Active", value: "active"},
   {label: "History", value: "history"},
 ]
 
-const columns = [
+const columns: DataTableColumn<Alert>[] = [
   {type: 'expand', renderExpand: renderExpand},
   {
     title: () => h(XTimestampTitle),
-    render: (row) => h(XTime, {ts: {display: row.startsAt}}),
+    render: (row) => h(XTime, {ts: row.startAt}),
+    key: 'timestamp',
     width: 150,
   },
   {
     title: 'Attributes',
     render: (row) => h(XAlertAttributes, {row: row}),
+    key: 'attributes',
   },
   {
     title: 'Summary',
@@ -55,7 +58,7 @@ const columns = [
   },
 ]
 
-function refresh(): Promise {
+function refresh() {
   loading.start()
   params.value.timerange = xTimerange.value.getTime()
   getAlerts(params.value)
@@ -90,7 +93,7 @@ function reset() {
   refresh()
 }
 
-function renderExpand(row) {
+function renderExpand(row: Alert) {
   return h("pre", null, JSON.stringify(row, null, 2))
 }
 

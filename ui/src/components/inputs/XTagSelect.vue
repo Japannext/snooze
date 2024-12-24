@@ -1,40 +1,39 @@
 <script setup lang="ts">
-import { h, ref, defineModel } from 'vue'
-import { getTags, type Tag, type GetTagsParams } from '@/api'
+import { h, ref, defineModel, type VNodeChild } from 'vue'
+import { getTags, type GetTagsParams } from '@/api'
 
-import { NSelect, NSpace, NEllipsis } from 'naive-ui'
+import { NSelect, type SelectOption } from 'naive-ui'
 import { XTag } from '@/components/attributes'
 import { XTagOption } from '@/components/inputs'
 
-import type { VNodeChild } from 'vue'
-import type { SelectBaseOption, SelectOption } from 'naive-ui'
-
 const tags = defineModel('tags')
-const tagOptions = ref<SelectOption>([])
-const loading = ref<Boolean>(false)
+const tagOptions = ref<SelectOption[]>([])
+const loading = ref(false)
 
 const params = ref<GetTagsParams>({
-  search: null,
+  search: undefined,
+  timerange: {},
+  pagination: {},
 })
 
 async function onFocus() {
-  await getTagOptions(null)
+  await getTagOptions(undefined)
 }
 
 async function onSearch(query: string) {
   await getTagOptions(query)
 }
 
-function getTagOptions(query?: string): Promise {
+function getTagOptions(query?: string): Promise<void> {
   loading.value = true
   if (query) {
     params.value.search = `*${query}*`
   }
-  getTags(params.value)
+  return getTags(params.value)
     .then((list) => {
       tagOptions.value = list.items.map(tag => {
         return {
-          value: tag,
+          value: tag.name,
         }
       })
     })
@@ -47,7 +46,7 @@ function renderLabel(option: SelectOption): VNodeChild {
   return h(XTagOption, {tag: option.value})
 }
 
-function renderTag({option, handleClose}): VNodeChild {
+function renderTag({option, handleClose}: {option: SelectOption, handleClose: () => void}): VNodeChild {
   return h(XTag, {tag: option.value, closable: true, onClose: handleClose })
 }
 

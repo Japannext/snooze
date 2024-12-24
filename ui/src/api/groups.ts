@@ -1,9 +1,12 @@
 import axios from "axios"
-import type { ListOf, Pagination, TimeRangeParams } from "@/api"
+import type { ListOf, Pagination, TimeRangeParams, KeyValue } from "@/api"
 
 export type Group = {
-  id?: string;
+  id?: string
 
+  name: string
+  hash: string
+  labels: KeyValue
 }
 
 export type GetGroupsParams = {

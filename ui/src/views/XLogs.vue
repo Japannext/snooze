@@ -4,17 +4,17 @@ import { useLoadingBar, useMessage } from 'naive-ui'
 import { usePagination } from '@/api'
 
 // Components
-import { NIcon, NButton, NSpace, NDataTable, NInputGroup } from 'naive-ui'
+import { NIcon, NButton, NSpace, NDataTable, NInputGroup, type DataTableColumn, type SelectOption, RadioButtonProps } from 'naive-ui'
 import { XSearch, XFilter, XTimeRange, XTimestampTitle } from '@/components/interface'
 import { XStatus, XTime, XLogAttributes } from '@/components/attributes'
 import { XAckModal } from '@/components/modal'
 import { Refresh } from '@/icons'
 
-import { getLogs, type Log, type GetLogsParams } from '@/api'
+import { getLogs, type Log, type GetLogsParams, type Filter } from '@/api'
 
 const items = ref<Array<Log>>()
 const selectedItems = ref<Array<string>>([])
-const xTimerange = ref(null)
+const xTimerange = ref()
 
 const loading = useLoadingBar()
 const message = useMessage()
@@ -24,17 +24,18 @@ const showEscalateModal = ref<boolean>(false)
 const params = ref<GetLogsParams>({
   search: "",
   filter: "active",
-  pagination: usePagination(refresh)
+  pagination: usePagination(refresh),
+  timerange: {},
 })
 
-const filters = [
+const filters: Filter[] = [
   {label: "Active", value: "active"},
   {label: "Snoozed", value: "snoozed"},
   {label: "Acked", value: "acked"},
   {label: "All", value: "all"},
 ]
 
-const columns = [
+const columns: DataTableColumn<Log>[] = [
   {type: 'selection'},
   {
     type: 'expand',
@@ -43,6 +44,7 @@ const columns = [
   {
     title: 'Status',
     render: (row) => h(XStatus, {status: row.status}),
+    key: 'status',
     width: 90,
   },
   {
@@ -51,7 +53,12 @@ const columns = [
     render: (row) => h(XTime, {ts: row.displayTime}),
     width: 150,
   },
-  {title: 'Attributes', render: (row) => h(XLogAttributes, {row: row}), width: 300},
+  {
+    title: 'Attributes',
+    render: (row) => h(XLogAttributes, {row: row}),
+    width: 300,
+    key: 'attributes',
+  },
   {
     title: () => 'Message',
     key: 'message',
@@ -66,7 +73,7 @@ onMounted(() => {
   refresh()
 })
 
-function refresh(): Promise {
+function refresh() {
   loading.start()
   params.value.timerange = xTimerange.value.getTime()
   getLogs(params.value)
@@ -88,23 +95,13 @@ function unselect() {
   refresh()
 }
 
-function renderExpand(row) {
+function renderExpand(row: Log) {
   return h("pre", null, JSON.stringify(row, null, 2))
 }
 
 function reset() {
   params.value.pagination.page = 1
   refresh()
-}
-
-function rowProps(row: Log) {
-  return {
-    onContextmenu: (e) =>{
-      console.log("right click supported!")
-      e.preventDefault()
-      return false
-    }
-  }
 }
 
 </script>

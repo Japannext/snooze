@@ -37,7 +37,6 @@ onMounted(() => {
 
 <template>
   <n-tabs v-model:value="section" type="card" placement="left">
-
     <n-tab-pane name="overall" tab="Overall">
       TODO
     </n-tab-pane>
@@ -60,7 +59,7 @@ onMounted(() => {
           <n-list hoverable clickable>
             <n-list-item v-for="pattern in profile.patterns" :key="pattern.regex">
               <n-thing :title="pattern.name">
-                <template #description v-if="pattern.description">
+                <template v-if="pattern.description" #description>
                   {{ pattern.description }}
                 </template>
                 <pre>{{ pattern.regex }}</pre>
@@ -82,7 +81,6 @@ onMounted(() => {
     <n-tab-pane name="notifications" tab="Notifications">
       <pre>{{ processConfig.notifications }}</pre>
     </n-tab-pane>
-
   </n-tabs>
   <n-anchor affix>
     <n-anchor-link

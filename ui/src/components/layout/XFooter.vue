@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { LogoGithub, Book } from '@vicons/ionicons5'
-import { version, homepage, repository } from '../../../package'
+// import { version, homepage, repository } from '../../../package'
+import { version, homepage, repository } from '@/../package.json'
 
 // Components
 import { NSpace, NP, NButton, NIcon, NButtonGroup, NPopover } from 'naive-ui'

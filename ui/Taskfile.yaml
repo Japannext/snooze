@@ -15,6 +15,11 @@ tasks:
     cmds:
     - hadolint Dockerfile
 
+  build:
+    desc: Build and see if the typescript works
+    cmds:
+    - pnpm run build
+
   develop:
     desc: Deploy a temporary dev Docker image
     cmds:

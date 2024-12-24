@@ -3,13 +3,14 @@ import { defineProps, defineModel } from 'vue'
 
 // Components
 // import { NTab, NTabs } from 'naive-ui'
-import { NInputGroup, NInputGroupLabel, NRadioGroup, NRadioButton } from 'naive-ui'
+import { NInputGroup, NInputGroupLabel, NRadioGroup, NRadioButton, type RadioButtonProps } from 'naive-ui'
+import { Filter } from '@/api'
 
 defineProps<{
-  filters: Array<object>,
+  filters: Array<Filter>
 }>()
 
-const model = defineModel('value')
+const model = defineModel<string>('value')
 
 </script>
 

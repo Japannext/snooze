@@ -14,7 +14,7 @@ const props = defineProps<{
 const emit = defineEmits(['success'])
 
 const show = defineModel('show', {type: Boolean, default: false})
-const loading = ref<Boolean>(false)
+const loading = ref(false)
 const reason = ref<string>("")
 
 function submit() {

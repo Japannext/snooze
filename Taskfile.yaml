@@ -27,6 +27,10 @@ tasks:
     cmds:
     - go test ./...
 
+  cloc:
+    cmds:
+    - cloc HEAD --not-match-f=pnpm-lock.yaml
+
   develop:
     cmds:
     - task: build

@@ -9,8 +9,9 @@ export type Tag = {
   color: string
 }
 
+type TagColor = "default" | "success" | "error" | "warning" | "primary" | "info" | undefined
+
 export type GetTagsParams = {
-  timerange: TimeRangeParams,
   pagination: Pagination
   search?: string
 }
@@ -25,6 +26,6 @@ export function getTags(params: GetTagsParams): Promise<ListOf<Tag>> {
     })
 }
 
-export function createTag(item: Tag): Promise {
+export function createTag(item: Tag): Promise<void> {
   return axios.post("/api/tag", item)
 }

@@ -1,40 +1,43 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useDevMode, useLocale } from '@/stores'
+import { computed } from 'vue'
+// import { useLocale } from '@/stores'
 import { menuOptions } from '@/router'
 import { useRoute } from 'vue-router'
 
-import { NSpace, NMenu, NFlex, NGrid, NGi, NInputGroup, NButton} from 'naive-ui'
-import STray from '@/components/STray.vue'
+import { NSpace, NMenu, NGrid, NGi} from 'naive-ui'
+// import STray from '@/components/STray.vue'
 
-import type { MenuInst, MenuOption } from 'naive-ui'
-
-const { locale } = useLocale()
-const { devMode } = useDevMode()
-const allowDevMode = Boolean(import.meta.env.MODE == "development")
+// const locale = useLocale()
+/*
 const options = [
   {label: "English", value: "en"},
   {label: "日本語", value: "ja"},
 ]
+*/
 
 const route = useRoute()
 const selectedMenu = computed(() => {
-  return route.name
+  if (route.name) {
+    return route.name
+  }
+  return ""
 })
 
+/*
 const localeData = computed({
   get() { return $i18n.locale },
   set(value) {
     locale.value = value
   },
 })
+*/
 
 </script>
 
 <template>
   <n-grid layout-shift-disabled>
-    <n-gi :span="2">
-      Snooze
+    <n-gi :span="3">
+      <img src="public/img/logo.png" :height="36" style="margin: 2px">
     </n-gi>
     <n-gi :span="18">
       <n-space justify="center">
@@ -47,7 +50,7 @@ const localeData = computed({
       </n-space>
     </n-gi>
     <n-gi :span="4">
-      <s-tray />
+      <!-- <s-tray /> -->
     </n-gi>
   </n-grid>
   <!-- </n-space> -->

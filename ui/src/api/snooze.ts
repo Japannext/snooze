@@ -8,7 +8,7 @@ export type Snooze = {
   groups: Group[]
 
   reason: string
-  tags?: string[]
+  tags: string[]
 
   cancelled?: SnoozeCancel
 
@@ -23,7 +23,7 @@ export type SnoozeCancel = {
 }
 
 export type GetSnoozesParams = {
-  timerange: TimeRangeParams,
+  timerange: TimeRangeParams
   pagination: Pagination
   search?: string
   filter: string
@@ -44,7 +44,7 @@ export function getSnoozes(params: GetSnoozesParams): Promise<ListOf<Snooze>> {
     })
 }
 
-export function createSnooze(item: Snooze): Promise {
+export function createSnooze(item: Snooze): Promise<void> {
   console.log(`createSnooze(${JSON.stringify(item)})`)
   return axios.post("/api/snooze", item)
 }
@@ -54,7 +54,7 @@ export type PostSnoozeCancelParams = {
   reason: string
 }
 
-export function cancelSnooze(ids: string[], reason: string): Promise {
+export function cancelSnooze(ids: string[], reason: string): Promise<void> {
   console.log(`cancelSnooze(${JSON.stringify(ids)}, '${reason}')`)
   var query = {
     ids: ids,

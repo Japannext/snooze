@@ -1,14 +1,11 @@
 <script setup lang="ts">
-import { ref, defineEmits, onMounted, VNodeChild } from 'vue'
-import { NIcon, NCard, NSpace, NLayout, NLayoutContent, NButton, NButtonGroup } from 'naive-ui'
-import { router } from '@/router'
-import { useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { NIcon, NCard, NSpace, NButton } from 'naive-ui'
 import { Github, Openid, SignInAlt } from '@/icons'
 
 import { getAuthConfig, type AuthConfig } from '@/api'
 
-const router = useRouter()
-const authConfig = ref<AuthConfig>(null)
+const authConfig = ref<AuthConfig>()
 
 onMounted(() => {
   getAuthConfig()
@@ -33,9 +30,7 @@ function redirect(providerName: string) {
 </script>
 
 <template>
-  <n-card size="huge" title="Login" v-if="authConfig">
-    {{ authConfig }}
-
+  <n-card v-if="authConfig" size="huge" title="Login">
     <n-space vertical>
       <n-button
         v-if="authConfig.oidc"
@@ -45,18 +40,9 @@ function redirect(providerName: string) {
         <template #icon><n-icon :component="getIcon(authConfig.oidc.icon)" /></template>
         {{ authConfig.oidc.displayName }}
       </n-button>
-
-      <n-button
-        v-if="authConfig.github"
-        @click="redirect('github')"
-      >
-        <template #icon><n-icon :component="Github" /></template>
-        GitHub
-      </n-button>
     </n-space>
   </n-card>
   <n-card v-else>
     Could not get authConfig
   </n-card>
-
 </template>

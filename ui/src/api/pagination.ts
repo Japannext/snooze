@@ -1,17 +1,39 @@
-import { reactive, ref } from 'vue'
+import { reactive, ref, type VNodeChild } from 'vue'
 import { useRouteQuery } from '@vueuse/router'
+import type { PaginationProps } from 'naive-ui'
 
+/*
 export interface Pagination {
   page: number
   pageSize: number
+  showSizePicker: boolean
+  pageSizes: number[]
   itemCount: number
+  prefix(p: Pagination): void
+  onUpdatePage(p: number): void
+  onUpdatePageSize(p: number): void
+  setMore(m: boolean): void
+}
+*/
+
+// export type Pagination = PaginationProps
+export interface Pagination extends PaginationProps {
+  setMore(m: boolean): void
+}
+
+type PrefixOption = {
+  startIndex: number,
+  endIndex: number,
+  pageSize: number,
+  pageCount: number,
+  itemCount: number|undefined
 }
 
 // Return a pagination reactive object compatible with
 // naive-ui `n-data-table`
 export function usePagination(refresh: Function): Pagination {
-  const page = useRouteQuery('page', 1, {transform: Number})
-  const size = useRouteQuery('size', 20, {transform: Number})
+  const page = useRouteQuery<number>('page', 1, {transform: Number})
+  const size = useRouteQuery<number>('size', 20, {transform: Number})
   const more = ref<boolean>(false)
   const pagination = reactive({
     page: page,
@@ -19,7 +41,7 @@ export function usePagination(refresh: Function): Pagination {
     showSizePicker: true,
     pageSizes: [5, 10, 20, 30, 50, 100],
     itemCount: 0,
-    prefix(p: Pagination) {
+    prefix(p: PrefixOption): VNodeChild {
       console.log(p)
       if (more.value) {
         return `${p.itemCount}+ objects`

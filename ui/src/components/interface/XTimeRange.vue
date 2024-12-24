@@ -15,12 +15,12 @@ enum Preset {
   Last7Days = "Last 7 days"
 }
 
-const preset = useRouteQuery('preset', "")
-const dateRange = ref<[number, number]>()
-const start = useRouteQuery('start', 0, {transform: Number})
-const end = useRouteQuery('end', 0, {transform: Number})
+const preset = useRouteQuery<string>('preset', "")
+const dateRange = ref<[number, number]>([0, 0])
+const start = useRouteQuery<number>('start', 0, {transform: Number})
+const end = useRouteQuery<number>('end', 0, {transform: Number})
 
-const showPopover = ref<Boolean>(false)
+const showPopover = ref(false)
 const displayText = ref<string>(Preset.Last24Hours)
 
 const emit = defineEmits(['change'])
@@ -45,12 +45,12 @@ function setDateRange() {
   if (dateRange.value[0] > 0) {
     start.value = dateRange.value[0]
   } else {
-    delete(start.value)
+    start.value = 0
   }
   if (dateRange.value[1] > 0) {
     end.value = dateRange.value[1]
   } else {
-    delete(end.value)
+    end.value = 0
   }
   preset.value = ""
   ok()

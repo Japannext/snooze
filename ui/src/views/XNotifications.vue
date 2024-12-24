@@ -4,15 +4,15 @@ import { useLoadingBar, useMessage } from 'naive-ui'
 import { usePagination } from '@/api'
 
 // Components
-import { NButton, NSpace, NIcon, NDataTable, NInputGroup } from 'naive-ui'
+import { NButton, NSpace, NIcon, NDataTable, NInputGroup, type DataTableColumn, type SelectOption, type RadioButtonProps } from 'naive-ui'
 import { XSearch, XFilter, XTimeRange, XTimestampTitle } from '@/components/interface'
 import { XDestination, XTime  } from '@/components/attributes'
 import { XAckModal } from '@/components/modal'
 import { Refresh } from '@/icons'
 
-import { getNotifications, type GetNotificationsParams, type Notification } from '@/api'
+import { getNotifications, type GetNotificationsParams, type Notification, type Filter } from '@/api'
 
-const selected = ref<Notification>(null)
+const selected = ref<Notification|null>(null)
 const showDetails = ref<boolean>(false)
 
 // Utils
@@ -21,7 +21,7 @@ const message = useMessage()
 
 const items = ref<Array<Notification>>([])
 const selectedItems = ref<Array<string>>([])
-const xTimerange = ref(null)
+const xTimerange = ref()
 
 const showAckModal = ref<boolean>(false)
 const showEscalateModal = ref<boolean>(false)
@@ -29,26 +29,32 @@ const showEscalateModal = ref<boolean>(false)
 const params = ref<GetNotificationsParams>({
   search: "",
   filter: "active",
-  pagination: usePagination(refresh)
+  pagination: usePagination(refresh),
+  timerange: {},
 })
 
-const filters = [
+const filters: Filter[] = [
   {label: "Active", value: "active"},
   {label: "History", value: "history"},
 ]
 
-const columns = [
+const columns: DataTableColumn<Notification>[] = [
   {type: 'selection'},
   {
     title: () => h(XTimestampTitle),
     render: (row) => h(XTime, {ts: row.notificationTime}),
+    key: 'timestamp',
     width: 150,
   },
-  {title: 'Destination', render: (row) => h(XDestination, {destination: row.destination})},
+  {
+    title: 'Destination',
+    render: (row) => h(XDestination, {destination: row.destination}),
+    key: 'destination',
+  },
   {type: 'expand', renderExpand: renderExpand},
 ]
 
-function refresh(): Promise {
+function refresh() {
   loading.start()
   params.value.timerange = xTimerange.value.getTime()
   getNotifications(params.value)
@@ -83,7 +89,7 @@ function reset() {
   refresh()
 }
 
-function renderExpand(row) {
+function renderExpand(row: Notification) {
   return h("pre", null, JSON.stringify(row, null, 2))
 }
 

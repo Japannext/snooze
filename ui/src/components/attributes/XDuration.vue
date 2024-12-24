@@ -3,6 +3,7 @@ import { defineProps } from 'vue'
 import { Duration } from 'luxon'
 
 import { NTag } from 'naive-ui'
+import { type NaiveColor } from '@/api'
 
 const props = defineProps<{
   duration: number,
@@ -24,10 +25,10 @@ function toHuman(dur: Duration, smallestUnit: string = "seconds"): string {
   return dur2.toHuman();
 }
 
-function getTagType(): string {
+function getTagType(): NaiveColor {
   switch (true) {
   case (props.duration <= 1 * hour):
-    return ""
+    return "default"
   case (props.duration <= 6 * hour):
     return "success"
   case (props.duration <= 1 * day):

@@ -2,11 +2,18 @@ FROM node:18-alpine as build
 
 WORKDIR /code
 
+COPY .ca-bundle /usr/local/share/ca-certificates/
+RUN find /usr/local/share/ca-certificates/ -type f -exec cat {} \; >> /etc/ssl/certs/ca-certificates.crt
+ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
+
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 
 COPY package.json ./
 COPY pnpm-lock.yaml ./
+# Installing pnpm
+RUN corepack enable && corepack install
+# Installing dependencies
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 
 COPY . .

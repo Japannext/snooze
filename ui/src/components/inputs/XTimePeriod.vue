@@ -4,8 +4,8 @@ import { DateTime, Duration } from 'luxon'
 
 import { NSpace, NInputGroup, NDatePicker, NButtonGroup, NButton } from 'naive-ui'
 
-const start = defineModel('start')
-const end = defineModel('end')
+const start = defineModel<number>('start')
+const end = defineModel<number>('end')
 
 const day = Duration.fromObject({days: 1}).toMillis()
 const hour = Duration.fromObject({hours: 1}).toMillis()

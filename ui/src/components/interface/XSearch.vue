@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted, defineEmits, defineModel } from 'vue'
+import { ref, onMounted, defineEmits, defineModel, type Ref } from 'vue'
 
 import { NInput, NInputGroup, NButton, NIcon } from 'naive-ui'
 import { Search } from '@vicons/ionicons5'
 import { useRouteQuery } from '@vueuse/router'
 
-const route = useRouteQuery("search", "")
+const route = useRouteQuery<string>("search", "")
 const tmp = ref<string>("")
 
 onMounted(() => {
@@ -13,7 +13,7 @@ onMounted(() => {
 })
 
 defineProps<{
-  value: String,
+  value: string|undefined,
 }>()
 
 const emit = defineEmits(['update:value', 'change'])

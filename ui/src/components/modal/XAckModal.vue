@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { defineProps, defineEmits, defineModel, ref} from 'vue'
+import { defineProps, defineEmits, defineModel, ref, type Ref } from 'vue'
 import { NAlert, NModal, NCard, NForm, NGrid, NFormItemGi, NSpace, NButton, NInput, NSelect } from 'naive-ui'
 import { createAck, type Ack } from '@/api/ack'
 
-const show = defineModel('show', {type: Boolean, default: false})
-const item = ref<Ack>({})
-const buttonLoading = ref<Boolean>(false)
-const alerts = ref<Array<String>>([])
+const show = defineModel<boolean>('show', {default: false})
+const item = ref<Ack>(newAck())
+const buttonLoading = ref(false)
+const alerts: Ref<string[]> = ref([])
 
 const emit = defineEmits(['success'])
 
@@ -18,6 +18,15 @@ const tagOptions = [
   {label: 'Maintenance', value: 'maintenance', class: 'warning'},
   {label: 'Incident', value: 'incident', class: 'error'},
 ]
+
+function newAck(): Ack {
+  return {
+    time: 0,
+    username: "",
+    reason: "",
+    logIDs: [],
+  }
+}
 
 async function create() {
   buttonLoading.value = true
@@ -36,7 +45,7 @@ async function create() {
 
 function cancel() {
   show.value = false
-  item.value = {}
+  item.value = newAck()
 }
 
 </script>

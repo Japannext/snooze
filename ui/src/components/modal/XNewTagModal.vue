@@ -12,7 +12,7 @@ defineProps<{
 }>()
 
 const show = defineModel('show', {type: Boolean, default: false})
-const loading = ref<Boolean>(false)
+const loading = ref<boolean>(false)
 const message = useMessage()
 const item = ref<Tag>(defaultTag())
 
@@ -34,6 +34,8 @@ const swatches = [
 
 function defaultTag(): Tag {
   return {
+    name: "",
+    description: "",
     color: "#7BB5FDFF",
   }
 }

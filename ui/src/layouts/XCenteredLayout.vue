@@ -8,9 +8,15 @@ import {
 <template>
   <n-layout>
     <n-layout-content id="container">
-      <n-space id="element" vertical>
+      <n-space
+        id="element"
+        vertical
+      >
         <router-view v-slot="{ Component }">
-          <component :is="Component" id="component" />
+          <component
+            :is="Component"
+            id="component"
+          />
         </router-view>
       </n-space>
     </n-layout-content>

@@ -4,7 +4,7 @@ import { NPopover } from 'naive-ui'
 import { DateTime } from 'luxon'
 import { useTimeRelative } from '@/stores'
 
-const { timeRelative } = useTimeRelative()
+const timeRelative = useTimeRelative()
 
 const props = defineProps<{
   ts: number,

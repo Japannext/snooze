@@ -13,12 +13,15 @@ defineProps<{
 const emit = defineEmits(['success'])
 
 const show = defineModel('show', {type: Boolean, default: false})
-const loading = ref<Boolean>(false)
+const loading = ref(false)
 const message = useMessage()
 const item = ref<Snooze>(defaultValue())
 
 function defaultValue(): Snooze {
   return {
+    reason: "",
+    startAt: 0,
+    expireAt: 0,
     groups: [],
     tags: [],
   }

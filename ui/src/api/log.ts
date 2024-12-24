@@ -1,27 +1,29 @@
 import axios from "axios"
-import type { AxiosResponse } from "axios"
-import type { ListOf, Pagination, TimeRangeParams } from "@/api"
+import type { ListOf, Pagination, TimeRangeParams, Identity } from "@/api"
 
 export type Log = {
-  id?: string;
+  id?: string
 
-  source: object;
-  identity?: object
-  labels?: object;
+  source: object
+  identity: Identity
+  labels?: object
 
-  actualTime: number;
-  observedTime: number;
-  displayTime: number;
+  actualTime: number
+  observedTime: number
+  displayTime: number
 
-  groupHash?: string;
-  groupLabels?: any;
+  groupHash?: string
+  groupLabels?: any
 
-  severityText: string;
-  severityNumber: number;
+  pattern?: string
+  profile?: string
 
-  message: string;
+  severityText: string
+  severityNumber: number
 
-  status: LogStatus;
+  message: string
+
+  status: LogStatus
 }
 
 export type LogStatus = {

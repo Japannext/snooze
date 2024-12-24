@@ -8,7 +8,7 @@ import { TagDismiss16Regular } from '@/icons'
 import type { Tag } from '@/api'
 
 defineProps<{
-  tags?: Tag[],
+  tags: Tag[],
 }>()
 
 </script>

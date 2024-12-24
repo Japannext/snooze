@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { defineProps } from 'vue'
 import { NTag, NIcon } from 'naive-ui'
-import { Mail, LogoGoogle, BuildingLighthouse20Filled, Box24Regular, Browser } from '@/icons'
+import { Mail, LogoGoogle, BuildingLighthouse20Filled, Box24Regular, Browser, Slack } from '@/icons'
 
 import type { Destination } from '@/api'
 

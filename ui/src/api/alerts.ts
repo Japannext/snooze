@@ -1,10 +1,26 @@
 import axios from "axios"
-import type { ListOf, Pagination, TimeRangeParams } from "@/api"
+import type { ListOf, Pagination, TimeRangeParams, Identity } from "@/api"
 
 export type Alert = {
-  id?: string;
+  id?: string
 
-  status: object;
+  hash: string
+  source: object
+  identity: Identity
+
+  startAt: number
+  endAt: number
+
+  alertName: string
+  alertGroup: string
+
+  severityText?: string
+  severityNumber?: number
+
+  description: string
+  summary: string
+
+  labels: object
 }
 
 export type GetAlertsParams = {

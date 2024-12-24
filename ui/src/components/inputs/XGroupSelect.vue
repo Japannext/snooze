@@ -1,28 +1,25 @@
 <script setup lang="ts">
 import { ref, defineModel } from 'vue'
 import { getGroups, type Group, type GetGroupsParams } from '@/api'
+import { NSelect, type SelectOption } from 'naive-ui'
 
-import { NSelect } from 'naive-ui'
-
-import type { SelectOption } from 'naive-ui'
-
-const groups = defineModel('groups')
-const groupOptions = ref<SelectOption>([])
-const loading = ref<Boolean>(false)
+const groups = defineModel<Group[]>('groups')
+const groupOptions = ref<SelectOption[]>([])
+const loading = ref(false)
 
 const params = ref<GetGroupsParams>({
-  search: null,
+  search: undefined,
 })
 
 async function onFocus() {
-  await getGroupOptions(null)
+  await getGroupOptions(undefined)
 }
 
 async function onSearch(query: string) {
   await getGroupOptions(query)
 }
 
-function getGroupOptions(query?: string): Promise {
+function getGroupOptions(query?: string) {
   loading.value = true
   if (query) {
     params.value.search = `*${query}*`
@@ -35,7 +32,7 @@ function getGroupOptions(query?: string): Promise {
         })
         return {
           label: `[${group.name}] ${labels}`,
-          value: group,
+          value: group.hash,
         }
       })
     })

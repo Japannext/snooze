@@ -7,10 +7,6 @@ export type Ack = {
   logIDs: string[];
 }
 
-export function createAck(item: Ack) {
+export function createAck(item: Ack): Promise<void> {
   return axios.post("/api/ack", item)
-    .then(resp => {
-    })
-    .catch(err => {
-    })
 }
