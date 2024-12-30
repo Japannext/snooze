@@ -28,15 +28,15 @@ type ProfileConfig struct {
 }
 
 type Profile struct {
-	Name string `yaml:"name"`
-	From string `yaml:"from"`
-	To string `yaml:"to"`
+	Name     string `yaml:"name"`
+	From     string `yaml:"from"`
+	To       string `yaml:"to"`
 	Template string `yaml:"template"`
-	Server string `yaml:"server"`
-	Port int `yaml:"port"`
+	Server   string `yaml:"server"`
+	Port     int    `yaml:"port"`
 
 	internal struct {
-		template *template.Template
+		template  *template.Template
 		isDefault bool
 	}
 }

@@ -1,17 +1,17 @@
 package routes
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
-	"encoding/json"
-	"time"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/japannext/snooze/pkg/common/redis"
 	"github.com/japannext/snooze/pkg/common/opensearch"
 	"github.com/japannext/snooze/pkg/common/opensearch/dsl"
+	"github.com/japannext/snooze/pkg/common/redis"
 	"github.com/japannext/snooze/pkg/common/utils"
 	"github.com/japannext/snooze/pkg/models"
 )
@@ -30,8 +30,8 @@ type getSnoozesParams struct {
 }
 
 func getSnoozes(c *gin.Context) {
-    ctx, span := tracer.Start(c.Request.Context(), "getSnoozes")
-    defer span.End()
+	ctx, span := tracer.Start(c.Request.Context(), "getSnoozes")
+	defer span.End()
 
 	req := &opensearch.SearchReq{Index: models.SNOOZE_INDEX}
 
@@ -68,13 +68,13 @@ func getSnoozes(c *gin.Context) {
 		}
 	}
 
-    items, err := opensearch.Search[*models.Snooze](ctx, req)
-    if err != nil {
-        c.String(http.StatusInternalServerError, "Error getting snoozes: %s", err)
-        return
-    }
+	items, err := opensearch.Search[*models.Snooze](ctx, req)
+	if err != nil {
+		c.String(http.StatusInternalServerError, "Error getting snoozes: %s", err)
+		return
+	}
 
-    c.JSON(http.StatusOK, items)
+	c.JSON(http.StatusOK, items)
 }
 
 func postSnooze(c *gin.Context) {
@@ -116,7 +116,7 @@ func postSnooze(c *gin.Context) {
 
 	err = opensearch.Index(ctx, &opensearch.IndexReq{
 		Index: models.SNOOZE_INDEX,
-		Item: item,
+		Item:  item,
 	})
 	if err != nil {
 		c.String(http.StatusInternalServerError, "failed to create snooze entry: %s", err)
@@ -178,9 +178,9 @@ func postSnoozeCancel(c *gin.Context) {
 	}, ";")
 	updateReq.Doc.WithPainlessScript(script, map[string]interface{}{
 		"emptyobject": map[string]string{},
-		"reason": params.Reason,
-		"at": time.Now().UnixMilli(),
-		"by": "",
+		"reason":      params.Reason,
+		"at":          time.Now().UnixMilli(),
+		"by":          "",
 	})
 
 	err = opensearch.UpdateByQuery(ctx, updateReq)

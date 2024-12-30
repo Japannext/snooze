@@ -1,8 +1,8 @@
 package alertmanager
 
 import (
-	"strings"
 	"strconv"
+	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"

@@ -2,19 +2,19 @@ package profile
 
 import (
 	"context"
-	"regexp"
 	"fmt"
+	"regexp"
 
-	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/common/lang"
 	"github.com/japannext/snooze/pkg/common/utils"
+	"github.com/japannext/snooze/pkg/models"
 
 	"github.com/japannext/snooze/pkg/processor/transform"
 )
 
 type Pattern struct {
 	// Name of the pattern
-	Name string	`yaml:"name" json:"name"`
+	Name string `yaml:"name" json:"name"`
 	// Description of the pattern
 	Description string `yaml:"description" json:"description"`
 	// If present, the pattern will match a given regex
@@ -36,8 +36,8 @@ type Pattern struct {
 	Silence bool `yaml:"silence" json:"silence"`
 
 	// Internal values initialized after startup
-	internal struct{
-		regexp *regexp.Regexp
+	internal struct {
+		regexp  *regexp.Regexp
 		actions []transform.Transformation
 		groupBy map[string]*lang.Template
 	}
@@ -131,7 +131,7 @@ func (p *Pattern) Process(ctx context.Context, item *models.Log) (match, reject 
 // Match the regex of the pattern, return the capture groups if any
 func (p *Pattern) match(item *models.Log) (bool, map[string]string) {
 	var (
-		match bool
+		match   bool
 		capture = make(map[string]string)
 	)
 	if p.internal.regexp == nil {

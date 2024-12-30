@@ -7,10 +7,10 @@ import (
 )
 
 type UnsetAction struct {
-	Identity []string `yaml:""`
-	Labels []string `yaml:"labels" json:"labels,omitempty"`
-	AllIdentity bool `yaml:"all_identity" json:"allIdentity,omitempty"`
-	AllLabels bool `yaml:"all_labels" json:"allLabels,omitempty"`
+	Identity    []string `yaml:""`
+	Labels      []string `yaml:"labels" json:"labels,omitempty"`
+	AllIdentity bool     `yaml:"all_identity" json:"allIdentity,omitempty"`
+	AllLabels   bool     `yaml:"all_labels" json:"allLabels,omitempty"`
 }
 
 func (action *UnsetAction) Load() Transformation {

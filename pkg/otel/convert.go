@@ -1,8 +1,8 @@
 package otel
 
 import (
-	"time"
 	"fmt"
+	"time"
 
 	commonv1 "go.opentelemetry.io/proto/otlp/common/v1"
 	logv1 "go.opentelemetry.io/proto/otlp/logs/v1"

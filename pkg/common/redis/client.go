@@ -1,9 +1,9 @@
 package redis
 
 import (
-	"github.com/sirupsen/logrus"
-	redisv9 "github.com/redis/go-redis/v9"
 	"github.com/redis/go-redis/extra/redisotel/v9"
+	redisv9 "github.com/redis/go-redis/v9"
+	"github.com/sirupsen/logrus"
 
 	"github.com/japannext/snooze/pkg/common/tracing"
 )

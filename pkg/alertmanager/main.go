@@ -1,16 +1,16 @@
 package alertmanager
 
 import (
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
-	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 
-    "github.com/japannext/snooze/pkg/common/daemon"
-    "github.com/japannext/snooze/pkg/common/logging"
-    "github.com/japannext/snooze/pkg/common/redis"
+	"github.com/japannext/snooze/pkg/common/daemon"
+	"github.com/japannext/snooze/pkg/common/logging"
 	"github.com/japannext/snooze/pkg/common/mq"
-	"github.com/japannext/snooze/pkg/models"
+	"github.com/japannext/snooze/pkg/common/redis"
 	"github.com/japannext/snooze/pkg/common/tracing"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 var storeQ *mq.Pub
@@ -18,9 +18,9 @@ var tracer trace.Tracer
 
 func Startup() *daemon.DaemonManager {
 
-    logging.Init()
-    initConfig()
-    initMetrics()
+	logging.Init()
+	initConfig()
+	initMetrics()
 	redis.Init()
 	mq.Init()
 
@@ -29,7 +29,7 @@ func Startup() *daemon.DaemonManager {
 
 	storeQ = mq.StorePub().WithIndex(models.ALERT_INDEX)
 
-    dm := daemon.NewDaemonManager()
+	dm := daemon.NewDaemonManager()
 	srv := daemon.NewHttpDaemon()
 	srv.Engine.Use(otelgin.Middleware("snooze-alertmanager", otelgin.WithFilter(tracing.HTTPFilter)))
 	{
@@ -37,10 +37,10 @@ func Startup() *daemon.DaemonManager {
 	}
 	dm.AddDaemon("http", srv)
 
-    return dm
+	return dm
 }
 
 func Run() {
-    dm := Startup()
-    dm.Run()
+	dm := Startup()
+	dm.Run()
 }

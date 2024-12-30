@@ -6,9 +6,9 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/japannext/snooze/pkg/activecheck"
 	"github.com/japannext/snooze/pkg/alertmanager"
 	"github.com/japannext/snooze/pkg/apiserver"
-	"github.com/japannext/snooze/pkg/activecheck"
 	"github.com/japannext/snooze/pkg/googlechat"
 	"github.com/japannext/snooze/pkg/mail"
 	"github.com/japannext/snooze/pkg/otel"

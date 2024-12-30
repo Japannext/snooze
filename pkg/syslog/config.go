@@ -1,14 +1,14 @@
 package syslog
 
 import (
-	"github.com/spf13/viper"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 )
 
 type Config struct {
-	InstanceName string `mapstructure:"SYSLOG_INSTANCE_NAME"`
+	InstanceName  string `mapstructure:"SYSLOG_INSTANCE_NAME"`
 	ListenAddress string `mapstructure:"SYSLOG_LISTEN_ADDRESS"`
-	ListenPort int `mapstructure:"SYSLOG_LISTEN_PORT"`
+	ListenPort    int    `mapstructure:"SYSLOG_LISTEN_PORT"`
 }
 
 var config *Config

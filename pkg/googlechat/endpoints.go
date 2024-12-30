@@ -6,5 +6,3 @@ import (
 
 func listProfiles(c *gin.Context) {
 }
-
-

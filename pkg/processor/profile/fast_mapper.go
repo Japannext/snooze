@@ -1,18 +1,18 @@
 package profile
 
 import (
-	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/common/lang"
 	"github.com/japannext/snooze/pkg/common/utils"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 type Kv struct {
-	Key string `yaml:"key"`
+	Key   string `yaml:"key"`
 	Value string `yaml:"value"`
 }
 
 type FastMapper struct {
-	keys []string
+	keys   []string
 	mapper map[Kv][]*Profile
 	fields map[string]*lang.Field
 }

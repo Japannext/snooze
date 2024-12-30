@@ -9,7 +9,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-func (client *Client) Consumer(stream jetstream.Stream, cfg jetstream.ConsumerConfig, opts... jetstream.FetchOpt) *Sub {
+func (client *Client) Consumer(stream jetstream.Stream, cfg jetstream.ConsumerConfig, opts ...jetstream.FetchOpt) *Sub {
 	log.Debugf("subscribing consumer '%s'", cfg.Name)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -22,26 +22,26 @@ func (client *Client) Consumer(stream jetstream.Stream, cfg jetstream.ConsumerCo
 	streamName := stream.CachedInfo().Config.Name
 
 	if len(opts) == 0 {
-		opts = append(opts, jetstream.FetchMaxWait(1 * time.Second))
+		opts = append(opts, jetstream.FetchMaxWait(1*time.Second))
 	}
 
 	return &Sub{
-		client: client,
-		consumer: consumer,
+		client:     client,
+		consumer:   consumer,
 		streamName: streamName,
-		fetchOpts: opts,
+		fetchOpts:  opts,
 	}
 }
 
 type Sub struct {
-	client *Client
-	consumer jetstream.Consumer
+	client     *Client
+	consumer   jetstream.Consumer
 	streamName string
-	fetchOpts []jetstream.FetchOpt
+	fetchOpts  []jetstream.FetchOpt
 }
 
 type MsgWithContext struct {
-	Msg jetstream.Msg
+	Msg     jetstream.Msg
 	Context context.Context
 }
 
@@ -78,4 +78,3 @@ func (sub *Sub) Fetch(size int) ([]MsgWithContext, error) {
 	}
 	return msgs, nil
 }
-

@@ -19,7 +19,7 @@ func createIndex(ctx context.Context, name string, tpl models.IndexTemplate) err
 	log.Debugf("Template: %s", body)
 	resp, err := client.IndexTemplate.Create(ctx, opensearchapi.IndexTemplateCreateReq{
 		IndexTemplate: name,
-		Body: bytes.NewReader(body),
+		Body:          bytes.NewReader(body),
 	})
 	if err != nil {
 		return err

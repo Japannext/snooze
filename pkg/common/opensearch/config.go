@@ -1,7 +1,6 @@
 package opensearch
 
 import (
-
 	"github.com/spf13/viper"
 )
 

@@ -1,15 +1,14 @@
 package routes
 
 import (
-    // "net/http"
-    "time"
+	// "net/http"
+	"time"
 
-    "github.com/gin-gonic/gin"
-    // "github.com/opensearch-project/opensearch-go/v4/opensearchapi"
-    // dsl "github.com/mottaquikarim/esquerydsl"
-
-    // "github.com/japannext/snooze/pkg/common/opensearch"
-    // "github.com/japannext/snooze/pkg/models"
+	"github.com/gin-gonic/gin"
+	// "github.com/opensearch-project/opensearch-go/v4/opensearchapi"
+	// dsl "github.com/mottaquikarim/esquerydsl"
+	// "github.com/japannext/snooze/pkg/common/opensearch"
+	// "github.com/japannext/snooze/pkg/models"
 )
 
 type Timeline struct {
@@ -17,10 +16,10 @@ type Timeline struct {
 }
 
 type Event struct {
-	Time time.Time
-	Label string
+	Time        time.Time
+	Label       string
 	Description string
-	Color string
+	Color       string
 }
 
 func logTimeline(c *gin.Context) {
@@ -47,4 +46,3 @@ func alertTimeline(c *gin.Context) {
 
 }
 */
-

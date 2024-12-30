@@ -1,10 +1,10 @@
 package models
 
 type Pagination struct {
-	Page int `form:"page"`
-	Size int `form:"size"`
-	OrderBy string `form:"order_by"`
-	Ascending bool `form:"asc"`
+	Page      int    `form:"page"`
+	Size      int    `form:"size"`
+	OrderBy   string `form:"order_by"`
+	Ascending bool   `form:"asc"`
 }
 
 func NewPagination() *Pagination {

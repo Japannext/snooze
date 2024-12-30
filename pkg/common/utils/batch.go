@@ -10,19 +10,19 @@ type Batch[T any] struct {
 }
 
 type BatchingChannel[T any] struct {
-	in chan T
-	out chan Batch[T]
-	size int
-	timeout time.Duration
+	in       chan T
+	out      chan Batch[T]
+	size     int
+	timeout  time.Duration
 	stopping bool
-	done (chan bool)
+	done     (chan bool)
 }
 
 func NewBatchingChannel[T any](size int, timeout time.Duration) *BatchingChannel[T] {
 	bc := &BatchingChannel[T]{
-		in: make(chan T),
-		out: make(chan Batch[T]),
-		size: size,
+		in:      make(chan T),
+		out:     make(chan Batch[T]),
+		size:    size,
 		timeout: timeout,
 	}
 	bc.Start()
@@ -59,7 +59,7 @@ func (bc *BatchingChannel[T]) Start() {
 				}
 			}
 		}
-		bc.done <-true
+		bc.done <- true
 	}()
 }
 
@@ -74,6 +74,6 @@ func (bc *BatchingChannel[T]) Add(item T) {
 	bc.in <- item
 }
 
-func (bc *BatchingChannel[T]) Channel() (<-chan Batch[T]) {
+func (bc *BatchingChannel[T]) Channel() <-chan Batch[T] {
 	return bc.out
 }

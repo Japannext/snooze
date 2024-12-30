@@ -5,9 +5,9 @@ import (
 )
 
 var Cmd = &cobra.Command{
-	Use: "activecheck",
+	Use:   "activecheck",
 	Short: "An active-check (prometheus exporter) daemon for snooze",
-	Long: "An active-check that test several components of snooze",
+	Long:  "An active-check that test several components of snooze",
 	Run: func(c *cobra.Command, args []string) {
 		Run()
 	},

@@ -5,42 +5,42 @@ import (
 )
 
 var (
-	COLORS = [5]string{"red", "yellow", "green", "blue", "white"}
+	COLORS     = [5]string{"red", "yellow", "green", "blue", "white"}
 	COLOR_HASH = map[string]bool{"red": true, "yellow": true, "green": true, "blue": true, "white": true}
 )
 
 var (
 	lightStringToByte = map[string]byte{
-		"off": OFF,
-		"on": ON,
+		"off":    OFF,
+		"on":     ON,
 		"blink1": BLINK1,
 		"blink2": BLINK2,
 	}
 	lightByteToString = map[byte]string{
-		OFF: "off",
-		ON: "on",
+		OFF:    "off",
+		ON:     "on",
 		BLINK1: "blink1",
 		BLINK2: "blink2",
 	}
 	soundStringToByte = map[string]byte{
-		"off": OFF,
+		"off":   OFF,
 		"short": SHORT,
-		"long": LONG,
-		"tiny": TINY,
-		"beep": BEEP,
+		"long":  LONG,
+		"tiny":  TINY,
+		"beep":  BEEP,
 	}
 	soundByteToString = map[byte]string{
-		OFF: "off",
+		OFF:   "off",
 		SHORT: "short",
-		LONG: "long",
-		TINY: "tiny",
-		BEEP: "beep",
+		LONG:  "long",
+		TINY:  "tiny",
+		BEEP:  "beep",
 	}
 )
 
 type State struct {
 	Lights map[string]string `yaml:"lights" json:"lights"`
-	Sound string `yaml:"sound" json:"sound"`
+	Sound  string            `yaml:"sound" json:"sound"`
 }
 
 func (s *State) Validate() error {

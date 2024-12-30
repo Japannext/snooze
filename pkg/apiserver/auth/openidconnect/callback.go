@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"golang.org/x/oauth2"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/oauth2"
 
 	"github.com/japannext/snooze/pkg/apiserver/token"
 )
@@ -34,7 +34,6 @@ func callback(c *gin.Context) {
 		c.String(http.StatusUnauthorized, "verifier cookie not found: %s", err)
 		return
 	}
-
 
 	ctx := c.Request.Context()
 	// ctx = oidc.ClientContext(ctx, &http.Client{Transport: &http.Transport{TLSClientConfig: m.internal.tlsConfig}})
@@ -85,7 +84,6 @@ func callback(c *gin.Context) {
 	}
 	c.SetCookie("snooze-token", snoozeToken, 3600, "/", cookieDomain, true, true)
 }
-
 
 func extractString(claims map[string]interface{}, field string) string {
 	data, found := claims[field]

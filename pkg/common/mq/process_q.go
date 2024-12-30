@@ -8,18 +8,18 @@ import (
 
 var (
 	processSubOnce, processPubOnce, processStreamOnce sync.Once
-	processStream jetstream.Stream
-	processSub *Sub
-	processPub *Pub
+	processStream                                     jetstream.Stream
+	processSub                                        *Sub
+	processPub                                        *Pub
 )
 
 func getProcessStream() jetstream.Stream {
 	processStreamOnce.Do(func() {
 		processStream = client.setupStream(jetstream.StreamConfig{
-			Name: "PROCESS",
+			Name:      "PROCESS",
 			Retention: jetstream.WorkQueuePolicy,
-			Subjects: []string{"PROCESS.logs"},
-			Replicas: config.Replicas,
+			Subjects:  []string{"PROCESS.logs"},
+			Replicas:  config.Replicas,
 		})
 	})
 	return processStream
@@ -29,7 +29,7 @@ func ProcessSub() *Sub {
 	processSubOnce.Do(func() {
 		stream := getProcessStream()
 		processSub = client.Consumer(stream, jetstream.ConsumerConfig{
-			Name: "process",
+			Name:    "process",
 			Durable: "process",
 		})
 	})

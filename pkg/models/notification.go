@@ -10,9 +10,9 @@ type Notification struct {
 	Base
 
 	// Time when the notification was sent
-	NotificationTime Time `json:"notificationTime,omitempty"`
-	Destination Destination `json:"destination"`
-	Acknowledged bool `json:"acknowledged"`
+	NotificationTime Time        `json:"notificationTime,omitempty"`
+	Destination      Destination `json:"destination"`
+	Acknowledged     bool        `json:"acknowledged"`
 
 	// The type of notification. Supported: "log", "alert"
 	Type string `json:"type"`
@@ -25,9 +25,9 @@ type Notification struct {
 	// The message contained in the log or the summary of the alert
 	Message string `json:"message,omitempty"`
 
-	Labels map[string]string `json:"labels"`
-	DocumentationURL string `json:"documentationURL"`
-	SnoozeURL string `json:"snoozeURL"`
+	Labels           map[string]string `json:"labels"`
+	DocumentationURL string            `json:"documentationURL"`
+	SnoozeURL        string            `json:"snoozeURL"`
 
 	ActiveCheckURL string `json:"activeCheckURL"`
 }
@@ -35,13 +35,13 @@ type Notification struct {
 // Used by template systems in transforms/profiles/etc
 func (item *Notification) Context() map[string]interface{} {
 	return map[string]interface{}{
-		"type": item.Type,
+		"type":             item.Type,
 		"notificationTime": item.NotificationTime,
-		"source": item.Source,
-		"identity": item.Identity,
-		"labels": item.Labels,
-		"message": item.Message,
-		"destination": item.Destination,
+		"source":           item.Source,
+		"identity":         item.Identity,
+		"labels":           item.Labels,
+		"message":          item.Message,
+		"destination":      item.Destination,
 	}
 }
 
@@ -59,9 +59,9 @@ func (dest *Destination) String() string {
 
 func init() {
 	index := IndexTemplate{
-		Version: 2,
+		Version:       2,
 		IndexPatterns: []string{NOTIFICATION_INDEX},
-		DataStream: map[string]map[string]string{"timestamp_field": {"name": "notificationTime"}},
+		DataStream:    map[string]map[string]string{"timestamp_field": {"name": "notificationTime"}},
 		Template: Indice{
 			Settings: IndexSettings{1, 2},
 			Mappings: IndexMapping{

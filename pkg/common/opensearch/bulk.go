@@ -7,5 +7,5 @@ import (
 )
 
 func Bulk(ctx context.Context, req opensearchapi.BulkReq) (*opensearchapi.BulkResp, error) {
-       return client.Bulk(ctx, req)
+	return client.Bulk(ctx, req)
 }

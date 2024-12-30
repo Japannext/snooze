@@ -15,7 +15,7 @@ type HttpDaemon struct {
 
 type Register = func(*gin.Engine)
 
-func NewHttpDaemon(registers... Register) *HttpDaemon {
+func NewHttpDaemon(registers ...Register) *HttpDaemon {
 	router := gin.New()
 	router.Use(gin.LoggerWithConfig(gin.LoggerConfig{
 		SkipPaths: []string{"/livez", "/readyz", "/metrics"},

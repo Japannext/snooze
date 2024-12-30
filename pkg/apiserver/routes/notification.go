@@ -21,15 +21,15 @@ func getNotifications(c *gin.Context) {
 
 	req := &opensearch.SearchReq{Index: models.NOTIFICATION_INDEX}
 
-    // Params
-    params := getNotificationsParams{Pagination: models.NewPagination()}
-    c.BindQuery(&params)
-    if params.Pagination.OrderBy == "" {
-        params.Pagination.OrderBy = "notificationTime"
-    }
-    req.WithPagination(params.Pagination)
-    req.WithTimeRange("notificationTime", params.TimeRange)
-    req.WithSearch(params.Search)
+	// Params
+	params := getNotificationsParams{Pagination: models.NewPagination()}
+	c.BindQuery(&params)
+	if params.Pagination.OrderBy == "" {
+		params.Pagination.OrderBy = "notificationTime"
+	}
+	req.WithPagination(params.Pagination)
+	req.WithTimeRange("notificationTime", params.TimeRange)
+	req.WithSearch(params.Search)
 
 	items, err := opensearch.Search[*models.Notification](ctx, req)
 	if err != nil {

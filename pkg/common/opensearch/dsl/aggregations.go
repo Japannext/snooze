@@ -5,7 +5,7 @@ type AggregationRequest struct {
 }
 
 type AggItem struct {
-	Terms *AggTerms `json:"terms"`
+	Terms  *AggTerms  `json:"terms"`
 	Filter *AggFilter `json:"-,squash"`
 }
 
@@ -14,8 +14,8 @@ type AggTerms struct {
 }
 
 type AggFilter struct {
-	Filter *Query `json:"filter"`
-	Aggs map[string]AggItem `json:"aggs"`
+	Filter *Query             `json:"filter"`
+	Aggs   map[string]AggItem `json:"aggs"`
 }
 
 type AggregationResponse = map[string]AggRespItem
@@ -25,8 +25,8 @@ type AggRespItem struct {
 }
 
 type Bucket struct {
-	Key string `json:"key"`
-	DocCount int `json:"doc_count"`
+	Key      string `json:"key"`
+	DocCount int    `json:"doc_count"`
 }
 
 func NewAggregationQuery(field string, filter *Query) *AggregationRequest {

@@ -14,15 +14,15 @@ type Group struct {
 
 func init() {
 	index := IndexTemplate{
-		Version: 1,
+		Version:       1,
 		IndexPatterns: []string{GROUP_INDEX},
 		Template: Indice{
 			Settings: IndexSettings{1, 2},
 			Mappings: IndexMapping{
 				Properties: map[string]MappingProps{
-					"name": {Type: "keyword"},
+					"name":   {Type: "keyword"},
 					"labels": {Type: "object"},
-					"hash": {Type: "keyword"},
+					"hash":   {Type: "keyword"},
 				},
 			},
 		},

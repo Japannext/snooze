@@ -12,8 +12,8 @@ type DailySchedule struct {
 	TimeZone string `yaml:"timezone" json:"timezone"`
 
 	internal struct {
-		from *hourminute
-		to *hourminute
+		from     *hourminute
+		to       *hourminute
 		timezone *time.Location
 	}
 }

@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/google/uuid"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/japannext/snooze/pkg/common/opensearch/format"
 	"github.com/japannext/snooze/pkg/common/utils"
@@ -28,12 +28,12 @@ func alertHandler(ctx context.Context, alert PostableAlert) {
 
 	labels := alert.Labels
 	var (
-		alertName = pop(labels, "alertname")
+		alertName  = pop(labels, "alertname")
 		alertGroup = pop(labels, "alertgroup")
-		hash = utils.ComputeHash(labels)
-		key = fmt.Sprintf("alertmanager/%s/%s/%s", alertGroup, alertName, hash)
-		startTime = parseTime(alert.StartsAt)
-		endTime = parseTime(alert.EndsAt)
+		hash       = utils.ComputeHash(labels)
+		key        = fmt.Sprintf("alertmanager/%s/%s/%s", alertGroup, alertName, hash)
+		startTime  = parseTime(alert.StartsAt)
+		endTime    = parseTime(alert.EndsAt)
 	)
 
 	status, err := getAlertStatus(ctx, key)
@@ -47,7 +47,7 @@ func alertHandler(ctx context.Context, alert PostableAlert) {
 		var (
 			annotations = alert.Annotations
 			description = pop(annotations, "description")
-			summary = pop(annotations, "summary")
+			summary     = pop(annotations, "summary")
 		)
 
 		id := uuid.NewString()
@@ -69,14 +69,14 @@ func alertHandler(ctx context.Context, alert PostableAlert) {
 
 		err := storeQ.PublishData(ctx, &format.Create{
 			Index: models.ALERT_INDEX,
-			Item: item,
+			Item:  item,
 		})
 		if err != nil {
 			log.Warnf("failed to insert alert: %s", err)
 			return
 		}
 		status = &models.AlertStatus{
-			ID: id,
+			ID:        id,
 			LastCheck: startTime,
 			NextCheck: endTime,
 		}
@@ -90,7 +90,7 @@ func alertHandler(ctx context.Context, alert PostableAlert) {
 
 	// Update status
 	newStatus := &models.AlertStatus{
-		ID: status.ID,
+		ID:        status.ID,
 		LastCheck: startTime,
 		NextCheck: endTime,
 	}

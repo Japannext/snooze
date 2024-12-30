@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/japannext/snooze/pkg/models"
 )
@@ -22,16 +22,15 @@ func probeHandler(c *gin.Context) {
 	check.Handle(c)
 }
 
-
 type Check struct {
-    Name string `yaml:"name" validate:"required"`
-    Source *SourceConfig `yaml:"source"`
-    Notification *NotificationConfig `yaml:"notification"`
-	Timeout *time.Duration `yaml:"timeout"`
+	Name         string              `yaml:"name" validate:"required"`
+	Source       *SourceConfig       `yaml:"source"`
+	Notification *NotificationConfig `yaml:"notification"`
+	Timeout      *time.Duration      `yaml:"timeout"`
 
-    internal struct {
-        probe Probe
-    }
+	internal struct {
+		probe Probe
+	}
 }
 
 type Probe interface {
@@ -39,12 +38,12 @@ type Probe interface {
 }
 
 type SourceConfig struct {
-    Syslog *SyslogConfig `yaml:"syslog"`
+	Syslog *SyslogConfig `yaml:"syslog"`
 }
 
 type NotificationConfig struct {
-    ExpectedQueue string `yaml:"expected_queue"`
-    ExpectedProfile string `yaml:"expected_profile"`
+	ExpectedQueue   string `yaml:"expected_queue"`
+	ExpectedProfile string `yaml:"expected_profile"`
 }
 
 func (check *Check) Load() {
@@ -55,19 +54,19 @@ func (check *Check) Load() {
 		timeout := 30 * time.Second
 		check.Timeout = &timeout
 	}
-    switch {
-    case check.Source.Syslog != nil:
-        check.internal.probe = NewSyslogProbe(check.Name, check.Source.Syslog)
+	switch {
+	case check.Source.Syslog != nil:
+		check.internal.probe = NewSyslogProbe(check.Name, check.Source.Syslog)
 	default:
 		log.Fatalf("no `source` defined in configuration for check '%s'", check.Name)
-    }
+	}
 }
 
 var (
 	probeUp = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "snooze",
-		Name: "activecheck_probe_up",
-		Help: "Active check that verify a probe is up",
+		Name:      "activecheck_probe_up",
+		Help:      "Active check that verify a probe is up",
 	}, []string{"check"})
 )
 
@@ -99,17 +98,17 @@ func (check *Check) Handle(c *gin.Context) {
 }
 
 func callbackHandler(c *gin.Context) {
-    key := c.Param("uid")
-    var callback models.SourceActiveCheck
-    c.BindJSON(&callback)
+	key := c.Param("uid")
+	var callback models.SourceActiveCheck
+	c.BindJSON(&callback)
 
-    waiter.Insert(key, callback)
+	waiter.Insert(key, callback)
 }
 
 func (check *Check) CheckCallback(callback models.SourceActiveCheck) bool {
-    if callback.Error != "" {
-        return false
-    }
+	if callback.Error != "" {
+		return false
+	}
 
-    return true
+	return true
 }

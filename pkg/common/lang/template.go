@@ -1,11 +1,11 @@
 package lang
 
 import (
-    "bytes"
+	"bytes"
 	"context"
 	"fmt"
 
-    "text/template"
+	"text/template"
 
 	"github.com/japannext/snooze/pkg/models"
 )
@@ -40,8 +40,8 @@ func (t *Template) Execute(ctx context.Context, item models.HasContext) (string,
 	data["mappings"] = ctx.Value("mappings").(map[string]map[string]string)
 	var buf bytes.Buffer
 	err := t.template.Execute(&buf, data)
-    if err != nil {
-        return "", err
-    }
-    return buf.String(), nil
+	if err != nil {
+		return "", err
+	}
+	return buf.String(), nil
 }

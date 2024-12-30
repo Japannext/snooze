@@ -1,6 +1,6 @@
 package formatter
 
-type Formatter struct {}
+type Formatter struct{}
 
 func (f *Formatter) Format() {
 }

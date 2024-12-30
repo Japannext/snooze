@@ -4,26 +4,26 @@ import (
 	"fmt"
 	"time"
 
-    "github.com/spf13/cobra"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 
 	"github.com/japannext/snooze/pkg/models"
 )
 
 var (
-	icinga bool
+	icinga   bool
 	hostname string
-	state string
-	labels map[string]string
-	ts string
+	state    string
+	labels   map[string]string
+	ts       string
 )
 
 const TIME_FORMAT = "2006-01-02 15:04:05 +0000"
 
 var hostCmd = &cobra.Command{
-    Use:   "host",
-    Short: "Send a host notification to snooze",
-	Run: sendHost,
+	Use:   "host",
+	Short: "Send a host notification to snooze",
+	Run:   sendHost,
 }
 
 func init() {

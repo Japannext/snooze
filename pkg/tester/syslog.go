@@ -12,7 +12,7 @@ import (
 var todayDate = time.Now().Format("2006-01-02")
 
 func today(t string) time.Time {
-	dt, err := time.Parse("2006-01-02T15:04:05", todayDate + "T" + t)
+	dt, err := time.Parse("2006-01-02T15:04:05", todayDate+"T"+t)
 	if err != nil {
 		log.Fatal(err)
 	}

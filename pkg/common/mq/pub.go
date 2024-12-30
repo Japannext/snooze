@@ -18,14 +18,14 @@ func (client *Client) Pub() *Pub {
 }
 
 type Pub struct {
-	client *Client
+	client  *Client
 	subject string
 	headers map[string]string
 }
 
 func (pub *Pub) WithSubject(subject string) *Pub {
 	return &Pub{
-		client: pub.client,
+		client:  pub.client,
 		headers: pub.headers,
 		subject: subject,
 	}
@@ -38,7 +38,7 @@ func (pub *Pub) WithHeader(key, value string) *Pub {
 	maps.Copy(pub.headers, headers)
 	headers[key] = value
 	return &Pub{
-		client: pub.client,
+		client:  pub.client,
 		subject: pub.subject,
 		headers: headers,
 	}

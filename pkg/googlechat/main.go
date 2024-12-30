@@ -4,22 +4,22 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
 
-    "github.com/japannext/snooze/pkg/common/daemon"
-    "github.com/japannext/snooze/pkg/common/logging"
-    "github.com/japannext/snooze/pkg/common/mq"
-    "github.com/japannext/snooze/pkg/common/tracing"
+	"github.com/japannext/snooze/pkg/common/daemon"
+	"github.com/japannext/snooze/pkg/common/logging"
+	"github.com/japannext/snooze/pkg/common/mq"
+	"github.com/japannext/snooze/pkg/common/tracing"
 )
 
 var (
 	notifyQ *mq.Sub
-	storeQ *mq.Pub
-	tracer trace.Tracer
+	storeQ  *mq.Pub
+	tracer  trace.Tracer
 )
 
 func Startup() *daemon.DaemonManager {
-    logging.Init()
-    initConfig()
-    loadProfiles()
+	logging.Init()
+	initConfig()
+	loadProfiles()
 	initGooglechat()
 	tracing.Init("snooze-googlechat")
 	mq.Init()
@@ -31,15 +31,15 @@ func Startup() *daemon.DaemonManager {
 	notifyQ = mq.NotifySub("googlechat")
 	storeQ = mq.StorePub()
 
-    dm := daemon.NewDaemonManager()
+	dm := daemon.NewDaemonManager()
 
 	wp := mq.NewWorkerPool(notifyQ, notificationHandler, 20)
-    dm.AddDaemon("notifier", wp)
+	dm.AddDaemon("notifier", wp)
 
-    return dm
+	return dm
 }
 
 func Run() {
-    dm := Startup()
-    dm.Run()
+	dm := Startup()
+	dm.Run()
 }

@@ -41,7 +41,7 @@ func (dm *DaemonManager) setupHealthcheck() {
 func (dm *DaemonManager) livezRoute(c *gin.Context) {
 	var (
 		status = http.StatusOK
-		err error
+		err    error
 	)
 	var buf strings.Builder
 	for _, check := range dm.live {
@@ -65,7 +65,7 @@ func (dm *DaemonManager) livezRoute(c *gin.Context) {
 func (dm *DaemonManager) readyzRoute(c *gin.Context) {
 	var (
 		status = http.StatusOK
-		err error
+		err    error
 	)
 	var buf strings.Builder
 	for _, check := range dm.ready {
@@ -93,4 +93,3 @@ func (dm *DaemonManager) AddLiveCheck(check Check) {
 func (dm *DaemonManager) AddReadyCheck(check Check) {
 	dm.live = append(dm.ready, check)
 }
-

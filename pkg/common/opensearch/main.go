@@ -15,7 +15,7 @@ import (
 type BootstrapFunction = func(context.Context)
 
 var (
-	client *opensearchapi.Client
+	client         *opensearchapi.Client
 	tracerProvider = tracing.NewTracerProvider("opensearch")
 )
 

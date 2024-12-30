@@ -11,6 +11,7 @@ import (
 func TestProcess(t *testing.T) {
 	groupings := []*Grouping{
 		{
+			Name:    "by-host-process",
 			If:      `source.Kind == "syslog"`,
 			GroupBy: []string{`labels.host`, `labels.process`},
 		},
@@ -19,7 +20,7 @@ func TestProcess(t *testing.T) {
 
 	tests := []struct {
 		Name           string
-		Log          *models.Log
+		Log            *models.Log
 		ExpectedLabels map[string]string
 		ExpectMatch    bool
 	}{
@@ -41,13 +42,15 @@ func TestProcess(t *testing.T) {
 		t.Run(tt.Name, func(t *testing.T) {
 			err := Process(context.TODO(), tt.Log)
 			assert.NoError(t, err)
+			assert.Equal(t, tt.Log.Groups, 0)
+			group := tt.Log.Groups[0]
 			if tt.ExpectMatch {
-				assert.NotEmpty(t, tt.Log.Group.Hash)
+				assert.NotEmpty(t, group.Hash)
 			} else {
-				assert.Empty(t, tt.Log.Group.Hash)
+				assert.Empty(t, group.Hash)
 			}
 			for k, v := range tt.ExpectedLabels {
-				assert.Equal(t, v, tt.Log.Group.Labels[k])
+				assert.Equal(t, v, group.Labels[k])
 			}
 		})
 	}

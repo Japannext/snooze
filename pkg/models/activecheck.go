@@ -8,5 +8,5 @@ type SourceActiveCheck struct {
 
 type DestinationActiveCheck struct {
 	Destination Destination `json:"destination"`
-	Error string `json:"error,omitempty"`
+	Error       string      `json:"error,omitempty"`
 }

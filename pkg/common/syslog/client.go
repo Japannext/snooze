@@ -2,9 +2,9 @@ package syslog
 
 import (
 	"bytes"
+	"fmt"
 	"net"
 	"time"
-	"fmt"
 )
 
 const (
@@ -53,17 +53,16 @@ const (
 	LOG_LOCAL7
 )
 
-
 var todayDate = time.Now().Format("2006-01-02")
 
 type Log struct {
 	Timestamp time.Time
-	AppName string
-	ProcId string
-	Host string
-	Severity int
-	Facility int
-	Msg string
+	AppName   string
+	ProcId    string
+	Host      string
+	Severity  int
+	Facility  int
+	Msg       string
 }
 
 func (item *Log) toRFC3164() []byte {
@@ -115,7 +114,6 @@ type Client struct {
 	Format string
 }
 
-
 func NewClient(addr string, format string, timeout time.Duration) (*Client, error) {
 	conn, err := net.DialTimeout("tcp", addr, timeout)
 	if err != nil {
@@ -124,14 +122,14 @@ func NewClient(addr string, format string, timeout time.Duration) (*Client, erro
 	return &Client{conn, format}, nil
 }
 
-func (client *Client) Send(items... Log) error {
+func (client *Client) Send(items ...Log) error {
 	for _, item := range items {
 		var data []byte
 		switch client.Format {
-			case "rfc5424":
-				data = item.toRFC5424()
-			case "rfc3164":
-				data = item.toRFC3164()
+		case "rfc5424":
+			data = item.toRFC5424()
+		case "rfc3164":
+			data = item.toRFC3164()
 		}
 		client.Write(data)
 	}

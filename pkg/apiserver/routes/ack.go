@@ -1,13 +1,13 @@
 package routes
 
 import (
-    "net/http"
+	"net/http"
 
-    "github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin"
 	//log "github.com/sirupsen/logrus"
 
-    "github.com/japannext/snooze/pkg/common/opensearch"
-    "github.com/japannext/snooze/pkg/models"
+	"github.com/japannext/snooze/pkg/common/opensearch"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 func getAcks(c *gin.Context) {
@@ -43,7 +43,7 @@ func postAck(c *gin.Context) {
 
 	err = opensearch.Index(ctx, &opensearch.IndexReq{
 		Index: models.ACK_INDEX,
-		Item: item,
+		Item:  item,
 	})
 	if err != nil {
 		c.String(http.StatusInternalServerError, "failed to save ack to opensearch: %s", err)

@@ -12,7 +12,7 @@ const (
 type BulkHeader = map[Action]Metadata
 
 type Metadata struct {
-	ID string `json:"_id,omitempty"`
+	ID    string `json:"_id,omitempty"`
 	Index string `json:"_index,omitempty"`
 }
 

@@ -14,15 +14,15 @@ import (
 func login(c *gin.Context) {
 	state, err := utils.RandomURLSafeBase64(16)
 	if err != nil {
-			log.Error(err)
-			c.String(http.StatusInternalServerError, "Error getting a random string for state: %s", err)
-			return
+		log.Error(err)
+		c.String(http.StatusInternalServerError, "Error getting a random string for state: %s", err)
+		return
 	}
 	nonce, err := utils.RandomURLSafeBase64(16)
 	if err != nil {
-			log.Error(err)
-			c.String(http.StatusInternalServerError, "Error getting a random string for nonce: %s", err)
-			return
+		log.Error(err)
+		c.String(http.StatusInternalServerError, "Error getting a random string for nonce: %s", err)
+		return
 	}
 	verifier, err := utils.RandomURLSafeBase64(32)
 	if err != nil {

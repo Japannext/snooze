@@ -1,8 +1,8 @@
 package routes
 
 import (
-	"net/http"
 	"encoding/json"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 
@@ -26,14 +26,14 @@ func getGroups(c *gin.Context) {
 	c.BindQuery(&params)
 	req.WithSearch(params.Search)
 
-    items, err := opensearch.Search[*models.Group](ctx, req)
-    if err != nil {
-        c.String(http.StatusInternalServerError, "Error getting log: %s", err)
+	items, err := opensearch.Search[*models.Group](ctx, req)
+	if err != nil {
+		c.String(http.StatusInternalServerError, "Error getting log: %s", err)
 		tracing.Error(span, err)
 		data, _ := json.Marshal(req.Doc)
 		tracing.SetString(span, "opensearch.query", string(data))
-        return
-    }
+		return
+	}
 
-    c.JSON(http.StatusOK, items)
+	c.JSON(http.StatusOK, items)
 }

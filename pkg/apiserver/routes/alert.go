@@ -26,14 +26,14 @@ func getAlerts(c *gin.Context) {
 
 	req := &opensearch.SearchReq{Index: models.ALERT_INDEX}
 
-    params := getLogsParams{Pagination: models.NewPagination()}
-    c.BindQuery(&params)
-    if params.Pagination.OrderBy == "" {
-        params.Pagination.OrderBy = "startsAt"
-    }
-    req.WithPagination(params.Pagination)
-    req.WithTimeRange("startsAt", params.TimeRange)
-    req.WithSearch(params.Search)
+	params := getLogsParams{Pagination: models.NewPagination()}
+	c.BindQuery(&params)
+	if params.Pagination.OrderBy == "" {
+		params.Pagination.OrderBy = "startsAt"
+	}
+	req.WithPagination(params.Pagination)
+	req.WithTimeRange("startsAt", params.TimeRange)
+	req.WithSearch(params.Search)
 
 	if params.Filter != nil {
 		switch params.Filter.Text {
@@ -83,4 +83,3 @@ func getLiveStatus(c *gin.Context) {
 
 	c.JSON(http.StatusOK, items)
 }
-

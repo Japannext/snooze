@@ -13,9 +13,9 @@ import (
 )
 
 type UpdateByQueryReq struct {
-	Index string
+	Index  string
 	Params opensearchapi.UpdateByQueryParams
-	Doc dsl.QueryReq
+	Doc    dsl.QueryReq
 }
 
 func UpdateByQuery(ctx context.Context, req UpdateByQueryReq) error {
@@ -29,8 +29,8 @@ func UpdateByQuery(ctx context.Context, req UpdateByQueryReq) error {
 	tracing.SetString(span, "query", string(body))
 	resp, err := client.UpdateByQuery(ctx, opensearchapi.UpdateByQueryReq{
 		Indices: []string{req.Index},
-		Params: req.Params,
-		Body: bytes.NewReader(body),
+		Params:  req.Params,
+		Body:    bytes.NewReader(body),
 	})
 	if err != nil {
 		return err

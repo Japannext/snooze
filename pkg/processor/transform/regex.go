@@ -2,11 +2,11 @@ package transform
 
 import (
 	"context"
-	"regexp"
 	"fmt"
+	"regexp"
 
-	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/common/lang"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 type RegexAction struct {
@@ -14,7 +14,7 @@ type RegexAction struct {
 	Match string `yaml:"match" json:"match"`
 
 	internal struct {
-		field *lang.Field
+		field  *lang.Field
 		regexp *regexp.Regexp
 	}
 }

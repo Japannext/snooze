@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"text/template"
 
-	chat "google.golang.org/api/chat/v1"
 	log "github.com/sirupsen/logrus"
+	chat "google.golang.org/api/chat/v1"
 
 	"github.com/japannext/snooze/pkg/models"
 )
@@ -34,11 +34,11 @@ func NewTemplate(opts *TemplateOptions) *Template {
 }
 
 func (tpl *Template) Format(item *models.Notification) (*chat.Message, error) {
-    var buf bytes.Buffer
-    err := tpl.template.Execute(&buf, item.Context())
-    if err != nil {
+	var buf bytes.Buffer
+	err := tpl.template.Execute(&buf, item.Context())
+	if err != nil {
 		return &chat.Message{}, err
-    }
+	}
 
 	return &chat.Message{Text: buf.String()}, nil
 }

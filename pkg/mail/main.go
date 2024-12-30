@@ -9,7 +9,7 @@ import (
 
 var (
 	notifyQ *mq.Sub
-	storeQ *mq.Pub
+	storeQ  *mq.Pub
 )
 
 func Startup() *daemon.DaemonManager {

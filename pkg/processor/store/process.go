@@ -3,9 +3,9 @@ package store
 import (
 	"context"
 
-	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/common/opensearch/format"
 	"github.com/japannext/snooze/pkg/common/tracing"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 func Process(ctx context.Context, item *models.Log) error {
@@ -20,6 +20,6 @@ func Process(ctx context.Context, item *models.Log) error {
 
 	return storeQ.PublishData(ctx, &format.Create{
 		Index: models.LOG_INDEX,
-		Item: item,
+		Item:  item,
 	})
 }

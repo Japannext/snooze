@@ -5,9 +5,9 @@ import (
 )
 
 type QueryReq struct {
-	Query `json:"query"`
-	Sort []map[string]Sort `json:"sort,omitempty"`
-	Script *Script `json:"script,omitempty"`
+	Query  `json:"query"`
+	Sort   []map[string]Sort `json:"sort,omitempty"`
+	Script *Script           `json:"script,omitempty"`
 }
 
 /*
@@ -20,7 +20,7 @@ type QueryRequest struct {
 
 const EMPTY_MAP = "{}"
 
-type EmptyMap struct {}
+type EmptyMap struct{}
 
 func (m *EmptyMap) MarshalJSON() ([]byte, error) {
 	return []byte(EMPTY_MAP), nil
@@ -35,7 +35,7 @@ func (m *EmptyMap) UnmarshalJSON(data []byte) error {
 }
 
 type Query struct {
-	Bool *Bool `json:"bool,omitempty"`
+	Bool     *Bool     `json:"bool,omitempty"`
 	MatchAll *EmptyMap `json:"match_all,omitempty"`
 }
 
@@ -44,25 +44,25 @@ type Sort struct {
 }
 
 type Bool struct {
-	Must []QueryItem `json:"must,omitempty"`
-	MustNot []QueryItem `json:"must_not,omitempty"`
-	Should []QueryItem `json:"should,omitempty"`
-	MinimumShouldMatch int `json:"minimum_should_match,omitempty"`
+	Must               []QueryItem `json:"must,omitempty"`
+	MustNot            []QueryItem `json:"must_not,omitempty"`
+	Should             []QueryItem `json:"should,omitempty"`
+	MinimumShouldMatch int         `json:"minimum_should_match,omitempty"`
 }
 
 type Script struct {
-	Source string `json:"source"`
-	Lang string `json:"lang"`
+	Source string                 `json:"source"`
+	Lang   string                 `json:"lang"`
 	Params map[string]interface{} `json:"params"`
 }
 
 type QueryItem struct {
-	Term map[string]interface{} `json:"term,omitempty"`
-	Terms map[string][]string `json:"terms,omitempty"`
-	Range map[string]Range `json:"range,omitempty"`
-	Match map[string]Match `json:"match,omitempty"`
-	Exists *Exists `json:"exists,omitempty"`
-	QueryString *QueryString `json:"query_string,omitempty"`
+	Term        map[string]interface{} `json:"term,omitempty"`
+	Terms       map[string][]string    `json:"terms,omitempty"`
+	Range       map[string]Range       `json:"range,omitempty"`
+	Match       map[string]Match       `json:"match,omitempty"`
+	Exists      *Exists                `json:"exists,omitempty"`
+	QueryString *QueryString           `json:"query_string,omitempty"`
 }
 
 type QueryString struct {
@@ -70,10 +70,10 @@ type QueryString struct {
 }
 
 type Match struct {
-	Query string `json:"query,omitempty"`
-	Operator string `json:"operator,omitempty"`
-	MinimumShouldMatch int `json:"minimum_should_match,omitempty"`
-	Analyzer string `json:"analyzer,omitempty"`
+	Query              string `json:"query,omitempty"`
+	Operator           string `json:"operator,omitempty"`
+	MinimumShouldMatch int    `json:"minimum_should_match,omitempty"`
+	Analyzer           string `json:"analyzer,omitempty"`
 }
 
 type Exists struct {
@@ -83,8 +83,8 @@ type Exists struct {
 type Range struct {
 	Gte *uint64 `json:"gte,omitempty"`
 	Lte *uint64 `json:"lte,omitempty"`
-	Gt *uint64 `json:"gt,omitempty"`
-	Lt *uint64 `json:"lt,omitempty"`
+	Gt  *uint64 `json:"gt,omitempty"`
+	Lt  *uint64 `json:"lt,omitempty"`
 }
 
 func (query *Query) WithTerm(key string, value interface{}) *Query {
@@ -160,7 +160,7 @@ func (req *QueryReq) WithSort(field string, ascending bool) *QueryReq {
 func (req *QueryReq) WithPainlessScript(script string, params map[string]interface{}) *QueryReq {
 	req.Script = &Script{
 		Source: script,
-		Lang: "painless",
+		Lang:   "painless",
 		Params: params,
 	}
 	return req

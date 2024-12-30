@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/common/redis"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 func getAlertStatus(ctx context.Context, key string) (*models.AlertStatus, error) {

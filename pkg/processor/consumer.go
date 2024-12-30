@@ -5,14 +5,15 @@ import (
 	"encoding/json"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/nats-io/nats.go/jetstream"
+	log "github.com/sirupsen/logrus"
 
-	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/common/tracing"
+	"github.com/japannext/snooze/pkg/models"
 
 	"github.com/japannext/snooze/pkg/processor/activecheck"
 	"github.com/japannext/snooze/pkg/processor/grouping"
+	"github.com/japannext/snooze/pkg/processor/mapping"
 	"github.com/japannext/snooze/pkg/processor/notification"
 	"github.com/japannext/snooze/pkg/processor/profile"
 	"github.com/japannext/snooze/pkg/processor/ratelimit"
@@ -21,10 +22,9 @@ import (
 	"github.com/japannext/snooze/pkg/processor/store"
 	"github.com/japannext/snooze/pkg/processor/timestamp"
 	"github.com/japannext/snooze/pkg/processor/transform"
-	"github.com/japannext/snooze/pkg/processor/mapping"
 )
 
-type Consumer struct {}
+type Consumer struct{}
 
 func NewConsumer() *Consumer {
 	return &Consumer{}
@@ -45,8 +45,9 @@ func (c *Consumer) Run() error {
 			continue
 		}
 
-		for _, m := range msgs {
-			msg := m.Msg
+		for _, msgWithCtx := range msgs {
+			msg := msgWithCtx.Msg
+			msgCtx := msgWithCtx.Context
 			// Immediately requeue messages when there is no worker
 			if ok := pool.TryAcquire(); !ok {
 				log.Warnf("Requeuing since no worker is ready (%d/%d)", pool.Busy(), pool.Max())
@@ -55,7 +56,7 @@ func (c *Consumer) Run() error {
 			}
 			go func() {
 				defer pool.Release()
-				processLog(m.Context, unmarshalLog(msg))
+				processLog(msgCtx, unmarshalLog(msg))
 				msg.Ack()
 			}()
 		}
@@ -71,11 +72,11 @@ func unmarshalLog(msg jetstream.Msg) *models.Log {
 	if err := json.Unmarshal(data, &item); err != nil {
 		log.Warnf("invalid JSON while parsing log: %s", err)
 		item = models.Log{
-			ActualTime: models.TimeNow(),
+			ActualTime:  models.TimeNow(),
 			DisplayTime: models.TimeNow(),
-			Identity: map[string]string{"snooze.internal": "error"},
-			Message: string(data),
-			Error: err.Error(),
+			Identity:    map[string]string{"snooze.internal": "error"},
+			Message:     string(data),
+			Error:       err.Error(),
 		}
 	}
 	return &item

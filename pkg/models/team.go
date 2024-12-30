@@ -1,9 +1,9 @@
 package models
 
 type Team struct {
-	Name string `json:"name"`
-	Description string `json:"description"`
-	Members []string `json:"members"`
+	Name                 string                `json:"name"`
+	Description          string                `json:"description"`
+	Members              []string              `json:"members"`
 	NotificationProfiles []NotificationProfile `json:"notificationProfiles"`
 }
 

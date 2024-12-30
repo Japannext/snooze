@@ -2,15 +2,15 @@ package googlechat
 
 import (
 	"context"
-	"net/http"
 	"io/ioutil"
+	"net/http"
 	"time"
 
-	chat "google.golang.org/api/chat/v1"
 	log "github.com/sirupsen/logrus"
+	chat "google.golang.org/api/chat/v1"
 	//"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"golang.org/x/oauth2/google"
 	"google.golang.org/api/option"
 
 	"github.com/japannext/snooze/pkg/common/tracing"
@@ -65,12 +65,12 @@ func getCredentials() *google.Credentials {
 
 func getHTTPClient() *http.Client {
 	transport := &http.Transport{
-		TLSClientConfig: config.TLS.Config(),
-		Proxy: http.ProxyFromEnvironment,
-		ForceAttemptHTTP2:     true,
-		MaxIdleConns:          100,
-		IdleConnTimeout:       90 * time.Second,
-		TLSHandshakeTimeout:   5 * time.Second,
+		TLSClientConfig:     config.TLS.Config(),
+		Proxy:               http.ProxyFromEnvironment,
+		ForceAttemptHTTP2:   true,
+		MaxIdleConns:        100,
+		IdleConnTimeout:     90 * time.Second,
+		TLSHandshakeTimeout: 5 * time.Second,
 	}
 
 	// tracing

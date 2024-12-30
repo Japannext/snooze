@@ -10,18 +10,18 @@ const X_SNOOZE_STORE_INDEX = "X-Snooze-Store-Index"
 
 var (
 	storeSubOnce, storePubOnce, storeStreamOnce sync.Once
-	storeStream jetstream.Stream
-	storeSub *Sub
-	storePub *Pub
+	storeStream                                 jetstream.Stream
+	storeSub                                    *Sub
+	storePub                                    *Pub
 )
 
 func getStoreStream() jetstream.Stream {
 	storeStreamOnce.Do(func() {
 		storeStream = client.setupStream(jetstream.StreamConfig{
-			Name: "STORE",
+			Name:      "STORE",
 			Retention: jetstream.WorkQueuePolicy,
-			Subjects: []string{"STORE.items"},
-			Replicas: config.Replicas,
+			Subjects:  []string{"STORE.items"},
+			Replicas:  config.Replicas,
 		})
 	})
 	return storeStream
@@ -31,7 +31,7 @@ func StoreSub() *Sub {
 	storeSubOnce.Do(func() {
 		stream := getStoreStream()
 		storeSub = client.Consumer(stream, jetstream.ConsumerConfig{
-			Name: "writer",
+			Name:    "writer",
 			Durable: "writer",
 		})
 	})

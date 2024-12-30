@@ -21,19 +21,19 @@ type DaemonManager struct {
 	errs    *errgroup.Group
 	context context.Context
 	daemons map[string]Daemon
-	ready []Check
-	live []Check
+	ready   []Check
+	live    []Check
 }
 
 func NewDaemonManager() *DaemonManager {
 	ctx := context.Background()
 	errs, ctx := errgroup.WithContext(ctx)
 	return &DaemonManager{
-		errs: errs,
+		errs:    errs,
 		context: ctx,
 		daemons: map[string]Daemon{},
-		ready: []Check{},
-		live: []Check{},
+		ready:   []Check{},
+		live:    []Check{},
 	}
 }
 

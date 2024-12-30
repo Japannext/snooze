@@ -1,12 +1,12 @@
 package models
 
 type LogStatus struct {
-	Kind int `json:"kind"`
+	Kind     int    `json:"kind"`
 	ObjectID string `json:"objectID,omitempty"`
-	Reason string `json:"reason"`
+	Reason   string `json:"reason"`
 
 	SkipNotification bool `json:"skipNotification"`
-	SkipStorage bool `json:"skipStorage"`
+	SkipStorage      bool `json:"skipStorage"`
 }
 
 type LogStatusKind int

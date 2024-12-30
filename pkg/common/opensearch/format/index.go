@@ -8,9 +8,10 @@ import (
 
 type Index struct {
 	Index string
-	ID string
-	Item interface{}
+	ID    string
+	Item  interface{}
 }
+
 func (a *Index) Serialize() ([]byte, error) {
 	var buf bytes.Buffer
 	meta := Metadata{Index: a.Index}
@@ -34,4 +35,3 @@ func (a *Index) Serialize() ([]byte, error) {
 	buf.WriteString("\n")
 	return buf.Bytes(), nil
 }
-

@@ -10,14 +10,14 @@ import (
 
 	"github.com/nats-io/nats.go/jetstream"
 	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
-	"go.opentelemetry.io/otel/trace"
 	log "github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/trace"
 
-	"github.com/japannext/snooze/pkg/common/opensearch"
 	"github.com/japannext/snooze/pkg/common/mq"
+	"github.com/japannext/snooze/pkg/common/opensearch"
 )
 
-type Consumer struct {}
+type Consumer struct{}
 
 func NewConsumer() *Consumer {
 	return &Consumer{}
@@ -88,7 +88,7 @@ func bulkWrite(ctx context.Context, msgs []mq.MsgWithContext) {
 		Timeout: 10 * time.Second,
 	}
 	req := opensearchapi.BulkReq{
-		Body: bytes.NewReader(buf.Bytes()),
+		Body:   bytes.NewReader(buf.Bytes()),
 		Params: params,
 	}
 	log.Debugf("Inserting bulk into opensearch...")
@@ -98,7 +98,7 @@ func bulkWrite(ctx context.Context, msgs []mq.MsgWithContext) {
 		log.Debugf("Query: %s", buf.Bytes())
 		log.Debugf("Result: %+v", resp.Items)
 		for _, m := range msgs {
-			m.Msg.NakWithDelay(1*time.Minute)
+			m.Msg.NakWithDelay(1 * time.Minute)
 		}
 	}
 	if resp.Errors {

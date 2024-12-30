@@ -7,8 +7,8 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"gopkg.in/mcuadros/go-syslog.v2/format"
 
-	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/common/tracing"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 var SEVERITY_TEXTS = []string{"emergency", "alert", "critical", "error", "warning", "notice", "informational", "debug"}
@@ -65,7 +65,7 @@ func parseLog(ctx context.Context, record format.LogParts) *models.Log {
 		item.Labels["syslog.tls_peer"] = value
 	}
 
-	facilityNumber :=  record["facility"].(int)
+	facilityNumber := record["facility"].(int)
 	if 0 <= facilityNumber && facilityNumber < len(FACILITY_TEXTS) {
 		item.Labels["syslog.facility"] = FACILITY_TEXTS[facilityNumber]
 	}
@@ -80,7 +80,7 @@ func parseLog(ctx context.Context, record format.LogParts) *models.Log {
 	item.Message = record["message"].(string)
 
 	severity, found := record["severity"].(int)
-	if found  && severity >= 0 && severity < 7 {
+	if found && severity >= 0 && severity < 7 {
 		item.SeverityText = SEVERITY_TEXTS[severity]
 		item.SeverityNumber = SEVERITY_NUMBERS[severity]
 	}

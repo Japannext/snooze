@@ -1,11 +1,11 @@
 package googlechat
 
 import (
-    "os"
+	"os"
 
-    log "github.com/sirupsen/logrus"
-    "gopkg.in/yaml.v3"
+	log "github.com/sirupsen/logrus"
 	chat "google.golang.org/api/chat/v1"
+	"gopkg.in/yaml.v3"
 
 	"github.com/japannext/snooze/pkg/googlechat/formatter"
 	"github.com/japannext/snooze/pkg/models"
@@ -16,12 +16,12 @@ type Profiles struct {
 }
 
 type Profile struct {
-    Name string `yaml:"name"`
-	Space string `yaml:"space"`
+	Name     string `yaml:"name"`
+	Space    string `yaml:"space"`
 	Timezone string `yaml:"timezone"`
 
 	Format struct {
-		Kind string `yaml:"kind"`
+		Kind            string                     `yaml:"kind"`
 		TemplateOptions *formatter.TemplateOptions `yaml:"-,squash"`
 	} `yaml:"format"`
 
@@ -56,20 +56,20 @@ func (p *Profile) FormatToMessage(item *models.Notification) *chat.Message {
 var profiles = map[string]*Profile{}
 
 func loadProfiles() {
-    data, err := os.ReadFile(config.ProfilePath)
-    if err != nil {
-        log.Fatal(err)
-    }
-    var profileConfig Profiles
-    if err := yaml.Unmarshal(data, &profileConfig); err != nil {
-        log.Fatal(err)
-    }
+	data, err := os.ReadFile(config.ProfilePath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var profileConfig Profiles
+	if err := yaml.Unmarshal(data, &profileConfig); err != nil {
+		log.Fatal(err)
+	}
 
-    for _, profile := range profileConfig.Profiles {
+	for _, profile := range profileConfig.Profiles {
 		profile.Load()
-        if _, ok := profiles[profile.Name]; ok {
-            log.Fatalf("Duplicate profile name '%s'", profile.Name)
-        }
-        profiles[profile.Name] = profile
-    }
+		if _, ok := profiles[profile.Name]; ok {
+			log.Fatalf("Duplicate profile name '%s'", profile.Name)
+		}
+		profiles[profile.Name] = profile
+	}
 }

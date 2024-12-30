@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/common/tracing"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 func Process(ctx context.Context, item *models.Log) error {

@@ -2,12 +2,12 @@ package sessions
 
 import (
 	"context"
-	"fmt"
 	"encoding/json"
+	"fmt"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/japannext/snooze/pkg/common/redis"
@@ -16,12 +16,12 @@ import (
 const SNOOZE_SESSION = "snooze-session"
 
 type Session struct {
-	c *gin.Context `json:"-"`
-	ID string `json:"id"`
-	Authenticated bool `json:"authenticated"`
-	Username string `json:"username"`
-	Role string `json:"role"`
-	Expiration time.Duration `json:"expiration"`
+	c             *gin.Context  `json:"-"`
+	ID            string        `json:"id"`
+	Authenticated bool          `json:"authenticated"`
+	Username      string        `json:"username"`
+	Role          string        `json:"role"`
+	Expiration    time.Duration `json:"expiration"`
 
 	// Provider specific values
 	OidcState string `json:"oidcState,omitempty"`
@@ -72,8 +72,8 @@ func deleteSession(ctx context.Context, id string) error {
 func newSession(c *gin.Context, ctx context.Context) *Session {
 	sessionID := uuid.NewString()
 	s := &Session{
-		c: c,
-		ID: sessionID,
+		c:          c,
+		ID:         sessionID,
 		Expiration: time.Duration(6) * time.Hour,
 	}
 	if err := setSession(ctx, s); err != nil {

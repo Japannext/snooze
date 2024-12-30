@@ -5,9 +5,9 @@ import (
 )
 
 var Cmd = &cobra.Command{
-	Use: "tester",
+	Use:   "tester",
 	Short: "Populate snooze with sample data",
-	Long: "Populate snozoe with sample data for syslog",
+	Long:  "Populate snozoe with sample data for syslog",
 	Run: func(c *cobra.Command, args []string) {
 		Run()
 	},

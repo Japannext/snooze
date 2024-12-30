@@ -10,7 +10,7 @@ import (
 func TestField(t *testing.T) {
 	tests := []struct {
 		Raw          string
-		Log        *models.Log
+		Log          *models.Log
 		ExpectResult string
 	}{
 		{
@@ -38,22 +38,22 @@ func TestField(t *testing.T) {
 }
 
 func TestFieldMap(t *testing.T) {
-	tests := []struct{
-		name string
-		fields []string
-		log *models.Log
+	tests := []struct {
+		name     string
+		fields   []string
+		log      *models.Log
 		expected map[string]string
 	}{
 		{
-			name: "hostproc identity matching",
-			fields: []string{"identity.hostname", "identity.process"},
-			log: &models.Log{Identity: map[string]string{"hostname": "host01", "process": "sshd"}},
+			name:     "hostproc identity matching",
+			fields:   []string{"identity.hostname", "identity.process"},
+			log:      &models.Log{Identity: map[string]string{"hostname": "host01", "process": "sshd"}},
 			expected: map[string]string{"identity.hostname": "host01", "identity.process": "sshd"},
 		},
 		{
-			name: "source matching",
-			fields: []string{"source.Kind", "source.Name"},
-			log: &models.Log{Source: models.Source{Kind: "syslog", Name: "dev"}},
+			name:     "source matching",
+			fields:   []string{"source.Kind", "source.Name"},
+			log:      &models.Log{Source: models.Source{Kind: "syslog", Name: "dev"}},
 			expected: map[string]string{"source.Kind": "syslog", "source.Name": "dev"},
 		},
 	}

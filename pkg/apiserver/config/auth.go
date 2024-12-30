@@ -10,33 +10,33 @@ import (
 )
 
 type AuthConfig struct {
-	Oidc *OidcConfig `yaml:"oidc" json:"oidc"`
-	AdminRole string `yaml:"admin_role" json:"adminRole"`
-	UserRole string `yaml:"user_role" json:"userRole"`
+	Oidc      *OidcConfig `yaml:"oidc" json:"oidc"`
+	AdminRole string      `yaml:"admin_role" json:"adminRole"`
+	UserRole  string      `yaml:"user_role" json:"userRole"`
 }
 
 type OidcConfig struct {
-	URL string `yaml:"url" json:"url"`
-	ClientID string `yaml:"client_id" json:"clientID"`
-	ClientSecret string `yaml:"client_secret" json:"-"`
-	CallbackURL string `yaml:"callback_url" json:"callbackURL"`
-	Scopes []string `yaml:"scopes" json:"scopes"`
-	UsernameField string `yaml:"username_field" json:"usernameField"`
-	EmailField string `yaml:"email_field" json:"emailField"`
-	FullnameField string `yaml:"fullname_field" json:"fullnameField"`
-	RolesField string `yaml:"roles_field" json:"rolesField"`
-	TLSConfig *utils.TLSConfig
+	URL           string   `yaml:"url" json:"url"`
+	ClientID      string   `yaml:"client_id" json:"clientID"`
+	ClientSecret  string   `yaml:"client_secret" json:"-"`
+	CallbackURL   string   `yaml:"callback_url" json:"callbackURL"`
+	Scopes        []string `yaml:"scopes" json:"scopes"`
+	UsernameField string   `yaml:"username_field" json:"usernameField"`
+	EmailField    string   `yaml:"email_field" json:"emailField"`
+	FullnameField string   `yaml:"fullname_field" json:"fullnameField"`
+	RolesField    string   `yaml:"roles_field" json:"rolesField"`
+	TLSConfig     *utils.TLSConfig
 
 	// Cosmetics
 	DisplayName string `yaml:"display_name" json:"displayName"`
-	Icon string `yaml:"icon" json:"icon"`
-	Color string `yaml:"color" json:"color"`
+	Icon        string `yaml:"icon" json:"icon"`
+	Color       string `yaml:"color" json:"color"`
 }
 
 type GithubConfig struct {
-	ClientID string `yaml:"client_id" json:"clientID"`
+	ClientID     string `yaml:"client_id" json:"clientID"`
 	ClientSecret string `yaml:"client_secret" json:"-"`
-	CallbackURL string `yaml:"callback_url" json:"callbackURL"`
+	CallbackURL  string `yaml:"callback_url" json:"callbackURL"`
 }
 
 var authConfig *AuthConfig

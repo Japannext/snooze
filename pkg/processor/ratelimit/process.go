@@ -2,19 +2,19 @@ package ratelimit
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
-	"encoding/json"
 
-	redisv9 "github.com/redis/go-redis/v9"
 	"github.com/google/uuid"
+	redisv9 "github.com/redis/go-redis/v9"
 	// "github.com/go-redis/redis_rate/v10"
 
-	"github.com/japannext/snooze/pkg/models"
-	"github.com/japannext/snooze/pkg/common/redis"
 	"github.com/japannext/snooze/pkg/common/opensearch/format"
+	"github.com/japannext/snooze/pkg/common/redis"
 	"github.com/japannext/snooze/pkg/common/tracing"
 	"github.com/japannext/snooze/pkg/common/utils"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 // This object is used to represent all variables needed
@@ -29,10 +29,10 @@ type result struct {
 
 // Used to represent a counter used for rate limiting
 type counter struct {
-	key string
-	cmd *redisv9.StringCmd
-	value uint64
-	hash string
+	key    string
+	cmd    *redisv9.StringCmd
+	value  uint64
+	hash   string
 	fields map[string]string
 }
 
@@ -57,7 +57,6 @@ func (c *counter) extract() error {
 	c.value = value
 	return nil
 }
-
 
 func Process(ctx context.Context, item *models.Log) error {
 	ctx, span := tracer.Start(ctx, "ratelimit")
@@ -95,18 +94,18 @@ func Process(ctx context.Context, item *models.Log) error {
 		fields := group.Labels
 
 		res.i0 = counter{
-			key: fmt.Sprintf("ratelimits/%s:%s/period:%d", rate.Name, hash, period),
-			hash: hash,
+			key:    fmt.Sprintf("ratelimits/%s:%s/period:%d", rate.Name, hash, period),
+			hash:   hash,
 			fields: fields,
 		}
 		res.i1 = counter{
-			key: fmt.Sprintf("ratelimits/%s:%s/period:%d", rate.Name, hash, period-1),
-			hash: hash,
+			key:    fmt.Sprintf("ratelimits/%s:%s/period:%d", rate.Name, hash, period-1),
+			hash:   hash,
 			fields: fields,
 		}
 		res.i2 = counter{
-			key: fmt.Sprintf("ratelimits/%s:%s/period:%d", rate.Name, hash, period-2),
-			hash: hash,
+			key:    fmt.Sprintf("ratelimits/%s:%s/period:%d", rate.Name, hash, period-2),
+			hash:   hash,
 			fields: fields,
 		}
 		res.lock = lock{
@@ -173,13 +172,13 @@ func Process(ctx context.Context, item *models.Log) error {
 		if i0.value >= limit || id == "" {
 			item := &models.Ratelimit{
 				StartsAt: now(),
-				Rule: rate.Name,
-				Hash: i0.hash,
-				Fields: i0.fields,
+				Rule:     rate.Name,
+				Hash:     i0.hash,
+				Fields:   i0.fields,
 			}
 			err := storeQ.PublishData(ctx, &format.Create{
 				Index: models.RATELIMIT_INDEX,
-				Item: item,
+				Item:  item,
 			})
 			if err != nil {
 				log.Warnf("failed to publish ratelimit '%s'", rate.Name)
@@ -200,8 +199,8 @@ func Process(ctx context.Context, item *models.Log) error {
 			}
 			err = storeQ.PublishData(ctx, &format.Update{
 				Index: models.RATELIMIT_INDEX,
-				ID: id,
-				Doc: data,
+				ID:    id,
+				Doc:   data,
 			})
 			if err != nil {
 				log.Warnf("failed to update ratelimit '%s'", rate.Name)

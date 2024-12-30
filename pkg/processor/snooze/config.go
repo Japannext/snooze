@@ -16,6 +16,6 @@ type SnoozeGroup struct {
 
 	internal struct {
 		condition *lang.Condition
-		fields []*lang.Field
+		fields    []*lang.Field
 	}
 }

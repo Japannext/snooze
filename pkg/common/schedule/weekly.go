@@ -169,4 +169,3 @@ func (wt *Weektime) InBetween(wa, wb *Weektime) bool {
 
 	return false
 }
-

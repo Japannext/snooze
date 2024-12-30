@@ -7,17 +7,17 @@ import (
 )
 
 type Update struct {
-	Index string
-	ID string
-	Doc interface{}
-	Upsert interface{}
+	Index       string
+	ID          string
+	Doc         interface{}
+	Upsert      interface{}
 	DocAsUpsert bool
 }
 
 type updateWrapper struct {
-	Doc json.RawMessage `json:"doc,omitempty"`
-	DocAsUpsert bool `json:"doc_as_upsert,omitempty"`
-	Upsert *json.RawMessage `json:"upsert,omitempty"`
+	Doc         json.RawMessage  `json:"doc,omitempty"`
+	DocAsUpsert bool             `json:"doc_as_upsert,omitempty"`
+	Upsert      *json.RawMessage `json:"upsert,omitempty"`
 }
 
 func (a *Update) Serialize() ([]byte, error) {
@@ -31,7 +31,6 @@ func (a *Update) Serialize() ([]byte, error) {
 	}
 	buf.Write(headerData)
 	buf.WriteString("\n")
-
 
 	w := &updateWrapper{
 		DocAsUpsert: a.DocAsUpsert,
@@ -61,4 +60,3 @@ func (a *Update) Serialize() ([]byte, error) {
 
 	return buf.Bytes(), nil
 }
-

@@ -8,9 +8,9 @@ import (
 
 	redisv9 "github.com/redis/go-redis/v9"
 
-	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/common/redis"
 	"github.com/japannext/snooze/pkg/common/tracing"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 func Process(ctx context.Context, item *models.Log) error {

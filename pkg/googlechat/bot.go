@@ -7,10 +7,10 @@ import (
 	"context"
 	"encoding/json"
 
-	log "github.com/sirupsen/logrus"
 	"cloud.google.com/go/pubsub"
-	"google.golang.org/api/option"
+	log "github.com/sirupsen/logrus"
 	chat "google.golang.org/api/chat/v1"
+	"google.golang.org/api/option"
 )
 
 type Bot struct {

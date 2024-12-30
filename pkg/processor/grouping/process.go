@@ -5,15 +5,15 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	redisv9 "github.com/redis/go-redis/v9"
+	"github.com/sirupsen/logrus"
 
-	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/common/lang"
 	"github.com/japannext/snooze/pkg/common/opensearch/format"
 	"github.com/japannext/snooze/pkg/common/redis"
-	"github.com/japannext/snooze/pkg/common/utils"
 	"github.com/japannext/snooze/pkg/common/tracing"
+	"github.com/japannext/snooze/pkg/common/utils"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 var expiration = time.Duration(6) * time.Hour
@@ -50,17 +50,17 @@ func Process(ctx context.Context, item *models.Log) error {
 
 		} else if group.GroupByMap != "" {
 			switch group.GroupByMap {
-				case "source":
-					gr.Labels["source.kind"] = item.Source.Kind
-					gr.Labels["source.name"] = item.Source.Name
-				case "identity":
-					for k, v := range item.Identity {
-						gr.Labels[fmt.Sprintf("identity.%s", k)] = v
-					}
-				case "gr.Labels":
-					for k, v := range item.Labels {
-						gr.Labels[fmt.Sprintf("gr.Labels.%s", k)] = v
-					}
+			case "source":
+				gr.Labels["source.kind"] = item.Source.Kind
+				gr.Labels["source.name"] = item.Source.Name
+			case "identity":
+				for k, v := range item.Identity {
+					gr.Labels[fmt.Sprintf("identity.%s", k)] = v
+				}
+			case "gr.Labels":
+				for k, v := range item.Labels {
+					gr.Labels[fmt.Sprintf("gr.Labels.%s", k)] = v
+				}
 			}
 
 		}
@@ -91,9 +91,9 @@ func Process(ctx context.Context, item *models.Log) error {
 		}
 
 		err := storeQ.PublishData(ctx, &format.Update{
-			Index: models.GROUP_INDEX,
-			ID: fmt.Sprintf("%s.%s", gr.Name, gr.Hash),
-			Doc: gr,
+			Index:       models.GROUP_INDEX,
+			ID:          fmt.Sprintf("%s.%s", gr.Name, gr.Hash),
+			Doc:         gr,
 			DocAsUpsert: true,
 		})
 		if err != nil {

@@ -1,12 +1,12 @@
 package opensearch
 
 import (
-    "context"
-    "encoding/json"
-    "fmt"
+	"context"
+	"encoding/json"
+	"fmt"
 	"strings"
 
-    "github.com/opensearch-project/opensearch-go/v4/opensearchapi"
+	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
 
 	"github.com/japannext/snooze/pkg/common/opensearch/dsl"
 )
@@ -16,8 +16,8 @@ type Mappings struct {
 }
 
 type Mapping struct {
-	Type string `json:"type"`
-	Fields *Fields `json:"fields"`
+	Type       string             `json:"type"`
+	Fields     *Fields            `json:"fields"`
 	Properties map[string]Mapping `json:"properties"`
 }
 
@@ -26,8 +26,8 @@ type Fields struct {
 }
 
 type Keyword struct {
-	Type string `json:"type"`
-	IgnoreAbove int `json:"ignore_above"`
+	Type        string `json:"type"`
+	IgnoreAbove int    `json:"ignore_above"`
 }
 
 // Do a search on all fields prefixed with the prefix.

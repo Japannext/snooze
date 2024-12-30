@@ -58,11 +58,11 @@ func getLogs(c *gin.Context) {
 	}
 
 	items, err := opensearch.Search[*models.Log](ctx, req)
-    if err != nil {
-        c.String(http.StatusInternalServerError, "Error getting log: %s", err)
-        return
-    }
+	if err != nil {
+		c.String(http.StatusInternalServerError, "Error getting log: %s", err)
+		return
+	}
 
-    c.JSON(http.StatusOK, items)
+	c.JSON(http.StatusOK, items)
 	logSearchDuration.Observe(time.Since(start).Seconds())
 }

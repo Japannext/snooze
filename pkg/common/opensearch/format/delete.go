@@ -7,7 +7,7 @@ import (
 
 type Delete struct {
 	Index string
-	ID string
+	ID    string
 }
 
 func (a *Delete) Serialize() ([]byte, error) {

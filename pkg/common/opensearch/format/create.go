@@ -8,7 +8,7 @@ import (
 
 type Create struct {
 	Index string
-	Item interface{}
+	Item  interface{}
 }
 
 func (a *Create) Serialize() ([]byte, error) {

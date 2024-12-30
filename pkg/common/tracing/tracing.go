@@ -3,8 +3,8 @@ package tracing
 import (
 	"context"
 	"fmt"
-	"time"
 	"net/http"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 
@@ -13,9 +13,9 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/sdk/resource"
+	tracesdk "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/semconv/v1.26.0"
 	"go.opentelemetry.io/otel/trace"
-	tracesdk "go.opentelemetry.io/otel/sdk/trace"
 
 	"github.com/japannext/snooze/pkg/models"
 )
@@ -39,42 +39,42 @@ func NewTracerProvider(serviceName string) trace.TracerProvider {
 
 func SetString(span trace.Span, key, value string) {
 	span.SetAttributes(attribute.KeyValue{
-		Key: attribute.Key(key),
+		Key:   attribute.Key(key),
 		Value: attribute.StringValue(value),
 	})
 }
 
 func SetInt(span trace.Span, key string, value int) {
 	span.SetAttributes(attribute.KeyValue{
-		Key: attribute.Key(key),
+		Key:   attribute.Key(key),
 		Value: attribute.IntValue(value),
 	})
 }
 
 func SetInt64(span trace.Span, key string, value int64) {
 	span.SetAttributes(attribute.KeyValue{
-		Key: attribute.Key(key),
+		Key:   attribute.Key(key),
 		Value: attribute.Int64Value(value),
 	})
 }
 
 func SetFloat64(span trace.Span, key string, value float64) {
 	span.SetAttributes(attribute.KeyValue{
-		Key: attribute.Key(key),
+		Key:   attribute.Key(key),
 		Value: attribute.Float64Value(value),
 	})
 }
 
 func SetBool(span trace.Span, key string, value bool) {
 	span.SetAttributes(attribute.KeyValue{
-		Key: attribute.Key(key),
+		Key:   attribute.Key(key),
 		Value: attribute.BoolValue(value),
 	})
 }
 
 func SetTime(span trace.Span, key string, value time.Time) {
 	span.SetAttributes(attribute.KeyValue{
-		Key: attribute.Key(key),
+		Key:   attribute.Key(key),
 		Value: attribute.StringValue(value.Format(time.RFC3339)),
 	})
 }

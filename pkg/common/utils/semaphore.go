@@ -5,7 +5,7 @@ import (
 )
 
 type Semaphore struct {
-	mu sync.Mutex
+	mu  sync.Mutex
 	cur int64
 	max int64
 }
@@ -49,7 +49,7 @@ func (sem *Semaphore) WaitForFree() <-chan struct{} {
 	ch := make(chan struct{})
 	go func() {
 		for {
-			
+
 		}
 	}()
 	return ch

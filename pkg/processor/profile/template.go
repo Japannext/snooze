@@ -1,10 +1,10 @@
 package profile
 
 import (
-    "bytes"
+	"bytes"
 	"fmt"
 
-    "text/template"
+	"text/template"
 
 	"github.com/japannext/snooze/pkg/models"
 )
@@ -36,17 +36,17 @@ func NewTemplateMap(rawMap map[string]string) (map[string]Template, error) {
 func (t *Template) Execute(item *models.Log, capture map[string]string) (string, error) {
 	data := map[string]interface{}{
 		"actualTime": item.ActualTime,
-		"labels": item.Labels,
-		"identity": item.Identity,
-		"message": item.Message,
+		"labels":     item.Labels,
+		"identity":   item.Identity,
+		"message":    item.Message,
 	}
 	if len(capture) > 0 {
 		data["capture"] = capture
 	}
 	var buf bytes.Buffer
 	err := t.template.Execute(&buf, data)
-    if err != nil {
-        return "", err
-    }
-    return buf.String(), nil
+	if err != nil {
+		return "", err
+	}
+	return buf.String(), nil
 }

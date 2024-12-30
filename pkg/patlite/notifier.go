@@ -5,23 +5,23 @@ import (
 	"encoding/json"
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/nats-io/nats.go/jetstream"
+	log "github.com/sirupsen/logrus"
 
-	pl "github.com/japannext/snooze/pkg/common/patlite"
-	"github.com/japannext/snooze/pkg/models"
-	"github.com/japannext/snooze/pkg/common/tracing"
 	"github.com/japannext/snooze/pkg/common/opensearch/format"
+	pl "github.com/japannext/snooze/pkg/common/patlite"
+	"github.com/japannext/snooze/pkg/common/tracing"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 func notificationHandler(ctx context.Context, msg jetstream.Msg) error {
 	ctx, span := tracer.Start(ctx, "handler")
 	defer span.End()
 
-    var notification *models.Notification
-    if err := json.Unmarshal(msg.Data(), &notification); err != nil {
-        return err
-    }
+	var notification *models.Notification
+	if err := json.Unmarshal(msg.Data(), &notification); err != nil {
+		return err
+	}
 	profileName := notification.Destination.Profile
 	profile, found := profiles[profileName]
 	if !found {
@@ -39,7 +39,7 @@ func notificationHandler(ctx context.Context, msg jetstream.Msg) error {
 	notification.NotificationTime = models.TimeNow()
 	err = storeQ.PublishData(ctx, &format.Create{
 		Index: models.NOTIFICATION_INDEX,
-		Item: notification,
+		Item:  notification,
 	})
 	if err != nil {
 		log.Warnf("failed to publish notification")

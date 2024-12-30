@@ -3,19 +3,19 @@ package transform
 import (
 	"context"
 
-	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/common/lang"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 type SetAction struct {
 	Identity map[string]string `yaml:"identity" json:"identity,omitempty"`
-	Labels map[string]string `yaml:"labels" json:"labels,omitempty"`
-	Message string `yaml:"message" json:"message,omitempty"`
+	Labels   map[string]string `yaml:"labels" json:"labels,omitempty"`
+	Message  string            `yaml:"message" json:"message,omitempty"`
 
 	internal struct {
 		identity map[string]*lang.Template
-		labels map[string]*lang.Template
-		message *lang.Template
+		labels   map[string]*lang.Template
+		message  *lang.Template
 	}
 }
 

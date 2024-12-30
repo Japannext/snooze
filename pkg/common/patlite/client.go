@@ -11,7 +11,7 @@ type Client struct {
 
 func NewClient(host string, port int) (*Client, error) {
 	addr := fmt.Sprintf("%s:%d", host, port)
-	conn, err := net.Dial("tcp", addr, )
+	conn, err := net.Dial("tcp", addr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to patlite at %s: %s", addr, err)
 	}
@@ -46,13 +46,13 @@ func (client *Client) SetState(state State) error {
 	if len(resp) == 0 {
 		return fmt.Errorf("empty response")
 	}
-	switch(resp[0]) {
-		case ACK:
-			return nil
-		case NACK:
-			return fmt.Errorf("patlite returned NACK")
-		default:
-			return fmt.Errorf("unknown response '%s'", resp)
+	switch resp[0] {
+	case ACK:
+		return nil
+	case NACK:
+		return fmt.Errorf("patlite returned NACK")
+	default:
+		return fmt.Errorf("unknown response '%s'", resp)
 	}
 }
 

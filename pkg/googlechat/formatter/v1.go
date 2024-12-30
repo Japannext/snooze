@@ -9,7 +9,7 @@ import (
 	"github.com/japannext/snooze/pkg/models"
 )
 
-type V1 struct {}
+type V1 struct{}
 
 func NewV1() *V1 {
 	return &V1{}

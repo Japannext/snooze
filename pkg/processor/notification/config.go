@@ -1,13 +1,13 @@
 package notification
 
 import (
-	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/common/lang"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 type Notification struct {
-	Name string	`yaml:"name" json:"name"`
-	If string `yaml:"if" json:"if,omitempty"`
+	Name         string               `yaml:"name" json:"name"`
+	If           string               `yaml:"if" json:"if,omitempty"`
 	Destinations []models.Destination `yaml:"destinations" json:"destinations"`
 
 	internal struct {

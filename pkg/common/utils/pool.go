@@ -5,16 +5,16 @@ import (
 )
 
 type Pool struct {
-	busy chan struct{}
-	max int
+	busy  chan struct{}
+	max   int
 	ready *sync.Cond
 }
 
 func NewPool(max int) *Pool {
 	mu := sync.Mutex{}
 	pool := &Pool{
-		max: max,
-		busy: make(chan struct{}, max),
+		max:   max,
+		busy:  make(chan struct{}, max),
 		ready: sync.NewCond(&mu),
 	}
 	return pool
@@ -33,7 +33,7 @@ func (pool *Pool) TryAcquire() bool {
 	pool.ready.L.Lock()
 	defer pool.ready.L.Unlock()
 	select {
-	case pool.busy <-struct{}{}:
+	case pool.busy <- struct{}{}:
 		return true
 	default:
 		return false

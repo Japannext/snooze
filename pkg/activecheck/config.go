@@ -4,10 +4,10 @@ import (
 	"net"
 	"os"
 
+	"github.com/go-playground/validator/v10"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
-	"github.com/go-playground/validator/v10"
 )
 
 var config *Config
@@ -15,9 +15,9 @@ var checks = map[string]Check{}
 
 type Config struct {
 	CallbackAddress string `mapstructure:"CALLBACK_ADDRESS"`
-	CallbackPort int `mapstructure:"CALLBACK_PORT"`
-	SyslogAddress string `mapstructure:"SYSLOG_ADDRESS"`
-	SyslogPort int `mapstructure:"SYSLOG_PORT"`
+	CallbackPort    int    `mapstructure:"CALLBACK_PORT"`
+	SyslogAddress   string `mapstructure:"SYSLOG_ADDRESS"`
+	SyslogPort      int    `mapstructure:"SYSLOG_PORT"`
 	CheckConfigPath string `mapstructure:"CHECK_CONFIG_PATH"`
 }
 

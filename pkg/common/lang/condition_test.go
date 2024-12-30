@@ -12,7 +12,7 @@ func TestCondition(t *testing.T) {
 
 	tests := []struct {
 		Raw         string
-		Log       *models.Log
+		Log         *models.Log
 		ExpectMatch bool
 	}{
 		{

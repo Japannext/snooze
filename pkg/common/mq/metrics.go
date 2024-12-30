@@ -6,7 +6,7 @@ import (
 
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
-    "github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 const X_SNOOZE_PUBLISHED_TIME = "X-Snooze-Published-Time"
@@ -14,8 +14,8 @@ const X_SNOOZE_PUBLISHED_TIME = "X-Snooze-Published-Time"
 var (
 	inQueue = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: "snooze",
-		Name: "mq_inqueue",
-		Help: "time spent in-queue",
+		Name:      "mq_inqueue",
+		Help:      "time spent in-queue",
 	}, []string{"stream_name"})
 )
 

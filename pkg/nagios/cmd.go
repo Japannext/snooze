@@ -3,14 +3,14 @@ package nagios
 import (
 	"net/url"
 
-    "github.com/spf13/cobra"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 )
 
 var Cmd = &cobra.Command{
-    Use:   "nagios",
-    Short: "Send a nagios/icinga notification to snooze",
-    Long:  "Send a nagios/icinga notification to snooze",
+	Use:   "nagios",
+	Short: "Send a nagios/icinga notification to snooze",
+	Long:  "Send a nagios/icinga notification to snooze",
 }
 
 var (

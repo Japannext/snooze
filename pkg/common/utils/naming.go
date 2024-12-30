@@ -5,7 +5,7 @@ import (
 )
 
 type NameValidator struct {
-	mapper map[string]bool
+	mapper   map[string]bool
 	notEmpty bool
 }
 

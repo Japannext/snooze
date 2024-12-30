@@ -5,8 +5,8 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/common/lang"
+	"github.com/japannext/snooze/pkg/models"
 )
 
 type ExtraLabels struct {
@@ -27,14 +27,14 @@ func (tr *ExtraLabels) Load() error {
 }
 
 func (tr *ExtraLabels) Transform(ctx context.Context, item *models.Log) error {
-    for label, tpl := range tr.internal.templates {
-        value, err := tpl.Execute(ctx, item)
-        if err != nil {
-            log.Warnf("failed to execute template `%s`", tr.ExtraLabels[label])
-            return err
-        }
-        log.Debugf("Adding extra label: %s=%s", label, value)
-        item.Labels[label] = value
-    }
+	for label, tpl := range tr.internal.templates {
+		value, err := tpl.Execute(ctx, item)
+		if err != nil {
+			log.Warnf("failed to execute template `%s`", tr.ExtraLabels[label])
+			return err
+		}
+		log.Debugf("Adding extra label: %s=%s", label, value)
+		item.Labels[label] = value
+	}
 	return nil
 }

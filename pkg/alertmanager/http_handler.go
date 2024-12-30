@@ -2,9 +2,9 @@ package alertmanager
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"net/http"
-	"encoding/json"
 
 	"github.com/gin-gonic/gin"
 )
@@ -14,11 +14,11 @@ type PostableAlerts struct {
 }
 
 type PostableAlert struct {
-	StartsAt string `json:"startsAt"`
-	EndsAt string `json:"endsAt"`
-	GeneratorURL string `json:"generatorURL"`
-	Labels map[string]string `json:"labels"`
-	Annotations map[string]string `json:"annotations"`
+	StartsAt     string            `json:"startsAt"`
+	EndsAt       string            `json:"endsAt"`
+	GeneratorURL string            `json:"generatorURL"`
+	Labels       map[string]string `json:"labels"`
+	Annotations  map[string]string `json:"annotations"`
 }
 
 func postAlert(c *gin.Context) {

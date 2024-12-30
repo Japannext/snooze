@@ -1,8 +1,8 @@
 package models
 
 type Escalation struct {
-	LogID string
+	LogID   string
 	AlertID string
-	Team string
+	Team    string
 	Message string
 }

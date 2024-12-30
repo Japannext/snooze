@@ -5,8 +5,8 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/japannext/snooze/pkg/common/mq"
 	"github.com/japannext/snooze/pkg/apiserver/auth"
+	"github.com/japannext/snooze/pkg/common/mq"
 )
 
 var storeQ *mq.Pub

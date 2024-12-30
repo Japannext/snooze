@@ -30,7 +30,7 @@ func keyfunc(token *jwt.Token) (any, error) {
 }
 
 // Verify the token and extract the claims object
-func Verify(tokenString string, ) (*Claims, error) {
+func Verify(tokenString string) (*Claims, error) {
 	claims := &Claims{}
 	opts := []jwt.ParserOption{
 		jwt.WithExpirationRequired(),

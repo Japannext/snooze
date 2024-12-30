@@ -3,8 +3,8 @@ package config
 import (
 	"net/url"
 
-	"github.com/spf13/viper"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 
 	"github.com/japannext/snooze/pkg/common/utils"
 )

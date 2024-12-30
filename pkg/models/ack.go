@@ -6,8 +6,8 @@ const ACK_INDEX = "v2-ack"
 // group of logs.
 type Ack struct {
 	Base
-	Time Time `json:"timestamp"`
-	Username string `json:"username"`
-	Reason string `json:"reason"`
-	LogIDs []string `json:"logIDs"`
+	Time     Time     `json:"timestamp"`
+	Username string   `json:"username"`
+	Reason   string   `json:"reason"`
+	LogIDs   []string `json:"logIDs"`
 }

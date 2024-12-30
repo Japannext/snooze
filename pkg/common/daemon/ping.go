@@ -1,6 +1,6 @@
 package daemon
 
-type Ping struct {}
+type Ping struct{}
 
 func (ping *Ping) Pass() error {
 	return nil

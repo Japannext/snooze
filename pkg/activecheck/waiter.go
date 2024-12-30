@@ -1,9 +1,9 @@
 package activecheck
 
 import (
-	"time"
-	"sync"
 	"fmt"
+	"sync"
+	"time"
 
 	"github.com/japannext/snooze/pkg/models"
 )
@@ -13,7 +13,7 @@ import (
 
 type Waiter struct {
 	mu sync.Mutex
-	m map[string](chan models.SourceActiveCheck)
+	m  map[string](chan models.SourceActiveCheck)
 }
 
 func NewWaiter() *Waiter {

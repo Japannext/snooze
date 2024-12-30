@@ -12,10 +12,10 @@ import (
 )
 
 type IndexReq struct {
-	Index string
-	ID string
+	Index  string
+	ID     string
 	Params opensearchapi.IndexParams
-	Item models.HasID
+	Item   models.HasID
 }
 
 func Index(ctx context.Context, req *IndexReq) error {
@@ -25,10 +25,10 @@ func Index(ctx context.Context, req *IndexReq) error {
 	}
 
 	resp, err := client.Index(ctx, opensearchapi.IndexReq{
-		Index: req.Index,
+		Index:      req.Index,
 		DocumentID: req.ID,
-		Params: req.Params,
-		Body: bytes.NewReader(body),
+		Params:     req.Params,
+		Body:       bytes.NewReader(body),
 	})
 	if err != nil {
 		return fmt.Errorf("error indexing document to '%s': %s", req.Index, err)

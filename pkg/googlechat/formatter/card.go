@@ -9,7 +9,7 @@ import (
 )
 
 // Format things within a googlechat CardV2
-type Card struct {}
+type Card struct{}
 
 func NewCard() *Card {
 	return &Card{}
@@ -20,18 +20,18 @@ func (p *Card) Format(item *models.Notification) (*chat.Message, error) {
 
 	footer := &chat.GoogleAppsCardV1CardFixedFooter{
 		PrimaryButton: &chat.GoogleAppsCardV1Button{
-			Text: "Acknowledge",
+			Text:    "Acknowledge",
 			AltText: "Acknowledge this notification",
-			Color: &chat.Color{Green: 0.8},
-			Icon: materialIcon("check"),
+			Color:   &chat.Color{Green: 0.8},
+			Icon:    materialIcon("check"),
 		},
 		SecondaryButton: &chat.GoogleAppsCardV1Button{
-			Text: "Snooze",
+			Text:    "Snooze",
 			AltText: "Open the snooze dialog",
 			OnClick: &chat.GoogleAppsCardV1OnClick{
 				Action: &chat.GoogleAppsCardV1Action{
 					Interaction: "OPEN_DIALOG",
-					Function: "",
+					Function:    "",
 				},
 			},
 		},
@@ -87,9 +87,9 @@ func getDecoratedText(item *models.Notification) *chat.GoogleAppsCardV1Decorated
 	icon, top, mid, bottom := getIdentityLabels(item.Identity)
 
 	return &chat.GoogleAppsCardV1DecoratedText{
-		Icon: materialIcon(icon),
-		TopLabel: top,
-		Text: mid,
+		Icon:        materialIcon(icon),
+		TopLabel:    top,
+		Text:        mid,
 		BottomLabel: bottom,
 	}
 }
@@ -97,4 +97,3 @@ func getDecoratedText(item *models.Notification) *chat.GoogleAppsCardV1Decorated
 func materialIcon(name string) *chat.GoogleAppsCardV1Icon {
 	return &chat.GoogleAppsCardV1Icon{MaterialIcon: &chat.GoogleAppsCardV1MaterialIcon{Name: name}}
 }
-

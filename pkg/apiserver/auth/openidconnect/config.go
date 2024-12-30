@@ -4,23 +4,23 @@ import (
 	"context"
 
 	"github.com/coreos/go-oidc/v3/oidc"
-	"golang.org/x/oauth2"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/oauth2"
 
 	"github.com/japannext/snooze/pkg/apiserver/config"
 )
 
 var (
-	oidcConfig *config.OidcConfig
-	provider *oidc.Provider
-	verifier *oidc.IDTokenVerifier
+	oidcConfig   *config.OidcConfig
+	provider     *oidc.Provider
+	verifier     *oidc.IDTokenVerifier
 	oauth2Config *oauth2.Config
 	cookieDomain string
 
 	usernameField string
-	emailField string
+	emailField    string
 	fullnameField string
-	rolesField string
+	rolesField    string
 )
 
 func initConfig() {
@@ -34,11 +34,11 @@ func initConfig() {
 	}
 
 	oauth2Config = &oauth2.Config{
-		ClientID: oidcConfig.ClientID,
+		ClientID:     oidcConfig.ClientID,
 		ClientSecret: oidcConfig.ClientSecret,
-		RedirectURL: oidcConfig.CallbackURL,
-		Endpoint: provider.Endpoint(),
-		Scopes: oidcConfig.Scopes,
+		RedirectURL:  oidcConfig.CallbackURL,
+		Endpoint:     provider.Endpoint(),
+		Scopes:       oidcConfig.Scopes,
 	}
 	verifier = provider.Verifier(&oidc.Config{ClientID: oidcConfig.ClientID})
 

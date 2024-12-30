@@ -1,16 +1,16 @@
 package processor
 
 import (
+	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
-	"github.com/gin-gonic/gin"
 
 	"github.com/japannext/snooze/pkg/common/daemon"
 	"github.com/japannext/snooze/pkg/common/logging"
 	"github.com/japannext/snooze/pkg/common/mq"
 	"github.com/japannext/snooze/pkg/common/redis"
-	"github.com/japannext/snooze/pkg/common/utils"
 	"github.com/japannext/snooze/pkg/common/tracing"
+	"github.com/japannext/snooze/pkg/common/utils"
 	// Sub-Processors
 	"github.com/japannext/snooze/pkg/processor/grouping"
 	"github.com/japannext/snooze/pkg/processor/mapping"

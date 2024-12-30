@@ -7,8 +7,8 @@ import (
 	"fmt"
 	gomail "gopkg.in/mail.v2"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/nats-io/nats.go/jetstream"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/japannext/snooze/pkg/models"
 )

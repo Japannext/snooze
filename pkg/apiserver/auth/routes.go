@@ -3,9 +3,9 @@ package auth
 import (
 	"net/http"
 
+	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
-	"github.com/gin-gonic/gin"
 
 	"github.com/japannext/snooze/pkg/apiserver/auth/openidconnect"
 	"github.com/japannext/snooze/pkg/apiserver/config"

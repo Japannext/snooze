@@ -54,39 +54,39 @@ type Log struct {
 // Used by template systems in transforms/profiles/etc
 func (item *Log) Context() map[string]interface{} {
 	return map[string]interface{}{
-		"source": map[string]string{"kind": item.Source.Kind, "name": item.Source.Name},
+		"source":   map[string]string{"kind": item.Source.Kind, "name": item.Source.Name},
 		"identity": item.Identity,
-		"labels": item.Labels,
-		"message": item.Message,
+		"labels":   item.Labels,
+		"message":  item.Message,
 	}
 }
 
 func init() {
 	index := IndexTemplate{
-		Version: 3,
+		Version:       3,
 		IndexPatterns: []string{LOG_INDEX},
-		DataStream: map[string]map[string]string{"timestamp_field": {"name": "displayTime"}},
+		DataStream:    map[string]map[string]string{"timestamp_field": {"name": "displayTime"}},
 		Template: Indice{
 			Settings: IndexSettings{1, 2},
 			Mappings: IndexMapping{
 				Properties: map[string]MappingProps{
-					"displayTime": {Type: "date", Format: "epoch_millis"},
-					"actualTime": {Type: "date", Format: "epoch_millis"},
-					"observedTime": {Type: "date", Format: "epoch_millis"},
-					"groups.name": {Type: "keyword"},
-					"groups.labels": {Type: "object"},
-					"groups.hash": {Type: "keyword"},
-					"source.kind": {Type: "keyword"},
-					"source.name": {Type: "keyword"},
-					"identity": {Type: "object"},
-					"profile": {Type: "keyword"},
-					"pattern": {Type: "keyword"},
-					"labels":      {Type: "object"},
-					"message":        {Type: "text"},
+					"displayTime":             {Type: "date", Format: "epoch_millis"},
+					"actualTime":              {Type: "date", Format: "epoch_millis"},
+					"observedTime":            {Type: "date", Format: "epoch_millis"},
+					"groups.name":             {Type: "keyword"},
+					"groups.labels":           {Type: "object"},
+					"groups.hash":             {Type: "keyword"},
+					"source.kind":             {Type: "keyword"},
+					"source.name":             {Type: "keyword"},
+					"identity":                {Type: "object"},
+					"profile":                 {Type: "keyword"},
+					"pattern":                 {Type: "keyword"},
+					"labels":                  {Type: "object"},
+					"message":                 {Type: "text"},
 					"status.skipNotification": {Type: "boolean"},
-					"status.skipStorage": {Type: "boolean"},
-					"status.reason": {Type: "text"},
-					"status.kind": {Type: "keyword"},
+					"status.skipStorage":      {Type: "boolean"},
+					"status.reason":           {Type: "text"},
+					"status.kind":             {Type: "keyword"},
 				},
 			},
 		},

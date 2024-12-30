@@ -1,8 +1,8 @@
 package activecheck
 
 import (
-	"context"
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -30,7 +30,7 @@ func Process(ctx context.Context, item *models.Log) error {
 		log.Warnf("failed to marshal response: %s", err)
 		return err
 	}
-	client := http.Client{Timeout: 1*time.Second}
+	client := http.Client{Timeout: 1 * time.Second}
 	if _, err := client.Post(url, "application/json", bytes.NewBuffer(data)); err != nil {
 		log.Warnf("active check failed to be sent back to %s: %s", url, err)
 	}
