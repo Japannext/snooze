@@ -30,9 +30,9 @@ func login(c *gin.Context) {
 		c.String(http.StatusInternalServerError, "Error getting a random string for pkce: %s", err)
 	}
 
-	c.SetCookie("state", state, 3600, "/", cookieDomain, true, true)
-	c.SetCookie("nonce", nonce, 3600, "/", cookieDomain, true, true)
-	c.SetCookie("verifier", verifier, 3600, "/", cookieDomain, true, true)
+	c.SetCookie("state", state, 30, "/", cookieDomain, true, true)
+	c.SetCookie("nonce", nonce, 30, "/", cookieDomain, true, true)
+	c.SetCookie("verifier", verifier, 30, "/", cookieDomain, true, true)
 
 	url := oauth2Config.AuthCodeURL(state, oidc.Nonce(nonce), oauth2.S256ChallengeOption(verifier))
 	c.Redirect(http.StatusTemporaryRedirect, url)

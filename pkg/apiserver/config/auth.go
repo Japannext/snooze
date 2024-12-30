@@ -11,6 +11,8 @@ import (
 
 type AuthConfig struct {
 	Oidc *OidcConfig `yaml:"oidc" json:"oidc"`
+	AdminRole string `yaml:"admin_role" json:"adminRole"`
+	UserRole string `yaml:"user_role" json:"userRole"`
 }
 
 type OidcConfig struct {
@@ -19,6 +21,10 @@ type OidcConfig struct {
 	ClientSecret string `yaml:"client_secret" json:"-"`
 	CallbackURL string `yaml:"callback_url" json:"callbackURL"`
 	Scopes []string `yaml:"scopes" json:"scopes"`
+	UsernameField string `yaml:"username_field" json:"usernameField"`
+	EmailField string `yaml:"email_field" json:"emailField"`
+	FullnameField string `yaml:"fullname_field" json:"fullnameField"`
+	RolesField string `yaml:"roles_field" json:"rolesField"`
 	TLSConfig *utils.TLSConfig
 
 	// Cosmetics
@@ -49,5 +55,27 @@ func initAuthConfig() {
 	}
 	if err := yaml.Unmarshal(data, &authConfig); err != nil {
 		log.Fatalf("failed to load config: %s", err)
+	}
+
+	// Defaults
+	if authConfig.Oidc != nil {
+		if authConfig.Oidc.UsernameField == "" {
+			authConfig.Oidc.UsernameField = "preferred_username"
+		}
+		if authConfig.Oidc.EmailField == "" {
+			authConfig.Oidc.EmailField = "email"
+		}
+		if authConfig.Oidc.FullnameField == "" {
+			authConfig.Oidc.FullnameField = "name"
+		}
+		if authConfig.Oidc.RolesField == "" {
+			authConfig.Oidc.RolesField = "groups"
+		}
+	}
+	if authConfig.AdminRole == "" {
+		authConfig.AdminRole = "admin"
+	}
+	if authConfig.UserRole == "" {
+		authConfig.UserRole = "user"
 	}
 }

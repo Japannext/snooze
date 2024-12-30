@@ -90,10 +90,11 @@ func Process(ctx context.Context, item *models.Log) error {
 			continue
 		}
 
-		err := storeQ.PublishData(ctx, &format.Index{
+		err := storeQ.PublishData(ctx, &format.Update{
 			Index: models.GROUP_INDEX,
-			ID: gr.ID,
-			Item: gr,
+			ID: fmt.Sprintf("%s.%s", gr.Name, gr.Hash),
+			Doc: gr,
+			DocAsUpsert: true,
 		})
 		if err != nil {
 			log.Warnf("failed to publish group: %+v", gr)

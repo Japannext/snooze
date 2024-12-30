@@ -11,7 +11,15 @@ const loading = useLoadingBar()
 const message = useMessage()
 const section = useRouteQuery("section", "overall")
 
-const processConfig = ref<ProcessConfig>({})
+const processConfig = ref<ProcessConfig>({
+  transforms: [],
+  groupings: [],
+  profiles: [],
+  silences: [],
+  ratelimits: [],
+  notifications: [],
+  defaultDestinations: [],
+})
 
 function refresh() {
   loading.start()

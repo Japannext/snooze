@@ -30,19 +30,22 @@ function redirect(providerName: string) {
 </script>
 
 <template>
-  <n-card v-if="authConfig" size="huge" title="Login">
-    <n-space vertical>
-      <n-button
-        v-if="authConfig.oidc"
-        :color="authConfig.oidc.color"
-        @click="redirect('oidc')"
-      >
-        <template #icon><n-icon :component="getIcon(authConfig.oidc.icon)" /></template>
-        {{ authConfig.oidc.displayName }}
-      </n-button>
-    </n-space>
-  </n-card>
-  <n-card v-else>
-    Could not get authConfig
-  </n-card>
+  <n-space vertical style="width: 100">
+    <img src="img/logo.png" :width="500" />
+    <n-card v-if="authConfig" size="huge" title="Login">
+      <n-space vertical>
+        <n-button
+          v-if="authConfig.oidc"
+          :color="authConfig.oidc.color"
+          @click="redirect('oidc')"
+        >
+          <template #icon><n-icon :component="getIcon(authConfig.oidc.icon)" /></template>
+          {{ authConfig.oidc.displayName }}
+        </n-button>
+      </n-space>
+    </n-card>
+    <n-card v-else>
+      Could not get authConfig
+    </n-card>
+  </n-space>
 </template>

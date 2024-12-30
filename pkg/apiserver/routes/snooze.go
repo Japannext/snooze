@@ -82,7 +82,13 @@ func postSnooze(c *gin.Context) {
 	defer span.End()
 
 	var item *models.Snooze
-	c.BindJSON(&item)
+	err := c.BindJSON(&item)
+	if err != nil {
+		c.String(http.StatusBadRequest, "error parsing snooze object: %s", err)
+		return
+	}
+
+	item.Username = c.GetString("username")
 
 	data, err := json.Marshal(item)
 	if err != nil {

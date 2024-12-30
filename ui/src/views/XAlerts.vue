@@ -5,9 +5,7 @@ import { usePagination } from '@/api'
 
 // Components
 import {NModal, NButton, NSpace, NIcon, NDataTable, NInputGroup, type DataTableColumn, type SelectOption, type RadioButtonProps } from 'naive-ui'
-import { XSearch, XFilter, XTimeRange, XTimestampTitle } from '@/components/interface'
-import { XAlertAttributes, XTime  } from '@/components/attributes'
-import { XAckModal } from '@/components/modal'
+import { XSearch, XFilter, XTimeRange, XTimestampTitle, XAlertAttributes, XTime, XModalAck } from '@/components'
 import { Refresh } from '@/icons'
 
 import { getAlerts, type GetAlertsParams, type Alert, type Filter } from '@/api'
@@ -26,10 +24,11 @@ const xTimerange = ref()
 const showAckModal = ref<boolean>(false)
 const showEscalateModal = ref<boolean>(false)
 
+const pagination = usePagination(refresh)
 const params = ref<GetAlertsParams>({
   search: "",
   filter: "active",
-  pagination: usePagination(refresh),
+  pagination: {},
   timerange: {},
 })
 
@@ -61,11 +60,15 @@ const columns: DataTableColumn<Alert>[] = [
 function refresh() {
   loading.start()
   params.value.timerange = xTimerange.value.getTime()
+  params.value.pagination = {
+    page: pagination.page,
+    pageSize: pagination.pageSize,
+  }
   getAlerts(params.value)
     .then((list) => {
       items.value = list.items
-      params.value.pagination.itemCount = list.total
-      params.value.pagination.setMore(list.more)
+      pagination.itemCount = list.total
+      pagination.setMore(list.more)
       loading.finish()
     })
     .catch((err) => {
@@ -109,7 +112,7 @@ function renderExpand(row: Alert) {
     </n-input-group>
     <n-input-group>
       <n-button type="primary" :disabled="selectedItems.length == 0" @click="showAckModal = true">Ack ({{ selectedItems.length }})</n-button>
-      <x-ack-modal v-model:show="showAckModal" :ids="selectedItems" @success="unselect" />
+      <x-modal-ack v-model:show="showAckModal" :ids="selectedItems" @success="unselect" />
 
       <n-button type="warning" :disabled="selectedItems.length == 0">Escalate ({{ selectedItems.length }})</n-button>
     </n-input-group>

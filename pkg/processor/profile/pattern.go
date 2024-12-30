@@ -15,6 +15,8 @@ import (
 type Pattern struct {
 	// Name of the pattern
 	Name string	`yaml:"name" json:"name"`
+	// Description of the pattern
+	Description string `yaml:"description" json:"description"`
 	// If present, the pattern will match a given regex
 	Regex string `yaml:"regex" json:"regex"`
 

@@ -18,7 +18,7 @@ tasks:
   build:
     desc: Build and see if the typescript works
     cmds:
-    - pnpm run build
+    - bun run build
 
   develop:
     desc: Deploy a temporary dev Docker image
@@ -28,6 +28,11 @@ tasks:
     preconditions:
     - sh: docker login {{ .REPO }} --get-login
       msg: "You need to login to docker with `docker login {{ .REPO }}`"
+
+  index:
+    desc: Update component index
+    cmds:
+    - find ./src/components/ -name \*.vue -printf '%f\n' | sort | sed "s#\(.*\).vue#export { default as \1 } from './\1.vue'#" > src/components/index.ts
 
   release:
     desc: Release the Docker image

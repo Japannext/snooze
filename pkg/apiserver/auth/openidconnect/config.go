@@ -16,6 +16,11 @@ var (
 	verifier *oidc.IDTokenVerifier
 	oauth2Config *oauth2.Config
 	cookieDomain string
+
+	usernameField string
+	emailField string
+	fullnameField string
+	rolesField string
 )
 
 func initConfig() {
@@ -36,4 +41,9 @@ func initConfig() {
 		Scopes: oidcConfig.Scopes,
 	}
 	verifier = provider.Verifier(&oidc.Config{ClientID: oidcConfig.ClientID})
+
+	usernameField = oidcConfig.UsernameField
+	emailField = oidcConfig.EmailField
+	fullnameField = oidcConfig.FullnameField
+	rolesField = oidcConfig.RolesField
 }

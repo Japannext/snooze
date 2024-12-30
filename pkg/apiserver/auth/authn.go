@@ -27,6 +27,9 @@ func Authenticate() func(*gin.Context) {
 			return
 		}
 
-		c.Set("claims", claims)
+		c.Set("username", claims.Username)
+		c.Set("fullname", claims.FullName)
+		c.Set("email", claims.Email)
+		c.Set("roles", claims.Roles)
 	}
 }

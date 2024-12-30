@@ -11,6 +11,7 @@ type Snooze struct {
 	StartAt Time `json:"startAt"`
 	ExpireAt Time `json:"expireAt"`
 	Cancelled *SnoozeCancel `json:"cancelled,omitempty"`
+	Username string `json:"username"`
 }
 
 type SnoozeCancel struct {
@@ -37,6 +38,8 @@ func init() {
 					"startAt": {Type: "date", Format: "epoch_millis"},
 					"expireAt": {Type: "date", Format: "epoch_millis"},
 					"tags.name": {Type: "keyword"},
+					"tags.color": {Type: "keyword"},
+					"tags.description": {Type: "text"},
 					"cancelled.at": {Type: "date", Format: "epoch_millis"},
 					"cancelled.by": {Type: "keyword"},
 					"cancelled.reason": {Type: "text"},

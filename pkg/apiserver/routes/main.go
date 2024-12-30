@@ -22,7 +22,7 @@ func Register(r *gin.Engine) {
 	rr.POST("/alert", postAlert)
 
 	// Authenticated
-	authn := rr.Group("/", auth.Authenticate())
+	authn := rr.Group("/", auth.Authenticate(), auth.UserAllowed())
 	{
 		// Ack
 		authn.GET("/acks", getAcks)

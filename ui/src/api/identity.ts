@@ -4,7 +4,7 @@ export type Identity =
 
 export type HostIdentity = {
   kind: "host"
-  hostname: string
+  host: string
   process?: string
 }
 

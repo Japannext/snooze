@@ -12,9 +12,11 @@ import (
 )
 
 var tracer trace.Tracer
+var authConfig *config.AuthConfig
 
 func RegisterRoutes(r *gin.Engine) {
 	tracer = otel.Tracer("snooze")
+	authConfig = config.Auth()
 
 	openidconnect.RegisterRoutes(r)
 	r.GET("/api/auth/config", getAuthConfig)

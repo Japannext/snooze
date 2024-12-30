@@ -1,10 +1,8 @@
-package googlechat
+package patlite
 
 import (
     "github.com/spf13/viper"
     log "github.com/sirupsen/logrus"
-
-    "github.com/japannext/snooze/pkg/common/utils"
 )
 
 var env *Env

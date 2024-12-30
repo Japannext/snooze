@@ -2,7 +2,7 @@
 
 // Components
 import { NLayout, NLayoutContent, NLayoutHeader, NLayoutFooter } from 'naive-ui'
-import { XHeader, XFooter } from '@/components/layout'
+import { XHeader, XFooter } from '@/components'
 
 </script>
 
@@ -34,6 +34,3 @@ import { XHeader, XFooter } from '@/components/layout'
     </n-layout-footer>
   </n-layout>
 </template>
-
-<style scoped>
-</style>

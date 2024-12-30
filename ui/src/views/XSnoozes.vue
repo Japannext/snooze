@@ -5,9 +5,7 @@ import { usePagination } from '@/api'
 
 // Components
 import { NIcon, NButton, NButtonGroup, NSpace, NDataTable, NInputGroup, type DataTableColumn, type SelectOption, type RadioButtonProps } from 'naive-ui'
-import { XSearch, XFilter, XTimeRange, XTimestampTitle } from '@/components/interface'
-import { XTime, XDuration, XTagList, XSnoozeTime } from '@/components/attributes'
-import { XNewSnoozeModal, XCancelSnoozeModal } from '@/components/modal'
+import { XSearch, XFilter, XTimeRange, XTimestampTitle, XTime, XDuration, XTagList, XSnoozeTime, XModalSnoozeCreate, XModalSnoozeCancel, XGroupList } from '@/components'
 import { Refresh, Add } from '@/icons'
 
 import { getSnoozes, type Snooze, type GetSnoozesParams, type Filter } from '@/api'
@@ -21,9 +19,10 @@ const message = useMessage()
 const showNewSnoozeModal = ref<boolean>(false)
 const showCancelSnoozeModal = ref<boolean>(false)
 
+const pagination = usePagination(refresh)
 const params = ref<GetSnoozesParams>({
   search: "",
-  pagination: usePagination(refresh),
+  pagination: {},
   filter: "active",
   timerange: {},
 })
@@ -40,15 +39,31 @@ const columns: DataTableColumn<Snooze>[] = [
   {type: 'selection'},
   {type: 'expand', renderExpand: renderExpand},
   {
-    key: 'time',
-    title: 'Time constraint',
-    render: renderSnoozeTime,
+    key: 'from',
+    title: 'From',
+    render: (row) => h(XTime, {ts: row.startAt, format: 'absolute'}),
+    width: 150,
+  },
+  {
+    key: 'to',
+    title: 'To',
+    render: (row) => h(XTime, {ts: row.expireAt, format: 'absolute'}),
+    width: 150,
+  },
+  {
+    key: 'groups',
+    title: 'Groups',
+    render: (row) => h(XGroupList, {groups: row.groups}),
   },
   {
     key: 'duration',
     title: 'Duration',
     render: (row) => h(XDuration, {duration: (row.expireAt - row.startAt)}),
     width: 150,
+  },
+  {
+    key: 'username',
+    title: 'Username',
   },
   {
     title: 'Tags',
@@ -66,11 +81,15 @@ function refresh() {
   console.log(`refresh()`)
   loading.start()
   params.value.timerange = xTimerange.value.getTime()
+  params.value.pagination = {
+    page: pagination.page,
+    pageSize: pagination.pageSize,
+  }
   getSnoozes(params.value)
     .then((list) => {
       items.value = list.items
-      params.value.pagination.itemCount = list.total
-      params.value.pagination.setMore(list.more)
+      pagination.itemCount = list.total
+      pagination.setMore(list.more)
       loading.finish()
     })
     .catch((err) => {
@@ -104,10 +123,7 @@ function reset() {
 }
 
 function renderTags(row: Snooze) {
-  const tags = row.tags.map(x => {
-    return {name: x, description: "", color: ""}
-  })
-  return h(XTagList, {tags: tags})
+  return h(XTagList, {tags: row.tags})
 }
 
 function renderExpand(row: Snooze) {
@@ -135,8 +151,8 @@ function renderExpand(row: Snooze) {
         </n-button>
       </n-button-group>
     </n-space>
-    <x-new-snooze-modal v-model:show="showNewSnoozeModal" @success="refreshWithDelay" />
-    <x-cancel-snooze-modal v-model:show="showCancelSnoozeModal" :ids="selectedItems" @success="refreshWithDelay" />
+    <x-modal-snooze-create v-model:show="showNewSnoozeModal" @success="refreshWithDelay" />
+    <x-modal-snooze-cancel v-model:show="showCancelSnoozeModal" :ids="selectedItems" @success="refreshWithDelay" />
     <n-data-table
       v-model:checked-row-keys="selectedItems"
       remote

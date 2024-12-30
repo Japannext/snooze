@@ -1,26 +1,19 @@
 # vim:syntax=dockerfile
 
 FROM node:20-alpine
+WORKDIR /code
 
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
+COPY --from=oven/bun:1-alpine /usr/local/bin/bun /usr/local/bin/bun
 
 COPY .ca-bundle /usr/local/share/ca-certificates/
 RUN find /usr/local/share/ca-certificates/ -type f -exec cat {} \; >> /etc/ssl/certs/ca-certificates.crt
 ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
 
-WORKDIR /code
-
-RUN corepack enable
-RUN pnpm config set cafile /etc/ssl/certs/ca-certificates.crt
-
-RUN chown -R 1000:1000 /code
-USER 1000
-
-COPY --chown=1000:1000 package.json ./
-COPY --chown=1000:1000 pnpm-lock.yaml ./
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+COPY --chown=1000:1000 package.json bun.lockb ./
+RUN bun install --frozen-lockfile
 
 COPY --chown=1000:1000 . .
+RUN chown -R 1000:1000 /code /home
+USER 1000
 
-ENTRYPOINT ["pnpm", "run", "dev"]
+ENTRYPOINT ["bun", "run", "dev", "--port", "8080"]

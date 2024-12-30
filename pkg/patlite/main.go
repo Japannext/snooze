@@ -20,7 +20,6 @@ func Startup() *daemon.DaemonManager {
     logging.Init()
     initConfig()
     loadProfiles()
-    initGooglechat()
     tracing.Init("snooze-googlechat")
     mq.Init()
 

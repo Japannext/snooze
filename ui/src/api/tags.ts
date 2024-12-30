@@ -12,13 +12,17 @@ export type Tag = {
 type TagColor = "default" | "success" | "error" | "warning" | "primary" | "info" | undefined
 
 export type GetTagsParams = {
-  pagination: Pagination
   search?: string
+  pagination: Pagination
 }
 
-export function getTags(params: GetTagsParams): Promise<ListOf<Tag>> {
+export type TagList = ListOf<Tag>
+
+export function getTags(params: GetTagsParams): Promise<TagList> {
   var q = {
     search: params.search,
+    page: params.pagination.page,
+    size: params.pagination.pageSize,
   }
   return axios.get<ListOf<Tag>>("/api/tags", {params: q})
     .then((resp) => {

@@ -35,6 +35,7 @@ export type Kv = {
 
 export type Pattern = {
   name: string
+  description: string
   regex: string
   groupBy: object
   identityOverride?: object

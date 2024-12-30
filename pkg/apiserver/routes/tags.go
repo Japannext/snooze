@@ -9,11 +9,20 @@ import (
     "github.com/japannext/snooze/pkg/models"
 )
 
+type getTagsParams struct {
+    *models.Search
+}
+
 func getTags(c *gin.Context) {
     ctx, span := tracer.Start(c.Request.Context(), "getTags")
     defer span.End()
 
     req := &opensearch.SearchReq{Index: models.TAG_INDEX}
+	req.WithSize(1000)
+	// Search related to tag
+	params := getTagsParams{}
+	c.BindQuery(&params)
+	req.WithSearch(params.Search)
 
     // Params
     items, err := opensearch.Search[*models.Tag](ctx, req)

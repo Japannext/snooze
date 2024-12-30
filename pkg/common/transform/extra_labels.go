@@ -13,7 +13,7 @@ type ExtraLabels struct {
 	ExtraLabels map[string]string `yaml:"extra_labels"`
 
 	internal struct {
-		templates map[string]lang.Template
+		templates map[string]*lang.Template
 	}
 }
 

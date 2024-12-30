@@ -16,8 +16,14 @@ export interface Pagination {
 }
 */
 
-// export type Pagination = PaginationProps
-export interface Pagination extends PaginationProps {
+// Pagination set of parameters for the API calls
+export interface Pagination {
+  page?: number
+  pageSize?: number
+}
+
+// A naive-ui compatible pagination that can be used with n-data-table
+export interface NaivePagination extends PaginationProps {
   setMore(m: boolean): void
 }
 
@@ -31,7 +37,7 @@ type PrefixOption = {
 
 // Return a pagination reactive object compatible with
 // naive-ui `n-data-table`
-export function usePagination(refresh: Function): Pagination {
+export function usePagination(refresh: Function): NaivePagination {
   const page = useRouteQuery<number>('page', 1, {transform: Number})
   const size = useRouteQuery<number>('size', 20, {transform: Number})
   const more = ref<boolean>(false)

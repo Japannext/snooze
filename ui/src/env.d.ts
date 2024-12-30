@@ -1,14 +1,9 @@
 /// <reference types="@rsbuild/core/types" />
 
-interface ImportMetaEnv {
-  readonly VITE_BASE_URL?: string
-}
-
-interface ImportMeta {
-  readonly env: ImportMetaEnv
-}
-
 declare module '*.vue' {
-  import Vue from 'vue'
-  export default Vue
+  import type { DefineComponent } from 'vue';
+
+  // biome-ignore lint/complexity/noBannedTypes: reason
+  const component: DefineComponent<{}, {}, any>;
+  export default component;
 }

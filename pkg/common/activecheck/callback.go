@@ -14,9 +14,7 @@ func Callback(item *models.Notification) error {
 	if item.ActiveCheckURL == "" {
 		return nil
 	}
-	callback := &models.ActiveCheck{
-		Destination: item.Destination,
-	}
+	callback := &models.SourceActiveCheck{}
 	data, err := json.Marshal(callback)
 	if err != nil {
 		return err

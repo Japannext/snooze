@@ -5,9 +5,7 @@ import { usePagination } from '@/api'
 
 // Components
 import { NIcon, NButton, NSpace, NDataTable, NInputGroup, type DataTableColumn, type SelectOption, RadioButtonProps } from 'naive-ui'
-import { XSearch, XFilter, XTimeRange, XTimestampTitle } from '@/components/interface'
-import { XStatus, XTime, XLogAttributes } from '@/components/attributes'
-import { XAckModal } from '@/components/modal'
+import { XSearch, XFilter, XTimeRange, XTimestampTitle, XStatus, XTime, XLogAttributes, XModalAck, XMessage } from '@/components'
 import { Refresh } from '@/icons'
 
 import { getLogs, type Log, type GetLogsParams, type Filter } from '@/api'
@@ -21,10 +19,11 @@ const message = useMessage()
 const showAckModal = ref<boolean>(false)
 const showEscalateModal = ref<boolean>(false)
 
+const pagination = usePagination(refresh)
 const params = ref<GetLogsParams>({
   search: "",
   filter: "active",
-  pagination: usePagination(refresh),
+  pagination: {},
   timerange: {},
 })
 
@@ -62,10 +61,7 @@ const columns: DataTableColumn<Log>[] = [
   {
     title: () => 'Message',
     key: 'message',
-    ellipsis: {
-      tooltip: {placement: "bottom-end", width: 500},
-      lineClamp: 2,
-    }
+    render: (row) => h(XMessage, {log: row}),
   },
 ]
 
@@ -76,11 +72,15 @@ onMounted(() => {
 function refresh() {
   loading.start()
   params.value.timerange = xTimerange.value.getTime()
+  params.value.pagination = {
+    page: pagination.page,
+    pageSize: pagination.pageSize,
+  }
   getLogs(params.value)
     .then((list) => {
       items.value = list.items
-      params.value.pagination.itemCount = list.total
-      params.value.pagination.setMore(list.more)
+      pagination.itemCount = list.total
+      pagination.setMore(list.more)
       loading.finish()
     })
     .catch((err) => {
@@ -117,7 +117,7 @@ function reset() {
       <x-filter v-model:value="params.filter" :filters="filters" @change="reset" />
       <n-input-group>
         <n-button type="primary" :disabled="selectedItems.length == 0" @click="showAckModal = true">Ack ({{ selectedItems.length }})</n-button>
-        <x-ack-modal v-model:show="showAckModal" :ids="selectedItems" @success="unselect" />
+        <x-modal-ack v-model:show="showAckModal" :ids="selectedItems" @success="unselect" />
 
         <n-button type="warning" :disabled="selectedItems.length == 0">Escalate ({{ selectedItems.length }})</n-button>
       </n-input-group>

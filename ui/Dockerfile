@@ -1,23 +1,17 @@
-FROM node:18-alpine as build
-
+FROM oven/bun:1-alpine AS build
 WORKDIR /code
 
 COPY .ca-bundle /usr/local/share/ca-certificates/
 RUN find /usr/local/share/ca-certificates/ -type f -exec cat {} \; >> /etc/ssl/certs/ca-certificates.crt
 ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
 
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
-
-COPY package.json ./
-COPY pnpm-lock.yaml ./
-# Installing pnpm
-RUN corepack enable && corepack install
 # Installing dependencies
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+COPY package.json bun.lockb ./
+RUN bun install --frozen-lockfile
 
+# Copy code and build
 COPY . .
-RUN pnpm run build
+RUN bun run build
 
 # Run in unprivileged nginx
 FROM nginxinc/nginx-unprivileged:1.25-alpine

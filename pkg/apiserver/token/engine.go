@@ -9,7 +9,7 @@ import (
 )
 
 var secret []byte
-var expiration time.Duration = time.Duration(1) * time.Hour
+var expiration time.Duration = time.Duration(6) * time.Hour
 
 func Init() {
 	env := config.Env()

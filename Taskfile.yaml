@@ -17,11 +17,15 @@ includes:
 
 tasks:
 
+  lint:
+    cmds:
+    - golangci-lint run ./...
+
   build:
     cmds:
     - go fmt .
     - go vet .
-    - go build -o /dev/null .
+    - go build -o /dev/null ./...
 
   test:
     cmds:
@@ -52,11 +56,14 @@ tasks:
 
   reset-groups:
     cmds:
-    - kubectl exec -it svc/snooze-opensearch-masters -- curl -k -u admin:admin https://localhost:9200/_index_template/v2-groups -X DELETE
-    - kubectl exec -it svc/snooze-redis -- redis-cli del "group:bloom_filter"
+    - >
+        kubectl exec -it svc/snooze-opensearch-masters --
+        curl -k -u admin:admin -X POST https://localhost:9200/v2-groups/_delete_by_query
+        -H 'Content-Type: application/json'
+        -d '{"query": {"match_all": {}}}'
+    - kubectl exec -it svc/snooze-redis -- bash -c 'redis-cli keys "group/*" | xargs redis-cli del'
 
   sync:
     cmds:
-    # - docker inspect --format='{{"{{"}}index .RepoDigests 0{{"}}"}}' nexus.dc.japannext.co.jp:8083/unix/kubernetes/snooze:develop | cut -d@ -f2 > .digest
     - helmfile -f .helmfile.yaml.gotmpl sync
     - kubectl rollout restart deploy/snooze-{syslog,process,apiserver,mail,alertmanager,activecheck,googlechat,writer}

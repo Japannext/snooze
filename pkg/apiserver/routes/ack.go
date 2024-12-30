@@ -32,7 +32,7 @@ func postAck(c *gin.Context) {
 	}
 	req.Doc.WithTerms("_id", item.LogIDs)
 	req.Doc.WithPainlessScript("ctx._source.status.kind = params.kind", map[string]interface{}{
-		"kind": "acked",
+		"kind": models.LogAcked,
 	})
 
 	err := opensearch.UpdateByQuery(ctx, req)

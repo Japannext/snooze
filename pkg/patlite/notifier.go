@@ -15,8 +15,8 @@ import (
 )
 
 func notificationHandler(ctx context.Context, msg jetstream.Msg) error {
-	//ctx, span := tracer.Start(ctx, "handler")
-	//defer span.End()
+	ctx, span := tracer.Start(ctx, "handler")
+	defer span.End()
 
     var notification *models.Notification
     if err := json.Unmarshal(msg.Data(), &notification); err != nil {
@@ -37,7 +37,7 @@ func notificationHandler(ctx context.Context, msg jetstream.Msg) error {
 	}
 
 	notification.NotificationTime = models.TimeNow()
-	err := storeQ.PublishData(ctx, &format.Create{
+	err = storeQ.PublishData(ctx, &format.Create{
 		Index: models.NOTIFICATION_INDEX,
 		Item: notification,
 	})

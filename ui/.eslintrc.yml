@@ -6,15 +6,20 @@ env:
   vue/setup-compiler-macros: true
 parser: 'vue-eslint-parser'
 parserOptions:
-  parser: '@typescript-eslint/parser'
+  parser:
+    js: "espree"
+    ts: '@typescript-eslint/parser'
+    <template>: "espree"
   sourceType: module
 plugins:
   - vue
 extends:
   - eslint:recommended
   - plugin:vue/vue3-recommended
+  - plugin:@typescript-eslint/recommended
 rules:
   no-unused-vars: warn
+  vue/script-setup-uses-vars: 1
   vue/max-attributes-per-line:
     - error
     - singleline:

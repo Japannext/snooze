@@ -5,25 +5,24 @@ import { usePagination } from '@/api'
 
 // Components
 import { NIcon, NButton, NButtonGroup, NSpace, NDataTable, NInputGroup, type DataTableColumn } from 'naive-ui'
-import { XSearch, XFilter, XTimeRange } from '@/components/interface'
-import { XTag } from '@/components/attributes'
-import { XNewTagModal } from '@/components/modal'
+import { XSearch, XFilter, XTimeRange, XTag, XModalTagCreate } from '@/components'
 import { Refresh, Add, Trash } from '@/icons'
 
 import { getTags, type Tag, type GetTagsParams } from '@/api'
 
 const items = ref<Tag[]>()
 const selectedItems = ref<string[]>([])
-const xTimerange = ref()
 
 const loading = useLoadingBar()
 const message = useMessage()
 const showNewTagModal = ref<boolean>(false)
 const showDeleteTagModal = ref<boolean>(false)
 
+const pagination = usePagination(refresh)
+
 const params = ref<GetTagsParams>({
   search: "",
-  pagination: usePagination(refresh),
+  pagination: {},
 })
 
 const columns: DataTableColumn<Tag>[] = [
@@ -32,7 +31,7 @@ const columns: DataTableColumn<Tag>[] = [
   {
     key: 'name',
     title: 'Name',
-    render: (row) => h(XTag, {tag: row}),
+    render: (row) => h(XTag, {name: row.name, color: row.color}),
     width: 150,
   },
   {
@@ -51,11 +50,15 @@ onMounted(() => {
 
 function refresh() {
   loading.start()
+  params.value.pagination = {
+    page: pagination.page,
+    pageSize: pagination.pageSize,
+  }
   getTags(params.value)
     .then((list) => {
       items.value = list.items
-      params.value.pagination.itemCount = list.total
-      params.value.pagination.setMore(list.more)
+      pagination.itemCount = list.total
+      pagination.setMore(list.more)
       loading.finish()
     })
     .catch((err) => {
@@ -66,7 +69,7 @@ function refresh() {
 }
 
 function reset() {
-  params.value.pagination.page = 1
+  pagination.page = 1
   refresh()
 }
 
@@ -94,7 +97,7 @@ function renderExpand(row: Tag) {
         </n-button>
       </n-button-group>
     </n-space>
-    <x-new-tag-modal v-model:show="showNewTagModal" />
+    <x-modal-tag-create v-model:show="showNewTagModal" />
     <n-data-table
       v-model:checked-row-keys="selectedItems"
       remote
@@ -106,7 +109,7 @@ function renderExpand(row: Tag) {
       :columns="columns"
       :data="items"
       :row-key="(row) => row._id"
-      :pagination="params.pagination"
+      :pagination="pagination"
     />
   </div>
 </template>

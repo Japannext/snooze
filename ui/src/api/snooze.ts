@@ -1,6 +1,6 @@
 import axios from "axios"
 import type { ListOf, Pagination, TimeRangeParams } from "@/api"
-import type { Group } from '@/api'
+import type { Tag, Group } from '@/api'
 
 export type Snooze = {
   id?: string
@@ -8,12 +8,14 @@ export type Snooze = {
   groups: Group[]
 
   reason: string
-  tags: string[]
+  tags: Tag[]
 
   cancelled?: SnoozeCancel
 
   startAt: number
   expireAt: number
+
+  username?: string
 }
 
 export type SnoozeCancel = {
