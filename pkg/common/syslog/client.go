@@ -7,8 +7,8 @@ import (
 	"time"
 )
 
+// Severity.
 const (
-	// Severity.
 
 	// From /usr/include/sys/syslog.h.
 	// These are the same on Linux, BSD, and OS X.
@@ -22,8 +22,8 @@ const (
 	LOG_DEBUG
 )
 
+// Facility.
 const (
-	// Facility.
 
 	// From /usr/include/sys/syslog.h.
 	// These are the same up to LOG_FTP on Linux, BSD, and OS X.
@@ -53,12 +53,10 @@ const (
 	LOG_LOCAL7
 )
 
-var todayDate = time.Now().Format("2006-01-02")
-
 type Log struct {
 	Timestamp time.Time
 	AppName   string
-	ProcId    string
+	ProcID    string
 	Host      string
 	Severity  int
 	Facility  int
@@ -66,19 +64,24 @@ type Log struct {
 }
 
 func (item *Log) toRFC3164() []byte {
-	var buf bytes.Buffer
-	pri := item.Severity | item.Facility
+	var (
+		buf bytes.Buffer
+		pri = item.Severity | item.Facility
+	)
+
 	buf.WriteString(fmt.Sprintf("<%d> ", pri))
 	buf.WriteString(item.Timestamp.Format("Jan 2 15:04:05"))
 	buf.WriteString(" ")
 	buf.WriteString(item.Host)
 	buf.WriteString(" ")
 	buf.WriteString(item.AppName)
-	if item.ProcId != "" {
+
+	if item.ProcID != "" {
 		buf.WriteString("[")
-		buf.WriteString(item.ProcId)
+		buf.WriteString(item.ProcID)
 		buf.WriteString("]")
 	}
+
 	buf.WriteString(": ")
 	buf.WriteString(item.Msg)
 	buf.WriteString("\n")
@@ -87,8 +90,11 @@ func (item *Log) toRFC3164() []byte {
 }
 
 func (item *Log) toRFC5424() []byte {
-	var buf bytes.Buffer
-	pri := item.Severity | item.Facility
+	var (
+		buf bytes.Buffer
+		pri = item.Severity | item.Facility
+	)
+
 	buf.WriteString(fmt.Sprintf("<%d>1 ", pri))
 	buf.WriteString(item.Timestamp.Format("2006-01-02T15:04:05.999Z"))
 	buf.WriteString(" ")
@@ -96,13 +102,14 @@ func (item *Log) toRFC5424() []byte {
 	buf.WriteString(" ")
 	buf.WriteString(item.AppName)
 	buf.WriteString(" ")
-	if item.ProcId != "" {
-		buf.WriteString(item.ProcId)
+
+	if item.ProcID != "" {
+		buf.WriteString(item.ProcID)
 	} else {
 		buf.WriteString("-")
 	}
-	buf.WriteString(" ")
-	buf.WriteString("- - ")
+
+	buf.WriteString(" - - ")
 	buf.WriteString(item.Msg)
 	buf.WriteString("\n")
 
@@ -117,21 +124,27 @@ type Client struct {
 func NewClient(addr string, format string, timeout time.Duration) (*Client, error) {
 	conn, err := net.DialTimeout("tcp", addr, timeout)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error in client: %w", err)
 	}
+
 	return &Client{conn, format}, nil
 }
 
 func (client *Client) Send(items ...Log) error {
 	for _, item := range items {
 		var data []byte
+
 		switch client.Format {
 		case "rfc5424":
 			data = item.toRFC5424()
 		case "rfc3164":
 			data = item.toRFC3164()
 		}
-		client.Write(data)
+
+		if _, err := client.Write(data); err != nil {
+			return fmt.Errorf("error sending data: %w", err)
+		}
 	}
+
 	return nil
 }

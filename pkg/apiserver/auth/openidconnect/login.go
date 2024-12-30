@@ -5,10 +5,9 @@ import (
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gin-gonic/gin"
+	"github.com/japannext/snooze/pkg/common/utils"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
-
-	"github.com/japannext/snooze/pkg/common/utils"
 )
 
 func login(c *gin.Context) {

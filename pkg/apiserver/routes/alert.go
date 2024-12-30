@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-
 	"github.com/japannext/snooze/pkg/common/opensearch"
 	"github.com/japannext/snooze/pkg/common/opensearch/dsl"
 	"github.com/japannext/snooze/pkg/common/redis"
@@ -70,7 +69,7 @@ func getLiveStatus(c *gin.Context) {
 	var keys []string
 	c.BindJSON(&keys)
 
-	var items = make([]string, len(keys))
+	items := make([]string, len(keys))
 
 	pipe := redis.Client.Pipeline()
 	for i, key := range keys {

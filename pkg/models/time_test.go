@@ -2,10 +2,10 @@ package models
 
 import (
 	"encoding/json"
+	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 type timeTest struct {

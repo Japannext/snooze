@@ -8,13 +8,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/japannext/snooze/pkg/common/mq"
+	"github.com/japannext/snooze/pkg/common/opensearch"
 	"github.com/nats-io/nats.go/jetstream"
 	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
 	log "github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/trace"
-
-	"github.com/japannext/snooze/pkg/common/mq"
-	"github.com/japannext/snooze/pkg/common/opensearch"
 )
 
 type Consumer struct{}
@@ -60,7 +59,7 @@ func extractBulkError(resp opensearchapi.BulkRespItem) error {
 
 func bulkHeader(action, index string) []byte {
 	m := map[string]map[string]string{
-		action: map[string]string{
+		action: {
 			"_index": index,
 		},
 	}
@@ -72,7 +71,7 @@ func bulkWrite(ctx context.Context, msgs []mq.MsgWithContext) {
 	ctx, bulkSpan := tracer.Start(ctx, "bulkWrite")
 	defer bulkSpan.End()
 	var buf bytes.Buffer
-	var messages = map[int]jetstream.Msg{}
+	messages := map[int]jetstream.Msg{}
 	for i, m := range msgs {
 		msg, msgCtx := m.Extract()
 		messages[i] = msg

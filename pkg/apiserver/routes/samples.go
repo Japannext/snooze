@@ -8,7 +8,6 @@ import (
 )
 
 func generateSamples(c *gin.Context) {
-
 	err := tester.Run()
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Issue generating samples: %s", err)

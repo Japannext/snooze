@@ -5,13 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/nats-io/nats.go/jetstream"
-	log "github.com/sirupsen/logrus"
-
 	"github.com/japannext/snooze/pkg/common/opensearch/format"
 	pl "github.com/japannext/snooze/pkg/common/patlite"
 	"github.com/japannext/snooze/pkg/common/tracing"
 	"github.com/japannext/snooze/pkg/models"
+	"github.com/nats-io/nats.go/jetstream"
+	log "github.com/sirupsen/logrus"
 )
 
 func notificationHandler(ctx context.Context, msg jetstream.Msg) error {

@@ -9,7 +9,7 @@ import (
 )
 
 // When the notification encountered is an active check,
-// return the callback for the active check to count in
+// return the callback for the active check to count in.
 func Callback(item *models.Notification) error {
 	if item.ActiveCheckURL == "" {
 		return nil

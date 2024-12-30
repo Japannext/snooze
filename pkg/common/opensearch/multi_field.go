@@ -6,9 +6,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
-
 	"github.com/japannext/snooze/pkg/common/opensearch/dsl"
+	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
 )
 
 type Mappings struct {
@@ -32,7 +31,7 @@ type Keyword struct {
 
 // Do a search on all fields prefixed with the prefix.
 // This is useful for "objects" that contain key/values that may change
-// with future configurations, like "identity" or "labels"
+// with future configurations, like "identity" or "labels".
 func (req *SearchReq) MultiFieldSearch(ctx context.Context, prefixes []string, search string) error {
 	request := opensearchapi.IndicesGetReq{
 		Indices: []string{req.Index},

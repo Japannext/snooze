@@ -8,10 +8,10 @@ import (
 )
 
 type Transform struct {
-	Name string `yaml:"name" json:"name"`
-	If   string `yaml:"if" json:"if,omitempty"`
+	Name string `json:"name"         yaml:"name"`
+	If   string `json:"if,omitempty" yaml:"if"`
 
-	Actions []Action `yaml:"actions" json:"actions"`
+	Actions []Action `json:"actions" yaml:"actions"`
 
 	internal struct {
 		condition *lang.Condition
@@ -24,9 +24,9 @@ type Transformation interface {
 }
 
 type Action struct {
-	Set   *SetAction   `yaml:"set" json:"set,omitempty"`
-	Unset *UnsetAction `yaml:"unset" json:"unset,omitempty"`
-	Regex *RegexAction `yaml:"regex" json:"regex,omitempty"`
+	Set   *SetAction   `json:"set,omitempty"   yaml:"set"`
+	Unset *UnsetAction `json:"unset,omitempty" yaml:"unset"`
+	Regex *RegexAction `json:"regex,omitempty" yaml:"regex"`
 }
 
 func LoadActions(actions []Action) []Transformation {

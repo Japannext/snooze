@@ -3,12 +3,11 @@ package googlechat
 import (
 	"os"
 
+	"github.com/japannext/snooze/pkg/googlechat/formatter"
+	"github.com/japannext/snooze/pkg/models"
 	log "github.com/sirupsen/logrus"
 	chat "google.golang.org/api/chat/v1"
 	"gopkg.in/yaml.v3"
-
-	"github.com/japannext/snooze/pkg/googlechat/formatter"
-	"github.com/japannext/snooze/pkg/models"
 )
 
 type Profiles struct {

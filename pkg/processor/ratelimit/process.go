@@ -7,14 +7,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	redisv9 "github.com/redis/go-redis/v9"
-	// "github.com/go-redis/redis_rate/v10"
-
 	"github.com/japannext/snooze/pkg/common/opensearch/format"
 	"github.com/japannext/snooze/pkg/common/redis"
 	"github.com/japannext/snooze/pkg/common/tracing"
 	"github.com/japannext/snooze/pkg/common/utils"
 	"github.com/japannext/snooze/pkg/models"
+	redisv9 "github.com/redis/go-redis/v9"
 )
 
 // This object is used to represent all variables needed
@@ -27,7 +25,7 @@ type result struct {
 	lock lock
 }
 
-// Used to represent a counter used for rate limiting
+// Used to represent a counter used for rate limiting.
 type counter struct {
 	key    string
 	cmd    *redisv9.StringCmd
@@ -37,7 +35,7 @@ type counter struct {
 }
 
 // Used to know when a ratelimit is started (to avoid
-// starting a ratelimit for every hit)
+// starting a ratelimit for every hit).
 type lock struct {
 	key string
 	cmd *redisv9.StatusCmd
@@ -63,7 +61,7 @@ func Process(ctx context.Context, item *models.Log) error {
 	defer span.End()
 
 	// 1. Filtering ratelimits by condition
-	var rr = []*RateLimit{}
+	rr := []*RateLimit{}
 	for _, rate := range rates {
 		if rate.internal.condition != nil {
 			match, err := rate.internal.condition.MatchLog(ctx, item)
@@ -81,7 +79,7 @@ func Process(ctx context.Context, item *models.Log) error {
 		rr = append(rr, rate)
 	}
 
-	var results = make(map[string]result)
+	results := make(map[string]result)
 
 	pipe := redis.Client.Pipeline()
 	// 2. Extracting i1/i0 rates

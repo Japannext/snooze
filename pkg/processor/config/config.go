@@ -3,13 +3,8 @@ package config
 import (
 	"os"
 
-	log "github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
-	"gopkg.in/yaml.v3"
-
 	"github.com/japannext/snooze/pkg/models"
-
-	// Sub-Processors
+	// Sub-Processors.
 	"github.com/japannext/snooze/pkg/processor/grouping"
 	"github.com/japannext/snooze/pkg/processor/mapping"
 	"github.com/japannext/snooze/pkg/processor/notification"
@@ -17,6 +12,9 @@ import (
 	"github.com/japannext/snooze/pkg/processor/ratelimit"
 	"github.com/japannext/snooze/pkg/processor/silence"
 	"github.com/japannext/snooze/pkg/processor/transform"
+	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
+	"gopkg.in/yaml.v3"
 )
 
 type Config struct {
@@ -39,21 +37,23 @@ type Config struct {
 	MaxWorkers int `mapstructure:"MAX_WORKERS"`
 }
 
-var config *Config
-var pipeline *Pipeline
+var (
+	config   *Config
+	pipeline *Pipeline
+)
 
 type Pipeline struct {
-	Mappings            []*mapping.Mapping           `yaml:"mappings" json:"mappings"`
-	Transforms          []*transform.Transform       `yaml:"transforms" json:"transforms"`
-	Grouping            []*grouping.Grouping         `yaml:"groupings" json:"groupings"`
-	Profiles            []*profile.Profile           `yaml:"profiles" json:"profiles"`
-	Silences            []*silence.Silence           `yaml:"silences" json:"silences"`
-	RateLimits          []*ratelimit.RateLimit       `yaml:"ratelimits" json:"ratelimits"`
-	Notifications       []*notification.Notification `yaml:"notifications" json:"notifications"`
-	DefaultDestinations []models.Destination         `yaml:"default_destinations" json:"default_destinations"`
+	Mappings            []*mapping.Mapping           `json:"mappings"             yaml:"mappings"`
+	Transforms          []*transform.Transform       `json:"transforms"           yaml:"transforms"`
+	Grouping            []*grouping.Grouping         `json:"groupings"            yaml:"groupings"`
+	Profiles            []*profile.Profile           `json:"profiles"             yaml:"profiles"`
+	Silences            []*silence.Silence           `json:"silences"             yaml:"silences"`
+	RateLimits          []*ratelimit.RateLimit       `json:"ratelimits"           yaml:"ratelimits"`
+	Notifications       []*notification.Notification `json:"notifications"        yaml:"notifications"`
+	DefaultDestinations []models.Destination         `json:"default_destinations" yaml:"default_destinations"`
 }
 
-// A config element that can be loaded and reloaded (when config is live updated)
+// A config element that can be loaded and reloaded (when config is live updated).
 type Loadable interface {
 	LoadConfig() error
 }

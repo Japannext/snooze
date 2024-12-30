@@ -2,14 +2,12 @@ package lang
 
 import (
 	"context"
-	"github.com/stretchr/testify/assert"
 	"testing"
-
 	"github.com/japannext/snooze/pkg/models"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCondition(t *testing.T) {
-
 	tests := []struct {
 		Raw         string
 		Log         *models.Log

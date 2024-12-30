@@ -51,15 +51,16 @@ func (msg MsgWithContext) Extract() (jetstream.Msg, context.Context) {
 
 func (sub *Sub) Fetch(size int) ([]MsgWithContext, error) {
 	ctx, fetchSpan := tracer.Start(context.Background(), "Fetch")
-	batch, err := sub.consumer.Fetch(size, sub.fetchOpts...)
 	defer fetchSpan.End()
+
+	batch, err := sub.consumer.Fetch(size, sub.fetchOpts...)
 	if err != nil {
 		return nil, err
 	}
 
-	var msgs = []MsgWithContext{}
-	for msg := range batch.Messages() {
+	msgs := []MsgWithContext{}
 
+	for msg := range batch.Messages() {
 		// Opentelemetry trace context
 		propagator := propagation.TraceContext{}
 		msgCtx := propagator.Extract(context.Background(), propagation.HeaderCarrier(msg.Headers()))

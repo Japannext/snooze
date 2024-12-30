@@ -30,7 +30,6 @@ func NewFastMapper(prfs []*Profile) *FastMapper {
 			log.Fatalf("invalid field `%s`", prf.Switch.Key)
 		}
 		keys.Append(prf.Switch.Key)
-
 	}
 	return &FastMapper{keys.Items(), m, fields}
 }

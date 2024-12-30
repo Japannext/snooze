@@ -4,10 +4,9 @@ import (
 	"context"
 
 	"github.com/coreos/go-oidc/v3/oidc"
+	"github.com/japannext/snooze/pkg/apiserver/config"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
-
-	"github.com/japannext/snooze/pkg/apiserver/config"
 )
 
 var (

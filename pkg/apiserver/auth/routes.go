@@ -4,15 +4,16 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/trace"
-
 	"github.com/japannext/snooze/pkg/apiserver/auth/openidconnect"
 	"github.com/japannext/snooze/pkg/apiserver/config"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 )
 
-var tracer trace.Tracer
-var authConfig *config.AuthConfig
+var (
+	tracer     trace.Tracer
+	authConfig *config.AuthConfig
+)
 
 func RegisterRoutes(r *gin.Engine) {
 	tracer = otel.Tracer("snooze")

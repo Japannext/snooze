@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
 )
@@ -23,19 +24,23 @@ func createDatastream(ctx context.Context, name string) error {
 func hasDatastream(ctx context.Context, name string) (bool, error) {
 	ds, err := client.DataStream.Get(ctx, &opensearchapi.DataStreamGetReq{DataStreams: []string{name}})
 	resp := ds.Inspect().Response
-	if resp.StatusCode == 200 {
+	if resp.StatusCode == http.StatusOK {
 		log.Infof("Datastream '%s' already exists", name)
 		return true, nil
 	}
-	if resp.StatusCode == 404 {
+	if resp.StatusCode == http.StatusNotFound {
 		return false, nil
 	}
 	if err != nil {
 		return false, err
 	}
+
 	var buf bytes.Buffer
-	buf.ReadFrom(resp.Body)
-	return false, fmt.Errorf("Unexpected status code %d when checking datastream %s: %s", resp.StatusCode, name, buf.Bytes())
+	if _, err := buf.ReadFrom(resp.Body); err != nil {
+		return false, fmt.Errorf("cannot ready body: %w", err)
+	}
+
+	return false, fmt.Errorf("status code %d in datastream %s: %s", resp.StatusCode, name, buf.Bytes())
 }
 
 func ensureDatastream(ctx context.Context, name string) {

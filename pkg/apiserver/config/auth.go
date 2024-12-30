@@ -3,40 +3,39 @@ package config
 import (
 	"os"
 
+	"github.com/japannext/snooze/pkg/common/utils"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
-
-	"github.com/japannext/snooze/pkg/common/utils"
 )
 
 type AuthConfig struct {
-	Oidc      *OidcConfig `yaml:"oidc" json:"oidc"`
-	AdminRole string      `yaml:"admin_role" json:"adminRole"`
-	UserRole  string      `yaml:"user_role" json:"userRole"`
+	Oidc      *OidcConfig `json:"oidc"      yaml:"oidc"`
+	AdminRole string      `json:"adminRole" yaml:"admin_role"`
+	UserRole  string      `json:"userRole"  yaml:"user_role"`
 }
 
 type OidcConfig struct {
-	URL           string   `yaml:"url" json:"url"`
-	ClientID      string   `yaml:"client_id" json:"clientID"`
-	ClientSecret  string   `yaml:"client_secret" json:"-"`
-	CallbackURL   string   `yaml:"callback_url" json:"callbackURL"`
-	Scopes        []string `yaml:"scopes" json:"scopes"`
-	UsernameField string   `yaml:"username_field" json:"usernameField"`
-	EmailField    string   `yaml:"email_field" json:"emailField"`
-	FullnameField string   `yaml:"fullname_field" json:"fullnameField"`
-	RolesField    string   `yaml:"roles_field" json:"rolesField"`
+	URL           string   `json:"url"           yaml:"url"`
+	ClientID      string   `json:"clientID"      yaml:"client_id"`
+	ClientSecret  string   `json:"-"             yaml:"client_secret"`
+	CallbackURL   string   `json:"callbackURL"   yaml:"callback_url"`
+	Scopes        []string `json:"scopes"        yaml:"scopes"`
+	UsernameField string   `json:"usernameField" yaml:"username_field"`
+	EmailField    string   `json:"emailField"    yaml:"email_field"`
+	FullnameField string   `json:"fullnameField" yaml:"fullname_field"`
+	RolesField    string   `json:"rolesField"    yaml:"roles_field"`
 	TLSConfig     *utils.TLSConfig
 
 	// Cosmetics
-	DisplayName string `yaml:"display_name" json:"displayName"`
-	Icon        string `yaml:"icon" json:"icon"`
-	Color       string `yaml:"color" json:"color"`
+	DisplayName string `json:"displayName" yaml:"display_name"`
+	Icon        string `json:"icon"        yaml:"icon"`
+	Color       string `json:"color"       yaml:"color"`
 }
 
 type GithubConfig struct {
-	ClientID     string `yaml:"client_id" json:"clientID"`
-	ClientSecret string `yaml:"client_secret" json:"-"`
-	CallbackURL  string `yaml:"callback_url" json:"callbackURL"`
+	ClientID     string `json:"clientID"    yaml:"client_id"`
+	ClientSecret string `json:"-"           yaml:"client_secret"`
+	CallbackURL  string `json:"callbackURL" yaml:"callback_url"`
 }
 
 var authConfig *AuthConfig

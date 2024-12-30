@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-
 	"github.com/japannext/snooze/pkg/common/opensearch"
 	"github.com/japannext/snooze/pkg/common/opensearch/dsl"
 	"github.com/japannext/snooze/pkg/common/redis"
@@ -135,7 +134,7 @@ func postSnoozeCancel(c *gin.Context) {
 	ctx, span := tracer.Start(c.Request.Context(), "postSnoozeCancel")
 	defer span.End()
 
-	var params = postSnoozeCancelParams{}
+	params := postSnoozeCancelParams{}
 	c.BindJSON(&params)
 
 	if len(params.IDs) == 0 {
@@ -188,5 +187,4 @@ func postSnoozeCancel(c *gin.Context) {
 		c.String(http.StatusInternalServerError, "failed to update snooze in opensearch: %s", err)
 		return
 	}
-
 }

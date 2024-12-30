@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Return the health of the cluster
+// Return the health of the cluster.
 func livez(c *gin.Context) {
 	c.String(http.StatusOK, "Healthy")
 }

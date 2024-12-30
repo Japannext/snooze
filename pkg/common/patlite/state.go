@@ -39,8 +39,8 @@ var (
 )
 
 type State struct {
-	Lights map[string]string `yaml:"lights" json:"lights"`
-	Sound  string            `yaml:"sound" json:"sound"`
+	Lights map[string]string `json:"lights" yaml:"lights"`
+	Sound  string            `json:"sound"  yaml:"sound"`
 }
 
 func (s *State) Validate() error {
@@ -82,7 +82,7 @@ func newState(b []byte) (*State, error) {
 }
 
 func (s *State) bytes() []byte {
-	var res = make([]byte, 6)
+	res := make([]byte, 6)
 	for i, color := range COLORS {
 		light, ok := s.Lights[color]
 		if !ok {

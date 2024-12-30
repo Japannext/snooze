@@ -23,6 +23,7 @@ func initConfig() {
 	v.BindEnv("OPENSEARCH_PASSWORD", "")
 
 	v.AutomaticEnv()
+
 	if err := v.Unmarshal(&config); err != nil {
 		log.Fatalf("failed to load opensearch config: %s", err)
 	}

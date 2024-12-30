@@ -3,7 +3,6 @@ package profile
 import (
 	"bytes"
 	"fmt"
-
 	"text/template"
 
 	"github.com/japannext/snooze/pkg/models"

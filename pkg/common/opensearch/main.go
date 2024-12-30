@@ -24,7 +24,6 @@ var tracer = tracerProvider.Tracer("opensearch")
 var log *logrus.Entry
 
 func Init() {
-
 	log = logrus.WithFields(logrus.Fields{"module": "opensearch"})
 
 	initConfig()

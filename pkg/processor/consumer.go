@@ -5,12 +5,8 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/nats-io/nats.go/jetstream"
-	log "github.com/sirupsen/logrus"
-
 	"github.com/japannext/snooze/pkg/common/tracing"
 	"github.com/japannext/snooze/pkg/models"
-
 	"github.com/japannext/snooze/pkg/processor/activecheck"
 	"github.com/japannext/snooze/pkg/processor/grouping"
 	"github.com/japannext/snooze/pkg/processor/mapping"
@@ -22,6 +18,8 @@ import (
 	"github.com/japannext/snooze/pkg/processor/store"
 	"github.com/japannext/snooze/pkg/processor/timestamp"
 	"github.com/japannext/snooze/pkg/processor/transform"
+	"github.com/nats-io/nats.go/jetstream"
+	log "github.com/sirupsen/logrus"
 )
 
 type Consumer struct{}
@@ -118,23 +116,41 @@ func processLog(ctx context.Context, item *models.Log) {
 
 	// Transformative
 	timestamp.Process(ctx, item)
-	transform.Process(ctx, item)
-	profile.Process(ctx, item)
-	grouping.Process(ctx, item)
+	if err := transform.Process(ctx, item); err != nil {
+		log.Warnf("in 'transform': %s", err)
+	}
+	if err := profile.Process(ctx, item); err != nil {
+		log.Warnf("in 'profile': %s", err)
+	}
+	if err := grouping.Process(ctx, item); err != nil {
+		log.Warnf("in 'grouping': %s", err)
+	}
 
 	// Traffic control
-	silence.Process(ctx, item)
-	ratelimit.Process(ctx, item)
+	if err := silence.Process(ctx, item); err != nil {
+		log.Warnf("in 'silence': %s", err)
+	}
+	if err := ratelimit.Process(ctx, item); err != nil {
+		log.Warnf("in 'ratelimit': %s", err)
+	}
 
 	// Snooze
-	snooze.Process(ctx, item)
+	if err := snooze.Process(ctx, item); err != nil {
+		log.Warnf("in 'snooze': %s", err)
+	}
 
 	// Monitoring
-	activecheck.Process(ctx, item)
+	if err := activecheck.Process(ctx, item); err != nil {
+		log.Warnf("in 'activecheck': %s", err)
+	}
 
 	// Notification + Storage
-	notification.Process(ctx, item)
-	store.Process(ctx, item)
+	if err := notification.Process(ctx, item); err != nil {
+		log.Warnf("in 'notification': %s", err)
+	}
+	if err := store.Process(ctx, item); err != nil {
+		log.Warnf("in 'storage': %s", err)
+	}
 
 	processedLogs.Inc()
 	processTime.Observe(time.Since(start).Seconds())

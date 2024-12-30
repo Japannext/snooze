@@ -7,9 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/japannext/snooze/pkg/models"
+	log "github.com/sirupsen/logrus"
 )
 
 func Process(ctx context.Context, item *models.Log) error {

@@ -5,9 +5,8 @@ import (
 	"net"
 
 	log "github.com/sirupsen/logrus"
-	"google.golang.org/grpc"
-
 	collectorv1 "go.opentelemetry.io/proto/otlp/collector/logs/v1"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	healthv1 "google.golang.org/grpc/health/grpc_health_v1"
 )

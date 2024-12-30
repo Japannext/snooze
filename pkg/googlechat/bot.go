@@ -30,7 +30,6 @@ func NewBot() *Bot {
 }
 
 func (bot *Bot) Run() error {
-
 	ctx := context.Background()
 
 	// topic := bot.pubsub.Topic("snooze")
@@ -44,9 +43,8 @@ func (bot *Bot) Run() error {
 	return nil
 }
 
-// Route the pubsub event to the correct function
+// Route the pubsub event to the correct function.
 func pubsubRouter(ctx context.Context, msg *pubsub.Message) {
-
 	var event *chat.DeprecatedEvent
 	if err := json.Unmarshal(msg.Data, &event); err != nil {
 		// TODO

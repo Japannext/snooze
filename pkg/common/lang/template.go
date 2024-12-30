@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-
 	"text/template"
 
 	"github.com/japannext/snooze/pkg/models"

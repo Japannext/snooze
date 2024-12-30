@@ -4,12 +4,13 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-
 	"github.com/japannext/snooze/pkg/apiserver/config"
 )
 
-var secret []byte
-var expiration time.Duration = time.Duration(6) * time.Hour
+var (
+	secret     []byte
+	expiration time.Duration = time.Duration(6) * time.Hour
+)
 
 func Init() {
 	env := config.Env()
@@ -29,7 +30,7 @@ func keyfunc(token *jwt.Token) (any, error) {
 	return []byte(secret), nil
 }
 
-// Verify the token and extract the claims object
+// Verify the token and extract the claims object.
 func Verify(tokenString string) (*Claims, error) {
 	claims := &Claims{}
 	opts := []jwt.ParserOption{

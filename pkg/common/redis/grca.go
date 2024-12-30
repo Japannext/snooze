@@ -16,17 +16,18 @@ type GCRA struct {
 	Period time.Duration
 }
 
-type GCRAStatus struct {
-}
+type GCRAStatus struct{}
 
-// go:embed perform_gcra.lua
+//go:embed perform_gcra.lua
 var PERFORM_GCRA_LUA string
 
-// go:embed inspect_gcra.lua
+//go:embed inspect_gcra.lua
 var INSPECT_GCRA_LUA string
 
-var PERFORM_GCRA_SCRIPT = redisv9.NewScript(PERFORM_GCRA_LUA)
-var INSPECT_GCRA_SCRITP = redisv9.NewScript(INSPECT_GCRA_LUA)
+var (
+	PERFORM_GCRA_SCRIPT = redisv9.NewScript(PERFORM_GCRA_LUA)
+	INSPECT_GCRA_SCRITP = redisv9.NewScript(INSPECT_GCRA_LUA)
+)
 
 func (gcra *GCRA) Perform(ctx context.Context, key string) (*GCRAStatus, error) {
 	/*
@@ -44,7 +45,6 @@ func (gcra *GCRA) Perform(ctx context.Context, key string) (*GCRAStatus, error) 
 }
 
 func (gcra *GCRA) Inspect(ctx context.Context) (*GCRAStatus, error) {
-
 	// TODO
 
 	return &GCRAStatus{}, nil

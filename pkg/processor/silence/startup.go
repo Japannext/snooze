@@ -6,9 +6,11 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-var silences []*Silence
-var log *logrus.Entry
-var tracer trace.Tracer
+var (
+	silences []*Silence
+	log      *logrus.Entry
+	tracer   trace.Tracer
+)
 
 func Startup(rules []*Silence) {
 	initMetrics()

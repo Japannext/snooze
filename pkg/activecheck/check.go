@@ -2,28 +2,29 @@ package activecheck
 
 import (
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/japannext/snooze/pkg/models"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
-
-	"github.com/japannext/snooze/pkg/models"
 )
 
-func probeHandler(c *gin.Context) {
-	name := c.Param("name")
+func probeHandler(ctx *gin.Context) {
+	name := ctx.Param("name")
 	check, found := checks[name]
 	if !found {
 		// TODO
 	}
-	check.Handle(c)
+
+	check.Handle(ctx)
 }
 
 type Check struct {
-	Name         string              `yaml:"name" validate:"required"`
+	Name         string              `validate:"required" yaml:"name"`
 	Source       *SourceConfig       `yaml:"source"`
 	Notification *NotificationConfig `yaml:"notification"`
 	Timeout      *time.Duration      `yaml:"timeout"`
@@ -34,7 +35,7 @@ type Check struct {
 }
 
 type Probe interface {
-	Fire(*Check, string) error
+	Fire(check *Check, url string) error
 }
 
 type SourceConfig struct {
@@ -50,6 +51,7 @@ func (check *Check) Load() {
 	if check.Name == "" {
 		log.Fatalf("no `name` for check")
 	}
+
 	if check.Timeout == nil {
 		timeout := 30 * time.Second
 		check.Timeout = &timeout
@@ -62,29 +64,31 @@ func (check *Check) Load() {
 	}
 }
 
-var (
-	probeUp = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "snooze",
-		Name:      "activecheck_probe_up",
-		Help:      "Active check that verify a probe is up",
-	}, []string{"check"})
-)
+var probeUp = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	Namespace: "snooze",
+	Name:      "activecheck_probe_up",
+	Help:      "Active check that verify a probe is up",
+}, []string{"check"})
 
-func (check *Check) Handle(c *gin.Context) {
-
+func (check *Check) Handle(ctx *gin.Context) {
 	// New prometheus registry
 	reg := prometheus.NewRegistry()
 	reg.MustRegister(probeUp)
 
 	key := uuid.NewString()
 	url := fmt.Sprintf("http://%s:%d/webhook/%s", config.CallbackAddress, config.CallbackPort, key)
+
 	if err := check.internal.probe.Fire(check, url); err != nil {
-		// TODO
+		ctx.String(http.StatusBadGateway, "failed to send probe: %s", err)
+
+		return
 	}
 
 	callback, err := waiter.Wait(key, *check.Timeout)
 	if err != nil {
-		// TODO
+		ctx.String(http.StatusBadGateway, "timeout: %s", err)
+
+		return
 	}
 
 	ok := check.CheckCallback(callback)
@@ -94,13 +98,20 @@ func (check *Check) Handle(c *gin.Context) {
 		probeUp.WithLabelValues(check.Name).Set(0)
 	}
 
-	promhttp.HandlerFor(reg, promhttp.HandlerOpts{}).ServeHTTP(c.Writer, c.Request)
+	promhttp.HandlerFor(reg, promhttp.HandlerOpts{}).ServeHTTP(ctx.Writer, ctx.Request)
 }
 
 func callbackHandler(c *gin.Context) {
-	key := c.Param("uid")
-	var callback models.SourceActiveCheck
-	c.BindJSON(&callback)
+	var (
+		key      = c.Param("uid")
+		callback models.SourceActiveCheck
+	)
+
+	if err := c.BindJSON(&callback); err != nil {
+		c.String(http.StatusBadRequest, "incorrect input data: %s", err)
+
+		return
+	}
 
 	waiter.Insert(key, callback)
 }

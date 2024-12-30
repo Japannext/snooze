@@ -1,16 +1,17 @@
 package mq
 
 import (
+	"github.com/japannext/snooze/pkg/common/tracing"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/trace"
-
-	"github.com/japannext/snooze/pkg/common/tracing"
 )
 
-var log *logrus.Entry
-var tracer trace.Tracer
+var (
+	log    *logrus.Entry
+	tracer trace.Tracer
+)
 
 type Client struct {
 	conn *nats.Conn

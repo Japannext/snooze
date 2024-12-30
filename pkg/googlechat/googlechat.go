@@ -2,18 +2,16 @@ package googlechat
 
 import (
 	"context"
-	"io/ioutil"
 	"net/http"
+	"os"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-	chat "google.golang.org/api/chat/v1"
-	//"golang.org/x/oauth2"
+	"github.com/japannext/snooze/pkg/common/tracing"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/option"
-
-	"github.com/japannext/snooze/pkg/common/tracing"
+	chat "google.golang.org/api/chat/v1"
+	log "github.com/sirupsen/logrus"
 )
 
 type Client struct {
@@ -50,10 +48,12 @@ func getCredentials() *google.Credentials {
 	if path == "" {
 		log.Fatal("No SERVICE_ACCOUNT_KEY defined")
 	}
-	data, err := ioutil.ReadFile(path)
+
+	data, err := os.ReadFile(path)
 	if err != nil {
 		log.Fatal("Error reading SERVICE_ACCOUNT_KEY file:", err)
 	}
+
 	ctx := context.Background()
 	cfg, err := google.CredentialsFromJSON(ctx, data, chat.ChatBotScope)
 	if err != nil {

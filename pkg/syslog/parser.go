@@ -4,19 +4,22 @@ import (
 	"context"
 	"time"
 
-	"go.opentelemetry.io/otel/trace"
-	"gopkg.in/mcuadros/go-syslog.v2/format"
-
 	"github.com/japannext/snooze/pkg/common/tracing"
 	"github.com/japannext/snooze/pkg/models"
+	"go.opentelemetry.io/otel/trace"
+	"gopkg.in/mcuadros/go-syslog.v2/format"
 )
 
-var SEVERITY_TEXTS = []string{"emergency", "alert", "critical", "error", "warning", "notice", "informational", "debug"}
-var SEVERITY_NUMBERS = []int32{21, 19, 18, 17, 13, 10, 9, 5}
+var (
+	SEVERITY_TEXTS   = []string{"emergency", "alert", "critical", "error", "warning", "notice", "informational", "debug"}
+	SEVERITY_NUMBERS = []int32{21, 19, 18, 17, 13, 10, 9, 5}
+)
 
-var FACILITY_TEXTS = []string{"kern", "user", "mail", "daemon", "auth", "syslog", "lpr", "news",
+var FACILITY_TEXTS = []string{
+	"kern", "user", "mail", "daemon", "auth", "syslog", "lpr", "news",
 	"uupc", "cron", "authpriv", "ftp", "ntp", "security", "console", "solaris-cron",
-	"local0", "local1", "local2", "local3", "local4", "local5", "local6", "local7"}
+	"local0", "local1", "local2", "local3", "local4", "local5", "local6", "local7",
+}
 
 const (
 	SOURCE_KIND = "syslog"

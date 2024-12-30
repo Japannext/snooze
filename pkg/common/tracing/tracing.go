@@ -6,18 +6,16 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/japannext/snooze/pkg/models"
 	log "github.com/sirupsen/logrus"
-
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/sdk/resource"
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
-	"go.opentelemetry.io/otel/semconv/v1.26.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"go.opentelemetry.io/otel/trace"
-
-	"github.com/japannext/snooze/pkg/models"
 )
 
 func NewTracerProvider(serviceName string) trace.TracerProvider {
@@ -118,12 +116,13 @@ func GetTraceID(ctx context.Context) string {
 func Warning(span trace.Span, err error) {
 	span.RecordError(err)
 }
+
 func Error(span trace.Span, err error) {
 	span.RecordError(err)
 	span.SetStatus(codes.Error, err.Error())
 }
 
-// Initialize the default tracer
+// Initialize the default tracer.
 func Init(serviceName string) {
 	provider := NewTracerProvider(serviceName)
 	otel.SetTracerProvider(provider)

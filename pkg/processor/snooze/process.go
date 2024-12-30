@@ -6,11 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	redisv9 "github.com/redis/go-redis/v9"
-
 	"github.com/japannext/snooze/pkg/common/redis"
 	"github.com/japannext/snooze/pkg/common/tracing"
 	"github.com/japannext/snooze/pkg/models"
+	redisv9 "github.com/redis/go-redis/v9"
 )
 
 func Process(ctx context.Context, item *models.Log) error {

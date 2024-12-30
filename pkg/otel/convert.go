@@ -4,40 +4,39 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/japannext/snooze/pkg/models"
 	commonv1 "go.opentelemetry.io/proto/otlp/common/v1"
 	logv1 "go.opentelemetry.io/proto/otlp/logs/v1"
 	resv1 "go.opentelemetry.io/proto/otlp/resource/v1"
-
-	"github.com/japannext/snooze/pkg/models"
 )
 
 const (
 	SOURCE_KIND = "otel"
 )
 
-// Convert an opentelemetry format to the snooze native format
+// Convert an opentelemetry format to the snooze native format.
 func convertLog(resource *resv1.Resource, scope *commonv1.InstrumentationScope, lr *logv1.LogRecord) *models.Log {
 	var item *models.Log
 
 	item.Source = models.Source{Kind: SOURCE_KIND, Name: config.SourceName}
 
 	// Timestamps
-	item.ActualTime = models.Time{Time: time.Unix(0, int64(lr.TimeUnixNano))}
-	if lr.ObservedTimeUnixNano == 0 {
+	item.ActualTime = models.Time{Time: time.Unix(0, int64(lr.GetTimeUnixNano()))}
+	if lr.GetObservedTimeUnixNano() == 0 {
 		item.ObservedTime = models.TimeNow()
 	} else {
-		item.ObservedTime = models.Time{Time: time.Unix(0, int64(lr.ObservedTimeUnixNano))}
+		item.ObservedTime = models.Time{Time: time.Unix(0, int64(lr.GetObservedTimeUnixNano()))}
 	}
 
-	item.SeverityText = lr.SeverityText
-	item.SeverityNumber = int32(lr.SeverityNumber)
+	item.SeverityText = lr.GetSeverityText()
+	item.SeverityNumber = int32(lr.GetSeverityNumber())
 
 	item.Labels = map[string]string{}
-	for key, value := range kvToMap(resource.Attributes) {
+	for key, value := range kvToMap(resource.GetAttributes()) {
 		item.Labels[fmt.Sprintf("otel.resource.%s", key)] = value
 	}
 
-	body := (&AnyValue{lr.Body}).ToMap()
+	body := (&AnyValue{lr.GetBody()}).ToMap()
 	for key, value := range body {
 		if key == "message" {
 			item.Message = value

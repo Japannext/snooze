@@ -35,8 +35,8 @@ func newBatch[T any]() Batch[T] {
 
 func (bc *BatchingChannel[T]) Start() {
 	go func() {
-		var batch = newBatch[T]()
-		var ticker = time.NewTicker(bc.timeout)
+		batch := newBatch[T]()
+		ticker := time.NewTicker(bc.timeout)
 		defer ticker.Stop()
 		for {
 			if bc.stopping {

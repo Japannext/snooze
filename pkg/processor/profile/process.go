@@ -2,7 +2,6 @@ package profile
 
 import (
 	"context"
-	// "github.com/sirupsen/logrus"
 
 	"github.com/japannext/snooze/pkg/models"
 )

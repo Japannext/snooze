@@ -1,14 +1,10 @@
 package routes
 
 import (
-	// "net/http"
+	// "net/http".
 	"time"
 
 	"github.com/gin-gonic/gin"
-	// "github.com/opensearch-project/opensearch-go/v4/opensearchapi"
-	// dsl "github.com/mottaquikarim/esquerydsl"
-	// "github.com/japannext/snooze/pkg/common/opensearch"
-	// "github.com/japannext/snooze/pkg/models"
 )
 
 type Timeline struct {

@@ -51,7 +51,7 @@ type Log struct {
 	Status LogStatus `json:"status"`
 }
 
-// Used by template systems in transforms/profiles/etc
+// Used by template systems in transforms/profiles/etc.
 func (item *Log) Context() map[string]interface{} {
 	return map[string]interface{}{
 		"source":   map[string]string{"kind": item.Source.Kind, "name": item.Source.Name},

@@ -8,7 +8,6 @@ import (
 	"syscall"
 
 	log "github.com/sirupsen/logrus"
-
 	"golang.org/x/sync/errgroup"
 )
 
@@ -64,7 +63,7 @@ func (dm *DaemonManager) Run() {
 		}
 	})
 
-	for name, _ := range dm.daemons {
+	for name := range dm.daemons {
 		n := name
 		d := dm.daemons[n]
 		log.Debug(fmt.Sprintf("Starting '%s' daemon", n))

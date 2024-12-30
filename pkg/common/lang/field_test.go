@@ -1,10 +1,10 @@
 package lang
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
 
 	"github.com/japannext/snooze/pkg/models"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestField(t *testing.T) {

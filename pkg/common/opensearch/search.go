@@ -6,11 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
-
 	"github.com/japannext/snooze/pkg/common/opensearch/dsl"
 	"github.com/japannext/snooze/pkg/common/tracing"
 	"github.com/japannext/snooze/pkg/models"
+	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
 )
 
 type SearchReq struct {
@@ -23,7 +22,7 @@ func (req *SearchReq) WithTimeRange(field string, timerange *models.TimeRange) *
 	if timerange == nil {
 		return req
 	}
-	var r = dsl.Range{}
+	r := dsl.Range{}
 	if timerange.Start > 0 {
 		r.Gte = &timerange.Start
 	}

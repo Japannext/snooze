@@ -6,9 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
-
 	"github.com/japannext/snooze/pkg/common/opensearch/dsl"
+	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
 )
 
 type AggregationResult struct {
@@ -22,7 +21,9 @@ type AggregationBucket struct {
 	DocCount int    `json:"doc_count"`
 }
 
-func Aggregate(ctx context.Context, index string, params *opensearchapi.SearchParams, doc *dsl.AggregationRequest) (*opensearchapi.SearchResp, error) {
+func Aggregate(ctx context.Context, index string, params *opensearchapi.SearchParams,
+	doc *dsl.AggregationRequest) (*opensearchapi.SearchResp, error) {
+
 	body, err := json.Marshal(doc)
 	if err != nil {
 		return nil, fmt.Errorf("invalid request body (%+v): %w", doc, err)
@@ -36,9 +37,11 @@ func Aggregate(ctx context.Context, index string, params *opensearchapi.SearchPa
 	if err != nil {
 		return nil, err
 	}
+
 	if resp.Errors {
 		return nil, fmt.Errorf("opensearch returned an error: %s", "")
 	}
+
 	if len(resp.Aggregations) == 0 {
 		// TODO
 	}

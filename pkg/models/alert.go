@@ -26,9 +26,9 @@ type Alert struct {
 	SeverityNumber int32 `json:"severityNumber,omitempty"`
 
 	// Text representing the severity
-	//SeverityText string `json:"severityText,omitempty"`
+	// SeverityText string `json:"severityText,omitempty"`
 	// Number representing the severity. Useful for filters (severity higher than a given value)
-	//SeverityNumber int32 `json:"severityNumber,omitempty"`
+	// SeverityNumber int32 `json:"severityNumber,omitempty"`
 
 	Description string `json:"description"`
 	Summary     string `json:"summary"`

@@ -5,14 +5,15 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/japannext/snooze/pkg/common/utils"
 	"github.com/japannext/snooze/pkg/models"
+	log "github.com/sirupsen/logrus"
 )
 
-const IDENTITY_PREFIX = "identity__"
-const TIME_LAYOUT = "2006-01-02T15:04:05.999999999Z"
+const (
+	IDENTITY_PREFIX = "identity__"
+	TIME_LAYOUT     = "2006-01-02T15:04:05.999999999Z"
+)
 
 func parseIdentity(labels map[string]string) map[string]string {
 	identity := map[string]string{}

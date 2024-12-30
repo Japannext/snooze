@@ -7,7 +7,7 @@ import (
 	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
 )
 
-// Check if the session is up
+// Check if the session is up.
 func CheckHealth(ctx context.Context) error {
 	resp, err := client.Cluster.Health(ctx, &opensearchapi.ClusterHealthReq{})
 	if err != nil {

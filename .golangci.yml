@@ -1,0 +1,15 @@
+---
+linters:
+  disable:
+  - exhaustruct
+  - varnamelen
+  - tagliatelle
+
+linters-settings:
+  depguard:
+    rules:
+      main:
+        list-mode: lax
+        allow:
+        - $gostd
+        - github.com/japannext

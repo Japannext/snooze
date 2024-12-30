@@ -13,9 +13,7 @@ var Cmd = &cobra.Command{
 	Long:  "Send a nagios/icinga notification to snooze",
 }
 
-var (
-	snoozeURL *url.URL
-)
+var snoozeURL *url.URL
 
 func init() {
 	var u string

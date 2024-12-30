@@ -6,12 +6,9 @@ import (
 	"github.com/japannext/snooze/pkg/common/mq"
 )
 
-var (
-	processQ *mq.Pub
-)
+var processQ *mq.Pub
 
 func Startup() *daemon.DaemonManager {
-
 	logging.Init()
 	initConfig()
 

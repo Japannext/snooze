@@ -87,5 +87,4 @@ func loadProfiles() {
 		}
 		profiles[profile.Name] = profile
 	}
-
 }

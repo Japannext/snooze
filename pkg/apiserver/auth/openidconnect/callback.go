@@ -4,10 +4,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/japannext/snooze/pkg/apiserver/token"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
-
-	"github.com/japannext/snooze/pkg/apiserver/token"
 )
 
 func callback(c *gin.Context) {
@@ -64,7 +63,7 @@ func callback(c *gin.Context) {
 	}
 
 	// Claims
-	var claims = make(map[string]interface{})
+	claims := make(map[string]interface{})
 	if err := idToken.Claims(&claims); err != nil {
 		c.String(http.StatusInternalServerError, "error verifying claims: %s", err)
 		return

@@ -1,16 +1,17 @@
 package snooze
 
 import (
+	"github.com/japannext/snooze/pkg/common/mq"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
-
-	"github.com/japannext/snooze/pkg/common/mq"
 )
 
-var log *logrus.Entry
-var tracer trace.Tracer
-var storeQ *mq.Pub
+var (
+	log    *logrus.Entry
+	tracer trace.Tracer
+	storeQ *mq.Pub
+)
 
 func Init() {
 	tracer = otel.Tracer("snooze")

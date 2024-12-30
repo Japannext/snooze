@@ -7,12 +7,12 @@ import (
 )
 
 type Schedule struct {
-	Always bool            `yaml:"always" json:"always"`
-	Weekly *WeeklySchedule `yaml:"weekly" json:"weekly,omitempty"`
-	Daily  *DailySchedule  `yaml:"daily" json:"daily,omitempty"`
+	Always bool            `json:"always"           yaml:"always"`
+	Weekly *WeeklySchedule `json:"weekly,omitempty" yaml:"weekly"`
+	Daily  *DailySchedule  `json:"daily,omitempty"  yaml:"daily"`
 
 	internal struct {
-		schedule ScheduleInterface
+		schedule Interface
 	}
 }
 
@@ -20,16 +20,14 @@ func (s *Schedule) Load() {
 	switch {
 	case s.Always:
 		s.internal.schedule = &AlwaysSchedule{}
-		break
 	case s.Weekly != nil:
 		s.internal.schedule = s.Weekly
-		break
 	case s.Daily != nil:
 		s.internal.schedule = s.Daily
-		break
 	default:
 		log.Fatalf("empty schedule defined")
 	}
+
 	s.internal.schedule.Load()
 }
 
@@ -41,7 +39,7 @@ func (s *Schedule) Match(t *time.Time) bool {
 	return s.internal.schedule.Match(t)
 }
 
-type ScheduleInterface interface {
+type Interface interface {
 	Load()
 	Match(*time.Time) bool
 }

@@ -5,11 +5,10 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	log "github.com/sirupsen/logrus"
-
 	"github.com/japannext/snooze/pkg/common/opensearch/format"
 	"github.com/japannext/snooze/pkg/common/utils"
 	"github.com/japannext/snooze/pkg/models"
+	log "github.com/sirupsen/logrus"
 )
 
 const ALERTMANAGER_KIND = "alertmanager"

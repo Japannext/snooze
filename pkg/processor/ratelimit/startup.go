@@ -1,19 +1,20 @@
 package ratelimit
 
 import (
-	"github.com/sirupsen/logrus"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/trace"
-
 	"github.com/japannext/snooze/pkg/common/mq"
 	"github.com/japannext/snooze/pkg/common/utils"
 	"github.com/japannext/snooze/pkg/models"
+	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 )
 
-var log *logrus.Entry
-var tracer trace.Tracer
-var rates = []*RateLimit{}
-var storeQ *mq.Pub
+var (
+	log    *logrus.Entry
+	tracer trace.Tracer
+	rates  = []*RateLimit{}
+	storeQ *mq.Pub
+)
 
 func Startup(ratelimits []*RateLimit) {
 	initMetrics()

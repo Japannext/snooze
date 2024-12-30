@@ -6,11 +6,10 @@ import (
 	"fmt"
 	"maps"
 
+	"github.com/japannext/snooze/pkg/common/tracing"
 	"github.com/nats-io/nats.go"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
-
-	"github.com/japannext/snooze/pkg/common/tracing"
 )
 
 func (client *Client) Pub() *Pub {
@@ -64,7 +63,7 @@ func (pub *Pub) publish(ctx context.Context, span trace.Span, data []byte) error
 	propagator.Inject(ctx, propagation.HeaderCarrier(header))
 	msg := &nats.Msg{Subject: pub.subject, Data: data, Header: header}
 
-	for key, _ := range header {
+	for key := range header {
 		tracing.SetString(span, fmt.Sprintf("nats.header.%s", key), header.Get(key))
 	}
 	tracing.SetString(span, "nats.data", string(data))

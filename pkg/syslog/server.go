@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	log "github.com/sirupsen/logrus"
-
 	"gopkg.in/mcuadros/go-syslog.v2"
 	"gopkg.in/mcuadros/go-syslog.v2/format"
 )
@@ -14,8 +13,7 @@ type SyslogServer struct {
 	srv *syslog.Server
 }
 
-type Handler struct {
-}
+type Handler struct{}
 
 func (h *Handler) Handle(record format.LogParts, msgLength int64, err error) {
 	log.Debugf("received log: %s", record)

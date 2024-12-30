@@ -1,10 +1,9 @@
 package googlechat
 
 import (
+	"github.com/japannext/snooze/pkg/common/utils"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-
-	"github.com/japannext/snooze/pkg/common/utils"
 )
 
 var config *Config
@@ -28,5 +27,4 @@ func initConfig() {
 	if err := config.TLS.Load(); err != nil {
 		log.Fatal(err)
 	}
-
 }

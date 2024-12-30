@@ -7,7 +7,6 @@ import (
 )
 
 func Process(ctx context.Context, item *models.Log) {
-
 	actual, observed := item.ActualTime.Time, item.ObservedTime.Time
 	if actual.After(observed) {
 		item.DisplayTime = item.ObservedTime

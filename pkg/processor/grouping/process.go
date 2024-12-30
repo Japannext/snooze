@@ -5,15 +5,14 @@ import (
 	"fmt"
 	"time"
 
-	redisv9 "github.com/redis/go-redis/v9"
-	"github.com/sirupsen/logrus"
-
 	"github.com/japannext/snooze/pkg/common/lang"
 	"github.com/japannext/snooze/pkg/common/opensearch/format"
 	"github.com/japannext/snooze/pkg/common/redis"
 	"github.com/japannext/snooze/pkg/common/tracing"
 	"github.com/japannext/snooze/pkg/common/utils"
 	"github.com/japannext/snooze/pkg/models"
+	redisv9 "github.com/redis/go-redis/v9"
+	"github.com/sirupsen/logrus"
 )
 
 var expiration = time.Duration(6) * time.Hour
@@ -37,7 +36,7 @@ func Process(ctx context.Context, item *models.Log) error {
 			}
 		}
 
-		var gr = &models.Group{Name: group.Name, Labels: make(map[string]string)}
+		gr := &models.Group{Name: group.Name, Labels: make(map[string]string)}
 		if len(group.GroupBy) > 0 {
 			for _, field := range group.internal.fields {
 				value, err := lang.ExtractField(item, field)
@@ -47,7 +46,6 @@ func Process(ctx context.Context, item *models.Log) error {
 				}
 				gr.Labels[field.String()] = value
 			}
-
 		} else if group.GroupByMap != "" {
 			switch group.GroupByMap {
 			case "source":
@@ -62,7 +60,6 @@ func Process(ctx context.Context, item *models.Log) error {
 					gr.Labels[fmt.Sprintf("gr.Labels.%s", k)] = v
 				}
 			}
-
 		}
 		gr.Hash = utils.ComputeHash(gr.Labels)
 		item.Groups = append(item.Groups, gr)

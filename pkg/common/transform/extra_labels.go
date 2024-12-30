@@ -3,10 +3,9 @@ package transform
 import (
 	"context"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/japannext/snooze/pkg/common/lang"
 	"github.com/japannext/snooze/pkg/models"
+	log "github.com/sirupsen/logrus"
 )
 
 type ExtraLabels struct {

@@ -1,8 +1,6 @@
 package apiserver
 
 import (
-	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
-
 	"github.com/japannext/snooze/pkg/apiserver/auth"
 	"github.com/japannext/snooze/pkg/apiserver/config"
 	"github.com/japannext/snooze/pkg/apiserver/routes"
@@ -12,6 +10,7 @@ import (
 	"github.com/japannext/snooze/pkg/common/opensearch"
 	"github.com/japannext/snooze/pkg/common/redis"
 	"github.com/japannext/snooze/pkg/common/tracing"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
 
 // We use a route registration array so that we can

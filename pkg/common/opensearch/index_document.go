@@ -6,9 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
-
 	"github.com/japannext/snooze/pkg/models"
+	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
 )
 
 type IndexReq struct {

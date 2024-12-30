@@ -3,10 +3,10 @@ package lang
 import (
 	"context"
 	"fmt"
-	"github.com/PaesslerAG/gval"
 	"reflect"
 	"strconv"
 
+	"github.com/PaesslerAG/gval"
 	"github.com/japannext/snooze/pkg/models"
 )
 
@@ -122,7 +122,7 @@ func reflectConvertTo(k reflect.Kind, value string) (interface{}, bool) {
 	return nil, false
 }
 
-// Check if a value is not nil/empty
+// Check if a value is not nil/empty.
 func hasFunction(args ...interface{}) (interface{}, error) {
 	for _, arg := range args {
 		v := reflect.ValueOf(arg)

@@ -29,7 +29,7 @@ profiles:
     red: "on"
     sound: "short"
 
-```
+```.
 */
 type Profile struct {
 	Name    string   `yaml:"name"`

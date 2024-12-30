@@ -21,6 +21,10 @@ tasks:
     cmds:
     - golangci-lint run ./...
 
+  fix:
+    cmds:
+    - golangci-lint run ./... --fix --enable-all
+
   build:
     cmds:
     - go fmt .

@@ -6,7 +6,6 @@ import (
 
 	"github.com/PaesslerAG/gval"
 	"github.com/PaesslerAG/jsonpath"
-
 	"github.com/japannext/snooze/pkg/models"
 )
 
@@ -24,7 +23,7 @@ func NewField(raw string) (*Field, error) {
 }
 
 func NewFields(raws []string) ([]*Field, error) {
-	var fields = []*Field{}
+	fields := []*Field{}
 	for _, raw := range raws {
 		f, err := NewField(raw)
 		if err != nil {

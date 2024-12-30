@@ -8,9 +8,9 @@ import (
 )
 
 type SetAction struct {
-	Identity map[string]string `yaml:"identity" json:"identity,omitempty"`
-	Labels   map[string]string `yaml:"labels" json:"labels,omitempty"`
-	Message  string            `yaml:"message" json:"message,omitempty"`
+	Identity map[string]string `json:"identity,omitempty" yaml:"identity"`
+	Labels   map[string]string `json:"labels,omitempty"   yaml:"labels"`
+	Message  string            `json:"message,omitempty"  yaml:"message"`
 
 	internal struct {
 		identity map[string]*lang.Template

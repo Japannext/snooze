@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/spf13/cobra"
-
 	"github.com/japannext/snooze/pkg/activecheck"
 	"github.com/japannext/snooze/pkg/alertmanager"
 	"github.com/japannext/snooze/pkg/apiserver"
@@ -16,6 +14,7 @@ import (
 	"github.com/japannext/snooze/pkg/syslog"
 	"github.com/japannext/snooze/pkg/version"
 	"github.com/japannext/snooze/pkg/writer"
+	"github.com/spf13/cobra"
 )
 
 var root = &cobra.Command{

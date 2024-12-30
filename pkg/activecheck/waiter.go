@@ -22,7 +22,7 @@ func NewWaiter() *Waiter {
 	}
 }
 
-// Get a channel or initialize it
+// Get a channel or initialize it.
 func (waiter *Waiter) getChannel(key string) chan models.SourceActiveCheck {
 	waiter.mu.Lock()
 	ch, found := waiter.m[key]
@@ -34,7 +34,7 @@ func (waiter *Waiter) getChannel(key string) chan models.SourceActiveCheck {
 	return ch
 }
 
-// Cleanup the key to avoid growing the map infinitely
+// Cleanup the key to avoid growing the map infinitely.
 func (waiter *Waiter) cleanup(key string) {
 	waiter.mu.Lock()
 	delete(waiter.m, key)

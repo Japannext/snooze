@@ -5,16 +5,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	gomail "gopkg.in/mail.v2"
-
+	"github.com/japannext/snooze/pkg/models"
 	"github.com/nats-io/nats.go/jetstream"
 	log "github.com/sirupsen/logrus"
-
-	"github.com/japannext/snooze/pkg/models"
+	gomail "gopkg.in/mail.v2"
 )
 
 func handler(ctx context.Context, msg jetstream.Msg) error {
-
 	var notification *models.Notification
 	if err := json.Unmarshal(msg.Data(), &notification); err != nil {
 		return err

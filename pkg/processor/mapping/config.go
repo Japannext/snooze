@@ -5,8 +5,8 @@ import (
 )
 
 type Mapping struct {
-	Name string            `yaml:"name" json:"name"`
-	Map  map[string]string `yaml:"map" json:"map"`
+	Name string            `json:"name" yaml:"name"`
+	Map  map[string]string `json:"map"  yaml:"map"`
 }
 
 func WithMappings(ctx context.Context) context.Context {

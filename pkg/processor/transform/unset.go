@@ -8,9 +8,9 @@ import (
 
 type UnsetAction struct {
 	Identity    []string `yaml:""`
-	Labels      []string `yaml:"labels" json:"labels,omitempty"`
-	AllIdentity bool     `yaml:"all_identity" json:"allIdentity,omitempty"`
-	AllLabels   bool     `yaml:"all_labels" json:"allLabels,omitempty"`
+	Labels      []string `json:"labels,omitempty"      yaml:"labels"`
+	AllIdentity bool     `json:"allIdentity,omitempty" yaml:"all_identity"`
+	AllLabels   bool     `json:"allLabels,omitempty"   yaml:"all_labels"`
 }
 
 func (action *UnsetAction) Load() Transformation {

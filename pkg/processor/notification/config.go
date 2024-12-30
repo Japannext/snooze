@@ -6,9 +6,9 @@ import (
 )
 
 type Notification struct {
-	Name         string               `yaml:"name" json:"name"`
-	If           string               `yaml:"if" json:"if,omitempty"`
-	Destinations []models.Destination `yaml:"destinations" json:"destinations"`
+	Name         string               `json:"name"         yaml:"name"`
+	If           string               `json:"if,omitempty" yaml:"if"`
+	Destinations []models.Destination `json:"destinations" yaml:"destinations"`
 
 	internal struct {
 		condition *lang.Condition

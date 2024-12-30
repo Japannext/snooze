@@ -8,9 +8,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	log "github.com/sirupsen/logrus"
-
 	"github.com/japannext/snooze/pkg/common/redis"
+	log "github.com/sirupsen/logrus"
 )
 
 const SNOOZE_SESSION = "snooze-session"
@@ -31,7 +30,7 @@ func sessionKey(id string) string {
 	return fmt.Sprintf("sessions/%s", id)
 }
 
-// Get the session from redis (if any)
+// Get the session from redis (if any).
 func getSession(c *gin.Context, id string) (*Session, error) {
 	ctx := c.Request.Context()
 	data, err := redis.Client.Get(ctx, sessionKey(id)).Bytes()
@@ -49,7 +48,7 @@ func getSession(c *gin.Context, id string) (*Session, error) {
 	return s, nil
 }
 
-// Set the session to redis
+// Set the session to redis.
 func setSession(ctx context.Context, s *Session) error {
 	data, err := json.Marshal(s)
 	if err != nil {
@@ -68,7 +67,7 @@ func deleteSession(ctx context.Context, id string) error {
 	return nil
 }
 
-// Create a new session
+// Create a new session.
 func newSession(c *gin.Context, ctx context.Context) *Session {
 	sessionID := uuid.NewString()
 	s := &Session{

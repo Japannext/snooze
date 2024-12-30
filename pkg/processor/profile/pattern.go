@@ -8,32 +8,31 @@ import (
 	"github.com/japannext/snooze/pkg/common/lang"
 	"github.com/japannext/snooze/pkg/common/utils"
 	"github.com/japannext/snooze/pkg/models"
-
 	"github.com/japannext/snooze/pkg/processor/transform"
 )
 
 type Pattern struct {
 	// Name of the pattern
-	Name string `yaml:"name" json:"name"`
+	Name string `json:"name" yaml:"name"`
 	// Description of the pattern
-	Description string `yaml:"description" json:"description"`
+	Description string `json:"description" yaml:"description"`
 	// If present, the pattern will match a given regex
-	Regex string `yaml:"regex" json:"regex"`
+	Regex string `json:"regex" yaml:"regex"`
 
-	Actions []transform.Action `yaml:"actions" json:"actions,omitempty"`
+	Actions []transform.Action `json:"actions,omitempty" yaml:"actions"`
 
 	// List of labels/fields used to group the logs
 	// for notification purposes
-	GroupBy map[string]string `yaml:"group_by" json:"groupBy"`
+	GroupBy map[string]string `json:"groupBy" yaml:"group_by"`
 
 	// Drop labels from the log when the pattern match
-	DroppedLabels []string `yaml:"dropped_labels" json:"droppedLabels"`
+	DroppedLabels []string `json:"droppedLabels" yaml:"dropped_labels"`
 
 	// Drop the log (dropped from database)
-	Drop bool `yaml:"drop" json:"drop"`
+	Drop bool `json:"drop" yaml:"drop"`
 
 	// Silence the log (won't notify)
-	Silence bool `yaml:"silence" json:"silence"`
+	Silence bool `json:"silence" yaml:"silence"`
 
 	// Internal values initialized after startup
 	internal struct {
@@ -50,7 +49,7 @@ func (p *Pattern) String() string {
 	return fmt.Sprintf("/%s/", p.Regex)
 }
 
-// Initialize internal values at startup
+// Initialize internal values at startup.
 func (p *Pattern) Load() error {
 	var err error
 
@@ -107,7 +106,7 @@ func (p *Pattern) Process(ctx context.Context, item *models.Log) (match, reject 
 
 	// Group By
 	if len(p.internal.groupBy) > 0 {
-		var gr = &models.Group{Name: p.Name, Labels: make(map[string]string)}
+		gr := &models.Group{Name: p.Name, Labels: make(map[string]string)}
 		for key, tpl := range p.internal.groupBy {
 			value, err := tpl.Execute(ctx, item)
 			if err != nil {
@@ -128,7 +127,7 @@ func (p *Pattern) Process(ctx context.Context, item *models.Log) (match, reject 
 	return
 }
 
-// Match the regex of the pattern, return the capture groups if any
+// Match the regex of the pattern, return the capture groups if any.
 func (p *Pattern) match(item *models.Log) (bool, map[string]string) {
 	var (
 		match   bool

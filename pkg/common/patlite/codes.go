@@ -1,18 +1,18 @@
 package patlite
 
 const (
-	// Status
+	// Status.
 	OFF    = 0x00
 	ON     = 0x01
 	BLINK1 = 0x02
 	BLINK2 = 0x03
 	// Color
-	// Buzzer
+	// Buzzer.
 	SHORT = 0x01
 	LONG  = 0x02
 	TINY  = 0x03
 	BEEP  = 0x04
-	// Communication
+	// Communication.
 	ACK  = 0x06
 	NACK = 0x15
 )

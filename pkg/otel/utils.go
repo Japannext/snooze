@@ -8,9 +8,9 @@ import (
 	commonv1 "go.opentelemetry.io/proto/otlp/common/v1"
 )
 
-// Check if a map has at least one key prefixed in a certain way
+// Check if a map has at least one key prefixed in a certain way.
 func hasPrefixedKey(m map[string]string, prefix string) bool {
-	for k, _ := range m {
+	for k := range m {
 		if strings.HasPrefix(k, prefix) {
 			return true
 		}
@@ -19,13 +19,13 @@ func hasPrefixedKey(m map[string]string, prefix string) bool {
 }
 
 // Convert the opentelemetry keyvalue to a map[string]string
-// TODO: handle types other than string with a conversion
+// TODO: handle types other than string with a conversion.
 func kvToMap(kvs []*commonv1.KeyValue) map[string]string {
 	var mapping map[string]string = make(map[string]string)
 
 	for _, kv := range kvs {
 		if kv != nil {
-			mapping[kv.Key] = kv.Value.GetStringValue()
+			mapping[kv.GetKey()] = kv.GetValue().GetStringValue()
 		}
 	}
 	return mapping
@@ -35,13 +35,12 @@ type AnyValue struct {
 	*commonv1.AnyValue
 }
 
-// Utility to return a single key-value
+// Utility to return a single key-value.
 func m(key, value string) map[string]string {
 	return map[string]string{key: value}
 }
 
 func (x AnyValue) ToMap() map[string]string {
-
 	switch x.GetValue().(type) {
 	case *commonv1.AnyValue_StringValue:
 		return m("string", x.GetStringValue())
@@ -68,9 +67,9 @@ func (x AnyValue) ToMap() map[string]string {
 			if i != 0 {
 				b.WriteString(", ")
 			}
-			b.WriteString(kv.Key)
+			b.WriteString(kv.GetKey())
 			b.WriteString("=")
-			b.WriteString(AnyValue{kv.Value}.ToString())
+			b.WriteString(AnyValue{kv.GetValue()}.ToString())
 		}
 		return m("map", b.String())
 	}
@@ -104,22 +103,22 @@ func (x AnyValue) ToString() string {
 			if i != 0 {
 				b.WriteString(", ")
 			}
-			b.WriteString(kv.Key)
+			b.WriteString(kv.GetKey())
 			b.WriteString("=")
-			b.WriteString(AnyValue{kv.Value}.ToString())
+			b.WriteString(AnyValue{kv.GetValue()}.ToString())
 		}
 		return b.String()
 	}
 	return ""
 }
 
-// Return a time in the correct format
+// Return a time in the correct format.
 func timeNow() uint64 {
 	return uint64(time.Now().UnixNano())
 }
 
 // Convert a string to the AnyValue type used
-// in opentelemetry
+// in opentelemetry.
 func AnyString(s string) *commonv1.AnyValue {
 	return &commonv1.AnyValue{
 		Value: &commonv1.AnyValue_StringValue{

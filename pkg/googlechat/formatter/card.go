@@ -3,12 +3,11 @@ package formatter
 import (
 	"fmt"
 
-	chat "google.golang.org/api/chat/v1"
-
 	"github.com/japannext/snooze/pkg/models"
+	chat "google.golang.org/api/chat/v1"
 )
 
-// Format things within a googlechat CardV2
+// Format things within a googlechat CardV2.
 type Card struct{}
 
 func NewCard() *Card {
@@ -61,7 +60,7 @@ func (p *Card) Format(item *models.Notification) (*chat.Message, error) {
 	}, nil
 }
 
-// Use the "identity" of the notification to determine the decorated text labels
+// Use the "identity" of the notification to determine the decorated text labels.
 func getIdentityLabels(identity map[string]string) (icon, top string, mid string, bottom string) {
 	icon = "help"
 

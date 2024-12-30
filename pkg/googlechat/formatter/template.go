@@ -4,10 +4,9 @@ import (
 	"bytes"
 	"text/template"
 
+	"github.com/japannext/snooze/pkg/models"
 	log "github.com/sirupsen/logrus"
 	chat "google.golang.org/api/chat/v1"
-
-	"github.com/japannext/snooze/pkg/models"
 )
 
 type TemplateOptions struct {
@@ -19,7 +18,6 @@ type Template struct {
 }
 
 func NewTemplate(opts *TemplateOptions) *Template {
-
 	if opts.Template == "" {
 		log.Fatalf("empty `template` provided")
 	}

@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	chat "google.golang.org/api/chat/v1"
-
 	"github.com/japannext/snooze/pkg/models"
+	chat "google.golang.org/api/chat/v1"
 )
 
 type V1 struct{}

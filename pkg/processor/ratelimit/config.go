@@ -4,24 +4,23 @@ import (
 	"time"
 
 	"github.com/japannext/snooze/pkg/common/lang"
-	// "github.com/japannext/snooze/pkg/common/redis"
 )
 
 type RateLimit struct {
 	// Name of the rate limit. Must be unique (used for key)
-	Name string `yaml:"name" json:"name"`
+	Name string `json:"name" yaml:"name"`
 
 	// An optional condition to only apply the rate limit if the condition match
-	If string `yaml:"if" json:"if,omitempty"`
+	If string `json:"if,omitempty" yaml:"if"`
 
 	// The group to group by
-	Group string `yaml:"group" json:"group"`
+	Group string `json:"group" yaml:"group"`
 
 	// The amount of authorized logs during the period
-	Burst uint64 `yaml:"burst" json:"burst"`
+	Burst uint64 `json:"burst" yaml:"burst"`
 
 	// The period used to measure the rate
-	Period time.Duration `yaml:"period" json:"period"`
+	Period time.Duration `json:"period" yaml:"period"`
 
 	internal struct {
 		condition *lang.Condition

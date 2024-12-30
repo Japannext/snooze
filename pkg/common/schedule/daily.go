@@ -7,9 +7,9 @@ import (
 )
 
 type DailySchedule struct {
-	From     string `yaml:"from" json:"from"`
-	To       string `yaml:"to" json:"to"`
-	TimeZone string `yaml:"timezone" json:"timezone"`
+	From     string `json:"from"     yaml:"from"`
+	To       string `json:"to"       yaml:"to"`
+	TimeZone string `json:"timezone" yaml:"timezone"`
 
 	internal struct {
 		from     *hourminute

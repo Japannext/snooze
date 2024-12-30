@@ -32,7 +32,7 @@ type Notification struct {
 	ActiveCheckURL string `json:"activeCheckURL"`
 }
 
-// Used by template systems in transforms/profiles/etc
+// Used by template systems in transforms/profiles/etc.
 func (item *Notification) Context() map[string]interface{} {
 	return map[string]interface{}{
 		"type":             item.Type,

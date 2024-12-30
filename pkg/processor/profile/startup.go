@@ -6,9 +6,11 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-var fastMapper *FastMapper
-var log *logrus.Entry
-var tracer trace.Tracer
+var (
+	fastMapper *FastMapper
+	log        *logrus.Entry
+	tracer     trace.Tracer
+)
 
 func Startup(prfs []*Profile) {
 	log = logrus.WithFields(logrus.Fields{"module": "profile"})

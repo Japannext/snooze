@@ -2,15 +2,16 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/trace"
-
 	"github.com/japannext/snooze/pkg/apiserver/auth"
 	"github.com/japannext/snooze/pkg/common/mq"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 )
 
-var storeQ *mq.Pub
-var tracer trace.Tracer
+var (
+	storeQ *mq.Pub
+	tracer trace.Tracer
+)
 
 func Register(r *gin.Engine) {
 	storeQ = mq.StorePub()
@@ -45,7 +46,7 @@ func Register(r *gin.Engine) {
 	}
 
 	// Admin routes
-	//adminOnly := rr.Group("/admin", auth.Authenticated(), auth.AdminOnly())
+	// adminOnly := rr.Group("/admin", auth.Authenticated(), auth.AdminOnly())
 	//{
 	//}
 }

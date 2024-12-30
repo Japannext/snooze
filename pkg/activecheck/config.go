@@ -10,8 +10,10 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var config *Config
-var checks = map[string]Check{}
+var (
+	config *Config
+	checks = map[string]Check{}
+)
 
 type Config struct {
 	CallbackAddress string `mapstructure:"CALLBACK_ADDRESS"`

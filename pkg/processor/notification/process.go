@@ -20,7 +20,7 @@ func Process(ctx context.Context, item *models.Log) error {
 	// A set is necessary to avoid sending duplicates when 2 rules match
 	// the same destination.
 	// var destinations = utils.NewOrderedSet[models.Destination]()
-	var destinations = make(map[models.Destination]bool)
+	destinations := make(map[models.Destination]bool)
 
 	tracing.SetInt(span, "notifications.number", len(notifications))
 

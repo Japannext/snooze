@@ -2,16 +2,13 @@ package processor
 
 import (
 	"github.com/gin-gonic/gin"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/trace"
-
 	"github.com/japannext/snooze/pkg/common/daemon"
 	"github.com/japannext/snooze/pkg/common/logging"
 	"github.com/japannext/snooze/pkg/common/mq"
 	"github.com/japannext/snooze/pkg/common/redis"
 	"github.com/japannext/snooze/pkg/common/tracing"
 	"github.com/japannext/snooze/pkg/common/utils"
-	// Sub-Processors
+	// Sub-Processors.
 	"github.com/japannext/snooze/pkg/processor/grouping"
 	"github.com/japannext/snooze/pkg/processor/mapping"
 	"github.com/japannext/snooze/pkg/processor/notification"
@@ -21,18 +18,21 @@ import (
 	"github.com/japannext/snooze/pkg/processor/snooze"
 	"github.com/japannext/snooze/pkg/processor/store"
 	"github.com/japannext/snooze/pkg/processor/transform"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 )
 
-var processQ *mq.Sub
-var pool *utils.Pool
-var tracer trace.Tracer
+var (
+	processQ *mq.Sub
+	pool     *utils.Pool
+	tracer   trace.Tracer
+)
 
 var routes []func(*gin.Engine)
 
 // Logic done only at the application startup.
 // All errors are fatal.
 func Startup() *daemon.DaemonManager {
-
 	logging.Init()
 	initConfig()
 	initMetrics()

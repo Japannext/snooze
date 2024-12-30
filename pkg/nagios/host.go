@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/japannext/snooze/pkg/models"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-
-	"github.com/japannext/snooze/pkg/models"
 )
 
 var (

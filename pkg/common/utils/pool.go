@@ -38,7 +38,6 @@ func (pool *Pool) TryAcquire() bool {
 	default:
 		return false
 	}
-
 }
 
 func (pool *Pool) Max() int {

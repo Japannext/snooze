@@ -7,29 +7,29 @@ import (
 )
 
 func AdminOnly() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		for _, role := range c.GetStringSlice("roles") {
+	return func(ctx *gin.Context) {
+		for _, role := range ctx.GetStringSlice("roles") {
 			if role == authConfig.AdminRole {
-				c.Next()
+				ctx.Next()
 				return
 			}
 		}
-		c.String(http.StatusForbidden, "You are not allowed on this page. Need to be admin")
-		c.Abort()
-		return
+
+		ctx.String(http.StatusForbidden, "You are not allowed on this page. Need to be admin")
+		ctx.Abort()
 	}
 }
 
 func UserAllowed() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		for _, role := range c.GetStringSlice("roles") {
+	return func(ctx *gin.Context) {
+		for _, role := range ctx.GetStringSlice("roles") {
 			if role == authConfig.AdminRole || role == authConfig.UserRole {
-				c.Next()
+				ctx.Next()
 				return
 			}
 		}
-		c.String(http.StatusForbidden, "You are not allowed on this page. Need to be user or admin")
-		c.Abort()
-		return
+
+		ctx.String(http.StatusForbidden, "You are not allowed on this page. Need to be user or admin")
+		ctx.Abort()
 	}
 }

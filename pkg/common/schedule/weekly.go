@@ -7,10 +7,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Like golang's time.Weekday
+// Like golang's time.Weekday.
 var weekdays = []string{"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}
 
-// Transform a string to a Weekday (if possible)
+// Transform a string to a Weekday (if possible).
 func parseWeekday(w string) (int, error) {
 	for i, s := range weekdays {
 		if s == w {
@@ -20,7 +20,7 @@ func parseWeekday(w string) (int, error) {
 	return 0, fmt.Errorf("'%s' is not a valid weekday", w)
 }
 
-// Parse a time string in the format "HH:MM" to an hour and minute integers
+// Parse a time string in the format "HH:MM" to an hour and minute integers.
 func parseTime(s string) (int, int, error) {
 	var h, m int
 	t, err := time.Parse("15:04", s)
@@ -31,9 +31,9 @@ func parseTime(s string) (int, int, error) {
 }
 
 type WeeklySchedule struct {
-	From     *Weektime `yaml:"from" json:"from"`
-	To       *Weektime `yaml:"to" json:"to"`
-	TimeZone string    `yaml:"timezone" json:"timezone"`
+	From     *Weektime `json:"from"     yaml:"from"`
+	To       *Weektime `json:"to"       yaml:"to"`
+	TimeZone string    `json:"timezone" yaml:"timezone"`
 
 	internal struct {
 		timezone *time.Location
@@ -68,10 +68,10 @@ func (s *WeeklySchedule) Match(t *time.Time) bool {
 	return wt.InBetween(s.From, s.To)
 }
 
-// A specific time within a week, represented by a weekday, and a time (hour:minute)
+// A specific time within a week, represented by a weekday, and a time (hour:minute).
 type Weektime struct {
-	Weekday string `yaml:"weekday" json:"weekday"`
-	Time    string `yaml:"time" json:"time"`
+	Weekday string `json:"weekday" yaml:"weekday"`
+	Time    string `json:"time"    yaml:"time"`
 
 	internal struct {
 		weekday int
@@ -100,7 +100,7 @@ func (wt *Weektime) Load() {
 	}
 }
 
-// Check if a weektime is between 2 weektimes
+// Check if a weektime is between 2 weektimes.
 func (wt *Weektime) InBetween(wa, wb *Weektime) bool {
 	a := wa.internal
 	b := wb.internal

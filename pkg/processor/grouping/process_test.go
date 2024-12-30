@@ -2,10 +2,10 @@ package grouping
 
 import (
 	"context"
-	"github.com/stretchr/testify/assert"
 	"testing"
 
 	"github.com/japannext/snooze/pkg/models"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestProcess(t *testing.T) {

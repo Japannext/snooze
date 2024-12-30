@@ -1,10 +1,10 @@
 package schedule
 
 import (
+	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 type dailyTest struct {
@@ -16,12 +16,18 @@ type dailyTest struct {
 }
 
 var dailyTests = []dailyTest{
-	{"Natural order #1",
-		"08:00", "17:00", "2024-04-19T10:30:00+09:00", true},
-	{"Natural order #2",
-		"08:00", "17:00", "2024-04-19T07:30:00+09:00", true},
-	{"Natural order #3",
-		"08:00", "17:00", "2024-04-19T07:30:00+09:00", true},
+	{
+		"Natural order #1",
+		"08:00", "17:00", "2024-04-19T10:30:00+09:00", true,
+	},
+	{
+		"Natural order #2",
+		"08:00", "17:00", "2024-04-19T07:30:00+09:00", true,
+	},
+	{
+		"Natural order #3",
+		"08:00", "17:00", "2024-04-19T07:30:00+09:00", true,
+	},
 }
 
 func TestMatch(t *testing.T) {

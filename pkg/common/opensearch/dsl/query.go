@@ -10,14 +10,6 @@ type QueryReq struct {
 	Script *Script           `json:"script,omitempty"`
 }
 
-/*
-type QueryRequest struct {
-	Query Query `json:"query"`
-	Sort []map[string]Sort `json:"sort,omitempty"`
-	Script *Script `json:"script,omitempty"`
-}
-*/
-
 const EMPTY_MAP = "{}"
 
 type EmptyMap struct{}
@@ -28,7 +20,6 @@ func (m *EmptyMap) MarshalJSON() ([]byte, error) {
 
 func (m *EmptyMap) UnmarshalJSON(data []byte) error {
 	if string(data) == EMPTY_MAP {
-		m = &EmptyMap{}
 		return nil
 	}
 	return fmt.Errorf("`%s` is not {}", data)
@@ -89,16 +80,19 @@ type Range struct {
 
 func (query *Query) WithTerm(key string, value interface{}) *Query {
 	item := QueryItem{Term: map[string]interface{}{key: value}}
+
 	return query.And(item)
 }
 
 func (query *Query) WithTerms(key string, values []string) *Query {
 	item := QueryItem{Terms: map[string][]string{key: values}}
+
 	return query.And(item)
 }
 
 func (query *Query) WithRange(field string, rg Range) *Query {
 	item := QueryItem{Range: map[string]Range{field: rg}}
+
 	return query.And(item)
 }
 
@@ -106,7 +100,9 @@ func (query *Query) And(item QueryItem) *Query {
 	if query.Bool == nil {
 		query.Bool = &Bool{}
 	}
+
 	query.Bool.Must = append(query.Bool.Must, item)
+
 	return query
 }
 
@@ -114,7 +110,9 @@ func (query *Query) Or(item QueryItem) *Query {
 	if query.Bool == nil {
 		query.Bool = &Bool{}
 	}
+
 	query.Bool.Should = append(query.Bool.Should, item)
+
 	return query
 }
 
@@ -122,27 +120,33 @@ func (query *Query) AndNot(item QueryItem) *Query {
 	if query.Bool == nil {
 		query.Bool = &Bool{}
 	}
+
 	query.Bool.MustNot = append(query.Bool.MustNot, item)
+
 	return query
 }
 
 func (query *Query) WithExists(field string) *Query {
 	item := QueryItem{Exists: &Exists{Field: field}}
+
 	return query.And(item)
 }
 
 func (query *Query) WithNotExists(field string) *Query {
 	item := QueryItem{Exists: &Exists{Field: field}}
+
 	return query.AndNot(item)
 }
 
 func (query *Query) WithQueryString(text string) *Query {
 	item := QueryItem{QueryString: &QueryString{Query: text}}
+
 	return query.And(item)
 }
 
 func (req *QueryReq) MatchAll() *QueryReq {
 	req.Query.MatchAll = &EmptyMap{}
+
 	return req
 }
 
@@ -153,7 +157,9 @@ func (req *QueryReq) WithSort(field string, ascending bool) *QueryReq {
 	} else {
 		order = Sort{Order: "desc"}
 	}
+
 	req.Sort = append(req.Sort, map[string]Sort{field: order})
+
 	return req
 }
 
@@ -163,5 +169,6 @@ func (req *QueryReq) WithPainlessScript(script string, params map[string]interfa
 		Lang:   "painless",
 		Params: params,
 	}
+
 	return req
 }

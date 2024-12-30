@@ -6,10 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
-
 	"github.com/japannext/snooze/pkg/common/opensearch/dsl"
 	"github.com/japannext/snooze/pkg/common/tracing"
+	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
 )
 
 type UpdateByQueryReq struct {

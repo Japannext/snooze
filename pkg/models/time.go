@@ -5,11 +5,11 @@ import (
 	"strconv"
 	"time"
 
-	// Important for making timezone work as expected
+	// Important for making timezone work as expected.
 	_ "time/tzdata"
 )
 
-// Wrapper for marshal/unmarshal all times in the same way
+// Wrapper for marshal/unmarshal all times in the same way.
 type Time struct {
 	time.Time
 }

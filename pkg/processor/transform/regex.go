@@ -10,8 +10,8 @@ import (
 )
 
 type RegexAction struct {
-	Field string `yaml:"field" json:"field"`
-	Match string `yaml:"match" json:"match"`
+	Field string `json:"field" yaml:"field"`
+	Match string `json:"match" yaml:"match"`
 
 	internal struct {
 		field  *lang.Field

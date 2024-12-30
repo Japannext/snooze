@@ -6,9 +6,11 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-var log *logrus.Entry
-var tracer trace.Tracer
-var transforms []*Transform
+var (
+	log        *logrus.Entry
+	tracer     trace.Tracer
+	transforms []*Transform
+)
 
 func Startup(trs []*Transform) {
 	log = logrus.WithFields(logrus.Fields{"module": "transform"})

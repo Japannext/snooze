@@ -1,19 +1,20 @@
 package notification
 
 import (
+	"github.com/japannext/snooze/pkg/common/mq"
+	"github.com/japannext/snooze/pkg/models"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
-
-	"github.com/japannext/snooze/pkg/common/mq"
-	"github.com/japannext/snooze/pkg/models"
 )
 
-var notifications []*Notification
-var defaultDestinations []models.Destination
-var log *logrus.Entry
-var tracer trace.Tracer
-var notifyQ, storeQ *mq.Pub
+var (
+	notifications       []*Notification
+	defaultDestinations []models.Destination
+	log                 *logrus.Entry
+	tracer              trace.Tracer
+	notifyQ, storeQ     *mq.Pub
+)
 
 func Startup(notifs []*Notification, defaults []models.Destination) {
 	log = logrus.WithFields(logrus.Fields{"module": "notification"})

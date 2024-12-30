@@ -49,7 +49,6 @@ func (sem *Semaphore) WaitForFree() <-chan struct{} {
 	ch := make(chan struct{})
 	go func() {
 		for {
-
 		}
 	}()
 	return ch

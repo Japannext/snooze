@@ -6,7 +6,7 @@ import (
 	"sort"
 )
 
-// Compute the hash of a map of string, in a predictable way
+// Compute the hash of a map of string, in a predictable way.
 func ComputeHash(m map[string]string) string {
 	var keys []string
 	h := md5.New()
