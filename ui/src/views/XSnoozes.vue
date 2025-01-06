@@ -41,13 +41,13 @@ const columns: DataTableColumn<Snooze>[] = [
   {
     key: 'from',
     title: 'From',
-    render: (row) => h(XTime, {ts: row.startAt, format: 'absolute'}),
+    render: (row) => h(XTime, {ts: row.startsAt, format: 'absolute'}),
     width: 150,
   },
   {
     key: 'to',
     title: 'To',
-    render: (row) => h(XTime, {ts: row.expireAt, format: 'absolute'}),
+    render: (row) => h(XTime, {ts: row.endsAt, format: 'absolute'}),
     width: 150,
   },
   {
@@ -58,7 +58,7 @@ const columns: DataTableColumn<Snooze>[] = [
   {
     key: 'duration',
     title: 'Duration',
-    render: (row) => h(XDuration, {duration: (row.expireAt - row.startAt)}),
+    render: (row) => h(XDuration, {duration: (row.endsAt - row.startsAt)}),
     width: 150,
   },
   {
@@ -107,8 +107,8 @@ function renderSnoozeTime(row: Snooze) {
     isCancelled = true
   }
   return h(XSnoozeTime, {
-    start: row.startAt,
-    end: row.expireAt,
+    start: row.startsAt,
+    end: row.endsAt,
     cancelled: isCancelled,
   })
 }

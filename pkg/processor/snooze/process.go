@@ -49,7 +49,7 @@ func Process(ctx context.Context, item *models.Log) error {
 			continue
 		}
 		now := time.Now()
-		if now.After(sz.ExpireAt.Time) || now.Before(sz.StartAt.Time) {
+		if now.After(sz.EndsAt.Time) || now.Before(sz.StartsAt.Time) {
 			tracing.SetString(span, fmt.Sprintf("snooze.%s:%s", groupName, hashes[groupName]), "ignoring because out of range")
 			continue
 		}

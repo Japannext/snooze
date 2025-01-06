@@ -62,7 +62,7 @@ func sendHost(c *cobra.Command, args []string) {
 		if err != nil {
 			log.Fatalf("failed to parse timestamp '%s': %s", t, err)
 		}
-		item.StartAt = models.Time{Time: t}
+		item.StartsAt = models.Time{Time: t}
 	}
 
 	for key, value := range labels {

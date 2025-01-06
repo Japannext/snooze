@@ -18,8 +18,8 @@ function defaultValue(): Snooze {
   var now = DateTime.now()
   return {
     reason: "",
-    startAt: now.toMillis(),
-    expireAt: now.plus({hour: 1}).toMillis(),
+    startsAt: now.toMillis(),
+    endsAt: now.plus({hour: 1}).toMillis(),
     groups: [],
     tags: [],
     username: ""
@@ -63,7 +63,7 @@ function exit() {
             <x-group-select v-model:groups="item.groups" />
           </n-form-item-gi>
           <n-form-item-gi label="Period" size="small" :span="24" required>
-            <x-time-period v-model:start="item.startAt" v-model:end="item.expireAt" />
+            <x-time-period v-model:start="item.startsAt" v-model:end="item.endsAt" />
           </n-form-item-gi>
           <n-form-item-gi label="Reason" size="small" :span="24">
             <n-input v-model:value="item.reason" type="textarea" />

@@ -58,7 +58,7 @@ func alertHandler(ctx context.Context, alert PostableAlert) {
 		item.Source.Kind = ALERTMANAGER_KIND
 		item.Source.Name = config.InstanceName
 		item.Identity = parseIdentity(labels)
-		item.StartAt = startTime
+		item.StartsAt = startTime
 		item.AlertName = alertName
 		item.AlertGroup = alertGroup
 		item.SeverityText, item.SeverityNumber = parseSeverity(labels)

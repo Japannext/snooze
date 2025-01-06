@@ -27,8 +27,8 @@ export type Snooze = {
   groupName: string;
   hash: string;
   reason: string;
-  startAt: DateTime;
-  expireAt: DateTime;
+  startsAt: DateTime;
+  endsAt: DateTime;
 }
 
 export type ListOf<Type> = {

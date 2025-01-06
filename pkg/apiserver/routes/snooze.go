@@ -106,7 +106,7 @@ func postSnooze(c *gin.Context) {
 	for _, group := range item.Groups {
 		key := fmt.Sprintf("snooze/%s/%s", group.Name, group.Hash)
 		pipe.Set(ctx, key, data, 0)
-		pipe.ExpireAt(ctx, key, item.ExpireAt.Time)
+		pipe.ExpireAt(ctx, key, item.EndsAt.Time)
 	}
 	if _, err := pipe.Exec(ctx); err != nil {
 		c.String(http.StatusInternalServerError, "failed to execute redis pipeline: %s", err)

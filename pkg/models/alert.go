@@ -12,8 +12,8 @@ type Alert struct {
 	Identity map[string]string `json:"identity"`
 
 	// Timestamps
-	StartAt Time `json:"startAt"`
-	EndAt   Time `json:"endAt"`
+	StartsAt Time `json:"startsAt"`
+	EndsAt   Time `json:"endsAt"`
 
 	// Name of the alert
 	AlertName string `json:"alertName"`
@@ -63,7 +63,7 @@ type AlertUpdate struct {
 
 func init() {
 	index := IndexTemplate{
-		Version:       0,
+		Version:       1,
 		IndexPatterns: []string{ALERT_INDEX},
 		DataStream:    map[string]map[string]string{"timestamp_field": {"name": "startsAt"}},
 		Template: Indice{

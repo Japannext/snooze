@@ -8,8 +8,8 @@ export type Alert = {
   source: object
   identity: Identity
 
-  startAt: number
-  endAt: number
+  startsAt: number
+  endsAt: number
 
   alertName: string
   alertGroup: string

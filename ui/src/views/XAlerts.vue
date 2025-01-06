@@ -41,7 +41,7 @@ const columns: DataTableColumn<Alert>[] = [
   {type: 'expand', renderExpand: renderExpand},
   {
     title: () => h(XTimestampTitle),
-    render: (row) => h(XTime, {ts: row.startAt}),
+    render: (row) => h(XTime, {ts: row.startsAt}),
     key: 'timestamp',
     width: 150,
   },

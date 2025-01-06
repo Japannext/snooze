@@ -12,8 +12,8 @@ export type Snooze = {
 
   cancelled?: SnoozeCancel
 
-  startAt: number
-  expireAt: number
+  startsAt: number
+  endsAt: number
 
   username?: string
 }
