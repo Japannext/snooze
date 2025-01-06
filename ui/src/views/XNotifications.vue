@@ -124,6 +124,6 @@ function renderExpand(row: Notification) {
     :columns="columns"
     :data="items"
     :row-key="(row) => row._id"
-    :pagination="params.pagination"
+    :pagination="pagination"
   />
 </template>
