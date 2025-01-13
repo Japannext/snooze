@@ -9,7 +9,7 @@ import (
 	"github.com/japannext/snooze/pkg/models"
 )
 
-func sendAlert(item *models.Alert) error {
+func sendAlert(item *models.ActiveAlert) error {
 	client := &http.Client{}
 
 	data, err := json.Marshal(item)

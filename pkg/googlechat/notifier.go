@@ -36,7 +36,7 @@ func notificationHandler(ctx context.Context, msg jetstream.Msg) error {
 
 	notification.NotificationTime = models.TimeNow()
 	err := storeQ.PublishData(ctx, &format.Create{
-		Index: models.NOTIFICATION_INDEX,
+		Index: models.NotificationIndex,
 		Item:  notification,
 	})
 	if err != nil {

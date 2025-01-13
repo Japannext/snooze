@@ -175,7 +175,7 @@ func Process(ctx context.Context, item *models.Log) error {
 				Fields:   i0.fields,
 			}
 			err := storeQ.PublishData(ctx, &format.Create{
-				Index: models.RATELIMIT_INDEX,
+				Index: models.RatelimitIndex,
 				Item:  item,
 			})
 			if err != nil {
@@ -196,7 +196,7 @@ func Process(ctx context.Context, item *models.Log) error {
 				continue
 			}
 			err = storeQ.PublishData(ctx, &format.Update{
-				Index: models.RATELIMIT_INDEX,
+				Index: models.RatelimitIndex,
 				ID:    id,
 				Doc:   data,
 			})

@@ -19,7 +19,7 @@ func Startup() *daemon.DaemonManager {
 	mq.Init()
 
 	notifyQ = mq.NotifySub("mail")
-	storeQ = mq.StorePub().WithIndex(models.NOTIFICATION_INDEX)
+	storeQ = mq.StorePub().WithIndex(models.NotificationIndex)
 
 	dm := daemon.NewDaemonManager()
 

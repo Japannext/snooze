@@ -25,12 +25,14 @@ func postAlert(c *gin.Context) {
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "failed to read body: %w", err)
+
 		return
 	}
 
 	var alerts []PostableAlert
 	if err := json.Unmarshal(body, &alerts); err != nil {
 		c.String(http.StatusBadRequest, "Failed to unmarshal body into Alerts: %w", err)
+
 		return
 	}
 

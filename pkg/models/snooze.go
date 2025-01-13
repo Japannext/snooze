@@ -1,6 +1,6 @@
 package models
 
-const SNOOZE_INDEX = "v2-snoozes"
+const SnoozeIndex = "v2-snoozes"
 
 type Snooze struct {
 	Base
@@ -24,9 +24,9 @@ type SnoozeCancel struct {
 }
 
 func init() {
-	index := IndexTemplate{
+	OpensearchIndexTemplates[SnoozeIndex] = IndexTemplate{
 		Version:       3,
-		IndexPatterns: []string{SNOOZE_INDEX},
+		IndexPatterns: []string{SnoozeIndex},
 		DataStream:    map[string]map[string]string{"timestamp_field": {"name": "startAt"}},
 		Template: Indice{
 			Settings: IndexSettings{1, 2},
@@ -47,5 +47,4 @@ func init() {
 			},
 		},
 	}
-	INDEXES = append(INDEXES, index)
 }

@@ -6,6 +6,8 @@ import (
 	"fmt"
 )
 
+const updateAction Action = "update"
+
 type Update struct {
 	Index       string
 	ID          string
@@ -22,14 +24,15 @@ type updateWrapper struct {
 
 func (a *Update) Serialize() ([]byte, error) {
 	var buf bytes.Buffer
-	header := BulkHeader(map[Action]Metadata{
-		UPDATE_ACTION: {Index: a.Index, ID: a.ID},
-	})
-	headerData, err := json.Marshal(header)
-	if err != nil {
-		return []byte{}, fmt.Errorf("error marshalling `%+v`: %s", header, err)
-	}
-	buf.Write(headerData)
+
+    meta := Metadata{Index: a.Index, ID: a.ID}
+
+    header, err := MarshalHeader(updateAction, meta)
+    if err != nil {
+        return []byte{}, fmt.Errorf("error serializing header: %w", err)
+    }
+
+	buf.Write(header)
 	buf.WriteString("\n")
 
 	w := &updateWrapper{
@@ -38,23 +41,25 @@ func (a *Update) Serialize() ([]byte, error) {
 	if a.Doc != nil {
 		w.Doc, err = json.Marshal(a.Doc)
 		if err != nil {
-			return []byte{}, fmt.Errorf("error marhsalling `%+v`: %s", a.Doc, err)
+			return []byte{}, fmt.Errorf("error serializing document `%+v`: %w", a.Doc, err)
 		}
 	}
 
 	if a.Upsert != nil {
 		upsert, err := json.Marshal(a.Upsert)
 		if err != nil {
-			return []byte{}, fmt.Errorf("error marhsalling `%+v`: %s", a.Upsert, err)
+			return []byte{}, fmt.Errorf("error serializing upsert `%+v`: %w", a.Upsert, err)
 		}
+
 		upsertData := json.RawMessage(upsert)
 		w.Upsert = &upsertData
 	}
 
 	data, err := json.Marshal(w)
 	if err != nil {
-		return []byte{}, fmt.Errorf("error marhsalling `%+v`: %s", w, err)
+		return []byte{}, fmt.Errorf("error serializing body `%+v`: %s", w, err)
 	}
+
 	buf.Write(data)
 	buf.WriteString("\n")
 

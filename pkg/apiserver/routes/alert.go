@@ -2,12 +2,18 @@ package routes
 
 import (
 	"net/http"
+	// "time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/japannext/snooze/pkg/common/opensearch"
-	"github.com/japannext/snooze/pkg/common/opensearch/dsl"
+	// "github.com/japannext/snooze/pkg/common/opensearch/dsl"
 	"github.com/japannext/snooze/pkg/common/redis"
 	"github.com/japannext/snooze/pkg/models"
+)
+
+const (
+	alertFilterActive  = "active"
+	alertFilterHistory = "history"
 )
 
 type getAlertsParams struct {
@@ -17,38 +23,40 @@ type getAlertsParams struct {
 	*models.Filter
 }
 
-var zero uint64 = 0
-
 func getAlerts(c *gin.Context) {
 	ctx, span := tracer.Start(c.Request.Context(), "getAlerts")
 	defer span.End()
 
-	req := &opensearch.SearchReq{Index: models.ALERT_INDEX}
+	params := getAlertsParams{Pagination: models.NewPagination()}
+	if err := c.BindQuery(&params); err != nil {
+		c.String(http.StatusBadRequest, "error in query parameter: %s", err)
 
-	params := getLogsParams{Pagination: models.NewPagination()}
-	c.BindQuery(&params)
+		return
+	}
+
 	if params.Pagination.OrderBy == "" {
 		params.Pagination.OrderBy = "startsAt"
 	}
-	req.WithPagination(params.Pagination)
-	req.WithTimeRange("startsAt", params.TimeRange)
-	req.WithSearch(params.Search)
+
+	req := &opensearch.SearchReq{}
 
 	if params.Filter != nil {
 		switch params.Filter.Text {
-		case "active":
-			req.Doc.WithTerm("endsAt", 0)
-		case "history":
-			req.Doc.WithRange("endsAt", dsl.Range{Gt: &zero})
-		case "all":
-			// no filter
+		case alertFilterActive:
+			req.Index = models.ActiveAlertIndex
+		case alertFilterHistory:
+			req.Index = models.AlertHistoryIndex
 		default:
 			c.String(http.StatusBadRequest, "unknown filter name `%s`", params.Filter.Text)
 			return
 		}
 	}
 
-	items, err := opensearch.Search[*models.Alert](ctx, req)
+	req.WithPagination(params.Pagination)
+	req.WithTimeRange("startsAt", params.TimeRange)
+	req.WithSearch(params.Search)
+
+	items, err := opensearch.Search[*models.AlertRecord](ctx, req)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error getting alerts for : %s", err)
 		return

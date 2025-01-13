@@ -26,7 +26,7 @@ func postAck(c *gin.Context) {
 	}
 
 	req := opensearch.UpdateByQueryReq{
-		Index: models.LOG_INDEX,
+		Index: models.LogIndex,
 	}
 	req.Doc.WithTerms("_id", item.LogIDs)
 	req.Doc.WithPainlessScript("ctx._source.status.kind = params.kind", map[string]interface{}{
@@ -39,8 +39,8 @@ func postAck(c *gin.Context) {
 		return
 	}
 
-	err = opensearch.Index(ctx, &opensearch.IndexReq{
-		Index: models.ACK_INDEX,
+	_, err = opensearch.Index(ctx, &opensearch.IndexReq{
+		Index: models.AckIndex,
 		Item:  item,
 	})
 	if err != nil {

@@ -25,7 +25,7 @@ func hasDatastream(ctx context.Context, name string) (bool, error) {
 	ds, err := client.DataStream.Get(ctx, &opensearchapi.DataStreamGetReq{DataStreams: []string{name}})
 	resp := ds.Inspect().Response
 	if resp.StatusCode == http.StatusOK {
-		log.Infof("Datastream '%s' already exists", name)
+		log.Debugf("Datastream '%s' already exists", name)
 		return true, nil
 	}
 	if resp.StatusCode == http.StatusNotFound {

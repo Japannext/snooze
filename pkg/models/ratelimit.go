@@ -1,6 +1,6 @@
 package models
 
-const RATELIMIT_INDEX = "v2-ratelimits"
+const RatelimitIndex = "v2-ratelimits"
 
 // A rate limit object. Represent the start or end of rate limiting.
 type Ratelimit struct {
@@ -24,9 +24,9 @@ type RatelimitResults struct {
 }
 
 func init() {
-	index := IndexTemplate{
+	OpensearchIndexTemplates[RatelimitIndex] = IndexTemplate{
 		Version:       0,
-		IndexPatterns: []string{RATELIMIT_INDEX},
+		IndexPatterns: []string{RatelimitIndex},
 		DataStream:    map[string]map[string]string{"timestamp_field": {"name": "startsAt"}},
 		Template: Indice{
 			Settings: IndexSettings{1, 2},
@@ -40,5 +40,4 @@ func init() {
 			},
 		},
 	}
-	INDEXES = append(INDEXES, index)
 }

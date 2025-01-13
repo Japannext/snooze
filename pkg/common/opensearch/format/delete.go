@@ -1,9 +1,10 @@
 package format
 
 import (
-	"encoding/json"
 	"fmt"
 )
+
+const deleteAction Action = "delete"
 
 type Delete struct {
 	Index string
@@ -11,12 +12,12 @@ type Delete struct {
 }
 
 func (a *Delete) Serialize() ([]byte, error) {
-	header := BulkHeader(map[Action]Metadata{
-		DELETE_ACTION: {Index: a.Index, ID: a.ID},
-	})
-	data, err := json.Marshal(header)
-	if err != nil {
-		return []byte{}, fmt.Errorf("error marshalling `%+v`: %s", header, err)
-	}
+    meta := Metadata{Index: a.Index, ID: a.ID}
+
+    data, err := MarshalHeader(deleteAction, meta)
+    if err != nil {
+        return []byte{}, fmt.Errorf("error serializing header: %w", err)
+    }
+
 	return data, nil
 }

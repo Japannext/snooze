@@ -1,6 +1,6 @@
 package models
 
-const GROUP_INDEX = "v2-groups"
+const GroupIndex = "v2-groups"
 
 type Group struct {
 	Base
@@ -13,19 +13,14 @@ type Group struct {
 }
 
 func init() {
-	index := IndexTemplate{
-		Version:       1,
-		IndexPatterns: []string{GROUP_INDEX},
-		Template: Indice{
-			Settings: IndexSettings{1, 2},
-			Mappings: IndexMapping{
-				Properties: map[string]MappingProps{
-					"name":   {Type: "keyword"},
-					"labels": {Type: "object"},
-					"hash":   {Type: "keyword"},
-				},
+	OpensearchIndices[GroupIndex] = Indice{
+		Settings: IndexSettings{1, 2},
+		Mappings: IndexMapping{
+			Properties: map[string]MappingProps{
+				"name":   {Type: "keyword"},
+				"labels": {Type: "object"},
+				"hash":   {Type: "keyword"},
 			},
 		},
 	}
-	INDEXES = append(INDEXES, index)
 }

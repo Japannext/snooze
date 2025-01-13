@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-const NOTIFICATION_INDEX = "v2-notifications"
+const NotificationIndex = "v2-notifications"
 
 type Notification struct {
 	Base
@@ -58,9 +58,9 @@ func (dest *Destination) String() string {
 }
 
 func init() {
-	index := IndexTemplate{
+	OpensearchIndexTemplates[NotificationIndex] = IndexTemplate{
 		Version:       2,
-		IndexPatterns: []string{NOTIFICATION_INDEX},
+		IndexPatterns: []string{NotificationIndex},
 		DataStream:    map[string]map[string]string{"timestamp_field": {"name": "notificationTime"}},
 		Template: Indice{
 			Settings: IndexSettings{1, 2},
@@ -73,5 +73,4 @@ func init() {
 			},
 		},
 	}
-	INDEXES = append(INDEXES, index)
 }

@@ -19,7 +19,7 @@ func Process(ctx context.Context, item *models.Log) error {
 	}
 
 	return storeQ.PublishData(ctx, &format.Create{
-		Index: models.LOG_INDEX,
+		Index: models.LogIndex,
 		Item:  item,
 	})
 }

@@ -39,3 +39,5 @@ func (merr *MultiError) Error() string {
 func (merr *MultiError) HasErrors() bool {
 	return (len(merr.errors) != 0)
 }
+
+

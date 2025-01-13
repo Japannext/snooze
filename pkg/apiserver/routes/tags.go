@@ -16,7 +16,7 @@ func getTags(c *gin.Context) {
 	ctx, span := tracer.Start(c.Request.Context(), "getTags")
 	defer span.End()
 
-	req := &opensearch.SearchReq{Index: models.TAG_INDEX}
+	req := &opensearch.SearchReq{Index: models.TagIndex}
 	req.WithSize(1000)
 	// Search related to tag
 	params := getTagsParams{}
@@ -45,8 +45,8 @@ func postTag(c *gin.Context) {
 		return
 	}
 
-	err := opensearch.Index(ctx, &opensearch.IndexReq{
-		Index: models.TAG_INDEX,
+	_, err := opensearch.Index(ctx, &opensearch.IndexReq{
+		Index: models.TagIndex,
 		Item:  item,
 	})
 	if err != nil {

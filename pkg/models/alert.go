@@ -1,8 +1,12 @@
 package models
 
-const ALERT_INDEX = "v2-alerts"
+const (
+	ActiveAlertIndex = "v2-active-alerts"
+	AlertHistoryIndex = "v2-alerts-history"
+)
 
-type Alert struct {
+
+type ActiveAlert struct {
 	Base
 
 	Hash string `json:"hash"`
@@ -13,7 +17,6 @@ type Alert struct {
 
 	// Timestamps
 	StartsAt Time `json:"startsAt"`
-	EndsAt   Time `json:"endsAt"`
 
 	// Name of the alert
 	AlertName string `json:"alertName"`
@@ -38,7 +41,19 @@ type Alert struct {
 	Labels map[string]string `json:"labels,omitempty"`
 }
 
-func (item *Alert) Context() map[string]interface{} {
+type AlertRecord struct {
+	ActiveAlert
+
+	EndsAt Time `json:"endsAt"`
+}
+
+type AlertStatus struct {
+	ID        string `json:"id"`
+	LastCheck Time   `json:"lastCheck"`
+	NextCheck Time   `json:"nextCheck"`
+}
+
+func (item *ActiveAlert) Context() map[string]interface{} {
 	return map[string]interface{}{
 		"source":      map[string]string{"kind": item.Source.Kind, "name": item.Source.Name},
 		"identity":    item.Identity,
@@ -50,21 +65,27 @@ func (item *Alert) Context() map[string]interface{} {
 	}
 }
 
-type AlertStatus struct {
-	ID        string `json:"id"`
-	LastCheck Time   `json:"lastCheck"`
-	NextCheck Time   `json:"nextCheck"`
-}
-
 type AlertUpdate struct {
-	Document *Alert `json:"doc"`
-	Upsert   *Alert `json:"upsert"`
+	Document *ActiveAlert `json:"doc"`
+	Upsert   *ActiveAlert `json:"upsert"`
 }
 
 func init() {
-	index := IndexTemplate{
-		Version:       1,
-		IndexPatterns: []string{ALERT_INDEX},
+	OpensearchIndices[ActiveAlertIndex] = Indice{
+		Settings: IndexSettings{1, 2},
+		Mappings: IndexMapping{
+			Properties: map[string]MappingProps{
+				"hash":        {Type: "keyword"},
+				"startsAt":    {Type: "date", Format: "epoch_millis"},
+				"source.kind": {Type: "keyword"},
+				"source.name": {Type: "keyword"},
+				"labels":      {Type: "object"},
+			},
+		},
+	}
+	OpensearchIndexTemplates[AlertHistoryIndex] = IndexTemplate{
+		Version: 1,
+		IndexPatterns: []string{AlertHistoryIndex},
 		DataStream:    map[string]map[string]string{"timestamp_field": {"name": "startsAt"}},
 		Template: Indice{
 			Settings: IndexSettings{1, 2},
@@ -80,5 +101,4 @@ func init() {
 			},
 		},
 	}
-	INDEXES = append(INDEXES, index)
 }

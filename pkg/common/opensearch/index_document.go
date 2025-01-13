@@ -17,10 +17,10 @@ type IndexReq struct {
 	Item   models.HasID
 }
 
-func Index(ctx context.Context, req *IndexReq) error {
+func Index(ctx context.Context, req *IndexReq) (string, error) {
 	body, err := json.Marshal(req.Item)
 	if err != nil {
-		return fmt.Errorf("failed to marshal document (%+v): %s", req.Item, err)
+		return "", fmt.Errorf("failed to marshal document (%+v): %s", req.Item, err)
 	}
 
 	resp, err := client.Index(ctx, opensearchapi.IndexReq{
@@ -30,12 +30,12 @@ func Index(ctx context.Context, req *IndexReq) error {
 		Body:       bytes.NewReader(body),
 	})
 	if err != nil {
-		return fmt.Errorf("error indexing document to '%s': %s", req.Index, err)
+		return "", fmt.Errorf("error indexing document to '%s': %s", req.Index, err)
 	}
 	r := resp.Inspect().Response
 	if r.IsError() {
-		return fmt.Errorf("error indexing document to '%s': %s", req.Index, r.String())
+		return "", fmt.Errorf("error indexing document to '%s': %s", req.Index, r.String())
 	}
 
-	return nil
+	return resp.ID, nil
 }

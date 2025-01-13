@@ -1,6 +1,6 @@
 package models
 
-const TAG_INDEX = "v2-tags"
+const TagIndex = "v2-tags"
 
 type Tag struct {
 	Base
@@ -10,19 +10,14 @@ type Tag struct {
 }
 
 func init() {
-	index := IndexTemplate{
-		Version:       3,
-		IndexPatterns: []string{TAG_INDEX},
-		Template: Indice{
-			Settings: IndexSettings{1, 2},
-			Mappings: IndexMapping{
-				Properties: map[string]MappingProps{
-					"name":        {Type: "keyword"},
-					"description": {Type: "text"},
-					"color":       {Type: "keyword"},
-				},
+	OpensearchIndices[TagIndex] = Indice{
+		Settings: IndexSettings{1, 2},
+		Mappings: IndexMapping{
+			Properties: map[string]MappingProps{
+				"name":        {Type: "keyword"},
+				"description": {Type: "text"},
+				"color":       {Type: "keyword"},
 			},
 		},
 	}
-	INDEXES = append(INDEXES, index)
 }

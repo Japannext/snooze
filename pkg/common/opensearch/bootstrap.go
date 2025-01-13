@@ -7,10 +7,15 @@ import (
 )
 
 func bootstrap(ctx context.Context) {
-	for _, tpl := range models.INDEXES {
-		ensureIndex(ctx, tpl.IndexPatterns[0], tpl)
+	for name, tpl := range models.OpensearchIndexTemplates {
+		ensureIndexTemplate(ctx, name, tpl)
+
 		if tpl.DataStream != nil {
-			ensureDatastream(ctx, tpl.IndexPatterns[0])
+			ensureDatastream(ctx, name)
 		}
+	}
+
+	for name, idx := range models.OpensearchIndices {
+		ensureIndice(ctx, name, idx)
 	}
 }

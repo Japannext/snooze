@@ -43,7 +43,7 @@ func init() {
 }
 
 func sendHost(c *cobra.Command, args []string) {
-	item := &models.Alert{}
+	item := &models.ActiveAlert{}
 
 	if icinga {
 		item.Source.Kind = "icinga"

@@ -1,19 +1,24 @@
 package format
 
-type Action = string
-
-const (
-	INDEX_ACTION  Action = "index"
-	UPDATE_ACTION Action = "update"
-	CREATE_ACTION Action = "create"
-	DELETE_ACTION Action = "delete"
+import (
+	"encoding/json"
+	"fmt"
 )
 
-type BulkHeader = map[Action]Metadata
+type Action = string
 
 type Metadata struct {
 	ID    string `json:"_id,omitempty"`
 	Index string `json:"_index,omitempty"`
 }
 
-// UPDATE action
+func MarshalHeader(action Action, meta Metadata) ([]byte, error) {
+	header := map[Action]Metadata{action: meta}
+
+	data, err := json.Marshal(header)
+	if err != nil {
+		return []byte{}, fmt.Errorf("error marshalling `%+v`: %w", header, err)
+	}
+
+	return data, nil
+}

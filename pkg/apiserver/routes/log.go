@@ -26,7 +26,7 @@ func getLogs(c *gin.Context) {
 
 	start := time.Now()
 
-	req := &opensearch.SearchReq{Index: models.LOG_INDEX}
+	req := &opensearch.SearchReq{Index: models.LogIndex}
 
 	params := getLogsParams{Pagination: models.NewPagination()}
 	c.BindQuery(&params)

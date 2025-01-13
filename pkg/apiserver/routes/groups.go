@@ -18,7 +18,7 @@ func getGroups(c *gin.Context) {
 	ctx, span := tracer.Start(c.Request.Context(), "getGroups")
 	defer span.End()
 
-	req := &opensearch.SearchReq{Index: models.GROUP_INDEX}
+	req := &opensearch.SearchReq{Index: models.GroupIndex}
 	req.WithSize(1000)
 	// Search related to group
 	params := getGroupParams{}

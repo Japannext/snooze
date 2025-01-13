@@ -67,6 +67,10 @@ tasks:
         -d '{"query": {"match_all": {}}}'
     - kubectl exec -it svc/snooze-redis -- bash -c 'redis-cli keys "group/*" | xargs redis-cli del'
 
+  reset-alerts:
+    cmds:
+    - kubectl exec -it svc/snooze-redis -- bash -c 'redis-cli keys "alertmanager/*" | xargs redis-cli del'
+
   sync:
     cmds:
     - helmfile -f .helmfile.yaml.gotmpl sync

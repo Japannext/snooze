@@ -5,68 +5,69 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 
 	"github.com/japannext/snooze/pkg/models"
 	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
 )
 
-func createIndex(ctx context.Context, name string, tpl models.IndexTemplate) error {
-	body, err := json.Marshal(tpl)
+func ensureIndice(ctx context.Context, name string, idx models.Indice) error {
+	found, _, err := hasIndice(ctx, name)
 	if err != nil {
-		return fmt.Errorf("error marshaling index template: %s", err)
+		log.Fatalf("failed to find indice %s: %s", name, err)
 	}
-	log.Debugf("Template: %s", body)
-	resp, err := client.IndexTemplate.Create(ctx, opensearchapi.IndexTemplateCreateReq{
-		IndexTemplate: name,
-		Body:          bytes.NewReader(body),
-	})
-	if err != nil {
-		return err
+
+	if !found {
+		if err := createIndice(ctx, name, idx); err != nil {
+			log.Fatalf("failed to create indice %s: %s", name, err)
+		}
 	}
-	if !resp.Acknowledged {
-		return fmt.Errorf("Index template request received but not acknowledged!")
-	}
-	log.Infof("Created index %s", name)
+
 	return nil
 }
 
-func hasIndex(ctx context.Context, name string) (bool, int, error) {
-	resp, err := client.IndexTemplate.Exists(ctx, opensearchapi.IndexTemplateExistsReq{
-		IndexTemplate: name,
-	})
-	if resp.StatusCode == 200 {
-		r, err := client.IndexTemplate.Get(ctx, &opensearchapi.IndexTemplateGetReq{
-			IndexTemplates: []string{name},
-		})
-		if err != nil {
-			return true, 0, err
-		}
+func createIndice(ctx context.Context, name string, idx models.Indice) error {
+	log.Debugf("Creating indice '%s'...", name)
 
-		details := r.IndexTemplates[0]
-		version := details.IndexTemplate.Version
-		return true, version, nil
+	body, err := json.Marshal(idx)
+	if err != nil {
+		return fmt.Errorf("error marshaling indice '%s': %w", name, err)
 	}
-	if resp.StatusCode == 404 {
+
+	resp, err := client.Indices.Create(ctx, opensearchapi.IndicesCreateReq{
+		Index: name,
+		Body: bytes.NewReader(body),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create indice %s: %w", name, err)
+	}
+
+	if !resp.Acknowledged {
+		return fmt.Errorf("Indice request received but not acknowledged!")
+	}
+
+	log.Infof("Created indice '%s'", name)
+
+	return nil
+}
+
+func hasIndice(ctx context.Context, name string) (bool, int, error) {
+	resp, err := client.Indices.Exists(ctx, opensearchapi.IndicesExistsReq{
+		Indices: []string{name},
+	})
+	if resp.StatusCode == http.StatusOK {
+		return true, 0, nil
+	}
+
+	if resp.StatusCode == http.StatusNotFound {
 		return false, 0, nil
 	}
+
 	if err != nil {
 		return false, 0, err
 	}
+
 	var buf bytes.Buffer
 	buf.ReadFrom(resp.Body)
-	return false, 0, fmt.Errorf("Unexpected status code %d when checking index %s: %s", resp.StatusCode, name, buf.Bytes())
-}
-
-func ensureIndex(ctx context.Context, name string, tpl models.IndexTemplate) {
-	found, version, err := hasIndex(ctx, name)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if found && tpl.Version <= version {
-		log.Debugf("index '%s' (version=%d) already exist", name, version)
-		return
-	}
-	if err := createIndex(ctx, name, tpl); err != nil {
-		log.Fatal(err)
-	}
+	return false, 0, fmt.Errorf("Unexpected status code %d when checking indice %s: %s", resp.StatusCode, name, buf.Bytes())
 }

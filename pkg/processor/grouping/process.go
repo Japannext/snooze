@@ -88,7 +88,7 @@ func Process(ctx context.Context, item *models.Log) error {
 		}
 
 		err := storeQ.PublishData(ctx, &format.Update{
-			Index:       models.GROUP_INDEX,
+			Index:       models.GroupIndex,
 			ID:          fmt.Sprintf("%s.%s", gr.Name, gr.Hash),
 			Doc:         gr,
 			DocAsUpsert: true,

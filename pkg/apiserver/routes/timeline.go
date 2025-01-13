@@ -28,8 +28,8 @@ func alertTimeline(c *gin.Context) {
 
 	req := opensearchapi.MSearchReq{
 		Indices: []string{
-			api.ALERT_INDEX,
-			api.NOTIFICATION_INDEX,
+			api.AlertIndex,
+			api.NotificationIndex,
 		},
 		Body: body,
 	}

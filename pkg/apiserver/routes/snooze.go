@@ -32,7 +32,7 @@ func getSnoozes(c *gin.Context) {
 	ctx, span := tracer.Start(c.Request.Context(), "getSnoozes")
 	defer span.End()
 
-	req := &opensearch.SearchReq{Index: models.SNOOZE_INDEX}
+	req := &opensearch.SearchReq{Index: models.SnoozeIndex}
 
 	// Params
 	params := getSnoozesParams{Pagination: models.NewPagination()}
@@ -113,8 +113,8 @@ func postSnooze(c *gin.Context) {
 		return
 	}
 
-	err = opensearch.Index(ctx, &opensearch.IndexReq{
-		Index: models.SNOOZE_INDEX,
+	_, err = opensearch.Index(ctx, &opensearch.IndexReq{
+		Index: models.SnoozeIndex,
 		Item:  item,
 	})
 	if err != nil {
@@ -143,7 +143,7 @@ func postSnoozeCancel(c *gin.Context) {
 	}
 
 	searchReq := &opensearch.SearchReq{
-		Index: models.SNOOZE_INDEX,
+		Index: models.SnoozeIndex,
 	}
 	searchReq.Doc.WithTerms("_id", params.IDs)
 
@@ -166,7 +166,7 @@ func postSnoozeCancel(c *gin.Context) {
 	}
 
 	updateReq := opensearch.UpdateByQueryReq{
-		Index: models.SNOOZE_INDEX,
+		Index: models.SnoozeIndex,
 	}
 	updateReq.Doc.WithTerms("_id", params.IDs)
 	script := strings.Join([]string{

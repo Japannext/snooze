@@ -21,7 +21,7 @@ func Startup(notifs []*Notification, defaults []models.Destination) {
 	tracer = otel.Tracer("snooze")
 
 	notifyQ = mq.NotifyPub()
-	storeQ = mq.StorePub().WithIndex(models.NOTIFICATION_INDEX)
+	storeQ = mq.StorePub().WithIndex(models.NotificationIndex)
 
 	defaultDestinations = defaults
 

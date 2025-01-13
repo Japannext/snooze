@@ -1,6 +1,6 @@
 package models
 
-const LOG_INDEX = "v2-logs"
+const LogIndex = "v2-logs"
 
 type Log struct {
 	Base
@@ -62,9 +62,9 @@ func (item *Log) Context() map[string]interface{} {
 }
 
 func init() {
-	index := IndexTemplate{
+	OpensearchIndexTemplates[LogIndex] = IndexTemplate{
 		Version:       3,
-		IndexPatterns: []string{LOG_INDEX},
+		IndexPatterns: []string{LogIndex},
 		DataStream:    map[string]map[string]string{"timestamp_field": {"name": "displayTime"}},
 		Template: Indice{
 			Settings: IndexSettings{1, 2},
@@ -91,5 +91,4 @@ func init() {
 			},
 		},
 	}
-	INDEXES = append(INDEXES, index)
 }

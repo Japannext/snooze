@@ -18,7 +18,7 @@ func getNotifications(c *gin.Context) {
 	ctx, span := tracer.Start(c.Request.Context(), "getNotifications")
 	defer span.End()
 
-	req := &opensearch.SearchReq{Index: models.NOTIFICATION_INDEX}
+	req := &opensearch.SearchReq{Index: models.NotificationIndex}
 
 	// Params
 	params := getNotificationsParams{Pagination: models.NewPagination()}

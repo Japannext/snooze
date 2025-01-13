@@ -3,7 +3,6 @@ package ratelimit
 import (
 	"github.com/japannext/snooze/pkg/common/mq"
 	"github.com/japannext/snooze/pkg/common/utils"
-	"github.com/japannext/snooze/pkg/models"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
@@ -20,7 +19,7 @@ func Startup(ratelimits []*RateLimit) {
 	initMetrics()
 	log = logrus.WithFields(logrus.Fields{"module": "ratelimit"})
 	tracer = otel.Tracer("snooze")
-	storeQ = mq.StorePub().WithIndex(models.RATELIMIT_INDEX)
+	storeQ = mq.StorePub()
 
 	validator := utils.NewNameValidator(true)
 
