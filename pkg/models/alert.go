@@ -6,7 +6,7 @@ const (
 )
 
 
-type ActiveAlert struct {
+type AlertBase struct {
 	Base
 
 	Hash string `json:"hash"`
@@ -28,6 +28,8 @@ type ActiveAlert struct {
 	// Number representing the severity. Useful for filters (severity higher than a given value)
 	SeverityNumber int32 `json:"severityNumber,omitempty"`
 
+	TraceID string `json:"traceID,omitempty"`
+
 	// Text representing the severity
 	// SeverityText string `json:"severityText,omitempty"`
 	// Number representing the severity. Useful for filters (severity higher than a given value)
@@ -41,8 +43,14 @@ type ActiveAlert struct {
 	Labels map[string]string `json:"labels,omitempty"`
 }
 
+type ActiveAlert struct {
+	AlertBase
+
+	LastHit Time `json:"lastHit"`
+}
+
 type AlertRecord struct {
-	ActiveAlert
+	AlertBase
 
 	EndsAt Time `json:"endsAt"`
 }

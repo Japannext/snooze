@@ -2,8 +2,7 @@ package schedule
 
 import (
 	"time"
-
-	log "github.com/sirupsen/logrus"
+	"fmt"
 )
 
 type DailySchedule struct {
@@ -18,22 +17,24 @@ type DailySchedule struct {
 	}
 }
 
-func (dr *DailySchedule) Load() {
+func (dr *DailySchedule) Load() error {
 	h1, m1, err := parseTime(dr.From)
 	if err != nil {
-		log.Fatalf("failed to load time `%s`: %s", dr.From, err)
+		return fmt.Errorf("failed to load time `%s`: %s", dr.From, err)
 	}
 	dr.internal.from = &hourminute{h1, m1}
 	h2, m2, err := parseTime(dr.To)
 	if err != nil {
-		log.Fatalf("failed to load time `%s`: %s", dr.To, err)
+		return fmt.Errorf("failed to load time `%s`: %s", dr.To, err)
 	}
 	dr.internal.to = &hourminute{h2, m2}
 	tz, err := time.LoadLocation(dr.TimeZone)
 	if err != nil {
-		log.Fatalf("failed to load timezone `%s`: %s", dr.TimeZone, err)
+		return fmt.Errorf("failed to load timezone `%s`: %s", dr.TimeZone, err)
 	}
 	dr.internal.timezone = tz
+
+	return nil
 }
 
 type hourminute struct {

@@ -5,9 +5,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/japannext/snooze/pkg/apiserver/token"
+	"go.opentelemetry.io/otel"
 )
 
 func Authenticate() func(*gin.Context) {
+	tracer := otel.Tracer("snooze")
+
 	return func(c *gin.Context) {
 		_, span := tracer.Start(c.Request.Context(), "Authenticate")
 		defer span.End()

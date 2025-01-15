@@ -14,7 +14,7 @@ func TestField(t *testing.T) {
 		ExpectResult string
 	}{
 		{
-			`source.Kind`,
+			`source.kind`,
 			&models.Log{Source: models.Source{Kind: "syslog", Name: "prod-syslog"}},
 			"syslog",
 		},
@@ -52,9 +52,9 @@ func TestFieldMap(t *testing.T) {
 		},
 		{
 			name:     "source matching",
-			fields:   []string{"source.Kind", "source.Name"},
+			fields:   []string{"source.kind", "source.name"},
 			log:      &models.Log{Source: models.Source{Kind: "syslog", Name: "dev"}},
-			expected: map[string]string{"source.Kind": "syslog", "source.Name": "dev"},
+			expected: map[string]string{"source.kind": "syslog", "source.name": "dev"},
 		},
 	}
 

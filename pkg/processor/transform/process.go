@@ -4,31 +4,42 @@ import (
 	"context"
 
 	"github.com/japannext/snooze/pkg/models"
+	"github.com/japannext/snooze/pkg/processor/decision"
+	"go.opentelemetry.io/otel"
+	log "github.com/sirupsen/logrus"
 )
 
-func Process(ctx context.Context, item *models.Log) error {
-	ctx, span := tracer.Start(ctx, "transform")
+func (p *Processor) Process(ctx context.Context, item *models.Log) *decision.Decision {
+	ctx, span := otel.Tracer("snooze").Start(ctx, "transform")
 	defer span.End()
-	for _, tr := range transforms {
-		if tr.internal.condition != nil {
-			match, err := tr.internal.condition.MatchLog(ctx, item)
+
+	for _, tr := range p.transforms {
+		if tr.condition != nil {
+			match, err := tr.condition.MatchLog(ctx, item)
 			if err != nil {
-				return err
+				log.Warnf("error while matching `%s`: %s", tr.cfg.If, err)
+
+				continue
 			}
+
 			if !match {
 				continue
 			}
 		}
 
 		ctx = context.WithValue(ctx, "capture", map[string]string{})
-		for _, action := range tr.internal.actions {
+
+		for index, action := range tr.actions {
 			var err error
+
 			ctx, err = action.Process(ctx, item)
 			if err != nil {
-				return err
+				log.Warnf("error in transform %s#%d: %s", tr.cfg.Name, index+1, err)
+
+				continue
 			}
 		}
 	}
 
-	return nil
+	return decision.OK()
 }

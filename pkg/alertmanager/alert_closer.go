@@ -42,7 +42,7 @@ func closeExpiredAlerts() error {
 		// Add the item to history
 		err := storeQ.PublishData(ctx, &format.Create{
 			Index: models.AlertHistoryIndex,
-			Item: models.AlertRecord{ActiveAlert: *item, EndsAt: now},
+			Item: models.AlertRecord{AlertBase: item.AlertBase, EndsAt: now},
 		})
 		if err != nil {
 			log.Errorf("failed to publish alert to history: %s", err)

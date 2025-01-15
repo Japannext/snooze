@@ -58,6 +58,8 @@ func convertAlert(alert PostableAlert) *models.ActiveAlert {
 	item.Description = alert.Annotations["description"]
 	item.Summary = alert.Annotations["summary"]
 
+	item.LastHit = models.TimeNow()
+
 	return item
 }
 

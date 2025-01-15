@@ -2,8 +2,7 @@ package schedule
 
 import (
 	"time"
-
-	log "github.com/sirupsen/logrus"
+	"fmt"
 )
 
 type Schedule struct {
@@ -16,7 +15,7 @@ type Schedule struct {
 	}
 }
 
-func (s *Schedule) Load() {
+func (s *Schedule) Load() error {
 	switch {
 	case s.Always:
 		s.internal.schedule = &AlwaysSchedule{}
@@ -25,10 +24,10 @@ func (s *Schedule) Load() {
 	case s.Daily != nil:
 		s.internal.schedule = s.Daily
 	default:
-		log.Fatalf("empty schedule defined")
+		return fmt.Errorf("empty schedule")
 	}
 
-	s.internal.schedule.Load()
+	return s.internal.schedule.Load()
 }
 
 func Default() *Schedule {
@@ -40,6 +39,6 @@ func (s *Schedule) Match(t *time.Time) bool {
 }
 
 type Interface interface {
-	Load()
+	Load() error
 	Match(*time.Time) bool
 }

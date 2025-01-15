@@ -7,7 +7,6 @@ package status
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"time"
 
@@ -38,7 +37,7 @@ const sortedSet = "active-alerts:sorted-set"
 
 func Get(ctx context.Context, key string) (*AlertStatus, bool, error) {
 	body, err := redis.Client.Get(ctx, key).Bytes()
-	if errors.Is(err, redis.Nil) {
+	if redis.IsNil(err) {
 		return &AlertStatus{}, false, nil
 	}
 

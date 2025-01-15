@@ -13,5 +13,12 @@ func init() {
 }
 
 func getProcessConfig(c *gin.Context) {
-	c.JSON(http.StatusOK, pipeline)
+	cfg, err := LoadConfig()
+	if err != nil {
+		c.String(http.StatusInternalServerError, "error loading config: %s", err)
+
+		return
+	}
+
+	c.JSON(http.StatusOK, cfg)
 }

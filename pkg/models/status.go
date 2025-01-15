@@ -11,6 +11,9 @@ type LogStatus struct {
 
 type LogStatusKind int
 
+// Statuses are sorted by "priority".
+// The status can only be changed to a higher
+// status when being changed.
 const (
 	LogActive int = iota
 	LogSnoozed
@@ -28,8 +31,10 @@ func (status *LogStatus) Change(kind int) bool {
 		status.Kind = kind
 		status.ObjectID = ""
 		status.Reason = ""
+
 		return true
 	}
+
 	return false
 }
 

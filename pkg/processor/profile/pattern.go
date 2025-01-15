@@ -9,6 +9,7 @@ import (
 	"github.com/japannext/snooze/pkg/common/utils"
 	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/processor/transform"
+	log "github.com/sirupsen/logrus"
 )
 
 type Pattern struct {
@@ -19,7 +20,7 @@ type Pattern struct {
 	// If present, the pattern will match a given regex
 	Regex string `json:"regex" yaml:"regex"`
 
-	Actions []transform.Action `json:"actions,omitempty" yaml:"actions"`
+	Actions []*transform.ActionConfig `json:"actions,omitempty" yaml:"actions"`
 
 	// List of labels/fields used to group the logs
 	// for notification purposes
@@ -37,7 +38,7 @@ type Pattern struct {
 	// Internal values initialized after startup
 	internal struct {
 		regexp  *regexp.Regexp
-		actions []transform.Transformation
+		actions []transform.ActionInterface
 		groupBy map[string]*lang.Template
 	}
 }
@@ -55,16 +56,23 @@ func (p *Pattern) Load() error {
 
 	p.internal.regexp, err = regexp.Compile(p.Regex)
 	if err != nil {
-		return err
+		return fmt.Errorf("invalid regex `%s`: %w", p.Regex, err)
 	}
 
-	p.internal.actions = transform.LoadActions(p.Actions)
+	for index, actionConfig := range p.Actions {
+		action, err := transform.NewAction(actionConfig)
+		if err != nil {
+			return fmt.Errorf("in action #%d: %w", index+1, err)
+		}
+
+		p.internal.actions = append(p.internal.actions, action)
+	}
+
 	p.internal.groupBy, err = lang.NewTemplateMap(p.GroupBy)
 	if err != nil {
-		return err
+		return fmt.Errorf("in groupBy: %w", err)
 	}
 
-	log.Debugf("[Startup] %+v", p.internal)
 	return nil
 }
 
@@ -133,17 +141,21 @@ func (p *Pattern) match(item *models.Log) (bool, map[string]string) {
 		match   bool
 		capture = make(map[string]string)
 	)
+
 	if p.internal.regexp == nil {
 		return true, capture
 	}
+
 	match = p.internal.regexp.MatchString(item.Message)
 	if !match {
 		return false, capture
 	}
+
 	keys := p.internal.regexp.SubexpNames()
 	if len(keys) > 1 {
 		keys = keys[1:]
 		values := p.internal.regexp.FindStringSubmatch(item.Message)
+
 		for _, key := range keys {
 			i := p.internal.regexp.SubexpIndex(key)
 			if i < 0 {

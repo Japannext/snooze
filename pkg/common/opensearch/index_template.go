@@ -62,13 +62,13 @@ func hasIndexTemplate(ctx context.Context, name string) (bool, int, error) {
 func ensureIndexTemplate(ctx context.Context, name string, tpl models.IndexTemplate) {
 	found, version, err := hasIndexTemplate(ctx, name)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to find index template '%s': %s", name, err)
 	}
 	if found && tpl.Version <= version {
 		log.Debugf("index '%s' (version=%d) already exist", name, version)
 		return
 	}
 	if err := createIndexTemplate(ctx, name, tpl); err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to create index template '%s': %s", name, err)
 	}
 }

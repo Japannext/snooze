@@ -11,8 +11,12 @@ import (
 	"github.com/japannext/snooze/pkg/common/redis"
 	"github.com/japannext/snooze/pkg/common/tracing"
 	"github.com/japannext/snooze/pkg/common/utils"
+	"github.com/japannext/snooze/pkg/processor/decision"
+	"github.com/japannext/snooze/pkg/processor/metrics"
 	"github.com/japannext/snooze/pkg/models"
 	redisv9 "github.com/redis/go-redis/v9"
+	log "github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel"
 )
 
 // This object is used to represent all variables needed
@@ -45,24 +49,25 @@ func (c *counter) extract() error {
 	if c.cmd == nil {
 		return fmt.Errorf("No cmd provided (nil) for '%s'", c.key)
 	}
+
 	value, err := c.cmd.Uint64()
-	if err == redis.Nil {
+	if redis.IsNil(err) {
 		return nil
 	}
+
 	if err != nil {
 		return err
 	}
+
 	c.value = value
+
 	return nil
 }
 
-func Process(ctx context.Context, item *models.Log) error {
-	ctx, span := tracer.Start(ctx, "ratelimit")
-	defer span.End()
-
-	// 1. Filtering ratelimits by condition
-	rr := []*RateLimit{}
-	for _, rate := range rates {
+// Return only the ratelimits that match the log (if conditions are set)
+func (p *Processor) filteredRatelimits(ctx context.Context, item *models.Log) []Ratelimit {
+	ratelimits := []Ratelimit{}
+	for _, rate := range p.ratelimits {
 		if rate.internal.condition != nil {
 			match, err := rate.internal.condition.MatchLog(ctx, item)
 			if err != nil {
@@ -76,14 +81,24 @@ func Process(ctx context.Context, item *models.Log) error {
 		if _, ok := utils.GetGroup(item, rate.Group); !ok {
 			continue
 		}
-		rr = append(rr, rate)
+		ratelimits = append(ratelimits, rate)
 	}
 
-	results := make(map[string]result)
+	return ratelimits
+}
 
+func (p *Processor) Process(ctx context.Context, item *models.Log) *decision.Decision {
+	ctx, span := otel.Tracer("snooze").Start(ctx, "ratelimit")
+	defer span.End()
+
+	// 1. Filtering ratelimits by condition
+	ratelimits := p.filteredRatelimits(ctx, item)
+
+	results := make(map[string]result)
 	pipe := redis.Client.Pipeline()
+
 	// 2. Extracting i1/i0 rates
-	for _, rate := range rr {
+	for _, rate := range ratelimits {
 		res := result{}
 
 		period := time.Now().Unix() / int64(rate.Period.Seconds())
@@ -118,14 +133,15 @@ func Process(ctx context.Context, item *models.Log) error {
 		results[rate.Name] = res
 	}
 	_, err := pipe.Exec(ctx)
-	if err != nil && err != redis.Nil {
+	if redis.IsError(err) {
 		log.Warnf("failed to get ratelimits: %s", err)
 		tracing.Error(span, err)
-		return err
+
+		return decision.Retry(err)
 	}
 
 	// 3. Compute rate info
-	for _, rate := range rr {
+	for _, rate := range ratelimits {
 		res := results[rate.Name]
 		i0, i1, i2, lock := res.i0, res.i1, res.i2, res.lock
 
@@ -157,7 +173,7 @@ func Process(ctx context.Context, item *models.Log) error {
 				item.Status.Reason = fmt.Sprintf("ratelimited by '%s'", rate.Name)
 				item.Status.SkipNotification = true
 				item.Status.SkipStorage = true
-				rateLimitedLogs.WithLabelValues(rate.Name).Inc()
+				metrics.RatelimitedLogs.WithLabelValues(rate.Name).Inc()
 			}
 			tracing.SetString(span, fmt.Sprintf("ratelimit.%s.decision", rate.Name), "drop")
 		} else {
@@ -174,7 +190,7 @@ func Process(ctx context.Context, item *models.Log) error {
 				Hash:     i0.hash,
 				Fields:   i0.fields,
 			}
-			err := storeQ.PublishData(ctx, &format.Create{
+			err := p.storeQ.PublishData(ctx, &format.Create{
 				Index: models.RatelimitIndex,
 				Item:  item,
 			})
@@ -195,7 +211,7 @@ func Process(ctx context.Context, item *models.Log) error {
 				tracing.Error(span, err)
 				continue
 			}
-			err = storeQ.PublishData(ctx, &format.Update{
+			err = p.storeQ.PublishData(ctx, &format.Update{
 				Index: models.RatelimitIndex,
 				ID:    id,
 				Doc:   data,
@@ -211,7 +227,7 @@ func Process(ctx context.Context, item *models.Log) error {
 	var incrCmds []*redisv9.IntCmd
 	var expireCmds []*redisv9.BoolCmd
 	pipe = redis.Client.Pipeline()
-	for _, rate := range rr {
+	for _, rate := range ratelimits {
 		i0 := results[rate.Name].i0
 
 		incrCmd := pipe.Incr(ctx, i0.key)
@@ -221,10 +237,11 @@ func Process(ctx context.Context, item *models.Log) error {
 		tracing.SetString(span, fmt.Sprintf("ratelimit.%s.incr_key", rate.Name), i0.key)
 	}
 	_, err = pipe.Exec(ctx)
-	if err != nil && err != redis.Nil {
+	if redis.IsError(err) {
 		log.Warnf("failed to increment ratelimits: %s", err)
 		tracing.Error(span, err)
-		return err
+
+		return decision.Retry(err)
 	}
 	for _, incrCmd := range incrCmds {
 		if err := incrCmd.Err(); err != nil {
@@ -239,7 +256,7 @@ func Process(ctx context.Context, item *models.Log) error {
 		}
 	}
 
-	return nil
+	return decision.OK()
 }
 
 func now() uint64 {

@@ -3,8 +3,6 @@ package schedule
 import (
 	"fmt"
 	"time"
-
-	log "github.com/sirupsen/logrus"
 )
 
 // Like golang's time.Weekday.
@@ -40,13 +38,13 @@ type WeeklySchedule struct {
 	}
 }
 
-func (s *WeeklySchedule) Load() {
+func (s *WeeklySchedule) Load() error {
 	s.From.Load()
 	s.To.Load()
 	var err error
 	s.internal.timezone, err = time.LoadLocation(s.TimeZone)
 	if err != nil {
-		log.Fatalf("failed to load timezone `%s`: %s", s.TimeZone, err)
+		return fmt.Errorf("failed to load timezone `%s`: %s", s.TimeZone, err)
 	}
 
 	from := s.From.internal
@@ -54,12 +52,14 @@ func (s *WeeklySchedule) Load() {
 	// Handling edge-case
 	if from.weekday == to.weekday {
 		if to.hour < from.hour {
-			log.Fatalf("error defining weekly schedule: same day, but hours backwards!")
+			return fmt.Errorf("error defining weekly schedule: same day, but hours backwards!")
 		}
 		if to.hour == from.hour && to.minute < from.minute {
-			log.Fatalf("error defining weekly schedule: same day, same hour, but minutes backwards!")
+			return fmt.Errorf("error defining weekly schedule: same day, same hour, but minutes backwards!")
 		}
 	}
+
+	return nil
 }
 
 func (s *WeeklySchedule) Match(t *time.Time) bool {
@@ -88,16 +88,20 @@ func NewWeektimeFromTime(t *time.Time) *Weektime {
 	return wt
 }
 
-func (wt *Weektime) Load() {
+func (wt *Weektime) Load() error {
 	var err error
+
 	wt.internal.hour, wt.internal.minute, err = parseTime(wt.Time)
 	if err != nil {
-		log.Fatalf("failed to parse time `%s`", wt.Time)
+		return fmt.Errorf("failed to parse time `%s`", wt.Time)
 	}
+
 	wt.internal.weekday, err = parseWeekday(wt.Weekday)
 	if err != nil {
-		log.Fatalf("failed to parse weekday `%s`", wt.Weekday)
+		return fmt.Errorf("failed to parse weekday `%s`", wt.Weekday)
 	}
+
+	return nil
 }
 
 // Check if a weektime is between 2 weektimes.

@@ -6,17 +6,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/japannext/snooze/pkg/apiserver/auth/openidconnect"
 	"github.com/japannext/snooze/pkg/apiserver/config"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/trace"
 )
 
 var (
-	tracer     trace.Tracer
 	authConfig *config.AuthConfig
 )
 
 func RegisterRoutes(r *gin.Engine) {
-	tracer = otel.Tracer("snooze")
 	authConfig = config.Auth()
 
 	openidconnect.RegisterRoutes(r)

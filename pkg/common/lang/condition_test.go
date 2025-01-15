@@ -14,12 +14,12 @@ func TestCondition(t *testing.T) {
 		ExpectMatch bool
 	}{
 		{
-			`source.Kind == "syslog"`,
+			`source.kind == "syslog"`,
 			&models.Log{Source: models.Source{Kind: "syslog", Name: "prod-syslog"}},
 			true,
 		},
 		{
-			`source.Kind == "otlp"`,
+			`source.kind == "otlp"`,
 			&models.Log{Source: models.Source{Kind: "syslog", Name: "prod-syslog"}},
 			false,
 		},

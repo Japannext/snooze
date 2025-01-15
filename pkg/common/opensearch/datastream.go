@@ -46,12 +46,12 @@ func hasDatastream(ctx context.Context, name string) (bool, error) {
 func ensureDatastream(ctx context.Context, name string) {
 	found, err := hasDatastream(ctx, name)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to find datastream '%s': %s", name, err)
 	}
 	if found {
 		return
 	}
 	if err := createDatastream(ctx, name); err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to create datastream '%s': %s", name, err)
 	}
 }

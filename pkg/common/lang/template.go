@@ -33,14 +33,34 @@ func NewTemplateMap(rawMap map[string]string) (map[string]*Template, error) {
 	return results, nil
 }
 
+// Extract the capture from the context
+func getCapture(ctx context.Context) map[string]string {
+	capture, ok := ctx.Value("capture").(map[string]string)
+	if !ok {
+		return map[string]string{}
+	}
+	return capture
+}
+
+func getMappings(ctx context.Context) map[string]string {
+	mappings, ok := ctx.Value("mappings").(map[string]string)
+	if !ok {
+		return map[string]string{}
+	}
+	return mappings
+}
+
 func (t *Template) Execute(ctx context.Context, item models.HasContext) (string, error) {
 	data := item.Context()
-	data["capture"] = ctx.Value("capture").(map[string]string)
-	data["mappings"] = ctx.Value("mappings").(map[string]map[string]string)
+	data["capture"] = getCapture(ctx)
+	data["mappings"] = getMappings(ctx)
+
 	var buf bytes.Buffer
+
 	err := t.template.Execute(&buf, data)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to execute template: %w", err)
 	}
+
 	return buf.String(), nil
 }

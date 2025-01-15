@@ -6,7 +6,9 @@ import (
 
 type AlwaysSchedule struct{}
 
-func (s *AlwaysSchedule) Load() {}
+func (s *AlwaysSchedule) Load() error {
+	return nil
+}
 
 func (s *AlwaysSchedule) Match(t *time.Time) bool {
 	return true

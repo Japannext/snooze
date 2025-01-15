@@ -31,7 +31,18 @@ tasks:
     - go vet .
     - go build -o /dev/null ./...
 
+  setup:k8s:
+    desc: Setup the test environment using Kubernetes.
+    cmds:
+    - helm -n snooze-testing upgrade --install snooze-testing charts/testing
+
+  setup:docker:
+    desc: Setup the test environment using Docker/Podman compose.
+    cmds:
+    - docker compose up -d nats opensearch dragonflydb
+
   test:
+    env:
     cmds:
     - go test ./...
 
@@ -70,6 +81,11 @@ tasks:
   reset-alerts:
     cmds:
     - kubectl exec -it svc/snooze-redis -- bash -c 'redis-cli keys "alertmanager/*" | xargs redis-cli del'
+    - >
+        kubectl exec -it snooze-opensearch-masters-0 --
+        curl -k -u admin:admin https://localhost:9200/v2-active-alerts/_delete_by_query -X POST
+        -H 'Content-Type: application/json'
+        -d '{"query": {"match_all": {}}}'
 
   sync:
     cmds:

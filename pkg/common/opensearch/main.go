@@ -42,14 +42,14 @@ func Init() {
 	var err error
 	client, err = opensearchapi.NewClient(opensearchapi.Config{Client: cfg})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to create client: %s", err)
 	}
 
 	// Fail immediately if the database is unreachable
 	ctx := context.Background()
-	if err := CheckHealth(ctx); err != nil {
-		log.Fatal(err)
-	}
+	//if err := CheckHealth(ctx); err != nil {
+	//	log.Fatalf("failed to check health: %s", err)
+	//}
 
 	// bootstrap
 	bootstrap(ctx)

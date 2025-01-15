@@ -52,3 +52,28 @@ Important files used by each route:
 
 The `snooze-process` is executing several sub-components one by one.
 * `pkg/processor/*/process.go`
+
+# Running unit tests
+
+The unit tests need to run against real databases.
+The databases can be configured with the same environment
+variables that snooze uses, in `.env.local`.
+
+Minimum required:
+```
+OPENSEARCH_ADDRESSES=http://127.0.0.1:9200
+OPENSEARCH_USERNAME=admin
+OPENSEARCH_PASSWORD=admin
+
+REDIS_ADDRESS=https://127.0.0.1:6379
+
+NATS_URL=http://127.0.0.1:4222
+```
+
+> Note: Opensearch requires a specific kernel parameter that is not always set correctly by default.
+> Run `sudo sysctl -w vm.max_map_count=262144` to fix it locally, or on your Kubernetes nodes.
+
+The following options are possible:
+* Run it in Kubernetes: `task setup:k8s` (will use the current context, and the `snooze-testing` namespace)
+* Run it in Docker: `task setup:docker`
+* Use external databases.

@@ -1,9 +1,12 @@
 package profile
 
 import (
+	"fmt"
+
 	"github.com/japannext/snooze/pkg/common/lang"
 	"github.com/japannext/snooze/pkg/common/utils"
 	"github.com/japannext/snooze/pkg/models"
+	log "github.com/sirupsen/logrus"
 )
 
 type Kv struct {
@@ -13,43 +16,52 @@ type Kv struct {
 
 type FastMapper struct {
 	keys   []string
-	mapper map[Kv][]*Profile
+	mapper map[Kv][]Profile
 	fields map[string]*lang.Field
 }
 
-func NewFastMapper(prfs []*Profile) *FastMapper {
-	m := map[Kv][]*Profile{}
+func NewFastMapper(profiles []Profile) (*FastMapper, error) {
+	m := map[Kv][]Profile{}
 	keys := utils.NewOrderedSet[string]()
 	fields := map[string]*lang.Field{}
-	var err error
-	for _, prf := range prfs {
-		prf.Load()
+
+	for _, prf := range profiles {
 		m[prf.Switch] = append(m[prf.Switch], prf)
-		fields[prf.Switch.Key], err = lang.NewField(prf.Switch.Key)
+
+		value, err := lang.NewField(prf.Switch.Key)
 		if err != nil {
-			log.Fatalf("invalid field `%s`", prf.Switch.Key)
+			return &FastMapper{}, fmt.Errorf("invalid field `%s: %w", prf.Switch.Key, err)
 		}
+
+		fields[prf.Switch.Key] = value
+
 		keys.Append(prf.Switch.Key)
 	}
-	return &FastMapper{keys.Items(), m, fields}
+
+	return &FastMapper{keys.Items(), m, fields}, nil
 }
 
-func (m *FastMapper) GetMatches(item *models.Log) []*Profile {
+func (m *FastMapper) GetMatches(item *models.Log) []Profile {
 	for _, key := range m.keys {
 		field, found := m.fields[key]
 		if !found {
 			log.Warnf("unexpected field `%s`", key)
+
 			continue
 		}
+
 		value, err := lang.ExtractField(item, field)
 		if err != nil {
 			continue
 		}
-		prfs, found := m.mapper[Kv{key, value}]
+
+		profiles, found := m.mapper[Kv{key, value}]
 		if !found {
 			continue
 		}
-		return prfs
+
+		return profiles
 	}
-	return []*Profile{}
+
+	return []Profile{}
 }

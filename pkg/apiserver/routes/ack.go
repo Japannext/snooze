@@ -4,6 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/otel"
+
 	"github.com/japannext/snooze/pkg/common/opensearch"
 	"github.com/japannext/snooze/pkg/models"
 )
@@ -12,16 +14,21 @@ func getAcks(c *gin.Context) {
 }
 
 func postAck(c *gin.Context) {
-	ctx, span := tracer.Start(c.Request.Context(), "postAck")
+	ctx, span := otel.Tracer("snooze").Start(c.Request.Context(), "postAck")
 	defer span.End()
 
 	var item *models.Ack
-	c.BindJSON(&item)
+	if err := c.BindJSON(&item); err != nil {
+		c.String(http.StatusBadRequest, "ack object invalid: %s", err)
+
+		return
+	}
 
 	item.Time = models.TimeNow()
 
 	if len(item.LogIDs) == 0 {
 		c.String(http.StatusBadRequest, "ack object need a non-empty logIDs")
+
 		return
 	}
 
@@ -36,6 +43,7 @@ func postAck(c *gin.Context) {
 	err := opensearch.UpdateByQuery(ctx, req)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "failed to update in opensearch: %s", err)
+
 		return
 	}
 
@@ -45,6 +53,9 @@ func postAck(c *gin.Context) {
 	})
 	if err != nil {
 		c.String(http.StatusInternalServerError, "failed to save ack to opensearch: %s", err)
+
 		return
 	}
+
+	c.String(http.StatusCreated, "ack created")
 }

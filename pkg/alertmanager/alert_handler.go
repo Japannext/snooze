@@ -9,12 +9,13 @@ import (
 	"github.com/japannext/snooze/pkg/common/utils"
 	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/alertmanager/status"
+	"github.com/japannext/snooze/pkg/common/tracing"
 	log "github.com/sirupsen/logrus"
 )
 
 const (
 	ALERTMANAGER_KIND = "alertmanager"
-	opensearchIDByteLength = 16
+	opensearchIDByteSize = 30
 )
 
 func alertHandler(ctx context.Context, alert PostableAlert) {
@@ -50,13 +51,16 @@ func getKey(alert PostableAlert) string {
 }
 
 func isAlertActive(ctx context.Context, key string) (*status.AlertStatus, bool, error) {
-	ctx, span := tracer.Start(ctx, "isActiveAlert")
+	ctx, span := tracer.Start(ctx, "isAlertActive")
 	defer span.End()
 
 	alertStatus, found, err := status.Get(ctx, key)
 	if err != nil {
 		return &status.AlertStatus{}, false, fmt.Errorf("isAlertActive failed for key %s: %w", key, err)
 	}
+
+	tracing.SetBool(span, "found", found)
+	tracing.SetTime(span, "status.nextCheck", alertStatus.NextCheck.Time)
 
 	if !found {
 		return &status.AlertStatus{}, false, nil
@@ -82,6 +86,17 @@ func updateActiveAlert(ctx context.Context, alertStatus *status.AlertStatus, ale
 		return fmt.Errorf("failed to update alert status: %w", err)
 	}
 
+	err = storeQ.PublishData(ctx, &format.Update{
+		Index: models.ActiveAlertIndex,
+		ID: alertStatus.ID,
+		Doc: struct{LastHit models.Time `json:"lastHit"`}{
+			LastHit: models.TimeNow(),
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to queue active alert update: %w", err)
+	}
+
 	updatedAlerts.WithLabelValues(ALERTMANAGER_KIND, config.InstanceName).Inc()
 
 	return nil
@@ -92,7 +107,9 @@ func newActiveAlert(ctx context.Context, key string, alert PostableAlert) {
 	defer span.End()
 
 	activeAlert := convertAlert(alert)
-	id := utils.RandomURLSafeBase64(30)
+	id := utils.RandomURLSafeBase64(opensearchIDByteSize)
+
+	activeAlert.TraceID = tracing.GetTraceID(ctx)
 
 	// Add it to opensearch
 	err := storeQ.PublishData(ctx, &format.Index{
@@ -121,4 +138,3 @@ func newActiveAlert(ctx context.Context, key string, alert PostableAlert) {
 
 	ingestedAlerts.WithLabelValues(ALERTMANAGER_KIND, config.InstanceName).Inc()
 }
-

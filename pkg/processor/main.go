@@ -8,16 +8,7 @@ import (
 	"github.com/japannext/snooze/pkg/common/redis"
 	"github.com/japannext/snooze/pkg/common/tracing"
 	"github.com/japannext/snooze/pkg/common/utils"
-	// Sub-Processors.
-	"github.com/japannext/snooze/pkg/processor/grouping"
-	"github.com/japannext/snooze/pkg/processor/mapping"
-	"github.com/japannext/snooze/pkg/processor/notification"
-	"github.com/japannext/snooze/pkg/processor/profile"
-	"github.com/japannext/snooze/pkg/processor/ratelimit"
-	"github.com/japannext/snooze/pkg/processor/silence"
-	"github.com/japannext/snooze/pkg/processor/snooze"
-	"github.com/japannext/snooze/pkg/processor/store"
-	"github.com/japannext/snooze/pkg/processor/transform"
+	"github.com/japannext/snooze/pkg/processor/metrics"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -35,24 +26,14 @@ var routes []func(*gin.Engine)
 func Startup() *daemon.DaemonManager {
 	logging.Init()
 	initConfig()
-	initMetrics()
+	metrics.Init()
 	redis.Init()
 	tracing.Init("snooze-process")
 	mq.Init()
 
 	processQ = mq.ProcessSub()
-	pool = utils.NewPool(config.MaxWorkers)
+	pool = utils.NewPool(env.MaxWorkers)
 	tracer = otel.Tracer("snooze")
-
-	mapping.Startup(pipeline.Mappings)
-	transform.Startup(pipeline.Transforms)
-	grouping.Startup(pipeline.Grouping)
-	silence.Startup(pipeline.Silences)
-	profile.Startup(pipeline.Profiles)
-	snooze.Init()
-	ratelimit.Startup(pipeline.RateLimits)
-	notification.Startup(pipeline.Notifications, pipeline.DefaultDestinations)
-	store.Startup()
 
 	dm := daemon.NewDaemonManager()
 	srv := daemon.NewHttpDaemon(routes...)

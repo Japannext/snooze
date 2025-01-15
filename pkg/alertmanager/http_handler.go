@@ -13,6 +13,7 @@ type PostableAlerts struct {
 	Alerts []PostableAlert `json:",inline"`
 }
 
+// Model the data received by Prometheus notifications.
 type PostableAlert struct {
 	StartsAt     string            `json:"startsAt"`
 	EndsAt       string            `json:"endsAt"`

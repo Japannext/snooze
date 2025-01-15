@@ -1,31 +1,24 @@
 package processor
 
 import (
-	"context"
 	"encoding/json"
-	"time"
 
-	"github.com/japannext/snooze/pkg/common/tracing"
+	"github.com/japannext/snooze/pkg/common/mq"
 	"github.com/japannext/snooze/pkg/models"
-	"github.com/japannext/snooze/pkg/processor/activecheck"
-	"github.com/japannext/snooze/pkg/processor/grouping"
-	"github.com/japannext/snooze/pkg/processor/mapping"
-	"github.com/japannext/snooze/pkg/processor/notification"
-	"github.com/japannext/snooze/pkg/processor/profile"
-	"github.com/japannext/snooze/pkg/processor/ratelimit"
-	"github.com/japannext/snooze/pkg/processor/silence"
-	"github.com/japannext/snooze/pkg/processor/snooze"
-	"github.com/japannext/snooze/pkg/processor/store"
-	"github.com/japannext/snooze/pkg/processor/timestamp"
-	"github.com/japannext/snooze/pkg/processor/transform"
 	"github.com/nats-io/nats.go/jetstream"
 	log "github.com/sirupsen/logrus"
 )
 
-type Consumer struct{}
+type Consumer struct{
+	manager *Manager
+	processQ *mq.Sub
+}
 
 func NewConsumer() *Consumer {
-	return &Consumer{}
+	return &Consumer{
+		manager: NewManager(),
+		processQ: mq.ProcessSub(),
+	}
 }
 
 func (c *Consumer) Run() error {
@@ -54,7 +47,12 @@ func (c *Consumer) Run() error {
 			}
 			go func() {
 				defer pool.Release()
-				processLog(msgCtx, unmarshalLog(msg))
+
+				// Get a processor with the latest config
+				p := c.manager.GetProcessor()
+				// Process the message
+				p.Process(msgCtx, unmarshalLog(msg))
+				// Ack
 				msg.Ack()
 			}()
 		}
@@ -78,80 +76,4 @@ func unmarshalLog(msg jetstream.Msg) *models.Log {
 		}
 	}
 	return &item
-}
-
-/*
-type ProcessDecision int
-const (
-	CONTINUE ProcessDecision = iota
-	SILENCE
-	DROP
-)
-
-type ProcessFunc = func(context.Context, *models.Log)
-
-var processes = []ProcessFunc{
-	timestamp.Process,
-	transform.Process,
-	silence.Process,
-	profile.Process,
-	grouping.Process,
-	ratelimit.Process,
-	activecheck.Process,
-	snooze.Process,
-	notification.Process,
-	store.Process,
-}
-*/
-
-func processLog(ctx context.Context, item *models.Log) {
-	ctx, span := tracer.Start(ctx, "processLog")
-	defer span.End()
-
-	start := time.Now()
-
-	tracing.SetLog(span, item)
-
-	ctx = mapping.WithMappings(ctx)
-
-	// Transformative
-	timestamp.Process(ctx, item)
-	if err := transform.Process(ctx, item); err != nil {
-		log.Warnf("in 'transform': %s", err)
-	}
-	if err := profile.Process(ctx, item); err != nil {
-		log.Warnf("in 'profile': %s", err)
-	}
-	if err := grouping.Process(ctx, item); err != nil {
-		log.Warnf("in 'grouping': %s", err)
-	}
-
-	// Traffic control
-	if err := silence.Process(ctx, item); err != nil {
-		log.Warnf("in 'silence': %s", err)
-	}
-	if err := ratelimit.Process(ctx, item); err != nil {
-		log.Warnf("in 'ratelimit': %s", err)
-	}
-
-	// Snooze
-	if err := snooze.Process(ctx, item); err != nil {
-		log.Warnf("in 'snooze': %s", err)
-	}
-
-	// Monitoring
-	if err := activecheck.Process(ctx, item); err != nil {
-		log.Warnf("in 'activecheck': %s", err)
-	}
-
-	// Notification + Storage
-	if err := notification.Process(ctx, item); err != nil {
-		log.Warnf("in 'notification': %s", err)
-	}
-	if err := store.Process(ctx, item); err != nil {
-		log.Warnf("in 'storage': %s", err)
-	}
-
-	processedLogs.Inc()
-	processTime.Observe(time.Since(start).Seconds())
 }

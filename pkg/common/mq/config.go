@@ -15,8 +15,8 @@ func initConfig() {
 	v := viper.New()
 
 	// Defaults
-	v.BindEnv("NATS_URL")
-	v.SetDefault("NATS_REPLICAS", "3")
+	v.SetDefault("NATS_URL", "http://127.0.0.1:4222")
+	v.SetDefault("NATS_REPLICAS", "1")
 
 	v.AutomaticEnv()
 	err := v.Unmarshal(&config)

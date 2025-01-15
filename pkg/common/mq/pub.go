@@ -66,6 +66,7 @@ func (pub *Pub) publish(ctx context.Context, span trace.Span, data []byte) error
 	for key := range header {
 		tracing.SetString(span, fmt.Sprintf("nats.header.%s", key), header.Get(key))
 	}
+
 	tracing.SetString(span, "nats.data", string(data))
 
 	if _, err := pub.client.js.PublishMsg(ctx, msg); err != nil {

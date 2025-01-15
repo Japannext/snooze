@@ -18,12 +18,14 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-func NewTracerProvider(serviceName string) trace.TracerProvider {
+func NewTracerProvider(serviceName string) *tracesdk.TracerProvider {
 	ctx := context.Background()
+
 	exporter, err := otlptracegrpc.New(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	res := resource.NewWithAttributes(
 		semconv.SchemaURL,
 		semconv.ServiceNameKey.String(serviceName),
@@ -32,6 +34,7 @@ func NewTracerProvider(serviceName string) trace.TracerProvider {
 		tracesdk.WithBatcher(exporter, tracesdk.WithBatchTimeout(time.Second)),
 		tracesdk.WithResource(res),
 	)
+
 	return provider
 }
 
@@ -102,6 +105,7 @@ func HTTPFilter(req *http.Request) bool {
 		req.URL.Path == "/metrics" {
 		return false
 	}
+
 	return true
 }
 
@@ -110,6 +114,7 @@ func GetTraceID(ctx context.Context) string {
 	if spanCtx.HasTraceID() {
 		return spanCtx.TraceID().String()
 	}
+
 	return ""
 }
 

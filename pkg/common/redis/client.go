@@ -1,6 +1,8 @@
 package redis
 
 import (
+	"errors"
+
 	"github.com/japannext/snooze/pkg/common/tracing"
 	"github.com/redis/go-redis/extra/redisotel/v9"
 	redisv9 "github.com/redis/go-redis/v9"
@@ -16,6 +18,15 @@ type RedisClient struct {
 }
 
 var log *logrus.Entry
+
+// Filter actual errors.
+func IsError(err error) bool {
+	return err != nil && !errors.Is(err, redisv9.Nil)
+}
+
+func IsNil(err error) bool {
+	return errors.Is(err, redisv9.Nil)
+}
 
 func Init() {
 	log = logrus.WithFields(logrus.Fields{"module": "redis"})

@@ -1,0 +1,47 @@
+---
+apiVersion: opensearch.opster.io/v1
+kind: OpenSearchCluster
+metadata:
+  name: "{{ .Release.Name }}-opensearch"
+  namespace: "{{ .Release.Namespace }}"
+spec:
+  general:
+    version: 2.3.0
+    httpPort: 9200
+    vendor: opensearch
+    serviceName: "{{ .Release.Name }}-opensearch"
+    monitoring:
+      enable: false  # plugin fetched by http get
+  dashboards:
+    enable: true
+    version: 2.3.0
+    replicas: 1
+  nodePools:
+  - component: masters
+    replicas: 3
+    resources:
+      requests:
+        cpu: 1
+        memory: 4Gi
+      limits:
+        cpu: 1
+        memory: 4Gi
+    roles:
+    - data
+    - cluster_manager
+    diskSize: "{{ .Values.opensearch.diskSize }}"
+    persistence:
+      pvc:
+        accessModes:
+        - ReadWriteOnce
+        {{- with .Values.opensearch.storageClass }}
+        storageClass: "{{ . }}"
+        {{- end }}
+  security:
+    config:
+    tls:
+      http:
+        generate: true
+      transport:
+        generate: true
+        perNode: true
