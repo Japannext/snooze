@@ -2,6 +2,30 @@ package models
 
 const SnoozeIndex = "v2-snoozes"
 
+var SnoozeIndices = IndexTemplate{
+	Version:       3,
+	IndexPatterns: []string{SnoozeIndex},
+	DataStream:    map[string]map[string]string{"timestamp_field": {"name": "startAt"}},
+	Template: Indice{
+		Settings: IndexSettings{1, 2},
+		Mappings: IndexMapping{
+			Properties: map[string]MappingProps{
+				"groups.name":      {Type: "keyword"},
+				"groups.hash":      {Type: "keyword"},
+				"reason":           {Type: "text"},
+				"startsAt":         {Type: "date", Format: "epoch_millis"},
+				"endsAt":           {Type: "date", Format: "epoch_millis"},
+				"tags.name":        {Type: "keyword"},
+				"tags.color":       {Type: "keyword"},
+				"tags.description": {Type: "text"},
+				"cancelled.at":     {Type: "date", Format: "epoch_millis"},
+				"cancelled.by":     {Type: "keyword"},
+				"cancelled.reason": {Type: "text"},
+			},
+		},
+	},
+}
+
 type Snooze struct {
 	Base
 	// Groups that will be snoozed
@@ -21,30 +45,4 @@ type SnoozeCancel struct {
 	At Time `json:"cancelledAt"`
 	// The reason why the snooze was cancelled
 	Reason string `json:"reason"`
-}
-
-func init() {
-	OpensearchIndexTemplates[SnoozeIndex] = IndexTemplate{
-		Version:       3,
-		IndexPatterns: []string{SnoozeIndex},
-		DataStream:    map[string]map[string]string{"timestamp_field": {"name": "startAt"}},
-		Template: Indice{
-			Settings: IndexSettings{1, 2},
-			Mappings: IndexMapping{
-				Properties: map[string]MappingProps{
-					"groups.name":      {Type: "keyword"},
-					"groups.hash":      {Type: "keyword"},
-					"reason":           {Type: "text"},
-					"startsAt":         {Type: "date", Format: "epoch_millis"},
-					"endsAt":           {Type: "date", Format: "epoch_millis"},
-					"tags.name":        {Type: "keyword"},
-					"tags.color":       {Type: "keyword"},
-					"tags.description": {Type: "text"},
-					"cancelled.at":     {Type: "date", Format: "epoch_millis"},
-					"cancelled.by":     {Type: "keyword"},
-					"cancelled.reason": {Type: "text"},
-				},
-			},
-		},
-	}
 }

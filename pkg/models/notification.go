@@ -6,6 +6,22 @@ import (
 
 const NotificationIndex = "v2-notifications"
 
+var NotificationIndexTemplate = IndexTemplate{
+	Version:       2,
+	IndexPatterns: []string{NotificationIndex},
+	DataStream:    map[string]map[string]string{"timestamp_field": {"name": "notificationTime"}},
+	Template: Indice{
+		Settings: IndexSettings{1, 2},
+		Mappings: IndexMapping{
+			Properties: map[string]MappingProps{
+				"notificationTime": {Type: "date", Format: "epoch_millis"},
+				"destination.kind": {Type: "keyword"},
+				"destination.name": {Type: "keyword"},
+			},
+		},
+	},
+}
+
 type Notification struct {
 	Base
 
@@ -55,22 +71,4 @@ type Destination struct {
 
 func (dest *Destination) String() string {
 	return fmt.Sprintf("%s:%s", dest.Queue, dest.Profile)
-}
-
-func init() {
-	OpensearchIndexTemplates[NotificationIndex] = IndexTemplate{
-		Version:       2,
-		IndexPatterns: []string{NotificationIndex},
-		DataStream:    map[string]map[string]string{"timestamp_field": {"name": "notificationTime"}},
-		Template: Indice{
-			Settings: IndexSettings{1, 2},
-			Mappings: IndexMapping{
-				Properties: map[string]MappingProps{
-					"notificationTime": {Type: "date", Format: "epoch_millis"},
-					"destination.kind": {Type: "keyword"},
-					"destination.name": {Type: "keyword"},
-				},
-			},
-		},
-	}
 }

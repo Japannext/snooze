@@ -43,8 +43,6 @@ func ScriptError(msg string, args ...interface{}) error {
 	return fmt.Errorf("SCRIPT ERROR: " + msg, args)
 }
 
-
-
 func (gcra *GCRA) Perform(ctx context.Context, key string) (*GCRAStatus, error) {
 	keys := []string{key}
 	args := []interface{}{

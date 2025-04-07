@@ -42,7 +42,6 @@ tasks:
     - docker compose up -d nats opensearch dragonflydb
 
   test:
-    env:
     cmds:
     - go test ./...
 

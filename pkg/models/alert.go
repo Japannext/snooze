@@ -1,10 +1,41 @@
 package models
 
 const (
-	ActiveAlertIndex = "v2-active-alerts"
+	ActiveAlertIndex  = "v2-active-alerts"
 	AlertHistoryIndex = "v2-alerts-history"
 )
 
+var ActiveAlertIndice = Indice{
+	Settings: IndexSettings{1, 2},
+	Mappings: IndexMapping{
+		Properties: map[string]MappingProps{
+			"hash":        {Type: "keyword"},
+			"startsAt":    {Type: "date", Format: "epoch_millis"},
+			"source.kind": {Type: "keyword"},
+			"source.name": {Type: "keyword"},
+			"labels":      {Type: "object"},
+		},
+	},
+}
+
+var AlertHistoryIndexTemplate = IndexTemplate{
+	Version:       1,
+	IndexPatterns: []string{AlertHistoryIndex},
+	DataStream:    map[string]map[string]string{"timestamp_field": {"name": "startsAt"}},
+	Template: Indice{
+		Settings: IndexSettings{1, 2},
+		Mappings: IndexMapping{
+			Properties: map[string]MappingProps{
+				"hash":        {Type: "keyword"},
+				"startsAt":    {Type: "date", Format: "epoch_millis"},
+				"endsAt":      {Type: "date", Format: "epoch_millis"},
+				"source.kind": {Type: "keyword"},
+				"source.name": {Type: "keyword"},
+				"labels":      {Type: "object"},
+			},
+		},
+	},
+}
 
 type AlertBase struct {
 	Base
@@ -76,37 +107,4 @@ func (item *ActiveAlert) Context() map[string]interface{} {
 type AlertUpdate struct {
 	Document *ActiveAlert `json:"doc"`
 	Upsert   *ActiveAlert `json:"upsert"`
-}
-
-func init() {
-	OpensearchIndices[ActiveAlertIndex] = Indice{
-		Settings: IndexSettings{1, 2},
-		Mappings: IndexMapping{
-			Properties: map[string]MappingProps{
-				"hash":        {Type: "keyword"},
-				"startsAt":    {Type: "date", Format: "epoch_millis"},
-				"source.kind": {Type: "keyword"},
-				"source.name": {Type: "keyword"},
-				"labels":      {Type: "object"},
-			},
-		},
-	}
-	OpensearchIndexTemplates[AlertHistoryIndex] = IndexTemplate{
-		Version: 1,
-		IndexPatterns: []string{AlertHistoryIndex},
-		DataStream:    map[string]map[string]string{"timestamp_field": {"name": "startsAt"}},
-		Template: Indice{
-			Settings: IndexSettings{1, 2},
-			Mappings: IndexMapping{
-				Properties: map[string]MappingProps{
-					"hash":        {Type: "keyword"},
-					"startsAt":    {Type: "date", Format: "epoch_millis"},
-					"endsAt":      {Type: "date", Format: "epoch_millis"},
-					"source.kind": {Type: "keyword"},
-					"source.name": {Type: "keyword"},
-					"labels":      {Type: "object"},
-				},
-			},
-		},
-	}
 }

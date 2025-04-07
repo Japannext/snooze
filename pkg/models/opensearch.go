@@ -1,7 +1,21 @@
 package models
 
-var OpensearchIndexTemplates = make(map[string]IndexTemplate)
-var OpensearchIndices = make(map[string]Indice)
+// var OpensearchIndexTemplates = make(map[string]IndexTemplate)
+// var OpensearchIndices = make(map[string]Indice)
+
+var OpensearchIndices = map[string]Indice{
+	AckIndex:         AckIndice,
+	ActiveAlertIndex: ActiveAlertIndice,
+	GroupIndex:       GroupIndice,
+	TagIndex:         TagIndice,
+}
+
+var OpensearchIndexTemplates = map[string]IndexTemplate{
+	AlertHistoryIndex: AlertHistoryIndexTemplate,
+	LogIndex:          LogIndexTemplate,
+	NotificationIndex: NotificationIndexTemplate,
+	RatelimitIndex:    RatelimitIndexTemplate,
+}
 
 type IndexTemplate struct {
 	// Context       *IndexContext                `json:"context"`
@@ -18,7 +32,7 @@ type Indice struct {
 }
 
 type IndexContext struct {
-	Name string `json:"name,omitempty"`
+	Name    string `json:"name,omitempty"`
 	Version string `json:"version,omitempty"`
 }
 

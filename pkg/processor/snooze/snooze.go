@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/japannext/snooze/pkg/common/mq"
+	// "github.com/japannext/snooze/pkg/common/mq"
 	"github.com/japannext/snooze/pkg/common/redis"
 	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/processor/decision"
@@ -17,7 +17,7 @@ import (
 )
 
 type Processor struct {
-    storeQ *mq.Pub
+    // storeQ *mq.Pub
 }
 
 type Config struct {}
