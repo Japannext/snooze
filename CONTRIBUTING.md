@@ -1,11 +1,14 @@
 # Requirements
 
-You will need a kubernetes cluster with:
-* a working ingress class
-* a working storage class
-* a configured cert-manager
+You will need the following operators:
+* cert-manager
 * opensearch-operator
-* dragonflydb-operator (for a redis-like database)
+* dragonflydb-operator
+
+You will need the following programs:
+* [taskfile](https://taskfile.dev/installation/) (An alternative to Makefile)
+* [mise](https://mise.jdx.dev/installing-mise.html) (version manager for golang and bun)
+* [devspace](https://github.com/devspace-sh/devspace) (for running the webui auto-reloading in kubernetes)
 
 # Getting started
 
@@ -15,27 +18,19 @@ git clone https://github.com/japannext/snooze
 cd snooze/
 ```
 
-2) Install [taskfile](https://taskfile.dev/installation/)
+Install the golang and bun version used by the project:
+```bash
+mise install
+```
 
 ## Backend development
 
-1) Get [gvm](https://github.com/moovweb/gvm)
-2) Install the go version required
-```console
-> grep 'go 1' go.mod
-go 1.23
-
-> gvm install go1.23
-[...]
-```
-3) Build snooze (locally)
+Build snooze (locally)
 ```bash
 task build
 ```
 
 ## Web development
-
-You need a running backend and [devspace](https://github.com/devspace-sh/devspace).
 
 Important files used by each route:
 * Frontend
