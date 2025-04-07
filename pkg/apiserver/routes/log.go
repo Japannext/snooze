@@ -41,11 +41,11 @@ func getLogs(c *gin.Context) {
 	if params.Filter != nil {
 		switch params.Filter.Text {
 		case "active", "":
-			req.Doc.WithTerm("status.kind.keyword", models.LogActive)
+			req.Doc.WithTerm("status.kind", models.LogActive)
 		case "snoozed":
-			req.Doc.WithTerm("status.kind.keyword", models.LogSnoozed)
+			req.Doc.WithTerm("status.kind", models.LogSnoozed)
 		case "acked":
-			req.Doc.WithTerm("status.kind.keyword", models.LogAcked)
+			req.Doc.WithTerm("status.kind", models.LogAcked)
 		case "failed":
 			// req.Doc.WithTerm("", "")
 		case "all":

@@ -3,7 +3,7 @@ package writer
 import (
 	"bytes"
 	"context"
-	"encoding/json"
+	// "encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -57,6 +57,7 @@ func extractBulkError(resp opensearchapi.BulkRespItem) error {
 	return fmt.Errorf("%s", builder.String())
 }
 
+/*
 func bulkHeader(action, index string) []byte {
 	m := map[string]map[string]string{
 		action: {
@@ -66,6 +67,7 @@ func bulkHeader(action, index string) []byte {
 	b, _ := json.Marshal(m)
 	return b
 }
+*/
 
 func bulkWrite(ctx context.Context, msgs []mq.MsgWithContext) {
 	ctx, bulkSpan := tracer.Start(ctx, "bulkWrite")
@@ -97,7 +99,11 @@ func bulkWrite(ctx context.Context, msgs []mq.MsgWithContext) {
 		log.Debugf("Query: %s", buf.Bytes())
 		log.Debugf("Result: %+v", resp.Items)
 		for _, m := range msgs {
-			m.Msg.NakWithDelay(1 * time.Minute)
+			if err := m.Msg.NakWithDelay(1 * time.Minute); err != nil {
+				log.Warn("fail to reschedule log")
+
+				continue
+			}
 		}
 	}
 	if resp.Errors {
@@ -112,7 +118,11 @@ func bulkWrite(ctx context.Context, msgs []mq.MsgWithContext) {
 		if res.Error != nil {
 			log.Warnf("failed to write item to '%s': %s", res.Index, extractBulkError(res))
 			if msg, ok := messages[i]; ok {
-				msg.Term()
+				if err := msg.Term(); err != nil {
+					log.Warnf("failed to cancel log")
+
+					continue
+				}
 			} else {
 				log.Warnf("failed to term!")
 			}
@@ -120,7 +130,11 @@ func bulkWrite(ctx context.Context, msgs []mq.MsgWithContext) {
 		} else {
 			writeItems.WithLabelValues(res.Index).Inc()
 			if msg, ok := messages[i]; ok {
-				msg.Ack()
+				if err := msg.Ack(); err != nil {
+					log.Warnf("failed to acknowledge log")
+
+					continue
+				}
 			} else {
 				log.Warnf("failed to ack!")
 			}
@@ -132,33 +146,8 @@ func getActionAndResult(results map[string]opensearchapi.BulkRespItem) (string, 
 	for key, value := range results {
 		return key, value
 	}
-	return "", opensearchapi.BulkRespItem{}
-}
 
-func handleResponse(resp opensearchapi.BulkResp, messages map[int]jetstream.Msg) {
-	for i, result := range resp.Items {
-		res, ok := result["create"]
-		if !ok {
-			log.Warnf("cannot find action `index` in error response: %+v", result)
-			continue
-		}
-		if res.Error != nil {
-			log.Warnf("failed to write item to '%s': %s", res.Index, extractBulkError(res))
-			if msg, ok := messages[i]; ok {
-				msg.Term()
-			} else {
-				log.Warnf("failed to term!")
-			}
-			errorItems.WithLabelValues(res.Index).Inc()
-		} else {
-			writeItems.WithLabelValues(res.Index).Inc()
-			if msg, ok := messages[i]; ok {
-				msg.Ack()
-			} else {
-				log.Warnf("failed to ack!")
-			}
-		}
-	}
+	return "", opensearchapi.BulkRespItem{}
 }
 
 func (w *Consumer) Stop() {

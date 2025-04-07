@@ -76,7 +76,7 @@ tasks:
         curl -k -u admin:admin -X POST https://localhost:9200/v2-groups/_delete_by_query
         -H 'Content-Type: application/json'
         -d '{"query": {"match_all": {}}}'
-    - kubectl exec -it svc/snooze-redis -- bash -c 'redis-cli keys "group/*" | xargs redis-cli del'
+    - kubectl exec -it svc/snooze-redis -- bash -c 'redis-cli keys "grouping:*" | xargs redis-cli del'
 
   reset-alerts:
     cmds:

@@ -12,15 +12,19 @@ type Claims struct {
 	FullName             string   `json:"fullName"`
 	Email                string   `json:"email"`
 	Roles                []string `json:"roles"`
+	MaxAge				 time.Duration
 }
 
 func NewClaims() *Claims {
-	return &Claims{RegisteredClaims: jwt.RegisteredClaims{
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(6 * time.Hour)),
-		IssuedAt:  jwt.NewNumericDate(time.Now()),
-		NotBefore: jwt.NewNumericDate(time.Now()),
-		Issuer:    "snooze-apiserver",
-		Subject:   "snooze",
-		Audience:  []string{"snooze"},
+	maxAge := 6 * time.Hour
+	return &Claims{
+		MaxAge: maxAge,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(maxAge)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			NotBefore: jwt.NewNumericDate(time.Now()),
+			Issuer:    "snooze-apiserver",
+			Subject:   "snooze",
+			Audience:  []string{"snooze"},
 	}}
 }

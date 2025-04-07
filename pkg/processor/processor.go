@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/japannext/snooze/pkg/models"
+	"github.com/japannext/snooze/pkg/processor/activecheck"
 	"github.com/japannext/snooze/pkg/processor/decision"
 	"github.com/japannext/snooze/pkg/processor/grouping"
 	"github.com/japannext/snooze/pkg/processor/notification"
@@ -13,6 +14,7 @@ import (
 	"github.com/japannext/snooze/pkg/processor/silence"
 	"github.com/japannext/snooze/pkg/processor/snooze"
 	"github.com/japannext/snooze/pkg/processor/store"
+	"github.com/japannext/snooze/pkg/processor/timestamp"
 	"github.com/japannext/snooze/pkg/processor/transform"
 )
 
@@ -24,15 +26,6 @@ type SubProcessor interface {
 // An object that can process a log, and contain the static config
 // of all processors
 type Processor struct {
-	transform,
-	profile,
-	grouping,
-	silence,
-	ratelimit,
-	snooze,
-	notification,
-	store SubProcessor
-
 	processes []SubProcessor
 }
 
@@ -80,12 +73,14 @@ func NewProcessor(cfg *Config) (*Processor, error) {
 	}
 
 	p.processes = []SubProcessor{
+		&timestamp.Processor{},
 		transformProcess,
 		profileProcess,
 		groupingProcess,
 		silenceProcess,
 		ratelimitProcess,
 		snoozeProcess,
+		&activecheck.Processor{},
 		notificationProcess,
 		storeProcess,
 	}
@@ -94,7 +89,6 @@ func NewProcessor(cfg *Config) (*Processor, error) {
 }
 
 func (p *Processor) Process(ctx context.Context, item *models.Log) *decision.Decision {
-
 	for _, subprocessor := range p.processes {
 		if decision := subprocessor.Process(ctx, item); decision.Stop {
 			return decision

@@ -6,15 +6,17 @@ metadata:
   namespace: "{{ .Release.Namespace }}"
 spec:
   general:
-    version: 2.3.0
+    version: 2.18.0
     httpPort: 9200
     vendor: opensearch
     serviceName: "{{ .Release.Name }}-opensearch"
     monitoring:
       enable: false  # plugin fetched by http get
+    additionalConfig:
+      action.auto_create_index: "false"
   dashboards:
     enable: true
-    version: 2.3.0
+    version: 2.18.0
     replicas: 1
   nodePools:
   - component: masters

@@ -5,16 +5,16 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/japannext/snooze/pkg/alertmanager/status"
 	"github.com/japannext/snooze/pkg/common/opensearch/format"
+	"github.com/japannext/snooze/pkg/common/tracing"
 	"github.com/japannext/snooze/pkg/common/utils"
 	"github.com/japannext/snooze/pkg/models"
-	"github.com/japannext/snooze/pkg/alertmanager/status"
-	"github.com/japannext/snooze/pkg/common/tracing"
 	log "github.com/sirupsen/logrus"
 )
 
 const (
-	ALERTMANAGER_KIND = "alertmanager"
+	ALERTMANAGER_KIND    = "alertmanager"
 	opensearchIDByteSize = 30
 )
 
@@ -88,8 +88,10 @@ func updateActiveAlert(ctx context.Context, alertStatus *status.AlertStatus, ale
 
 	err = storeQ.PublishData(ctx, &format.Update{
 		Index: models.ActiveAlertIndex,
-		ID: alertStatus.ID,
-		Doc: struct{LastHit models.Time `json:"lastHit"`}{
+		ID:    alertStatus.ID,
+		Doc: struct {
+			LastHit models.Time `json:"lastHit"`
+		}{
 			LastHit: models.TimeNow(),
 		},
 	})
@@ -114,8 +116,8 @@ func newActiveAlert(ctx context.Context, key string, alert PostableAlert) {
 	// Add it to opensearch
 	err := storeQ.PublishData(ctx, &format.Index{
 		Index: models.ActiveAlertIndex,
-		ID: id,
-		Item: activeAlert,
+		ID:    id,
+		Item:  activeAlert,
 	})
 	if err != nil {
 		log.Errorf("failed to queue active alert: %s", err)
@@ -125,8 +127,8 @@ func newActiveAlert(ctx context.Context, key string, alert PostableAlert) {
 
 	// Add alert status (redis)
 	err = status.Set(ctx, &status.AlertStatus{
-		ID: id,
-		Key: key,
+		ID:        id,
+		Key:       key,
 		LastCheck: parseTime(alert.StartsAt),
 		NextCheck: parseTime(alert.EndsAt),
 	})

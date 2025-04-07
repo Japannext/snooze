@@ -30,10 +30,12 @@
     "@rsbuild/plugin-type-check": "^1.1.0",
     "@rsbuild/plugin-vue": "^1.0.5",
     "@typescript-eslint/parser": "^8.18.2",
+    "@vue/typescript-plugin": "^2.2.2",
     "espree": "^10.3.0",
     "typescript": "^5.7.2",
     "vls": "^0.8.5",
     "vue-eslint-parser": "^9.4.3",
+    "vue-language-server": "^0.0.67",
     "vue-tsc": "^2.2.0"
   }
 }

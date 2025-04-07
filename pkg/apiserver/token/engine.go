@@ -19,10 +19,12 @@ func Init() {
 
 func Sign(claims jwt.Claims) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
 	tokenString, err := token.SignedString(secret)
 	if err != nil {
 		return "", err
 	}
+
 	return tokenString, nil
 }
 
@@ -36,9 +38,11 @@ func Verify(tokenString string) (*Claims, error) {
 	opts := []jwt.ParserOption{
 		jwt.WithExpirationRequired(),
 	}
+
 	_, err := jwt.ParseWithClaims(tokenString, claims, keyfunc, opts...)
 	if err != nil {
 		return claims, err
 	}
+
 	return claims, nil
 }
