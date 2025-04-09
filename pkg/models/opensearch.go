@@ -11,10 +11,10 @@ var OpensearchIndices = map[string]Indice{
 }
 
 var OpensearchIndexTemplates = map[string]IndexTemplate{
-	AlertHistoryIndex: AlertHistoryIndexTemplate,
-	LogIndex:          LogIndexTemplate,
-	NotificationIndex: NotificationIndexTemplate,
-	RatelimitIndex:    RatelimitIndexTemplate,
+	AlertHistoryIndex:     AlertHistoryIndexTemplate,
+	LogIndex:              LogIndexTemplate,
+	NotificationIndex:     NotificationIndexTemplate,
+	RatelimitHistoryIndex: RatelimitHistoryIndexTemplate,
 }
 
 type IndexTemplate struct {

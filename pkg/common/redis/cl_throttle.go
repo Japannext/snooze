@@ -2,16 +2,16 @@ package redis
 
 import (
 	"context"
-	"time"
 	"fmt"
+	"time"
 )
 
 type ThrottleState struct {
-	Allowed bool
-	Limit int64
-	Remaining int64
+	Allowed    bool
+	Limit      int64
+	Remaining  int64
 	RetryAfter time.Duration
-	Reset time.Duration
+	Reset      time.Duration
 }
 
 // Wrapper of redis-cell plugin / dragonflydb command
@@ -26,10 +26,10 @@ func (client *RedisClient) CLThrottle(ctx context.Context, key string, maxBurst,
 	}
 
 	return &ThrottleState{
-		Allowed: (res[0] == 0),
-		Limit: res[1],
-		Remaining: res[2],
+		Allowed:    (res[0] == 0),
+		Limit:      res[1],
+		Remaining:  res[2],
 		RetryAfter: time.Duration(res[3]) * time.Second,
-		Reset: time.Duration(res[4]) * time.Second,
+		Reset:      time.Duration(res[4]) * time.Second,
 	}, nil
 }

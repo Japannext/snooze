@@ -51,7 +51,7 @@ type Ratelimit struct {
 	Group string `json:"group" yaml:"group"`
 
 	// The amount of authorized logs during the period
-	Burst uint64 `json:"burst" yaml:"burst"`
+	CountPerPeriod int64 `json:"countPerPeriod" yaml:"countPerPeriod"`
 
 	// The period used to measure the rate
 	Period time.Duration `json:"period" yaml:"period"`

@@ -1,10 +1,10 @@
 package models
 
-const RatelimitIndex = "v2-ratelimits"
+const RatelimitHistoryIndex = "v2-ratelimit-history"
 
-var RatelimitIndexTemplate = IndexTemplate{
+var RatelimitHistoryIndexTemplate = IndexTemplate{
 	Version:       0,
-	IndexPatterns: []string{RatelimitIndex},
+	IndexPatterns: []string{RatelimitHistoryIndex},
 	DataStream:    map[string]map[string]string{"timestamp_field": {"name": "startsAt"}},
 	Template: Indice{
 		Settings: IndexSettings{1, 2},
@@ -19,23 +19,35 @@ var RatelimitIndexTemplate = IndexTemplate{
 	},
 }
 
-// A rate limit object. Represent the start or end of rate limiting.
-type Ratelimit struct {
-	ID string `json:"id"`
+// A rate limit status. Stored in Redis, and
+type RatelimitStatus struct {
+	// Whether the rate limiting is active or over
+	Active bool `json:"active"`
 	// Time when the entries were rate-limited or allowed back
-	StartsAt uint64 `yaml:"startsAt"`
+	StartsAt Time `json:"startsAt"`
+	// Time when the ratelimit should be retried
+	RetryAt uint64 `json:"retryAt"`
 	// Time when the concerned entries stopped being rate-limited
-	EndsAt uint64 `yaml:"endsAt"`
+	EndsAt uint64 `json:"endsAt"`
 	// The name of the ratelimit rule that was applied
 	Rule string `json:"name"`
-	// The fields that are concerned by the rate limiting
-	Fields map[string]string `yaml:"fields"`
 	// The hash of the fields. Can uniquely identify a ratelimited identity
-	Hash string `yaml:"hash"`
+	Hash string `json:"hash"`
 }
 
-type RatelimitResults struct {
-	Items []Ratelimit `json:"items"`
-	Total int         `json:"total"`
-	More  bool        `json:"more"`
+// An entry in the rate-limit history (persistent storage)
+type RatelimitRecord struct {
+	ID string `json:"id"`
+	// Whether the rate limiting is active or over
+	Active   bool `json:"active"`
+	StartsAt uint64
+	EndsAt   uint64
+	Rule     string
+	Hash     string
+}
+
+type RatelimitStatusResults struct {
+	Items []RatelimitStatus `json:"items"`
+	Total int               `json:"total"`
+	More  bool              `json:"more"`
 }
