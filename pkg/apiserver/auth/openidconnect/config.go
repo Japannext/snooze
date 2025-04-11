@@ -26,6 +26,10 @@ func initConfig() {
 	oidcConfig = config.Auth().Oidc
 	cookieDomain = config.Env().CookieDomain
 
+	if oidcConfig == nil {
+		log.Fatalf("auth.oidc is not defined")
+	}
+
 	var err error
 	provider, err = oidc.NewProvider(context.Background(), oidcConfig.URL)
 	if err != nil {

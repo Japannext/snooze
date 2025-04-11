@@ -124,3 +124,12 @@ ingress:
     enabled: false
     issuerKind: Issuer
     issuerName: default
+
+authentication:
+  keycloak:
+    enabled: false
+    keycloakURL: ""
+    clientName: ""
+    realm: ""
+    endpointKind: "KeycloakClusterEndpoint"
+    endpointName: keycloak

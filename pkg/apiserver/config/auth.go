@@ -42,7 +42,7 @@ var authConfig *AuthConfig
 
 func Auth() *AuthConfig {
 	if authConfig == nil {
-		log.Fatalf("auth config is not initialized!")
+		initAuthConfig()
 	}
 	return authConfig
 }
@@ -69,6 +69,9 @@ func initAuthConfig() {
 		}
 		if authConfig.Oidc.RolesField == "" {
 			authConfig.Oidc.RolesField = "groups"
+		}
+		if authConfig.Oidc.ClientSecret == "" {
+			authConfig.Oidc.ClientSecret = os.Getenv("SNOOZE_OIDC_CLIENT_SECRET")
 		}
 	}
 	if authConfig.AdminRole == "" {

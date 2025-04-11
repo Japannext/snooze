@@ -8,7 +8,18 @@ data:
   auth.yaml: |
     # Configuration of auth backend
     ---
-    {{- .Values.apiserver.auth | toYaml | nindent 6 }}
+    {{- with .Values.authentication.keycloak }}
+    oidc:
+      url: "{{ .keycloakURL }}"
+      client_id: "{{ .clientName }}"
+      callback_url: "{{ $.Values.ingress.host }}/#/callback/oidc"
+      scopes: [openid, email, profile, roles]
+      cacert: /cacert/ca.crt
+      display_name: Keycloak
+      roles_field: snooze2-roles
+      color: '#00a2cf'
+      icon: 'Openid'
+    {{- end }}
   {{- if .Values.apiserver.cors }}
   cors.yaml: |
     # CORS configuration

@@ -61,6 +61,13 @@ spec:
             secretKeyRef:
               name: "{{ .Values.apiserver.secretKey.secretName | default (printf "%s-apiserver-secret" .Release.Name) }}"
               key: "{{ .Values.apiserver.secretKey.key }}"
+        {{- if .Values.authentication.keycloak.enabled }}
+        - name: SNOOZE_OIDC_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Release.Name }}-oidc-secret"
+              key: client_secret
+        {{- end }}
         envFrom:
         - configMapRef:
             name: "{{ .Release.Name }}-common"

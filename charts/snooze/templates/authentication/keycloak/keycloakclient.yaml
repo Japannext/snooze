@@ -1,0 +1,26 @@
+{{- if .Values.authentication.keycloak.enabled }}
+{{- $clientName := required "authentication.keycloak.clientName is required" .Values.authentication.keycloak.clientName }}
+{{- $realm := required "authentication.keycloak.realm is required" .Values.authentication.keycloak.realm }}
+---
+apiVersion: keycloak.japannext.co.jp/v1alpha2
+kind: KeycloakClient
+metadata:
+  name: "{{ $clientName }}"
+  namespace: "{{ .Release.Namespace }}"
+spec:
+  endpoint:
+    kind: "{{ .Values.authentication.keycloak.endpointKind }}"
+    name: "{{ .Values.authentication.keycloak.endpointName }}"
+  realm: "{{ $realm }}"
+  secret:
+    enabled: true
+    name: "{{ .Release.Name }}-oidc-secret"
+  config:
+    name: "{{ $clientName }}"
+    enabled: true
+    baseUrl: "https://{{ .Values.ingress.host }}"
+    redirectUris:
+    - https://{{ .Values.ingress.host }}/api/auth/oidc/callback
+    description: "Snooze: An alerting management system"
+    publicClient: false
+{{- end }}
