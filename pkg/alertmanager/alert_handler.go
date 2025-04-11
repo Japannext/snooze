@@ -7,6 +7,7 @@ import (
 
 	"github.com/japannext/snooze/pkg/alertmanager/status"
 	"github.com/japannext/snooze/pkg/common/opensearch/format"
+	"github.com/japannext/snooze/pkg/common/redis"
 	"github.com/japannext/snooze/pkg/common/tracing"
 	"github.com/japannext/snooze/pkg/common/utils"
 	"github.com/japannext/snooze/pkg/models"
@@ -22,7 +23,7 @@ func alertHandler(ctx context.Context, alert PostableAlert) {
 	ctx, span := tracer.Start(ctx, "alertHandler")
 	defer span.End()
 
-	key := getKey(alert)
+	key := redis.AlertManagerKey(alert.Labels["alertgroup"], alert.Labels["alertname"], utils.ComputeHash(alert.Labels))
 
 	// Check if the alert is already active (in Redis).
 	alertStatus, active, err := isAlertActive(ctx, key)
@@ -42,12 +43,6 @@ func alertHandler(ctx context.Context, alert PostableAlert) {
 	}
 
 	newActiveAlert(ctx, key, alert)
-}
-
-func getKey(alert PostableAlert) string {
-	hash := utils.ComputeHash(alert.Labels)
-
-	return fmt.Sprintf("alertmanager/%s/%s/%s", alert.Labels["alertgroup"], alert.Labels["alertname"], hash)
 }
 
 func isAlertActive(ctx context.Context, key string) (*status.AlertStatus, bool, error) {

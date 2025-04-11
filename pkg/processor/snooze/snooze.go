@@ -86,7 +86,7 @@ func (p *Processor) Process(ctx context.Context, item *models.Log) *decision.Dec
 	keys := []string{}
 
 	for _, group := range item.Groups {
-		key := fmt.Sprintf("snooze/%s/%s", group.Name, group.Hash)
+		key := redis.SnoozeKey(group)
 		keys = append(keys, key)
 	}
 
