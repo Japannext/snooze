@@ -11,21 +11,21 @@ import (
 	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/processor/decision"
 	"github.com/japannext/snooze/pkg/processor/metrics"
-	"go.opentelemetry.io/otel"
-	log "github.com/sirupsen/logrus"
 	redisv9 "github.com/redis/go-redis/v9"
+	log "github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel"
 )
 
 type Processor struct {
-    // storeQ *mq.Pub
+	// storeQ *mq.Pub
 }
 
-type Config struct {}
+type Config struct{}
 
 func New(_ Config) (*Processor, error) {
-    p := &Processor{}
+	p := &Processor{}
 
-    return p, nil
+	return p, nil
 }
 
 // Return if the snooze is expired or not.

@@ -37,7 +37,8 @@ type RatelimitStatus struct {
 
 // An entry in the rate-limit history (persistent storage)
 type RatelimitRecord struct {
-	ID string `json:"id"`
+	Base
+
 	// Whether the rate limiting is active or over
 	Active   bool `json:"active"`
 	StartsAt uint64

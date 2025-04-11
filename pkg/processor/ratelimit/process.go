@@ -42,6 +42,9 @@ func getRatelimitKey(gr *models.Group) string {
 	return fmt.Sprintf("ratelimit:%s:%s", gr.Name, gr.Hash)
 }
 
+// Process the ratelimit. There are 2 important objects:
+// * Ratelimit status, stored in redis. It is fine to access/update it for every processed item
+// * Ratelimit record, stored in opensearch. They should not be updated often, as it is slow.
 func (p *Processor) Process(ctx context.Context, item *models.Log) *decision.Decision {
 	ctx, span := otel.Tracer("snooze").Start(ctx, "ratelimit")
 	defer span.End()
@@ -60,7 +63,7 @@ func (p *Processor) Process(ctx context.Context, item *models.Log) *decision.Dec
 		}
 
 		if !throttle.Allowed {
-			if err := UpsertStatus(ctx, rate, gr, throttle); err != nil {
+			if err := p.UpsertStatus(ctx, rate, gr, throttle); err != nil {
 				log.Warnf("failed to upsert ratelimit: %s", err)
 				return decision.OK()
 			}
