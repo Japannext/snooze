@@ -3,7 +3,6 @@ version: '3'
 
 vars:
   NAME: snooze-ui
-  REPO: nexus.dc.japannext.co.jp:8083/unix/kubernetes
   VERSION: 2.0.0
 
 env:
@@ -18,16 +17,17 @@ tasks:
   build:
     desc: Build and see if the typescript works
     cmds:
+    - bun install
     - bun run build
 
   develop:
     desc: Deploy a temporary dev Docker image
     cmds:
-    - docker build . -t {{ .REPO }}/{{ .NAME }}:develop
-    - docker push {{ .REPO }}/{{ .NAME }}:develop
+    - docker build . -t {{ .LOCAL_REPO }}/{{ .NAME }}:develop
+    - docker push {{ .LOCAL_REPO }}/{{ .NAME }}:develop
     preconditions:
-    - sh: docker login {{ .REPO }} --get-login
-      msg: "You need to login to docker with `docker login {{ .REPO }}`"
+    - sh: docker login {{ .LOCAL_REPO }} --get-login
+      msg: "You need to login to docker with `docker login {{ .LOCAL_REPO }}`"
 
   index:
     desc: Update component index
@@ -37,19 +37,19 @@ tasks:
   release:
     desc: Release the Docker image
     cmds:
-    - docker build . -t {{ .REPO }}/{{ .NAME }}:{{ .VERSION }}
-    - docker push {{ .REPO }}/{{ .NAME }}:{{ .VERSION }}
+    - docker build . -t {{ .LOCAL_REPO }}/{{ .NAME }}:{{ .VERSION }}
+    - docker push {{ .LOCAL_REPO }}/{{ .NAME }}:{{ .VERSION }}
     preconditions:
-    - sh: docker login {{ .REPO }} --get-login
-      msg: "You need to login to docker with `docker login {{ .REPO }}`"
+    - sh: docker login {{ .LOCAL_REPO }} --get-login
+      msg: "You need to login to docker with `docker login {{ .LOCAL_REPO }}`"
     status:  # Protect against accidental re-release
-    - docker manifest inspect {{ .REPO }}/{{ .NAME }}:{{ .VERSION }}
+    - docker manifest inspect {{ .LOCAL_REPO }}/{{ .NAME }}:{{ .VERSION }}
 
   dev-image:
     desc: Update the dev image used for devspace quick development
     cmds:
-    - docker build . -f Dockerfile.dev -t {{ .REPO }}/{{ .NAME }}-dev:develop
-    - docker push {{ .REPO }}/{{ .NAME }}-dev:develop
+    - docker build . -f Dockerfile.dev -t {{ .LOCAL_REPO }}/{{ .NAME }}-dev:develop
+    - docker push {{ .LOCAL_REPO }}/{{ .NAME }}-dev:develop
     preconditions:
-    - sh: docker login {{ .REPO }} --get-login
-      msg: "You need to login to docker with `docker login {{ .REPO }}`"
+    - sh: docker login {{ .LOCAL_REPO }} --get-login
+      msg: "You need to login to docker with `docker login {{ .LOCAL_REPO }}`"
