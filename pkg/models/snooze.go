@@ -26,7 +26,9 @@ var SnoozeIndices = IndexTemplate{
 	},
 }
 
-type Snooze struct {
+// A snooze entry that will be stored in Opensearch in order to search
+// easily
+type SnoozeEntry struct {
 	Base
 	// Groups that will be snoozed
 	Groups    []Group       `json:"groups"`
@@ -36,6 +38,22 @@ type Snooze struct {
 	EndsAt    Time          `json:"endsAt"`
 	Cancelled *SnoozeCancel `json:"cancelled,omitempty"`
 	Username  string        `json:"username"`
+	If        string        `json:"if"`
+}
+
+// A snooze entry placed in redis for fast lookup of what
+// snooze entry matches a log.
+type SnoozeLookup struct {
+	// ID of the associated Opensearch object (Snooze entry)
+	OpensearchID string `json:"opensearchID"`
+	// An additional condition of the snooze entry
+	If string `json:"if"`
+	// When the snooze entry should start. Only matter for edge cases.
+	StartsAt Time `json:"startsAt"`
+	// When the snooze entry should end. Only matter for edge cases.
+	EndsAt Time `json:"endsAt"`
+	// Number of times logs hit this snooze entry
+	Hits int `json:"hits"`
 }
 
 type SnoozeCancel struct {

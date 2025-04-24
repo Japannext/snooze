@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	// "github.com/japannext/snooze/pkg/common/mq"
+	"github.com/japannext/snooze/pkg/common/lang"
 	"github.com/japannext/snooze/pkg/common/redis"
 	"github.com/japannext/snooze/pkg/models"
 	"github.com/japannext/snooze/pkg/processor/decision"
@@ -29,31 +29,31 @@ func New(_ Config) (*Processor, error) {
 }
 
 // Return if the snooze is expired or not.
-func snoozeExpired(sz *models.Snooze) bool {
+func snoozeExpired(sz *models.SnoozeLookup) bool {
 	now := time.Now()
 
 	return now.After(sz.EndsAt.Time) || now.Before(sz.StartsAt.Time)
 }
 
 // Return the snooze entries that match in Redis.
-func getSnoozes(ctx context.Context, keys []string) ([]*models.Snooze, error) {
-	snoozes := []*models.Snooze{}
+func getSnoozeLookups(ctx context.Context, keys []string) ([]*models.SnoozeLookup, error) {
+	lookups := []*models.SnoozeLookup{}
 	pipe := redis.Client.Pipeline()
-	results := map[string]*redisv9.StringCmd{}
+	results := map[string]*redisv9.MapStringStringCmd{}
 
 	log.Debugf("searching for snooze entries: %s", keys)
 
 	for _, key := range keys {
-		results[key] = pipe.Get(ctx, key)
+		results[key] = pipe.HGetAll(ctx, key)
 	}
 
 	_, err := pipe.Exec(ctx)
 	if redis.IsError(err) {
-		return snoozes, fmt.Errorf("failed to execute redis call: %w", err)
+		return lookups, fmt.Errorf("failed to execute redis call: %w", err)
 	}
 
 	for hash, res := range results {
-		data, err := res.Bytes()
+		entries, err := res.Result()
 		if redis.IsNil(err) { // No snooze found, skip.
 			continue
 		}
@@ -64,18 +64,40 @@ func getSnoozes(ctx context.Context, keys []string) ([]*models.Snooze, error) {
 			continue
 		}
 
-		var sz *models.Snooze
+		for _, entry := range entries {
+			var lookup *models.SnoozeLookup
+			if err := json.Unmarshal([]byte(entry), &lookup); err != nil {
+				log.Warnf("failed to unmarshal snooze `%s`: %s", entry, err)
 
-		if err := json.Unmarshal(data, &sz); err != nil {
-			log.Warnf("failed to unmarshal snooze `%s`: %s", data, err)
+				continue
+			}
 
-			continue
+			lookups = append(lookups, lookup)
 		}
-
-		snoozes = append(snoozes, sz)
 	}
 
-	return snoozes, nil
+	return lookups, nil
+}
+
+// Check the snooze condition, return true if the log should be skipped
+func checkSnoozeCondition(ctx context.Context, sz *models.SnoozeLookup, item *models.Log) bool {
+	if sz.If != "" {
+		cond, err := lang.NewCondition(sz.If)
+		if err != nil {
+			log.Errorf("failed to evaluate snooze condition `%s`: %s", sz.If, err)
+			return true
+		}
+		match, err := cond.MatchLog(ctx, item)
+		if err != nil {
+			log.Errorf("failed to evaluate snooze match `%s`: %s", sz.If, err)
+			return true
+		}
+		if !match {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (p *Processor) Process(ctx context.Context, item *models.Log) *decision.Decision {
@@ -91,23 +113,27 @@ func (p *Processor) Process(ctx context.Context, item *models.Log) *decision.Dec
 	}
 
 	// 2. Check them all in redis
-	snoozes, err := getSnoozes(ctx, keys)
+	lookups, err := getSnoozeLookups(ctx, keys)
 	if err != nil {
 		log.Errorf("failed to fetch snoozes from redis: %s", err)
 
 		return decision.Retry(fmt.Errorf("failed to fetch snoozes from redis: %w", err))
 	}
 
-	if len(snoozes) == 0 {
+	if len(lookups) == 0 {
 		log.Debugf("no snooze entry found")
 
 		return decision.OK()
 	}
 
 	// 3. Check if they are still valid.
-	for _, sz := range snoozes {
-		if snoozeExpired(sz) {
-			log.Debugf("snooze entry expired. endsAt: %s", sz.EndsAt)
+	for _, lookup := range lookups {
+		if skip := checkSnoozeCondition(ctx, lookup, item); skip {
+			continue
+		}
+
+		if snoozeExpired(lookup) {
+			log.Debugf("snooze entry expired. endsAt: %s", lookup.EndsAt)
 
 			continue
 		}
@@ -116,7 +142,7 @@ func (p *Processor) Process(ctx context.Context, item *models.Log) *decision.Dec
 		ok := item.Status.Change(models.LogSnoozed)
 		if ok {
 			item.Status.SkipNotification = true
-			item.Status.ObjectID = sz.ID
+			item.Status.ObjectID = lookup.OpensearchID
 
 			metrics.SnoozedLogs.Inc()
 		}

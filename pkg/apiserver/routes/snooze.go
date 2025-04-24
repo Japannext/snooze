@@ -67,7 +67,7 @@ func getSnoozes(c *gin.Context) {
 		}
 	}
 
-	items, err := opensearch.Search[*models.Snooze](ctx, req)
+	items, err := opensearch.Search[*models.SnoozeEntry](ctx, req)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error getting snoozes: %s", err)
 		return
@@ -80,7 +80,7 @@ func postSnooze(c *gin.Context) {
 	ctx, span := tracer.Start(c.Request.Context(), "postSnooze")
 	defer span.End()
 
-	var item *models.Snooze
+	var item *models.SnoozeEntry
 	err := c.BindJSON(&item)
 	if err != nil {
 		c.String(http.StatusBadRequest, "error parsing snooze object: %s", err)
@@ -89,12 +89,6 @@ func postSnooze(c *gin.Context) {
 
 	item.Username = c.GetString("username")
 
-	data, err := json.Marshal(item)
-	if err != nil {
-		c.String(http.StatusInternalServerError, "failed to marshal Snooze entry: %s", err)
-		return
-	}
-
 	// Compute hash if not already computed
 	for _, group := range item.Groups {
 		if group.Hash == "" {
@@ -102,20 +96,7 @@ func postSnooze(c *gin.Context) {
 		}
 	}
 
-	pipe := redis.Client.Pipeline()
-
-	for _, group := range item.Groups {
-		key := fmt.Sprintf("snooze/%s/%s", group.Name, group.Hash)
-		pipe.Set(ctx, key, data, 0)
-		pipe.ExpireAt(ctx, key, item.EndsAt.Time)
-	}
-
-	if _, err := pipe.Exec(ctx); err != nil {
-		c.String(http.StatusInternalServerError, "failed to execute redis pipeline: %s", err)
-		return
-	}
-
-	_, err = opensearch.Index(ctx, &opensearch.IndexReq{
+	id, err := opensearch.Index(ctx, &opensearch.IndexReq{
 		Index: models.SnoozeIndex,
 		Item:  item,
 	})
@@ -123,6 +104,30 @@ func postSnooze(c *gin.Context) {
 		c.String(http.StatusInternalServerError, "failed to create snooze entry: %s", err)
 		return
 	}
+
+	pipe := redis.Client.Pipeline()
+
+	lookup, err := json.Marshal(&models.SnoozeLookup{
+		OpensearchID: id,
+		StartsAt:     item.StartsAt,
+		EndsAt:       item.EndsAt,
+	})
+	if err != nil {
+		c.String(http.StatusInternalServerError, "failed to marshal Snooze entry: %s", err)
+		return
+	}
+
+	for _, group := range item.Groups {
+		key := redis.SnoozeKey(&group)
+		pipe.HSet(ctx, key, id, lookup)
+		pipe.HExpireAt(ctx, key, item.EndsAt.Time, id)
+	}
+
+	if _, err := pipe.Exec(ctx); err != nil {
+		c.String(http.StatusInternalServerError, "failed to execute redis pipeline: %s", err)
+		return
+	}
+
 }
 
 type postSnoozeCancelParams struct {
@@ -149,7 +154,7 @@ func postSnoozeCancel(c *gin.Context) {
 	}
 	searchReq.Doc.WithTerms("_id", params.IDs)
 
-	list, err := opensearch.Search[*models.Snooze](ctx, searchReq)
+	list, err := opensearch.Search[*models.SnoozeEntry](ctx, searchReq)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "failed to find snooze entries: %s", err)
 		return
