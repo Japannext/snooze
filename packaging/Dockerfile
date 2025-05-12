@@ -1,9 +1,20 @@
 # vim: syntax=dockerfile
-FROM python:3.8-alpine
+FROM node:14.17 AS web-build
+WORKDIR /app
 
-#ENV PYTHONUNBUFFERED 1
-#ENV PIP_DISABLE_PIP_VERSION_CHECK=1
-#ENV PIP_NO_CACHE_DIR=1
+COPY .ca-bundle /usr/local/share/ca-certificates/
+RUN find /usr/local/share/ca-certificates/ -type f -exec cat {} \; >> /etc/ssl/certs/ca-certificates.crt
+ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
+
+COPY web/package*.json .
+RUN --mount=type=cache,target=/app/npm/cache \
+    npm ci --cache /app/npm/cache
+
+ADD web/ .
+RUN npm run build
+
+
+FROM ghcr.io/astral-sh/uv:python3.8-alpine
 
 ARG VERSION
 ARG RELEASE
@@ -12,9 +23,19 @@ ARG WEB_PATH
 ARG VCS_REF
 ARG BUILD_DATE=now
 
-RUN update-ca-certificates
+COPY .ca-bundle /usr/local/share/ca-certificates/
+RUN find /usr/local/share/ca-certificates/ -type f -exec cat {} \; >> /etc/ssl/certs/ca-certificates.crt
+
 ENV CA_REQUESTS_BUNDLE /etc/ssl/certs/ca-certificates.crt
-ENV PIP_CERT /etc/ssl/certs/ca-certificates.crt
+ENV UV_NATIVE_TLS=true
+ENV UV_LINK_MODE=copy
+ENV UV_CACHE_DIR=/opt/uv-cache
+
+RUN apk add --no-cache \
+      gcc==13.2.1_git20240309-r1 \
+      libldap==2.6.8-r0 \
+      musl-dev==1.2.5-r1 \
+      libffi-dev==3.4.6-r0
 
 LABEL org.label-schema.build-date=$BUILD_DATE \
       org.label-schema.url="https://snoozeweb.net" \
@@ -23,50 +44,29 @@ LABEL org.label-schema.build-date=$BUILD_DATE \
       org.label-schema.version=${VERSION}-${RELEASE} \
       org.label-schema.schema-version="1.0.0-rc.1"
 
-# SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+WORKDIR /app
+COPY pyproject.toml uv.lock README.md /app/
 
-# hadolint ignore=DL3008
-#RUN sed -i 's/https/http/g' /etc/apk/repositories
-RUN apk update && \
-    apk --no-cache add \
-    curl \
-    git \
-    gcc \
-    musl-dev \
-    linux-headers \
-    libldap \
-    python3-dev \
-    libffi-dev
+RUN --mount=type=cache,target=/opt/uv-cache \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    --mount=type=bind,source=README.md,target=README.md \
+    uv sync --locked --no-install-project --compile-bytecode
 
-RUN pip install --no-cache-dir poetry==1.2.0a2 pip==21.0.1 virtualenv==20.4.4
-RUN python3 -m venv /opt/snooze
-RUN mkdir -p /opt/snooze/web
-
-# Copy and install the wheel
-COPY "${WHEEL_PATH}" "/${WHEEL_PATH}"
-RUN /opt/snooze/bin/pip install --no-cache-dir "/${WHEEL_PATH}"
-RUN find /opt/snooze/lib -type f -name "*.so" -exec strip {} \;
-RUN rm "/${WHEEL_PATH}"
+ADD . .
+RUN --mount=type=cache,target=/opt/uv-cache \
+    uv sync --locked --compile-bytecode
 
 # Copy and install the web
-COPY "${WEB_PATH}" "/${WEB_PATH}"
-RUN tar -xvf "/${WEB_PATH}" -C /opt/snooze/web
-RUN rm "/${WEB_PATH}"
+RUN mkdir -p /app/web
+COPY --from=web-build /app/dist/ /app/web/
 
-# hadolint ignore=DL3013
-ENV PATH $PATH:/opt/snooze/bin
-
-RUN mkdir -p /opt/snooze /var/lib/snooze /etc/snooze/server /var/run/snooze /var/log/snooze
-RUN chgrp -R 0 /opt/snooze /var/lib/snooze /etc/snooze/server /var/run/snooze /var/log/snooze && \
-    chmod -R g=u /opt/snooze /var/lib/snooze /etc/snooze/server /var/run/snooze /var/log/snooze && \
-    adduser -D -u 1001 -G root -h /var/lib/snooze snooze
+ENV PATH="/app/.venv/bin:$PATH"
 
 USER 1001
 
-COPY docker-entrypoint.sh /usr/local/bin/
-
 WORKDIR /var/lib/snooze
 
-ENTRYPOINT ["/opt/snooze/bin/snooze-server"]
+CMD ["uv", "run", "snooze-server"]
 
 EXPOSE 5200

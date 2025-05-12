@@ -1,79 +1,92 @@
-[tool.poetry]
+[project]
 name = "snooze-server"
 version = "1.6.3"
 description = "Monitoring tool for logs aggregation and alerting"
 authors = [
-    "Florian Dematraz <florian.dematraz@snoozeweb.net>",
-    "Guillaume Ludinard <guillaume.ludi@gmail.com>",
+    { name = "Florian Dematraz", email = "florian.dematraz@snoozeweb.net" },
+    { name = "Guillaume Ludinard", email = "guillaume.ludi@gmail.com" },
 ]
-license = "AGPL-3.0-or-later"
+requires-python = "~=3.8"
 readme = "README.md"
-packages = [
-    { include = "snooze" },
+# license = "AGPL-3.0-or-later"
+# license-files = ["LICENSE"]
+dependencies = [
+    "click>=8.0.1,<9",
+    "falcon>=3.1.0,<4",
+    "Jinja2>=3.0.1,<4",
+    "ldap3>=2.9.1,<3",
+    "MarkupSafe>=2.0.1,<3",
+    "pathlib>=1.0.1,<2",
+    "prometheus-client>=0.13.1,<0.14",
+    "PyJWT>=2.3.0,<3",
+    "pymongo==3.12.1",
+    "pyparsing>=2.4.7,<3",
+    "python-dateutil>=2.8.2,<3",
+    "PyYAML==5.3.1",
+    "requests-unixsocket>=0.2.0,<0.3",
+    "requests==2.28.1",
+    "tinydb==4.5.2",
+    "waitress>=2.0.0,<3",
+    "netifaces>=0.11.0,<0.12",
+    "kombu>=5.1.0,<6",
+    "pydantic>=1.9.0,<2",
+    "tenacity>=8.0.1,<9",
+    "filelock>=3.7.0,<4",
+    "python-json-logger>=2.0.4,<3",
+    "opentelemetry-api>=1.14.0,<2",
+    "opentelemetry-sdk>=1.14.0,<2",
+    "opentelemetry-exporter-otlp>=1.14.0,<2",
+    "opentelemetry-instrumentation-falcon",
+    "opentelemetry-instrumentation-logging",
+    "opentelemetry-instrumentation-pymongo",
 ]
 
-[tool.poetry.scripts]
+[project.scripts]
 snooze-server = "snooze.__main__:main"
 snooze = "snooze.cli.__main__:snooze"
 check_snooze_server = "snooze.cli.health:check_snooze_server"
 
-[tool.poetry.dependencies]
-python = "^3.8"
-click = "^8.0.1"
-falcon = "^3.1.0"
-Jinja2 = "^3.0.1"
-ldap3 = "^2.9.1"
-MarkupSafe = "^2.0.1"
-pathlib = "^1.0.1"
-prometheus-client = "^0.13.1"
-PyJWT = "^2.3.0"
-pymongo = "3.12.1"
-pyparsing = "^2.4.7"
-python-dateutil = "^2.8.2"
-PyYAML = "5.4.1"
-requests-unixsocket = "^0.2.0"
-requests = "2.28.1" # https://github.com/psf/requests/issues/6432
-tinydb = "4.5.2"
-waitress = "^2.0.0"
-netifaces = "^0.11.0"
-kombu = "^5.1.0"
-pydantic = "^1.9.0"
-tenacity = "^8.0.1"
-filelock = "^3.7.0"
-python-json-logger = "^2.0.4"
-opentelemetry-api = "^1.14.0"
-opentelemetry-sdk = "^1.14.0"
-opentelemetry-exporter-otlp = "^1.14.0"
-opentelemetry-instrumentation-falcon = "*"
-opentelemetry-instrumentation-logging = "*"
-opentelemetry-instrumentation-pymongo = "*"
+[dependency-groups]
+lint = [
+    "pylint>=2.11.1,<3",
+    "pyright>=1.1.238,<2",
+    "pylint-pydantic>=0.1.4,<0.2",
+]
+security = ["bandit>=1.7.0,<2"]
+test = [
+    "pytest>=6.2.5,<7",
+    "pytest-cov>=2.12.1,<3",
+    "pytest-data>=0.4,<0.5",
+    "pytest-mongodb>=2.2.0,<3",
+    "pytest-spec>=3.2.0,<4",
+    "python-mimeparse>=1.6.0,<2",
+    "pytest-sugar>=0.9.4,<0.10",
+    "pytest-timeout>=1.4.2,<2",
+    "freezegun>=1.1.0,<2",
+    "responses>=0.20.0,<0.21",
+]
+build = [
+    "virtualenv>=20.8.1,<21",
+    "invoke>=1.6.0,<2",
+    "toml>=0.10.2,<0.11",
+    "Sphinx>=4,<5",
+    "sphinx-book-theme>=0.3.2,<0.4",
+]
 
-[tool.poetry.group.lint.dependencies]
-pylint = "^2.11.1"
-pyright = "^1.1.238"
-pylint-pydantic = "^0.1.4"
+[tool.uv]
+default-groups = [
+    "lint",
+    "security",
+    "test",
+    "build",
+]
 
-[tool.poetry.group.security.dependencies]
-bandit = "^1.7.0"
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-[tool.poetry.group.test.dependencies]
-pytest = "^6.2.5"
-pytest-cov = "^2.12.1"
-pytest-data = "^0.4"
-pytest-mongodb = "^2.2.0"
-pytest-spec = "^3.2.0"
-python-mimeparse = "^1.6.0"
-pytest-sugar = "^0.9.4"
-pytest-timeout = "^1.4.2"
-freezegun = "^1.1.0"
-responses = "^0.20.0"
-
-[tool.poetry.group.build.dependencies]
-virtualenv = "^20.8.1"
-invoke = "^1.6.0"
-toml = "^0.10.2"
-Sphinx = "^4"
-sphinx-book-theme = "^0.3.2"
+[tool.hatch.build.targets.wheel]
+packages = ["snooze"]
 
 [tool.pylint.MASTER]
 load-plugins = ['pylint_pydantic']
@@ -94,6 +107,8 @@ log_level = "DEBUG"
 log_cli_format = "%(asctime)s %(name)-20s %(levelname)-8s %(message)s"
 log_date_format = "%Y-%m-%d %H:%M:%S"
 
-[build-system]
-requires = ["poetry-core>=1.1.0a6"]
-build-backend = "poetry.core.masonry.api"
+[tool.ruff.per-file-ignores]
+# Ignore all directories named `tests`.
+"tests/**" = ["D"]
+# Ignore all files that end in `_test.py`.
+"*_test.py" = ["D"]

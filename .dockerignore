@@ -1,2 +1,6 @@
 web/node_modules
+web/Taskfile.yaml
 .git
+Taskfile.yaml
+dist/
+packaging/

@@ -10,3 +10,5 @@ snooze_server.egg-info
 invoke.yaml
 docs/configuration/*.rst
 !docs/configuration/index.rst
+.ca-bundle
+.env.local
