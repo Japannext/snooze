@@ -1,0 +1,353 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "global": {
+      "description": "Global values are values that can be accessed from any chart or subchart by exactly the same name.",
+      "required": [],
+      "title": "global",
+      "type": "object"
+    },
+    "googlechat": {
+      "additionalProperties": false,
+      "properties": {
+        "botName": {
+          "default": "Snooze",
+          "required": [],
+          "title": "botName",
+          "type": "string"
+        },
+        "enabled": {
+          "default": false,
+          "description": "When enabled, deploy snooze-syslog notification plugin",
+          "required": [],
+          "title": "enabled",
+          "type": "boolean"
+        },
+        "existingSaSecretName": {
+          "default": "",
+          "required": [],
+          "title": "existingSaSecretName",
+          "type": "string"
+        },
+        "httpProxy": {
+          "default": "",
+          "required": [],
+          "title": "httpProxy",
+          "type": "string"
+        },
+        "httpsProxy": {
+          "default": "",
+          "required": [],
+          "title": "httpsProxy",
+          "type": "string"
+        },
+        "image": {
+          "additionalProperties": false,
+          "properties": {
+            "pullPolicy": {
+              "default": "IfNotPresent",
+              "description": "Image pull policy of snooze-googlechat",
+              "required": [],
+              "title": "pullPolicy",
+              "type": "string"
+            },
+            "repository": {
+              "default": "ghcr.io/japannext/snooze-googlechat",
+              "description": "The image to use for snooze-googlechat",
+              "required": [],
+              "title": "repository",
+              "type": "string"
+            },
+            "tag": {
+              "default": "",
+              "description": "A tag override for snooze-googlechat",
+              "required": [],
+              "title": "tag",
+              "type": "string"
+            }
+          },
+          "required": [],
+          "title": "image",
+          "type": "object"
+        },
+        "noProxy": {
+          "default": "",
+          "required": [],
+          "title": "noProxy",
+          "type": "string"
+        },
+        "replicaCount": {
+          "default": 2,
+          "description": "Number of snooze-googlechat replicas",
+          "required": [],
+          "title": "replicaCount",
+          "type": "integer"
+        },
+        "subscriptionName": {
+          "default": "",
+          "required": [],
+          "title": "subscriptionName",
+          "type": "string"
+        }
+      },
+      "required": [],
+      "title": "googlechat",
+      "type": "object"
+    },
+    "ingress": {
+      "additionalProperties": false,
+      "properties": {
+        "certManager": {
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "default": false,
+              "description": "Whether cert-manager will be used for ingress certificate",
+              "required": [],
+              "title": "enabled",
+              "type": "boolean"
+            },
+            "issuerKind": {
+              "default": "ClusterIssuer",
+              "description": "The kind of cert-manager issuer",
+              "required": [],
+              "title": "issuerKind",
+              "type": "string"
+            },
+            "issuerName": {
+              "default": "",
+              "description": "The name of the cert-manager issuer",
+              "required": [],
+              "title": "issuerName",
+              "type": "string"
+            }
+          },
+          "required": [],
+          "title": "certManager",
+          "type": "object"
+        },
+        "className": {
+          "default": "nginx",
+          "description": "Ingress class name",
+          "required": [],
+          "title": "className",
+          "type": "string"
+        },
+        "host": {
+          "default": "",
+          "description": "The host to use for ingress",
+          "required": [],
+          "title": "host",
+          "type": "string"
+        }
+      },
+      "required": [],
+      "title": "ingress",
+      "type": "object"
+    },
+    "mongodb": {
+      "additionalProperties": false,
+      "properties": {
+        "storageClassName": {
+          "default": "",
+          "required": [],
+          "title": "storageClassName",
+          "type": "string"
+        }
+      },
+      "required": [],
+      "title": "mongodb",
+      "type": "object"
+    },
+    "server": {
+      "additionalProperties": false,
+      "properties": {
+        "config": {
+          "additionalProperties": false,
+          "properties": {
+            "defaultAuthBackend": {
+              "default": "ldap",
+              "required": [],
+              "title": "defaultAuthBackend",
+              "type": "string"
+            }
+          },
+          "required": [],
+          "title": "config",
+          "type": "object"
+        },
+        "image": {
+          "additionalProperties": false,
+          "properties": {
+            "pullPolicy": {
+              "default": "IfNotPresent",
+              "description": "Image pull policy of snooze-server",
+              "required": [],
+              "title": "pullPolicy",
+              "type": "string"
+            },
+            "repository": {
+              "default": "ghcr.io/japannext/snooze-server",
+              "description": "The image to use for snooze-server",
+              "required": [],
+              "title": "repository",
+              "type": "string"
+            },
+            "tag": {
+              "default": "",
+              "description": "A tag override for snooze-server",
+              "required": [],
+              "title": "tag",
+              "type": "string"
+            }
+          },
+          "required": [],
+          "title": "image",
+          "type": "object"
+        },
+        "ldap": {
+          "additionalProperties": false,
+          "properties": {
+            "baseDN": {
+              "default": "",
+              "required": [],
+              "title": "baseDN",
+              "type": "string"
+            },
+            "bindDN": {
+              "default": "",
+              "description": "The bindDN to use for LDAP authentication",
+              "required": [],
+              "title": "bindDN",
+              "type": "string"
+            },
+            "bindPassword": {
+              "default": "",
+              "required": [],
+              "title": "bindPassword",
+              "type": "string"
+            },
+            "displayNameAttribute": {
+              "default": "cn",
+              "required": [],
+              "title": "displayNameAttribute",
+              "type": "string"
+            },
+            "emailAttribute": {
+              "default": "mail",
+              "required": [],
+              "title": "emailAttribute",
+              "type": "string"
+            },
+            "enabled": {
+              "default": false,
+              "description": "Enable LDAP authentication configuration",
+              "required": [],
+              "title": "enabled",
+              "type": "boolean"
+            },
+            "groupDN": {
+              "default": "",
+              "required": [],
+              "title": "groupDN",
+              "type": "string"
+            },
+            "host": {
+              "default": "",
+              "description": "The LDAP host to contact",
+              "required": [],
+              "title": "host",
+              "type": "string"
+            },
+            "memberAttribute": {
+              "default": "memberOf",
+              "required": [],
+              "title": "memberAttribute",
+              "type": "string"
+            },
+            "port": {
+              "default": 636,
+              "required": [],
+              "title": "port",
+              "type": "integer"
+            },
+            "userFilter": {
+              "default": "(sAMAccountName=%s)",
+              "description": "The LDAP user filter for LDAP authentication",
+              "required": [],
+              "title": "userFilter",
+              "type": "string"
+            }
+          },
+          "required": [],
+          "title": "ldap",
+          "type": "object"
+        },
+        "replicaCount": {
+          "default": 3,
+          "description": "Number of replicas of snooze-server to run",
+          "required": [],
+          "title": "replicaCount",
+          "type": "integer"
+        }
+      },
+      "required": [],
+      "title": "server",
+      "type": "object"
+    },
+    "syslog": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "default": true,
+          "description": "When enabled, deploy snooze-syslog inputs",
+          "required": [],
+          "title": "enabled",
+          "type": "boolean"
+        },
+        "image": {
+          "additionalProperties": false,
+          "properties": {
+            "pullPolicy": {
+              "default": "IfNotPresent",
+              "description": "Image pull policy of snooze-syslog",
+              "required": [],
+              "title": "pullPolicy",
+              "type": "string"
+            },
+            "repository": {
+              "default": "ghcr.io/japannext/snooze-syslog",
+              "description": "The image to use for snooze-syslog",
+              "required": [],
+              "title": "repository",
+              "type": "string"
+            },
+            "tag": {
+              "default": "",
+              "description": "A tag override for snooze-syslog",
+              "required": [],
+              "title": "tag",
+              "type": "string"
+            }
+          },
+          "required": [],
+          "title": "image",
+          "type": "object"
+        },
+        "replicaCount": {
+          "default": 2,
+          "description": "Number of snooze-syslog replicas",
+          "required": [],
+          "title": "replicaCount",
+          "type": "integer"
+        }
+      },
+      "required": [],
+      "title": "syslog",
+      "type": "object"
+    }
+  },
+  "required": [],
+  "type": "object"
+}

@@ -1,20 +1,29 @@
 ---
 server:
+  # -- Number of replicas of snooze-server to run
   replicaCount: 3
   image:
+    # -- The image to use for snooze-server
     repository: ghcr.io/japannext/snooze-server
+    # -- A tag override for snooze-server
     tag: ""
+    # -- Image pull policy of snooze-server
     pullPolicy: IfNotPresent
 
   config:
     defaultAuthBackend: ldap
+
   ldap:
-    enabled: true
-    host: corp.japannext.co.jp
+    # -- Enable LDAP authentication configuration
+    enabled: false
+    # -- The LDAP host to contact
+    host: ""
     port: 636
-    baseDN: ou=users,ou=japannext,dc=corp,dc=japannext,dc=co,dc=jp
-    bindDN: CN=ldap_svc_snooze,OU=LDAP_SVC,OU=Users,OU=Japannext,DC=corp,DC=japannext,DC=co,DC=jp
-    bindPassword: jnxSnooz320211215
+    baseDN: ""
+    # -- The bindDN to use for LDAP authentication
+    bindDN: ""
+    bindPassword: ""
+    # -- The LDAP user filter for LDAP authentication
     userFilter: '(sAMAccountName=%s)'
     displayNameAttribute: 'cn'
     emailAttribute: 'mail'
@@ -22,28 +31,42 @@ server:
     memberAttribute: 'memberOf'
 
 ingress:
-  enabled: true
+  # -- Ingress class name
   className: nginx
+  # -- The host to use for ingress
   host: ""
   certManager:
+    # -- Whether cert-manager will be used for ingress certificate
     enabled: false
+    # -- The kind of cert-manager issuer
     issuerKind: ClusterIssuer
+    # -- The name of the cert-manager issuer
     issuerName: ""
 
 syslog:
+  # -- When enabled, deploy snooze-syslog inputs
   enabled: true
+  # -- Number of snooze-syslog replicas
   replicaCount: 2
   image:
+    # -- The image to use for snooze-syslog
     repository: ghcr.io/japannext/snooze-syslog
+    # -- A tag override for snooze-syslog
     tag: ""
+    # -- Image pull policy of snooze-syslog
     pullPolicy: IfNotPresent
 
 googlechat:
+  # -- When enabled, deploy snooze-syslog notification plugin
   enabled: false
+  # Number of snooze-googlechat replicas
   replicaCount: 2
   image:
+    # -- The image to use for snooze-googlechat
     repository: ghcr.io/japannext/snooze-googlechat
+    # -- A tag override for snooze-googlechat
     tag: ""
+    # -- Image pull policy of snooze-googlechat
     pullPolicy: IfNotPresent
   botName: "Snooze"
   subscriptionName: ""

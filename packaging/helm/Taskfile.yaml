@@ -1,0 +1,42 @@
+---
+version: '3'
+
+vars:
+  NAME:
+    sh: "grep -oP '^name: \\K.*' Chart.yaml"
+  VERSION:
+    sh: "grep -oP '^version: \\K.*' Chart.yaml"
+  OCI_REGISTRY: ghcr.io/japannext/helm-charts
+
+tasks:
+  lint:
+    desc: Lint the helm chart
+    deps: [docs, schema]
+    cmds:
+    - helm lint
+
+  docs:
+    cmds:
+    - helm-docs
+
+  schema:
+    cmds:
+    - helm-schema -k required
+
+  develop:
+    desc: Use helmfile to sync the chart to a local k8s environment
+    deps: [lint]
+    cmds:
+    - helmfile -f .helmfile.yaml sync
+    preconditions:
+    - sh: test -f .helmfile.yaml
+      msg: "You need to define a .helmfile.yaml in helmfile format that will be synced"
+
+  release:
+    desc: Release the finished helm chart, versionned
+    deps: [lint]
+    cmds:
+    - mkdir -p .charts
+    - helm package . --version {{ .VERSION }} -d .charts/
+    - helm cm-push .charts/{{ .NAME }}-{{ .VERSION }}.tgz {{ .REPO }}
+    - helm push .charts/{{ .NAME }}-{{ .VERSION }}.tgz oci://{{ .OCI_REGISTRY }}
