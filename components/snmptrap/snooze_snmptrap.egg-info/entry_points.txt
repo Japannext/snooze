@@ -1,0 +1,3 @@
+[console_scripts]
+snooze-snmptrap = snooze_snmptrap.main:main
+

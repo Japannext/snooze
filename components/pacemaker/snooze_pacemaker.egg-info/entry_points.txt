@@ -1,0 +1,3 @@
+[console_scripts]
+snooze-pacemaker = snooze_pacemaker.main:alert
+
