@@ -33,13 +33,13 @@ tasks:
     status:
     - find .ca-bundle -name '*.crt'
 
-  docker:local-release:
+  docker:develop:
     desc: Build the docker image
     deps:
     - cacert
     cmds:
-    - docker build -f packaging/Dockerfile . -t {{ .LOCAL_REPO }}/{{ .NAME }}:{{ .VERSION }}
-    - docker push {{ .LOCAL_REPO }}/{{ .NAME  }}:{{ .VERSION }}
+    - docker build -f packaging/Dockerfile . -t {{ .LOCAL_REPO }}/{{ .NAME }}:develop
+    - docker push {{ .LOCAL_REPO }}/{{ .NAME  }}:develop
     preconditions:
     - sh: test -n "{{ .LOCAL_REPO }}"
       msg: "You need to define LOCAL_REPO=... in .env.local!"
