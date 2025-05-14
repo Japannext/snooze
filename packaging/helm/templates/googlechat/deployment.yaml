@@ -45,6 +45,19 @@ spec:
           value: /config/
         - name: SNOOZE_CLIENT_CONFIG_FILE
           value: /client/client.yaml
+        {{- with .Values.googlechat.httpProxy }}
+        - name: HTTP_PROXY
+          value: "{{ . }}"
+        {{- end }}
+        {{- with .Values.googlechat.httpsProxy }}
+        - name: HTTPS_PROXY
+          value: "{{ . }}"
+        {{- end }}
+        {{- with .Values.googlechat.noProxy }}
+        - name: NO_PROXY
+          value: "{{ . }}"
+        {{- end }}
+
       volumes:
       - name: config
         configMap:

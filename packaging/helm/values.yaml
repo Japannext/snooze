@@ -48,6 +48,9 @@ googlechat:
   botName: "Snooze"
   subscriptionName: ""
   existingSaSecretName: ""
+  httpProxy: ""
+  httpsProxy: ""
+  noProxy: ""
 
 mongodb:
   storageClassName: ""
