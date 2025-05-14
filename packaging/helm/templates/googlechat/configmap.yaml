@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ .Release.Name }}-googlechat-config"
+  namespace: "{{ .Release.Namespace }}"
+data:
+  googlechat.yaml: |
+    # Snooze GoogleChat configuration
+    service_account_path: "/sa-secrets/sa_secrets.json"
+    subscription_name: "{{ .Values.googlechat.subscriptionName }}"
+    date_format: "%a, %b %d, %Y at %I:%M %p"
+    snooze_url: "https://{{ .Values.ingress.host }}"
+    bot_name: "{{ .Values.googlechat.botName }}"
+    debug: false    

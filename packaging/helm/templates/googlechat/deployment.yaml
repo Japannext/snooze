@@ -1,0 +1,59 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ .Release.Name }}-googlechat"
+  namespace: "{{ .Release.Namespace }}"
+  labels:
+    app.kubernetes.io/name: snooze-googlechat
+    app.kubernetes.io/instance: "{{ .Release.Name }}"
+    app.kubernetes.io/component: googlechat
+spec:
+  replicas: {{ .Values.googlechat.replicaCount }}
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: snooze-googlechat
+      app.kubernetes.io/instance: "{{ .Release.Name }}"
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: snooze-googlechat
+        app.kubernetes.io/instance: "{{ .Release.Name }}"
+        app.kubernetes.io/component: googlechat
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/googlechat/configmap.yaml") . | sha256sum }}
+    spec:
+      securityContext:
+      containers:
+      - name: snooze-googlechat
+        image: "{{ .Values.googlechat.image.repository }}:{{ .Values.googlechat.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: "{{ .Values.googlechat.image.pullPolicy }}"
+        ports:
+        - containerPort: 5201
+          name: http
+          protocol: TCP
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: client
+          mountPath: /client
+        - name: sa-secrets
+          mountPath: /sa-secrets
+        env:
+        - name: SNOOZE_GOOGLE_CHATBOT_PATH
+          value: /config/
+        - name: SNOOZE_CLIENT_CONFIG_FILE
+          value: /client/client.yaml
+      volumes:
+      - name: config
+        configMap:
+          name: "{{ .Release.Name }}-googlechat-config"
+      - name: client
+        configMap:
+          name: "{{ .Release.Name }}-client-config"
+      {{- if .Values.googlechat.existingSaSecretName }}
+      - name: sa-secrets
+        secret:
+          secretName: "{{ .Values.googlechat.existingSaSecretName }}"
+      {{- end }}

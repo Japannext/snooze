@@ -12,3 +12,5 @@ docs/configuration/*.rst
 !docs/configuration/index.rst
 .ca-bundle
 .env.local
+packaging/helm/.helmfile.yaml
+packaging/helm/.values.yaml

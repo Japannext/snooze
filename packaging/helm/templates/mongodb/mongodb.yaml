@@ -1,0 +1,52 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/datreeio/CRDs-catalog/refs/heads/main/mongodbcommunity.mongodb.com/mongodbcommunity_v1.json
+---
+apiVersion: mongodbcommunity.mongodb.com/v1
+kind: MongoDBCommunity
+metadata:
+  name: "{{ .Release.Name }}-mongodb"
+  namespace: "{{ .Release.Namespace }}"
+spec:
+  members: 3
+  type: ReplicaSet
+  version: "8.0.0"
+  users:
+  - name: snooze
+    db: snooze
+    passwordSecretRef:
+      name: "{{ .Release.Name }}-mongodb-credentials"
+    scramCredentialsSecretName: "{{ .Release.Name }}"
+    roles:
+    - name: root
+      db: snooze
+    - name: root
+      db: admin
+  security:
+    tls:
+      enabled: false
+    authentication:
+      modes:
+      - SCRAM
+  statefulSet:
+    spec:
+      template:
+        spec:
+          affinity:
+            podAntiAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchExpressions:
+                      - key: app
+                        operator: In
+                        values:
+                          - mongodb
+                  topologyKey: "kubernetes.io/hostname"
+          volumeClaimTemplates:
+          - metadata:
+              name: "{{ .Release.Name }}-mongodb"
+            spec:
+              storageClassName: "{{ .Values.mongodb.storageClassName }}"
+              accessModes:
+              - ReadWriteOnce
+              resources:
+                requests:
+                  storage: 10G

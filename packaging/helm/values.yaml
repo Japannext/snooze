@@ -1,0 +1,53 @@
+---
+server:
+  replicaCount: 3
+  image:
+    repository: ghcr.io/japannext/snooze-server
+    tag: ""
+    pullPolicy: IfNotPresent
+
+  config:
+    defaultAuthBackend: ldap
+  ldap:
+    enabled: true
+    host: corp.japannext.co.jp
+    port: 636
+    baseDN: ou=users,ou=japannext,dc=corp,dc=japannext,dc=co,dc=jp
+    bindDN: CN=ldap_svc_snooze,OU=LDAP_SVC,OU=Users,OU=Japannext,DC=corp,DC=japannext,DC=co,DC=jp
+    bindPassword: jnxSnooz320211215
+    userFilter: '(sAMAccountName=%s)'
+    displayNameAttribute: 'cn'
+    emailAttribute: 'mail'
+    groupDN: ''
+    memberAttribute: 'memberOf'
+
+ingress:
+  enabled: true
+  className: nginx
+  host: ""
+  certManager:
+    enabled: false
+    issuerKind: ClusterIssuer
+    issuerName: ""
+
+syslog:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: ghcr.io/japannext/snooze-syslog
+    tag: ""
+    pullPolicy: IfNotPresent
+
+googlechat:
+  enabled: false
+  replicaCount: 2
+  image:
+    repository: ghcr.io/japannext/snooze-googlechat
+    tag: ""
+    pullPolicy: IfNotPresent
+  botName: "Snooze"
+  subscriptionName: ""
+  existingSaSecretName: ""
+
+mongodb:
+  storageClassName: ""

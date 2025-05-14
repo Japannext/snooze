@@ -1,0 +1,14 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ .Release.Name }}-syslog-config"
+  namespace: "{{ .Release.Namespace }}"
+data:
+  syslog.yaml: |
+    # Snooze Syslog configuration
+    listening_address: 0.0.0.0
+    listening_port: 1514
+    snooze_server: "http://{{ .Release.Name }}-server:5200"
+    workers: {{ .Values.syslog.workers }}
+    

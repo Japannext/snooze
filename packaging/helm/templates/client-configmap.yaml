@@ -1,0 +1,10 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ .Release.Name }}-client-config"
+  namespace: "{{ .Release.Namespace }}"
+data:
+  client.yaml: |
+    # Client configuration
+    server: http://snooze-server:5200

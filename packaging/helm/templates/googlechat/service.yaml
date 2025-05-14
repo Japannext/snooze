@@ -1,0 +1,22 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Release.Name }}-googlechat"
+  namespace: "{{ .Release.Namespace }}"
+  labels:
+    app.kubernetes.io/name: snooze-googlechat
+    app.kubernetes.io/instance: "{{ .Release.Name }}"
+    app.kubernetes.io/component: googlechat
+    app.kubernetes.io/part-of: "{{ .Release.Name }}"
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5201
+    protocol: TCP
+    targetPort: http
+    name: http
+  selector:
+    app.kubernetes.io/name: snooze-googlechat
+    app.kubernetes.io/instance: "{{ .Release.Name }}"
+  sessionAffinity: None

@@ -688,6 +688,12 @@ class SyncerConfig(WritableConfig):
         default_factory=socket.gethostname,
     )
 
+    total: int = Field(
+        title="Total",
+        description="Total number of nodes the syncer should expect (for status reporting)",
+        default=1,
+    )
+
     sync_interval_ms: int = Field(
         title='Sync interval (in ms)',
         default=1000,

@@ -14,7 +14,7 @@ ADD web/ .
 RUN npm run build
 
 
-FROM ghcr.io/astral-sh/uv:python3.8-alpine
+FROM ghcr.io/astral-sh/uv:python3.8-alpine AS server-build
 
 ARG VERSION
 ARG RELEASE
@@ -51,22 +51,25 @@ RUN --mount=type=cache,target=/opt/uv-cache \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     --mount=type=bind,source=README.md,target=README.md \
-    uv sync --locked --no-install-project --compile-bytecode
+    uv sync --locked --no-install-project --compile-bytecode --no-editable
 
 ADD . .
 RUN --mount=type=cache,target=/opt/uv-cache \
-    uv sync --locked --compile-bytecode
+    uv sync --locked --compile-bytecode --no-editable
 
 # Copy and install the web
 RUN mkdir -p /app/web
 COPY --from=web-build /app/dist/ /app/web/
 
-ENV PATH="/app/.venv/bin:$PATH"
+
+FROM python:3.8-alpine
 
 USER 1001
+WORKDIR /app
 
-WORKDIR /var/lib/snooze
+COPY --from=server-build --chown=1001:1001 /app/.venv /app/.venv
+COPY --from=web-build --chown=1001:1001 /app/dist/ /app/web/
 
-CMD ["uv", "run", "snooze-server"]
+ENV PATH="/app/.venv/bin:$PATH"
 
-EXPOSE 5200
+CMD ["snooze-server"]

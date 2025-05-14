@@ -1,0 +1,93 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ .Release.Name }}-server-config"
+  namespace: "{{ .Release.Namespace }}"
+data:
+  core.yaml: |
+    # Snooze core config
+    listen_addr: 0.0.0.0
+    port: 5200
+    debug: false
+    bootstrap_db: true
+    unix_socket: /app/snooze.socket
+    no_login: false
+
+    syncer:
+      total: {{ .Values.server.replicaCount }}
+
+    core_plugins:
+    - record
+    - action
+    - settings
+    - profile
+    - user
+    - role
+    - widget
+    - comment
+    #- patlite
+
+    action_plugins:
+    - mail
+    - script
+    - webhook
+    #- patlite    
+    
+    process_plugins:
+    - rule
+    - aggregaterule
+    - snooze
+    - notification
+
+    init_sleep: 5
+    create_root_user: false
+    ssl:
+      enabled: false
+    web:
+      enabled: true
+      path: /app/web
+
+  general.yaml: |
+    # General configuration
+    anonymous_enabled: false
+    default_auth_backend: {{ .Values.server.config.defaultAuthBackend }}
+    local_users_enabled: true
+    metrics_enabled: true
+    ok_severities:
+    - ok
+    - success
+    - up
+
+  housekeeping.yaml: |
+    # Housekeeping configuration
+    cleanup_alert: 300
+    cleanup_comment: 86400
+    cleanup_notification: 259200
+    cleanup_snooze: 259200
+    record_ttl: 259200
+    trigger_on_startup: true
+
+  logging.yaml: |
+    # Logging configuration
+    ---
+    logging:
+      mode: console
+      level: INFO
+      fmt: text
+
+  {{- if .Values.server.ldap.enabled }}
+  ldap_auth.yaml: |
+    # LDAP configuration
+    enabled: true
+    host: "{{ .Values.server.ldap.host }}"
+    port: {{ .Values.server.ldap.port }}
+    base_dn: "{{ .Values.server.ldap.baseDN }}"
+    user_filter: "{{ .Values.server.ldap.userFilter }}"
+    bind_dn: "{{ .Values.server.ldap.bindDN }}"
+    bind_password: "{{ .Values.server.ldap.bindPassword }}"
+    display_name_attribute: "{{ .Values.server.ldap.displayNameAttribute }}"
+    email_attribute: "{{ .Values.server.ldap.emailAttribute }}"
+    member_attribute: "{{ .Values.server.ldap.memberAttribute }}"
+    group_dn: "{{ .Values.server.ldap.groupDN }}"
+  {{- end }}

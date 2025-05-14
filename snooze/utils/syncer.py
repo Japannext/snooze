@@ -69,8 +69,7 @@ class Syncer(SurvivingThread):
         for e in self.database.search('syncer_node')['data']:
             if e['type'] not in data:
                 continue # Ignore unknown type
-            data[e['type']][e['name']].setdefault('total', 0)
-            data[e['type']][e['name']]['total'] += 1
+            data[e['type']][e['name']]['total'] = self.config.total
             data[e['type']][e['name']].setdefault('synced', 0)
             if e['timestamp'] >= data[e['type']][e['name']].get('timestamp', 0):
                 data[e['type']][e['name']]['synced'] += 1

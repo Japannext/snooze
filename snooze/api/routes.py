@@ -608,11 +608,13 @@ class StaticRoute:
         if path.is_dir():
             index = self.search_index(path)
             if not index:
+                log.error("directory without index: %s", path)
                 raise falcon.HTTPNotFound()
             filepath = index
         elif path.is_file():
             filepath = path
         else:
+            log.error("not a file or directory: %s", path)
             raise falcon.HTTPNotFound()
 
         # Type and encoding

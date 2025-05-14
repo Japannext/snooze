@@ -1,0 +1,55 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ .Release.Name }}-syslog"
+  namespace: "{{ .Release.Namespace }}"
+  labels:
+    app.kubernetes.io/name: snooze-syslog
+    app.kubernetes.io/instance: "{{ .Release.Name }}"
+    app.kubernetes.io/component: syslog
+spec:
+  replicas: {{ .Values.syslog.replicaCount }}
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: snooze-syslog
+      app.kubernetes.io/instance: "{{ .Release.Name }}"
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: snooze-syslog
+        app.kubernetes.io/instance: "{{ .Release.Name }}"
+        app.kubernetes.io/component: syslog
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/syslog/configmap.yaml") . | sha256sum }}
+    spec:
+      securityContext:
+      containers:
+      - name: snooze-syslog
+        image: "{{ .Values.syslog.image.repository }}:{{ .Values.syslog.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: "{{ .Values.syslog.image.pullPolicy }}"
+        ports:
+        - containerPort: 1514
+          name: syslog-tcp
+          protocol: TCP
+        - containerPort: 1514
+          name: syslog-udp
+          protocol: UDP
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: client
+          mountPath: /client
+        env:
+        - name: SNOOZE_SYSLOG_CONFIG
+          value: /config/syslog.yaml
+        - name: SNOOZE_CLIENT_CONFIG_FILE
+          value: /client/client.yaml
+      volumes:
+      - name: config
+        configMap:
+          name: "{{ .Release.Name }}-syslog-config"
+      - name: client
+        configMap:
+          name: "{{ .Release.Name }}-client-config"
