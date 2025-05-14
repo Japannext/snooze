@@ -1,2 +1,0 @@
-snooze-client
-python-dateutil

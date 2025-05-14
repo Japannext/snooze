@@ -1,3 +1,0 @@
-[console_scripts]
-snooze-smtp = snooze_smtp.main:main
-

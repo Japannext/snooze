@@ -1,0 +1,4 @@
+pathlib
+pyyaml
+snooze-client
+snooze-syslog

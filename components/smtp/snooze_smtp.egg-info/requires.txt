@@ -1,3 +1,0 @@
-snooze-client
-PyYAML
-pathlib

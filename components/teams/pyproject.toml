@@ -1,31 +1,34 @@
-[tool.poetry]
+[project]
 name = "snooze_teams"
 version = "0.1.0"
 description = "Microsoft Teams bot for SnoozeWeb"
-authors = [
-    "Florian Dematraz <florian.dematraz@snoozeweb.net>",
-]
-license = "AGPL-3.0-or-later"
+authors = [{ name = "Florian Dematraz", email = "florian.dematraz@snoozeweb.net" }]
+requires-python = "~=3.8"
 readme = "README.md"
+license = "AGPL-3.0-or-later"
+dependencies = [
+    "pyparsing",
+    "python-dateutil",
+    "pyyaml",
+    "o365",
+    "waitress",
+    "falcon",
+    "snooze-client",
+]
 
-[tool.poetry.scripts]
+[project.scripts]
 snooze-teams = "snooze_teams.main:main"
 
-[tool.poetry.dependencies]
-python = "^3.8"
-pyparsing = "*"
-python-dateutil = "*"
-pyyaml = "*"
-o365 = "*"
-waitress = "*"
-falcon = "*"
-snooze-client = { file = "/home/florian/snooze_client/dist/snooze_client-1.0.20-py3-none-any.whl" }
+[dependency-groups]
+dev = []
+test = ["pytest>=6.2.5,<7"]
 
-[tool.poetry.dev-dependencies]
-
-[tool.poetry.group.test.dependencies]
-pytest = "^6.2.5"
+[tool.uv]
+default-groups = [
+    "dev",
+    "test",
+]
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
