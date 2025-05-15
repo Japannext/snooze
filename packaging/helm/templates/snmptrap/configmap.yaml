@@ -1,0 +1,15 @@
+{{- if .Values.snmptrap.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ .Release.Name }}-snmptrap-config"
+  namespace: "{{ .Release.Namespace }}"
+data:
+  snmptrap.yaml: |
+    # Snooze SNMPTRAP configuration
+    listening_address: 0.0.0.0
+    listening_port: 1162
+    snooze_server: "http://{{ .Release.Name }}-server:5200"
+    send_workers: {{ .Values.snmptrap.sendWorkers }}
+{{- end }}

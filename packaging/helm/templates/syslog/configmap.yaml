@@ -1,3 +1,4 @@
+{{- if .Values.syslog.enabled }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -11,4 +12,4 @@ data:
     listening_port: 1514
     snooze_server: "http://{{ .Release.Name }}-server:5200"
     workers: {{ .Values.syslog.workers }}
-    
+{{- end }}

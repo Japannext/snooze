@@ -1,28 +1,24 @@
-{{- if .Values.syslog.enabled }}
+{{- if .Values.snmptrap.enabled }}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: "{{ .Release.Name }}-syslog"
+  name: "{{ .Release.Name }}-snmptrap"
   namespace: "{{ .Release.Namespace }}"
   labels:
-    app.kubernetes.io/name: snooze-syslog
+    app.kubernetes.io/name: snooze-snmptrap
     app.kubernetes.io/instance: "{{ .Release.Name }}"
-    app.kubernetes.io/component: syslog
+    app.kubernetes.io/component: snmptrap
     app.kubernetes.io/part-of: "{{ .Release.Name }}"
 spec:
   type: LoadBalancer
   ports:
-  - port: 514
-    protocol: TCP
-    targetPort: syslog-tcp
-    name: syslog-tcp
-  - port: 514
+  - port: 162
     protocol: UDP
-    targetPort: syslog-udp
-    name: syslog-udp
+    targetPort: snmptrap
+    name: snmptrap
   selector:
-    app.kubernetes.io/name: snooze-syslog
+    app.kubernetes.io/name: snooze-snmptrap
     app.kubernetes.io/instance: "{{ .Release.Name }}"
   sessionAffinity: None
 {{- end }}

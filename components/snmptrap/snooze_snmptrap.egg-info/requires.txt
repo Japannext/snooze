@@ -1,4 +1,0 @@
-snooze-client
-PyYAML
-pathlib
-pysnmp

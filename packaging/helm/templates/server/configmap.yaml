@@ -85,7 +85,6 @@ data:
     base_dn: "{{ .Values.server.ldap.baseDN }}"
     user_filter: "{{ .Values.server.ldap.userFilter }}"
     bind_dn: "{{ .Values.server.ldap.bindDN }}"
-    bind_password: "{{ .Values.server.ldap.bindPassword }}"
     display_name_attribute: "{{ .Values.server.ldap.displayNameAttribute }}"
     email_attribute: "{{ .Values.server.ldap.emailAttribute }}"
     member_attribute: "{{ .Values.server.ldap.memberAttribute }}"

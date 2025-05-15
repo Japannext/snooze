@@ -1,0 +1,54 @@
+{{- if .Values.snmptrap.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ .Release.Name }}-snmptrap"
+  namespace: "{{ .Release.Namespace }}"
+  labels:
+    app.kubernetes.io/name: snooze-snmptrap
+    app.kubernetes.io/instance: "{{ .Release.Name }}"
+    app.kubernetes.io/component: snmptrap
+spec:
+  replicas: {{ .Values.snmptrap.replicaCount }}
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: snooze-snmptrap
+      app.kubernetes.io/instance: "{{ .Release.Name }}"
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: snooze-snmptrap
+        app.kubernetes.io/instance: "{{ .Release.Name }}"
+        app.kubernetes.io/component: snmptrap
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/snmptrap/configmap.yaml") . | sha256sum }}
+    spec:
+      securityContext:
+      containers:
+      - name: snooze-snmptrap
+        image: "{{ .Values.snmptrap.image.repository }}:{{ .Values.snmptrap.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: "{{ .Values.snmptrap.image.pullPolicy }}"
+        ports:
+        - containerPort: 1162
+          name: snmptrap
+          protocol: UDP
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: client
+          mountPath: /client
+        env:
+        - name: SNOOZE_SNMPTRAP_CONFIG
+          value: /config/snmptrap.yaml
+        - name: SNOOZE_CLIENT_CONFIG_FILE
+          value: /client/client.yaml
+      volumes:
+      - name: config
+        configMap:
+          name: "{{ .Release.Name }}-snmptrap-config"
+      - name: client
+        configMap:
+          name: "{{ .Release.Name }}-client-config"
+{{- end }}

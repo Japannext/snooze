@@ -1,3 +1,4 @@
+{{- if .Values.googlechat.enabled }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -70,3 +71,4 @@ spec:
         secret:
           secretName: "{{ .Values.googlechat.existingSaSecretName }}"
       {{- end }}
+{{- end }}

@@ -2,9 +2,9 @@
 version: '3'
 
 vars:
-  NAME:
+  CHART_NAME:
     sh: "grep -oP '^name: \\K.*' Chart.yaml"
-  VERSION:
+  CHART_VERSION:
     sh: "grep -oP '^version: \\K.*' Chart.yaml"
   OCI_REGISTRY: ghcr.io/japannext/helm-charts
 
@@ -37,6 +37,5 @@ tasks:
     deps: [lint]
     cmds:
     - mkdir -p .charts
-    - helm package . --version {{ .VERSION }} -d .charts/
-    - helm cm-push .charts/{{ .NAME }}-{{ .VERSION }}.tgz {{ .REPO }}
-    - helm push .charts/{{ .NAME }}-{{ .VERSION }}.tgz oci://{{ .OCI_REGISTRY }}
+    - helm package . --version {{ .CHART_VERSION }} -d .charts/
+    - helm push .charts/{{ .CHART_NAME }}-{{ .CHART_VERSION }}.tgz oci://{{ .OCI_REGISTRY }}

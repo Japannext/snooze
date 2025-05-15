@@ -222,10 +222,18 @@
               "title": "bindDN",
               "type": "string"
             },
-            "bindPassword": {
-              "default": "",
+            "bindPasswordExistingSecretKey": {
+              "default": "password",
+              "description": "The key in the secret containing the bind password",
               "required": [],
-              "title": "bindPassword",
+              "title": "bindPasswordExistingSecretKey",
+              "type": "string"
+            },
+            "bindPasswordExistingSecretName": {
+              "default": "",
+              "description": "Name of the secret containing the bind password",
+              "required": [],
+              "title": "bindPasswordExistingSecretName",
               "type": "string"
             },
             "displayNameAttribute": {
@@ -296,6 +304,63 @@
       "title": "server",
       "type": "object"
     },
+    "snmptrap": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "default": true,
+          "description": "When enabled, deploy snooze-snmptrap inputs",
+          "required": [],
+          "title": "enabled",
+          "type": "boolean"
+        },
+        "image": {
+          "additionalProperties": false,
+          "properties": {
+            "pullPolicy": {
+              "default": "IfNotPresent",
+              "description": "Image pull policy of snooze-snmptrap",
+              "required": [],
+              "title": "pullPolicy",
+              "type": "string"
+            },
+            "repository": {
+              "default": "ghcr.io/japannext/snooze-snmptrap",
+              "description": "The image to use for snooze-snmptrap",
+              "required": [],
+              "title": "repository",
+              "type": "string"
+            },
+            "tag": {
+              "default": "",
+              "description": "A tag override for snooze-snmptrap",
+              "required": [],
+              "title": "tag",
+              "type": "string"
+            }
+          },
+          "required": [],
+          "title": "image",
+          "type": "object"
+        },
+        "replicaCount": {
+          "default": 2,
+          "description": "Number of snooze-snmptrap replicas",
+          "required": [],
+          "title": "replicaCount",
+          "type": "integer"
+        },
+        "sendWorkers": {
+          "default": 4,
+          "required": [],
+          "title": "sendWorkers",
+          "type": "integer"
+        }
+      },
+      "required": [],
+      "title": "snmptrap",
+      "type": "object"
+    },
     "syslog": {
       "additionalProperties": false,
       "properties": {
@@ -340,6 +405,12 @@
           "description": "Number of snooze-syslog replicas",
           "required": [],
           "title": "replicaCount",
+          "type": "integer"
+        },
+        "workers": {
+          "default": 4,
+          "required": [],
+          "title": "workers",
           "type": "integer"
         }
       },

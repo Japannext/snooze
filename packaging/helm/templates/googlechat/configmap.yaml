@@ -1,3 +1,4 @@
+{{- if .Values.googlechat.enabled }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -13,3 +14,4 @@ data:
     snooze_url: "https://{{ .Values.ingress.host }}"
     bot_name: "{{ .Values.googlechat.botName }}"
     debug: false    
+{{- end }}

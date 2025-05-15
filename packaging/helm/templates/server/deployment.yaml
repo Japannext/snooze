@@ -43,6 +43,13 @@ spec:
             secretKeyRef:
               name: "{{ .Release.Name }}-mongodb-snooze-snooze"
               key: connectionString.standard
+        {{- if .Values.server.ldap.bindPasswordExistingSecretName }}
+        - name: LDAP_BIND_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Values.server.ldap.bindPasswordExistingSecretName }}"
+              key: "{{ .Values.server.ldap.bindPasswordExistingSecretKey }}"
+        {{- end }}
       volumes:
       - name: config
         configMap:

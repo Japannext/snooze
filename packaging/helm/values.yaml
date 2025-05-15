@@ -22,7 +22,10 @@ server:
     baseDN: ""
     # -- The bindDN to use for LDAP authentication
     bindDN: ""
-    bindPassword: ""
+    # -- Name of the secret containing the bind password
+    bindPasswordExistingSecretName: ""
+    # -- The key in the secret containing the bind password
+    bindPasswordExistingSecretKey: "password"
     # -- The LDAP user filter for LDAP authentication
     userFilter: '(sAMAccountName=%s)'
     displayNameAttribute: 'cn'
@@ -55,6 +58,21 @@ syslog:
     tag: ""
     # -- Image pull policy of snooze-syslog
     pullPolicy: IfNotPresent
+  workers: 4
+
+snmptrap:
+  # -- When enabled, deploy snooze-snmptrap inputs
+  enabled: true
+  # -- Number of snooze-snmptrap replicas
+  replicaCount: 2
+  image:
+    # -- The image to use for snooze-snmptrap
+    repository: ghcr.io/japannext/snooze-snmptrap
+    # -- A tag override for snooze-snmptrap
+    tag: ""
+    # -- Image pull policy of snooze-snmptrap
+    pullPolicy: IfNotPresent
+  sendWorkers: 4
 
 googlechat:
   # -- When enabled, deploy snooze-syslog notification plugin
