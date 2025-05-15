@@ -145,6 +145,11 @@ class TestLdapConfig:
         config.bind_password = ''
         assert config.bind_password == 'my-secret-password123'
 
+    @patch.dict(os.environ, {'LDAP_BIND_PASSWORD': 'password123'}, clear=True)
+    def test_ldap_bind_password(self, tmp_path):
+        config = LdapConfig(tmp_path)
+        assert config.bind_password == 'password123'
+
 class TestMetadataConfig:
     def test_all_plugins(self):
         metadata_files = SNOOZE_PLUGIN_PATH.glob('*/metadata.yaml')

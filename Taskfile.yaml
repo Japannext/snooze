@@ -14,13 +14,21 @@ includes:
   web:
     taskfile: ./web/Taskfile.yaml
     dir: ./web
+  chart:
+    taskfile: ./packaging/helm/Taskfile.yaml
+    dir: ./packaging/helm
 
 tasks:
-  server:lint:
+  py:lint:
     cmds:
     - ruff check
 
-  server:build:
+  py:test:
+    desc: Run pytest
+    cmds:
+    - PYTHONPATH=src uv run pytest
+
+  py:build:
     desc: Build the python snooze-server
     cmds:
     - uv build

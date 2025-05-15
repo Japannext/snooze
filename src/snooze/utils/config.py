@@ -312,6 +312,7 @@ class LdapConfig(WritableConfig):
     bind_password: Optional[str] = Field(
         title='Bind DN password',
         description='Password for the Bind DN user',
+        env="LDAP_BIND_PASSWORD",
         default=None,
         exclude=True,
     )
