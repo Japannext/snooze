@@ -1,7 +1,7 @@
 '''Action plugin to send alerts to a Patlite'''
 
-from patlite.utils.patlite import Patlite as PatliteAPI, State
 from snooze.plugins.core import Plugin
+from snooze.plugins.core.patlite.utils.patlite import Patlite as PatliteAPI, State
 from logging import getLogger, DEBUG
 log = getLogger('snooze.action.patlite')
 log.setLevel(DEBUG)

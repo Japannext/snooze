@@ -5,7 +5,7 @@ import falcon
 from snooze.plugins.core.basic.falcon.route import Route
 from snooze.utils.functions import authorize
 
-from patlite.utils.patlite import Patlite, PatliteError
+from snooze.plugins.core.patlite.utils.patlite import Patlite, PatliteError
 
 from logging import getLogger
 log = getLogger('snooze.patlite')
