@@ -1,15 +1,32 @@
----
+version: "2"
 linters:
   disable:
-  - exhaustruct
-  - varnamelen
-  - tagliatelle
-
-linters-settings:
-  depguard:
-    rules:
-      main:
-        list-mode: lax
-        allow:
-        - $gostd
-        - github.com/japannext
+    - exhaustruct
+    - tagliatelle
+    - varnamelen
+  settings:
+    depguard:
+      rules:
+        main:
+          list-mode: lax
+          allow:
+            - $gostd
+            - github.com/japannext
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
