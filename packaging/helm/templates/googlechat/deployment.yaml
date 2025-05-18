@@ -58,7 +58,10 @@ spec:
         - name: NO_PROXY
           value: "{{ . }}"
         {{- end }}
-
+        {{- with .Values.timeZone }}
+        - name: TZ
+          value: "{{ . }}"
+        {{- end }}
       volumes:
       - name: config
         configMap:

@@ -12,4 +12,5 @@ data:
     listening_port: 1514
     snooze_server: "http://{{ .Release.Name }}-server:5200"
     workers: {{ .Values.syslog.workers }}
+    debug: {{ .Values.syslog.debug }}
 {{- end }}

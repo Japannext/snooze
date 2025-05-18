@@ -46,8 +46,8 @@ tasks:
     deps:
     - cacert
     cmds:
-    - docker build -f packaging/Dockerfile . -t {{ .LOCAL_REPO }}/{{ .NAME }}:develop
-    - docker push {{ .LOCAL_REPO }}/{{ .NAME  }}:develop
+    - docker build -f packaging/Dockerfile . -t {{ .LOCAL_REPO }}/{{ .NAME }}:latest --no-cache
+    - docker push {{ .LOCAL_REPO }}/{{ .NAME  }}:latest
     preconditions:
     - sh: test -n "{{ .LOCAL_REPO }}"
       msg: "You need to define LOCAL_REPO=... in .env.local!"

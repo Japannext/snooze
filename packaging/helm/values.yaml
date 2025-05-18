@@ -1,4 +1,7 @@
 ---
+# -- Timezone to use for all components
+timeZone: ""
+
 server:
   # -- Number of replicas of snooze-server to run
   replicaCount: 3
@@ -9,6 +12,14 @@ server:
     tag: ""
     # -- Image pull policy of snooze-server
     pullPolicy: IfNotPresent
+
+  podMonitor:
+    # -- Enable the monitoring via prometheus
+    enabled: false
+    # @schema
+    # additionalProperties: {type: string}
+    # @schema
+    extraLabels: {}
 
   config:
     defaultAuthBackend: ldap
@@ -58,7 +69,10 @@ syslog:
     tag: ""
     # -- Image pull policy of snooze-syslog
     pullPolicy: IfNotPresent
+  # -- Number of workers per instance
   workers: 4
+  # -- Enable debug logs
+  debug: false
 
 snmptrap:
   # -- When enabled, deploy snooze-snmptrap inputs

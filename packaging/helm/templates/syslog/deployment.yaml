@@ -47,6 +47,10 @@ spec:
           value: /config/syslog.yaml
         - name: SNOOZE_CLIENT_CONFIG_FILE
           value: /client/client.yaml
+        {{- with .Values.timeZone }}
+        - name: TZ
+          value: "{{ . }}"
+        {{- end }}
       volumes:
       - name: config
         configMap:

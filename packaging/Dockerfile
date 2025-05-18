@@ -53,7 +53,7 @@ RUN --mount=type=cache,target=/opt/uv-cache \
     --mount=type=bind,source=README.md,target=README.md \
     uv sync --locked --no-install-project --compile-bytecode --no-editable
 
-ADD src/ .
+COPY src/ ./
 RUN --mount=type=cache,target=/opt/uv-cache \
     uv sync --locked --compile-bytecode --no-editable
 

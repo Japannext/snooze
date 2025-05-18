@@ -292,6 +292,28 @@
           "title": "ldap",
           "type": "object"
         },
+        "podMonitor": {
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "default": false,
+              "description": "Enable the monitoring via prometheus",
+              "required": [],
+              "title": "enabled",
+              "type": "boolean"
+            },
+            "extraLabels": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "required": [],
+              "title": "extraLabels"
+            }
+          },
+          "required": [],
+          "title": "podMonitor",
+          "type": "object"
+        },
         "replicaCount": {
           "default": 3,
           "description": "Number of replicas of snooze-server to run",
@@ -364,6 +386,13 @@
     "syslog": {
       "additionalProperties": false,
       "properties": {
+        "debug": {
+          "default": false,
+          "description": "Enable debug logs",
+          "required": [],
+          "title": "debug",
+          "type": "boolean"
+        },
         "enabled": {
           "default": true,
           "description": "When enabled, deploy snooze-syslog inputs",
@@ -409,6 +438,7 @@
         },
         "workers": {
           "default": 4,
+          "description": "Number of workers per instance",
           "required": [],
           "title": "workers",
           "type": "integer"
@@ -417,6 +447,13 @@
       "required": [],
       "title": "syslog",
       "type": "object"
+    },
+    "timeZone": {
+      "default": "",
+      "description": "Timezone to use for all components",
+      "required": [],
+      "title": "timeZone",
+      "type": "string"
     }
   },
   "required": [],
