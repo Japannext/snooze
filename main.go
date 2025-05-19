@@ -1,6 +1,6 @@
 package main
 
-import "github.com/japannext/snooze/pkg/cmd"
+import "github.com/japannext/snooze/cmd"
 
 func main() {
 	cmd.Execute()
