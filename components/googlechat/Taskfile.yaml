@@ -1,14 +1,8 @@
 ---
 version: '3'
 
-dotenv:
-- .env.local
-
 vars:
-  NAME: snooze-googlechat
-  VERSION:
-    sh: uv version --short
-  REPO: ghcr.io/japannext
+  GC_NAME: snooze-googlechat
 
 tasks:
   py:lint:
@@ -33,8 +27,8 @@ tasks:
     deps:
     - cacert
     cmds:
-    - docker build . -t {{ .LOCAL_REPO }}/{{ .NAME }}:develop -v ${PWD}/../client:/client 
-    - docker push {{ .LOCAL_REPO }}/{{ .NAME  }}:develop
+    - docker build . -t {{ .LOCAL_REPO }}/{{ .GC_NAME }}:develop -v ${PWD}/../client:/client 
+    - docker push {{ .LOCAL_REPO }}/{{ .GC_NAME  }}:develop
     preconditions:
     - sh: test -n "{{ .LOCAL_REPO }}"
       msg: "You need to define LOCAL_REPO=... in .env.local!"
@@ -46,8 +40,8 @@ tasks:
     deps:
     - cacert
     cmds:
-    - docker build . -t {{ .REPO }}/{{ .NAME }}:{{ .VERSION }}
-    - docker push {{ .REPO }}/{{ .NAME  }}:{{ .VERSION }}
+    - docker build . -t {{ .REPO }}/{{ .GC_NAME }}:{{ .VERSION }}
+    - docker push {{ .REPO }}/{{ .GC_NAME  }}:{{ .VERSION }}
     preconditions:
     - sh: docker login "{{ .REPO }}" --get-login
       msg: "You need to login to docker with `docker login {{ .REPO }}`"

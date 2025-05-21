@@ -1,115 +1,139 @@
-# Contributing
+# Requirements
 
-## Setup
+We use [mise](https://mise.jdx.dev/) to install all dev dependencies
+to manage this project.
 
-Install poetry
+# Setup
+
+1. Clone snooze repo
 ```bash
-pip3 install 'poetry>=1.2.0a2' --user
+git clone github.com/japannext/snooze
 ```
 
-Clone this git:
+2. Install tools (python/nodejs)
 ```bash
-git clone https://github.com/snoozeweb/snooze
-cd snooze
+mise trust
+mise install
 ```
 
-Install dependencies:
+3. Build the python code
 ```bash
-poetry install
+task py:build
 ```
 
-## Running unit tests
-
-For python unit tests, run the following:
+4. Build docker image locally
 ```bash
-poetry run pytest
+echo "LOCAL_REPO=nexus.example.com" > .env.local
+task docker:develop
 ```
 
-## Running the server locally
+5. Prepare local config for kubernetes
 
-At the moment, we're using a specific default logging configuration, so you either need to:
-* Create `/var/log/snooze` directory
-* Or edit `snooze/defaults/logging.yaml` to remove the `file` configuration
+Example of `packaging/helm/.helmfile.yaml`
+```yaml
+---
+environments:
+  d8:
+    kubeContext: dev-cluster
+---
+releases:
+- name: snooze
+  namespace: snooze
+  chart: .
+  values:
+  - .values.yaml.gotmpl
+```
 
-Then you can run the server in the following manner:
+Example of `packaging/helm/.values.yaml.gotmpl`
+```yaml
+---
+timeZone: Asia/Tokyo
+
+server:
+  replicaCount: 3
+  image:
+    repository: "nexus.example.com/snooze-server"
+    tag: "latest"
+    pullPolicy: Always
+  podMonitor:
+    enabled: true
+  config:
+    defaultAuthBackend: ldap
+  ldap:
+    # -- Enable LDAP authentication configuration
+    enabled: true
+    # -- The LDAP host to contact
+    host: ad.example.com
+    port: 636
+    baseDN: ou=users,dc=example,dc=com
+    bindDN: CN=my_bind_user,ou=users,dc=example,dc=com
+    bindPasswordExistingSecretName: "ldap-bind-password"
+    userFilter: '(sAMAccountName=%s)'
+    displayNameAttribute: 'cn'
+    emailAttribute: 'mail'
+    groupDN: ''
+    memberAttribute: 'memberOf'
+
+ingress:
+  className: nginx
+  host: snooze.example.com
+  certManager:
+    enabled: true
+    issuerKind: ClusterIssuer
+    issuerName: vault-x1
+
+syslog:
+  enabled: true
+  image:
+    repository: nexus.example.com/snooze-syslog
+    tag: develop
+    pullPolicy: Always
+  debug: true
+
+snmptrap:
+  enabled: true
+  image:
+    repository: nexus.example.com/snooze-snmptrap
+    tag: develop
+    pullPolicy: Always
+
+googlechat:
+  enabled: true
+  image:
+    repository: nexus.example.com/snooze-googlechat
+    tag: develop
+    pullPolicy: Always
+  botName: "Snooze JNX"
+  subscriptionName: "snoozebot-sub"
+  existingSaSecretName: "googlechat-sa-secrets"
+  httpProxy: "http://proxy.example.com:8080"
+  httpsProxy: "http://proxy.example.com:8080"
+  noProxy: "192.168.0.0/16,172.16.0.0/12,10.0.0.0/8,example.com"
+
+mongodb:
+  storageClassName: my-storage-class
+```
+
+5. Create necessary secrets
 ```bash
-poetry run snooze-server
+# For LDAP login
+kubectl create secret generic ldap-bind-password --from-literal=password=...
+# For googlechat
+kubectl create secret generic googlechat-sa-secrets --from-file=sa_secrets.json
 ```
 
-The server will bind to `*:5200`.
-
-## Running the web interface locally
-
-When running the web server in development mode, the name of the backend need to be specified
-in `web/.env.development.local`.
-
-Example of a local server configuration:
-```javascript
-# .env.development.local
-VUE_APP_API = "http://10.0.0.10:5200/api"
-```
-
-The dependencies can be downloaded as such:
+6. Deploy chart locally
 ```bash
-cd ./web
-npm ci
+task chart:develop
 ```
-Note that it requires a recent version of nodejs (see `web/package.json` for the exact requirements).
 
-The development web server can then be started as such:
+# Post-setup
+
+1. Get a root token
 ```bash
-npm run serve
+kubectl exec -it deploy/snooze-server -- snooze root-token -s snooze.socket
 ```
 
-# Development builds
+2. Use it to connect to snooze URL
 
-Versions of the build packages are managed by `pyproject.toml`.
-In order to get automatic versionning during the dev process, it is recommended:
-* To commit every change before building (to take advantage of commit hash for identification).
-* To use the `poetry run invoke dev-build` job (whihc build every packages).
-
-Builds are by default lazy: If a package of a given version is already built, the build will not
-be triggered again. This can be changed by the `--force` argument in most build jobs, or in `./invoke.yaml` (see
-invoke documention).
-
-## Python package
-
-```bash
-poetry run invoke pip.build
-```
-
-The builds will be placed in the `dist/` directory. If you're building versions, you will need to
-manage the version in `pyproject.toml`.
-
-## Web interface
-
-More details:
-[CONTRIBUTE.md](web/CONTRIBUTE.md)
-
-There is also a job to build it:
-```bash
-poetry run invoke web.build
-```
-
-The job requires a recent version of node (see `web/package.json` for the exact requirements).
-The build result will be placed in `dist/`
-
-## RPM
-
-The rpm build rely on the `web.build` and `pip.build`. It requires the `rpmbuild` binary.
-```bash
-poetry run invoke rpm.build
-```
-The build result will be placed in `dist/`
-
-## Docker image
-
-The docker build rely on `web.build` and `pip.build`. It requires a recent version of docker installed, as
-well as the current user being in the docker group.
-```bash
-poetry run invoke docker.build
-```
-The build result can be listed in docker afterwards:
-```bash
-docker images
-```
+3. Change the admin role to include your specific LDAP group

@@ -17,6 +17,15 @@ includes:
   chart:
     taskfile: ./packaging/helm/Taskfile.yaml
     dir: ./packaging/helm
+  syslog:
+    taskfile: ./components/syslog/Taskfile.yaml
+    dir: ./components/syslog
+  googlechat:
+    taskfile: ./components/googlechat/Taskfile.yaml
+    dir: ./components/googlechat
+  snmptrap:
+    taskfile: ./components/snmptrap/Taskfile.yaml
+    dir: ./components/snmptrap
 
 tasks:
   py:lint:
