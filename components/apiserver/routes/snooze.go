@@ -8,18 +8,13 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/japannext/snooze/internal/models"
 	"github.com/japannext/snooze/internal/opensearch"
 	"github.com/japannext/snooze/internal/opensearch/dsl"
 	"github.com/japannext/snooze/internal/redis"
 	"github.com/japannext/snooze/internal/utils"
-	"github.com/japannext/snooze/internal/models"
 )
-
-func registerSnoozeRoutes(r *gin.Engine) {
-	r.GET("/snoozes", getSnoozes)
-	r.POST("/snooze", postSnooze)
-	r.POST("/snooze/cancel", postSnoozeCancel)
-}
 
 type getSnoozesParams struct {
 	*models.Pagination
@@ -36,7 +31,10 @@ func getSnoozes(c *gin.Context) {
 
 	// Params
 	params := getSnoozesParams{Pagination: models.NewPagination()}
-	c.BindQuery(&params)
+	if err := c.ShouldBindQuery(&params); err != nil {
+		c.String(http.StatusBadRequest, "invalid parameter: %s", err)
+		return
+	}
 	if params.OrderBy == "" {
 		params.OrderBy = "startAt"
 	}
@@ -142,7 +140,10 @@ func postSnoozeCancel(c *gin.Context) {
 	defer span.End()
 
 	params := postSnoozeCancelParams{}
-	c.BindJSON(&params)
+	if err := c.ShouldBindJSON(&params); err != nil {
+		c.String(http.StatusBadRequest, "invalid data: %s", err)
+		return
+	}
 
 	if len(params.IDs) == 0 {
 		c.String(http.StatusBadRequest, "no snooze ID specified in `ids`")

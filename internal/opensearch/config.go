@@ -19,8 +19,8 @@ func initConfig() {
 	// Defaults
 	v.SetDefault("OPENSEARCH_ADDRESSES", "http://127.0.0.1:9200")
 	v.SetDefault("OPENSEARCH_INSECURE_SKIP_VERIFY", false)
-	v.BindEnv("OPENSEARCH_USERNAME", "")
-	v.BindEnv("OPENSEARCH_PASSWORD", "")
+	v.MustBindEnv("OPENSEARCH_USERNAME", "")
+	v.MustBindEnv("OPENSEARCH_PASSWORD", "")
 
 	v.AutomaticEnv()
 

@@ -38,19 +38,27 @@ func NewSyslogServer() *SyslogServer {
 	srv.SetFormat(syslog.RFC5424)
 	srv.SetHandler(&Handler{})
 	addr := fmt.Sprintf("%s:%d", config.ListenAddress, config.ListenPort)
-	srv.ListenUDP(addr)
-	srv.ListenTCP(addr)
+	if err := srv.ListenUDP(addr); err != nil {
+		log.Fatal(err)
+	}
+	if err := srv.ListenTCP(addr); err != nil {
+		log.Fatal(err)
+	}
 
 	return &SyslogServer{srv}
 }
 
 func (s *SyslogServer) Run() error {
-	s.srv.Boot()
+	if err := s.srv.Boot(); err != nil {
+		return fmt.Errorf("error booting syslog server: %w", err)
+	}
 	s.srv.Wait()
 
 	return nil
 }
 
 func (s *SyslogServer) Stop() {
-	s.srv.Kill()
+	if err := s.srv.Kill(); err != nil {
+		log.Fatalf("error stopping syslog server: %s", err)
+	}
 }

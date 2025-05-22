@@ -6,12 +6,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/japannext/snooze/internal/models"
 	"github.com/japannext/snooze/internal/opensearch"
 	"github.com/japannext/snooze/internal/tracing"
-	"github.com/japannext/snooze/internal/models"
 )
 
-type getGroupParams struct {
+type getGroupsParams struct {
 	*models.Search
 }
 
@@ -23,8 +23,12 @@ func getGroups(c *gin.Context) {
 	req.WithSize(1000)
 
 	// Search related to group
-	params := getGroupParams{}
-	c.ShouldBindQuery(&params)
+	params := getGroupsParams{}
+	if err := c.ShouldBindQuery(&params); err != nil {
+		c.String(http.StatusBadRequest, "invalid parameter: %s", err)
+
+		return
+	}
 
 	req.WithSearch(params.Search)
 

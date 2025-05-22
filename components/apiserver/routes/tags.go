@@ -4,8 +4,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/japannext/snooze/internal/opensearch"
+
 	"github.com/japannext/snooze/internal/models"
+	"github.com/japannext/snooze/internal/opensearch"
 )
 
 type getTagsParams struct {
@@ -20,7 +21,10 @@ func getTags(c *gin.Context) {
 	req.WithSize(1000)
 	// Search related to tag
 	params := getTagsParams{}
-	c.BindQuery(&params)
+	if err := c.ShouldBindQuery(&params); err != nil {
+		c.String(http.StatusBadRequest, "invalid parameter: %s", err)
+		return
+	}
 	req.WithSearch(params.Search)
 
 	// Params
@@ -38,7 +42,10 @@ func postTag(c *gin.Context) {
 	defer span.End()
 
 	var item *models.Tag
-	c.BindJSON(&item)
+	if err := c.ShouldBindJSON(&item); err != nil {
+		c.String(http.StatusBadRequest, "invalid data: %s", err)
+		return
+	}
 
 	if item.Name == "" {
 		c.String(http.StatusBadRequest, "tag must have a non-empty name")

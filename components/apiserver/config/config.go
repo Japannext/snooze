@@ -3,9 +3,10 @@ package config
 import (
 	"net/url"
 
-	"github.com/japannext/snooze/internal/utils"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+
+	"github.com/japannext/snooze/internal/utils"
 )
 
 type EnvConfig struct {
@@ -37,7 +38,7 @@ func Init() {
 	viper.SetDefault("APISERVER_LISTEN_ADDRESS", "0.0.0.0")
 	viper.SetDefault("APISERVER_LISTEN_PORT", 8080)
 	viper.SetDefault("APISERVER_AUTH_CONFIG", "/etc/snooze-apiserver/auth.yaml")
-	viper.BindEnv("APISERVER_SECRET_KEY")
+	viper.MustBindEnv("APISERVER_SECRET_KEY")
 	viper.AutomaticEnv()
 	hooks := []viper.DecoderConfigOption{
 		utils.URLDecodeHook(),

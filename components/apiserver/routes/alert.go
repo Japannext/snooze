@@ -5,10 +5,12 @@ import (
 	// "time"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/japannext/snooze/internal/opensearch"
+
 	// "github.com/japannext/snooze/internal/opensearch/dsl"
-	"github.com/japannext/snooze/internal/redis"
 	"github.com/japannext/snooze/internal/models"
+	"github.com/japannext/snooze/internal/redis"
 )
 
 const (
@@ -75,7 +77,11 @@ type AlertKeys struct {
 
 func getLiveStatus(c *gin.Context) {
 	var keys []string
-	c.BindJSON(&keys)
+
+	if err := c.ShouldBindJSON(&keys); err != nil {
+		c.String(http.StatusBadRequest, "invalid data: %s", err)
+		return
+	}
 
 	items := make([]string, len(keys))
 

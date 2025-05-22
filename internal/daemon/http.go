@@ -43,6 +43,8 @@ func (d *HttpDaemon) Run() error {
 
 func (d *HttpDaemon) Stop() {
 	log.Debugf("Stopping HTTP server...")
-	d.srv.Shutdown(context.Background())
+	if err := d.srv.Shutdown(context.Background()); err != nil {
+		log.Fatalf("error stopping http daemon: %s", err)
+	}
 	log.Debug("Stopped HTTP server")
 }

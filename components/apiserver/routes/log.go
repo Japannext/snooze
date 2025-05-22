@@ -5,8 +5,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/japannext/snooze/internal/opensearch"
+
 	"github.com/japannext/snooze/internal/models"
+	"github.com/japannext/snooze/internal/opensearch"
 )
 
 type Filter struct {
@@ -29,7 +30,12 @@ func getLogs(c *gin.Context) {
 	req := &opensearch.SearchReq{Index: models.LogIndex}
 
 	params := getLogsParams{Pagination: models.NewPagination()}
-	c.BindQuery(&params)
+
+	if err := c.ShouldBindQuery(&params); err != nil {
+		c.String(http.StatusBadRequest, "invalid parameter: %s", err)
+		return
+	}
+
 	if params.OrderBy == "" {
 		params.OrderBy = "displayTime"
 	}

@@ -39,8 +39,12 @@ type WeeklySchedule struct {
 }
 
 func (s *WeeklySchedule) Load() error {
-	s.From.Load()
-	s.To.Load()
+	if err := s.From.Load(); err != nil {
+		return fmt.Errorf("error loading `from`: %w", err)
+	}
+	if err := s.To.Load(); err != nil {
+		return fmt.Errorf("error loading `to`: %w", err)
+	}
 	var err error
 	s.internal.timezone, err = time.LoadLocation(s.TimeZone)
 	if err != nil {
@@ -52,10 +56,10 @@ func (s *WeeklySchedule) Load() error {
 	// Handling edge-case
 	if from.weekday == to.weekday {
 		if to.hour < from.hour {
-			return fmt.Errorf("error defining weekly schedule: same day, but hours backwards!")
+			return fmt.Errorf("error defining weekly schedule: same day, but hours backwards")
 		}
 		if to.hour == from.hour && to.minute < from.minute {
-			return fmt.Errorf("error defining weekly schedule: same day, same hour, but minutes backwards!")
+			return fmt.Errorf("error defining weekly schedule: same day, same hour, but minutes backwards")
 		}
 	}
 
