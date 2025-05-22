@@ -43,6 +43,9 @@ mail:
 alertmanager:
   replicaCount: 2
   instanceName: ""
+alertcloser:
+  replicaCount: 2
+  instanceName: ""
 syslog:
   replicaCount: 2
   instanceName: ""

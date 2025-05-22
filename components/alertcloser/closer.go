@@ -1,4 +1,4 @@
-package alertmanager
+package alertcloser
 
 import (
 	"context"
@@ -6,17 +6,17 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/japannext/snooze/components/alertmanager/status"
+	"github.com/japannext/snooze/internal/alertstatus"
+	"github.com/japannext/snooze/internal/models"
 	"github.com/japannext/snooze/internal/opensearch"
 	"github.com/japannext/snooze/internal/opensearch/format"
-	"github.com/japannext/snooze/internal/models"
 )
 
 func closeExpiredAlerts() error {
 	ctx := context.TODO()
 
 	// Get list of expired alerts (alerts which score was not updated)
-	expiredItems, err := status.GetExpired(ctx)
+	expiredItems, err := alertstatus.GetExpired(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get list of expired alerts: %w", err)
 	}
@@ -63,7 +63,7 @@ func closeExpiredAlerts() error {
 
 		// Remove from sorted set
 		key := fmt.Sprintf("alertmanager/%s/%s/%s", item.AlertGroup, item.AlertName, item.Hash)
-		if err := status.Delete(ctx, key); err != nil {
+		if err := alertstatus.Delete(ctx, key); err != nil {
 			log.Errorf("failed to dequeue the alert from sorted set: %s", err)
 
 			continue

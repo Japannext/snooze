@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/japannext/snooze/components/activecheck"
+	"github.com/japannext/snooze/components/alertcloser"
 	"github.com/japannext/snooze/components/alertmanager"
 	"github.com/japannext/snooze/components/apiserver"
 	"github.com/japannext/snooze/components/googlechat"
@@ -25,9 +26,10 @@ var root = &cobra.Command{
 }
 
 func init() {
+	root.AddCommand(activecheck.Cmd)
+	root.AddCommand(alertcloser.Cmd)
 	root.AddCommand(alertmanager.Cmd)
 	root.AddCommand(apiserver.Cmd)
-	root.AddCommand(activecheck.Cmd)
 	root.AddCommand(googlechat.Cmd)
 	root.AddCommand(mail.Cmd)
 	root.AddCommand(otel.Cmd)

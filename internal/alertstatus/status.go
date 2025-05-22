@@ -4,7 +4,7 @@
 Alert status are managed via individual keys, as well as a sorted set
 in order to retrieve the expired alerts in O(log(n)).
 */
-package status
+package alertstatus
 
 import (
 	"context"
@@ -15,8 +15,8 @@ import (
 	redisv9 "github.com/redis/go-redis/v9"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/japannext/snooze/internal/redis"
 	"github.com/japannext/snooze/internal/models"
+	"github.com/japannext/snooze/internal/redis"
 )
 
 type AlertStatus struct {

@@ -19,7 +19,10 @@ RUN go mod download
 # Common
 ENV CGO_ENABLED=0
 ENV GOOS=linux
-COPY main.go components/ internal/ cmd/ ./
+COPY main.go main.go
+COPY cmd cmd
+COPY components components
+COPY internal internal
 RUN \
     go build -o /build/snooze \
   -ldflags "-X ${PROJECT}/server.Version=${VERSION} -X ${PROJECT}/server.Commit=${COMMIT} -w -s" \

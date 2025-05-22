@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/japannext/snooze/components/alertmanager/status"
+	log "github.com/sirupsen/logrus"
+
+	"github.com/japannext/snooze/internal/alertstatus"
+	"github.com/japannext/snooze/internal/models"
 	"github.com/japannext/snooze/internal/opensearch/format"
 	"github.com/japannext/snooze/internal/redis"
 	"github.com/japannext/snooze/internal/tracing"
 	"github.com/japannext/snooze/internal/utils"
-	"github.com/japannext/snooze/internal/models"
-	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -45,38 +46,38 @@ func alertHandler(ctx context.Context, alert PostableAlert) {
 	newActiveAlert(ctx, key, alert)
 }
 
-func isAlertActive(ctx context.Context, key string) (*status.AlertStatus, bool, error) {
+func isAlertActive(ctx context.Context, key string) (*alertstatus.AlertStatus, bool, error) {
 	ctx, span := tracer.Start(ctx, "isAlertActive")
 	defer span.End()
 
-	alertStatus, found, err := status.Get(ctx, key)
+	alertStatus, found, err := alertstatus.Get(ctx, key)
 	if err != nil {
-		return &status.AlertStatus{}, false, fmt.Errorf("isAlertActive failed for key %s: %w", key, err)
+		return &alertstatus.AlertStatus{}, false, fmt.Errorf("isAlertActive failed for key %s: %w", key, err)
 	}
 
 	tracing.SetBool(span, "found", found)
 	tracing.SetTime(span, "status.nextCheck", alertStatus.NextCheck.Time)
 
 	if !found {
-		return &status.AlertStatus{}, false, nil
+		return &alertstatus.AlertStatus{}, false, nil
 	}
 
 	// In redis, but not cleaned-up yet
 	if alertStatus.NextCheck.Before(time.Now()) {
-		return &status.AlertStatus{}, false, nil
+		return &alertstatus.AlertStatus{}, false, nil
 	}
 
 	return alertStatus, true, nil
 }
 
-func updateActiveAlert(ctx context.Context, alertStatus *status.AlertStatus, alert PostableAlert) error {
+func updateActiveAlert(ctx context.Context, alertStatus *alertstatus.AlertStatus, alert PostableAlert) error {
 	ctx, span := tracer.Start(ctx, "updateActiveAlert")
 	defer span.End()
 
 	alertStatus.LastCheck = parseTime(alert.StartsAt)
 	alertStatus.NextCheck = parseTime(alert.EndsAt)
 
-	err := status.Set(ctx, alertStatus)
+	err := alertstatus.Set(ctx, alertStatus)
 	if err != nil {
 		return fmt.Errorf("failed to update alert status: %w", err)
 	}
@@ -121,7 +122,7 @@ func newActiveAlert(ctx context.Context, key string, alert PostableAlert) {
 	}
 
 	// Add alert status (redis)
-	err = status.Set(ctx, &status.AlertStatus{
+	err = alertstatus.Set(ctx, &alertstatus.AlertStatus{
 		ID:        id,
 		Key:       key,
 		LastCheck: parseTime(alert.StartsAt),
