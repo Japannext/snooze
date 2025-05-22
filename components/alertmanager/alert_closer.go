@@ -7,8 +7,8 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/japannext/snooze/components/alertmanager/status"
-	"github.com/japannext/snooze/internal/common/opensearch"
-	"github.com/japannext/snooze/internal/common/opensearch/format"
+	"github.com/japannext/snooze/internal/opensearch"
+	"github.com/japannext/snooze/internal/opensearch/format"
 	"github.com/japannext/snooze/internal/models"
 )
 

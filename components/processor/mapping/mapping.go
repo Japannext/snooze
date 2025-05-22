@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/japannext/snooze/internal/common/utils"
+	"github.com/japannext/snooze/internal/utils"
 )
 
 type ContextProcessor struct {

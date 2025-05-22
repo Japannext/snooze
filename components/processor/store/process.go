@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/japannext/snooze/components/processor/decision"
-	"github.com/japannext/snooze/internal/common/mq"
-	"github.com/japannext/snooze/internal/common/opensearch/format"
-	"github.com/japannext/snooze/internal/common/tracing"
+	"github.com/japannext/snooze/internal/mq"
+	"github.com/japannext/snooze/internal/opensearch/format"
+	"github.com/japannext/snooze/internal/tracing"
 	"github.com/japannext/snooze/internal/models"
 	log "github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"

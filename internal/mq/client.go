@@ -1,7 +1,7 @@
 package mq
 
 import (
-	"github.com/japannext/snooze/internal/common/tracing"
+	"github.com/japannext/snooze/internal/tracing"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 	"github.com/sirupsen/logrus"

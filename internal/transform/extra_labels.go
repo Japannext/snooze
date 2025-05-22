@@ -3,7 +3,7 @@ package transform
 import (
 	"context"
 
-	"github.com/japannext/snooze/internal/common/lang"
+	"github.com/japannext/snooze/internal/lang"
 	"github.com/japannext/snooze/internal/models"
 	log "github.com/sirupsen/logrus"
 )

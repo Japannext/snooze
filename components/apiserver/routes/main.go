@@ -3,7 +3,7 @@ package routes
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/japannext/snooze/components/apiserver/auth"
-	"github.com/japannext/snooze/internal/common/mq"
+	"github.com/japannext/snooze/internal/mq"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
 )

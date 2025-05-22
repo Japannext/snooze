@@ -1,7 +1,7 @@
 package health
 
 import (
-	"github.com/japannext/snooze/internal/common/daemon"
+	"github.com/japannext/snooze/internal/daemon"
 )
 
 func NewHealthDaemon(h HealthStatus) *daemon.HttpDaemon {

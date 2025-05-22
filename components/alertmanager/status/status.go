@@ -15,7 +15,7 @@ import (
 	redisv9 "github.com/redis/go-redis/v9"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/japannext/snooze/internal/common/redis"
+	"github.com/japannext/snooze/internal/redis"
 	"github.com/japannext/snooze/internal/models"
 )
 

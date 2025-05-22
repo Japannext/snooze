@@ -47,9 +47,10 @@ func (sem *Semaphore) Capacity() int64 {
 
 func (sem *Semaphore) WaitForFree() <-chan struct{} {
 	ch := make(chan struct{})
-	go func() {
-		for {
-		}
-	}()
+	// TODO
+	// go func() {
+	// 	for {
+	// 	}
+	// }()
 	return ch
 }

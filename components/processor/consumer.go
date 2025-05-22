@@ -3,7 +3,7 @@ package processor
 import (
 	"encoding/json"
 
-	"github.com/japannext/snooze/internal/common/mq"
+	"github.com/japannext/snooze/internal/mq"
 	"github.com/japannext/snooze/internal/models"
 	"github.com/nats-io/nats.go/jetstream"
 	log "github.com/sirupsen/logrus"

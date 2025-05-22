@@ -12,11 +12,11 @@ import (
 
 	"github.com/japannext/snooze/components/processor/decision"
 	"github.com/japannext/snooze/components/processor/snooze"
-	"github.com/japannext/snooze/internal/common/logging"
-	"github.com/japannext/snooze/internal/common/mq"
-	"github.com/japannext/snooze/internal/common/opensearch"
-	"github.com/japannext/snooze/internal/common/redis"
-	"github.com/japannext/snooze/internal/common/utils"
+	"github.com/japannext/snooze/internal/logging"
+	"github.com/japannext/snooze/internal/mq"
+	"github.com/japannext/snooze/internal/opensearch"
+	"github.com/japannext/snooze/internal/redis"
+	"github.com/japannext/snooze/internal/utils"
 	"github.com/japannext/snooze/internal/models"
 
 	"github.com/stretchr/testify/assert"

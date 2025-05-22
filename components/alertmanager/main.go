@@ -3,12 +3,12 @@ package alertmanager
 import (
 	"time"
 
-	"github.com/japannext/snooze/internal/common/daemon"
-	"github.com/japannext/snooze/internal/common/logging"
-	"github.com/japannext/snooze/internal/common/mq"
-	"github.com/japannext/snooze/internal/common/opensearch"
-	"github.com/japannext/snooze/internal/common/redis"
-	"github.com/japannext/snooze/internal/common/tracing"
+	"github.com/japannext/snooze/internal/daemon"
+	"github.com/japannext/snooze/internal/logging"
+	"github.com/japannext/snooze/internal/mq"
+	"github.com/japannext/snooze/internal/opensearch"
+	"github.com/japannext/snooze/internal/redis"
+	"github.com/japannext/snooze/internal/tracing"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"

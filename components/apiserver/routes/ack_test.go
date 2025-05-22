@@ -9,9 +9,9 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/japannext/snooze/internal/common/mq"
-	"github.com/japannext/snooze/internal/common/opensearch"
-	"github.com/japannext/snooze/internal/common/redis"
+	"github.com/japannext/snooze/internal/mq"
+	"github.com/japannext/snooze/internal/opensearch"
+	"github.com/japannext/snooze/internal/redis"
 	"github.com/japannext/snooze/internal/models"
 	"github.com/stretchr/testify/assert"
 )

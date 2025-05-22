@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/japannext/snooze/internal/common/redis"
+	"github.com/japannext/snooze/internal/redis"
 	"github.com/japannext/snooze/internal/models"
 )
 

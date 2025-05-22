@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/japannext/snooze/internal/common/opensearch"
-	"github.com/japannext/snooze/internal/common/opensearch/dsl"
-	"github.com/japannext/snooze/internal/common/redis"
-	"github.com/japannext/snooze/internal/common/utils"
+	"github.com/japannext/snooze/internal/opensearch"
+	"github.com/japannext/snooze/internal/opensearch/dsl"
+	"github.com/japannext/snooze/internal/redis"
+	"github.com/japannext/snooze/internal/utils"
 	"github.com/japannext/snooze/internal/models"
 )
 

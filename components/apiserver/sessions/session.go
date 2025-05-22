@@ -8,7 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/japannext/snooze/internal/common/redis"
+	"github.com/japannext/snooze/internal/redis"
 	log "github.com/sirupsen/logrus"
 )
 

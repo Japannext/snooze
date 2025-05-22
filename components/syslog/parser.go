@@ -4,10 +4,11 @@ import (
 	"context"
 	"time"
 
-	"github.com/japannext/snooze/internal/common/tracing"
-	"github.com/japannext/snooze/internal/models"
 	"go.opentelemetry.io/otel/trace"
 	"gopkg.in/mcuadros/go-syslog.v2/format"
+
+	"github.com/japannext/snooze/internal/tracing"
+	"github.com/japannext/snooze/internal/models"
 )
 
 var (

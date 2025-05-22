@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"maps"
 
-	"github.com/japannext/snooze/internal/common/tracing"
+	"github.com/japannext/snooze/internal/tracing"
 	"github.com/nats-io/nats.go"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"

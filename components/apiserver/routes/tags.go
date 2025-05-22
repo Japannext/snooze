@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/japannext/snooze/internal/common/opensearch"
+	"github.com/japannext/snooze/internal/opensearch"
 	"github.com/japannext/snooze/internal/models"
 )
 

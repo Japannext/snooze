@@ -3,8 +3,8 @@ package profile
 import (
 	"fmt"
 
-	"github.com/japannext/snooze/internal/common/lang"
-	"github.com/japannext/snooze/internal/common/utils"
+	"github.com/japannext/snooze/internal/lang"
+	"github.com/japannext/snooze/internal/utils"
 	"github.com/japannext/snooze/internal/models"
 	log "github.com/sirupsen/logrus"
 )

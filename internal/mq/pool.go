@@ -5,7 +5,7 @@ import (
 
 	"github.com/nats-io/nats.go/jetstream"
 
-	"github.com/japannext/snooze/internal/common/utils"
+	"github.com/japannext/snooze/internal/utils"
 )
 
 /* A daemon requiring a handler that auto manage a pool of workers

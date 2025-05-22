@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/japannext/snooze/internal/common/opensearch/format"
-	pl "github.com/japannext/snooze/internal/common/patlite"
-	"github.com/japannext/snooze/internal/common/tracing"
+	"github.com/japannext/snooze/internal/opensearch/format"
+	pl "github.com/japannext/snooze/internal/patlite"
+	"github.com/japannext/snooze/internal/tracing"
 	"github.com/japannext/snooze/internal/models"
 	"github.com/nats-io/nats.go/jetstream"
 	log "github.com/sirupsen/logrus"

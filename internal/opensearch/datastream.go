@@ -15,7 +15,7 @@ func createDatastream(ctx context.Context, name string) error {
 		return err
 	}
 	if !resp.Acknowledged {
-		return fmt.Errorf("Datastream request received but not acknowledged!")
+		return fmt.Errorf("datastream request received but not acknowledged")
 	}
 	log.Infof("Created datastream %s", name)
 	return nil

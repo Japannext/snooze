@@ -7,9 +7,9 @@ import (
 
 	"github.com/japannext/snooze/components/processor/decision"
 	"github.com/japannext/snooze/components/processor/notification"
-	"github.com/japannext/snooze/internal/common/mq"
-	"github.com/japannext/snooze/internal/common/opensearch"
-	"github.com/japannext/snooze/internal/common/redis"
+	"github.com/japannext/snooze/internal/mq"
+	"github.com/japannext/snooze/internal/opensearch"
+	"github.com/japannext/snooze/internal/redis"
 	"github.com/japannext/snooze/internal/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

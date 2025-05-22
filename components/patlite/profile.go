@@ -3,7 +3,7 @@ package patlite
 import (
 	"os"
 
-	pl "github.com/japannext/snooze/internal/common/patlite"
+	pl "github.com/japannext/snooze/internal/patlite"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/japannext/snooze/internal/common/lang"
+	"github.com/japannext/snooze/internal/lang"
 	"github.com/japannext/snooze/internal/models"
 )
 

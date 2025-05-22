@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/japannext/snooze/internal/common/opensearch/dsl"
+	"github.com/japannext/snooze/internal/opensearch/dsl"
 	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
 )
 

@@ -3,7 +3,7 @@ package config
 import (
 	"os"
 
-	"github.com/japannext/snooze/internal/common/utils"
+	"github.com/japannext/snooze/internal/utils"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )

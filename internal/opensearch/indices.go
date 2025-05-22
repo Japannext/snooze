@@ -7,8 +7,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/japannext/snooze/internal/models"
 	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
+
+	"github.com/japannext/snooze/internal/models"
 )
 
 func ensureIndice(ctx context.Context, name string, idx models.Indice) error {
@@ -43,7 +44,7 @@ func createIndice(ctx context.Context, name string, idx models.Indice) error {
 	}
 
 	if !resp.Acknowledged {
-		return fmt.Errorf("Indice request received but not acknowledged!")
+		return fmt.Errorf("indice request received but not acknowledged")
 	}
 
 	log.Infof("Created indice '%s'", name)
@@ -68,6 +69,8 @@ func hasIndice(ctx context.Context, name string) (bool, int, error) {
 	}
 
 	var buf bytes.Buffer
-	buf.ReadFrom(resp.Body)
-	return false, 0, fmt.Errorf("Unexpected status code %d when checking indice %s: %s", resp.StatusCode, name, buf.Bytes())
+	if _, err := buf.ReadFrom(resp.Body); err != nil {
+		return false, 0, fmt.Errorf("failed to read from buffer: %w", err)
+	}
+	return false, 0, fmt.Errorf("unexpected status code %d when checking indice %s: %s", resp.StatusCode, name, buf.Bytes())
 }

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/japannext/snooze/internal/common/mq"
-	"github.com/japannext/snooze/internal/common/opensearch"
+	"github.com/japannext/snooze/internal/mq"
+	"github.com/japannext/snooze/internal/opensearch"
 	"github.com/nats-io/nats.go/jetstream"
 	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
 	log "github.com/sirupsen/logrus"

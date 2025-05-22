@@ -6,7 +6,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/japannext/snooze/internal/common/redis"
+	"github.com/japannext/snooze/internal/redis"
 )
 
 type LockJob = func() error

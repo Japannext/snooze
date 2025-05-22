@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/japannext/snooze/internal/common/tracing"
+	"github.com/japannext/snooze/internal/tracing"
 	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
 )
 

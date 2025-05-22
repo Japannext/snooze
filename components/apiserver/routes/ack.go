@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel"
 
-	"github.com/japannext/snooze/internal/common/opensearch"
+	"github.com/japannext/snooze/internal/opensearch"
 	"github.com/japannext/snooze/internal/models"
 )
 

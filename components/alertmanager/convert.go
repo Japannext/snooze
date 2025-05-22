@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/japannext/snooze/internal/common/utils"
+	"github.com/japannext/snooze/internal/utils"
 	"github.com/japannext/snooze/internal/models"
 	log "github.com/sirupsen/logrus"
 )

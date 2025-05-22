@@ -3,7 +3,7 @@ package redis
 import (
 	"errors"
 
-	"github.com/japannext/snooze/internal/common/tracing"
+	"github.com/japannext/snooze/internal/tracing"
 	"github.com/redis/go-redis/extra/redisotel/v9"
 	redisv9 "github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"

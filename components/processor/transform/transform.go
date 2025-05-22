@@ -3,7 +3,7 @@ package transform
 import (
 	"fmt"
 
-	"github.com/japannext/snooze/internal/common/lang"
+	"github.com/japannext/snooze/internal/lang"
 )
 
 type Processor struct {

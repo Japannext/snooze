@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/japannext/snooze/internal/common/syslog"
+	"github.com/japannext/snooze/internal/syslog"
 )
 
 type SyslogConfig struct {

@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/japannext/snooze/components/processor/decision"
-	"github.com/japannext/snooze/internal/common/redis"
-	"github.com/japannext/snooze/internal/common/utils"
+	"github.com/japannext/snooze/internal/redis"
+	"github.com/japannext/snooze/internal/utils"
 	"github.com/japannext/snooze/internal/models"
 	log "github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"

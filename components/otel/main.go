@@ -1,9 +1,9 @@
 package otel
 
 import (
-	"github.com/japannext/snooze/internal/common/daemon"
-	"github.com/japannext/snooze/internal/common/logging"
-	"github.com/japannext/snooze/internal/common/mq"
+	"github.com/japannext/snooze/internal/daemon"
+	"github.com/japannext/snooze/internal/logging"
+	"github.com/japannext/snooze/internal/mq"
 )
 
 var processQ *mq.Pub

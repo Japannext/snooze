@@ -1,7 +1,7 @@
 package googlechat
 
 import (
-	"github.com/japannext/snooze/internal/common/utils"
+	"github.com/japannext/snooze/internal/utils"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )

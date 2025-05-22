@@ -4,7 +4,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/japannext/snooze/internal/common/syslog"
+	"github.com/japannext/snooze/internal/syslog"
 	log "github.com/sirupsen/logrus"
 )
 

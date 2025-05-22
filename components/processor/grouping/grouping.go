@@ -11,11 +11,11 @@ import (
 	"go.opentelemetry.io/otel"
 
 	"github.com/japannext/snooze/components/processor/decision"
-	"github.com/japannext/snooze/internal/common/lang"
-	"github.com/japannext/snooze/internal/common/mq"
-	"github.com/japannext/snooze/internal/common/opensearch/format"
-	"github.com/japannext/snooze/internal/common/redis"
-	"github.com/japannext/snooze/internal/common/utils"
+	"github.com/japannext/snooze/internal/lang"
+	"github.com/japannext/snooze/internal/mq"
+	"github.com/japannext/snooze/internal/opensearch/format"
+	"github.com/japannext/snooze/internal/redis"
+	"github.com/japannext/snooze/internal/utils"
 	"github.com/japannext/snooze/internal/models"
 )
 

@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"github.com/japannext/snooze/components/alertmanager/status"
-	"github.com/japannext/snooze/internal/common/opensearch/format"
-	"github.com/japannext/snooze/internal/common/redis"
-	"github.com/japannext/snooze/internal/common/tracing"
-	"github.com/japannext/snooze/internal/common/utils"
+	"github.com/japannext/snooze/internal/opensearch/format"
+	"github.com/japannext/snooze/internal/redis"
+	"github.com/japannext/snooze/internal/tracing"
+	"github.com/japannext/snooze/internal/utils"
 	"github.com/japannext/snooze/internal/models"
 	log "github.com/sirupsen/logrus"
 )

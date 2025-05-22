@@ -8,8 +8,8 @@ import (
 
 	"github.com/japannext/snooze/components/processor/decision"
 	"github.com/japannext/snooze/components/processor/metrics"
-	"github.com/japannext/snooze/internal/common/lang"
-	"github.com/japannext/snooze/internal/common/redis"
+	"github.com/japannext/snooze/internal/lang"
+	"github.com/japannext/snooze/internal/redis"
 	"github.com/japannext/snooze/internal/models"
 	redisv9 "github.com/redis/go-redis/v9"
 	log "github.com/sirupsen/logrus"

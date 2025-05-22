@@ -6,9 +6,9 @@ import (
 
 	"github.com/japannext/snooze/components/processor/decision"
 	"github.com/japannext/snooze/components/processor/metrics"
-	"github.com/japannext/snooze/internal/common/lang"
-	"github.com/japannext/snooze/internal/common/schedule"
-	"github.com/japannext/snooze/internal/common/tracing"
+	"github.com/japannext/snooze/internal/lang"
+	"github.com/japannext/snooze/internal/schedule"
+	"github.com/japannext/snooze/internal/tracing"
 	"github.com/japannext/snooze/internal/models"
 	log "github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"

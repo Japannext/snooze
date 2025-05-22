@@ -1,8 +1,8 @@
 package activecheck
 
 import (
-	"github.com/japannext/snooze/internal/common/daemon"
-	"github.com/japannext/snooze/internal/common/logging"
+	"github.com/japannext/snooze/internal/daemon"
+	"github.com/japannext/snooze/internal/logging"
 )
 
 func Startup() *daemon.DaemonManager {
