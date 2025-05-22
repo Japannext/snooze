@@ -34,8 +34,8 @@ func getAlerts(c *gin.Context) {
 		return
 	}
 
-	if params.Pagination.OrderBy == "" {
-		params.Pagination.OrderBy = "startsAt"
+	if params.OrderBy == "" {
+		params.OrderBy = "startsAt"
 	}
 
 	req := &opensearch.SearchReq{}

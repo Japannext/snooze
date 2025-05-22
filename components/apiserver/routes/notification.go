@@ -23,8 +23,8 @@ func getNotifications(c *gin.Context) {
 	// Params
 	params := getNotificationsParams{Pagination: models.NewPagination()}
 	c.BindQuery(&params)
-	if params.Pagination.OrderBy == "" {
-		params.Pagination.OrderBy = "notificationTime"
+	if params.OrderBy == "" {
+		params.OrderBy = "notificationTime"
 	}
 	req.WithPagination(params.Pagination)
 	req.WithTimeRange("notificationTime", params.TimeRange)

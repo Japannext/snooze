@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/japannext/snooze/internal/common/opensearch"
 	"github.com/japannext/snooze/internal/common/tracing"
 	"github.com/japannext/snooze/internal/models"
@@ -20,9 +21,11 @@ func getGroups(c *gin.Context) {
 
 	req := &opensearch.SearchReq{Index: models.GroupIndex}
 	req.WithSize(1000)
+
 	// Search related to group
 	params := getGroupParams{}
-	c.BindQuery(&params)
+	c.ShouldBindQuery(&params)
+
 	req.WithSearch(params.Search)
 
 	items, err := opensearch.Search[*models.Group](ctx, req)

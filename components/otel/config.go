@@ -22,7 +22,7 @@ func initConfig() {
 	viper.SetDefault("OTEL_GRPC_LISTENING_PORT", 4317)
 	viper.SetDefault("OTEL_PROMETHEUS_ENABLE", true)
 	viper.SetDefault("OTEL_PROMETHEUS_PORT", 9317)
-	viper.BindEnv("SOURCE_NAME")
+	viper.MustBindEnv("SOURCE_NAME")
 
 	viper.AutomaticEnv()
 	err := viper.Unmarshal(&config)

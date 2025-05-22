@@ -26,7 +26,7 @@ func (tks *TestKeys) Cleanup() {
 	ctx := context.Background()
 
 	keys := []string{}
-	for key, _ := range tks.kvs {
+	for key := range tks.kvs {
 		log.Debugf("deleting %s", key)
 		keys = append(keys, key)
 	}

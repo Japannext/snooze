@@ -37,8 +37,8 @@ func getSnoozes(c *gin.Context) {
 	// Params
 	params := getSnoozesParams{Pagination: models.NewPagination()}
 	c.BindQuery(&params)
-	if params.Pagination.OrderBy == "" {
-		params.Pagination.OrderBy = "startAt"
+	if params.OrderBy == "" {
+		params.OrderBy = "startAt"
 	}
 	req.WithPagination(params.Pagination)
 	req.WithTimeRange("startAt", params.TimeRange)

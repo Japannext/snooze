@@ -30,7 +30,7 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func newSnoozes(items []models.Snooze) *redis.TestKeys {
+func newSnoozes(items []models.SnoozeEntry) *redis.TestKeys {
 	kvs := map[string]string{}
 	for _, item := range items {
 		value, _ := json.Marshal(item)
@@ -60,7 +60,7 @@ func TestProcess(t *testing.T) {
 	startAt := models.Time{Time: time.Now()}
 	endAt := models.Time{Time: time.Now().Add(time.Hour)}
 
-	testkeys := newSnoozes([]models.Snooze{
+	testkeys := newSnoozes([]models.SnoozeEntry{
 		{
 			Groups: []models.Group{
 				{Name: "by-host", Labels: map[string]string{"identity.hostname": "myapp01"}},

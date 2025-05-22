@@ -30,8 +30,8 @@ func getLogs(c *gin.Context) {
 
 	params := getLogsParams{Pagination: models.NewPagination()}
 	c.BindQuery(&params)
-	if params.Pagination.OrderBy == "" {
-		params.Pagination.OrderBy = "displayTime"
+	if params.OrderBy == "" {
+		params.OrderBy = "displayTime"
 	}
 	req.WithPagination(params.Pagination)
 	req.WithTimeRange("displayTime", params.TimeRange)

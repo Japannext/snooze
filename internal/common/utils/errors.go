@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"fmt"
+	"errors"
 	"strings"
 )
 
@@ -18,7 +18,7 @@ func NewMultiError(header string) *MultiError {
 }
 
 func (merr *MultiError) Append(s string) {
-	merr.errors = append(merr.errors, fmt.Errorf(s))
+	merr.errors = append(merr.errors, errors.New(s))
 }
 
 func (merr *MultiError) AppendErr(err error) {

@@ -3,8 +3,9 @@ package mq
 import (
 	"context"
 
-	"github.com/japannext/snooze/internal/common/utils"
 	"github.com/nats-io/nats.go/jetstream"
+
+	"github.com/japannext/snooze/internal/common/utils"
 )
 
 /* A daemon requiring a handler that auto manage a pool of workers
@@ -41,10 +42,8 @@ func (r *Retry) Error() string {
 }
 
 func (wp *WorkerPool) Run() error {
-	for {
-		if wp.stopping {
-			break
-		}
+	for !wp.stopping {
+
 		size := wp.pool.Ready()
 		msgs, err := wp.q.Fetch(size)
 		if err != nil {

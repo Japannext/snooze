@@ -21,10 +21,10 @@ func today(t string) time.Time {
 
 func syslogSample() []syslog.Log {
 	return []syslog.Log{
-		{today("06:24:43"), "sshd", "", "prod-host01", syslog.LOG_ERR, syslog.LOG_AUTH, "error: kex_exchange_identification: Connection closed by remote host"},
-		{today("06:24:45"), "sshd", "", "prod-host02", syslog.LOG_ERR, syslog.LOG_AUTH, "error: kex_exchange_identification: Connection closed by remote host"},
-		{today("06:36:40"), "sshd", "", "prod-host01", syslog.LOG_ERR, syslog.LOG_AUTH, "error: connect_to 10.1.2.3 port 443: failed"},
-		{today("06:37:23"), "sshd", "", "prod-host01", syslog.LOG_ERR, syslog.LOG_AUTH, "error: PAM: User not known to the underlying authentication module for illegal user john.doe from workstation01.example.com"},
+		{Timestamp: today("06:24:43"), AppName: "sshd", ProcID: "", Host: "prod-host01", Severity: syslog.LOG_ERR, Facility: syslog.LOG_AUTH, Msg: "error: kex_exchange_identification: Connection closed by remote host"},
+		{Timestamp: today("06:24:45"), AppName: "sshd", ProcID: "", Host: "prod-host02", Severity: syslog.LOG_ERR, Facility: syslog.LOG_AUTH, Msg: "error: kex_exchange_identification: Connection closed by remote host"},
+		{Timestamp: today("06:36:40"), AppName: "sshd", ProcID: "", Host: "prod-host01", Severity: syslog.LOG_ERR, Facility: syslog.LOG_AUTH, Msg: "error: connect_to 10.1.2.3 port 443: failed"},
+		{Timestamp: today("06:37:23"), AppName: "sshd", ProcID: "", Host: "prod-host01", Severity: syslog.LOG_ERR, Facility: syslog.LOG_AUTH, Msg: "error: PAM: User not known to the underlying authentication module for illegal user john.doe from workstation01.example.com"},
 	}
 }
 

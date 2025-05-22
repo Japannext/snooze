@@ -3,7 +3,7 @@ package utils
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"io/ioutil"
+	"os"
 )
 
 type TLSConfig struct {
@@ -15,7 +15,7 @@ type TLSConfig struct {
 }
 
 func (cfg *TLSConfig) Load() error {
-	data, err := ioutil.ReadFile(cfg.CaCert)
+	data, err := os.ReadFile(cfg.CaCert)
 	if err != nil {
 		return err
 	}

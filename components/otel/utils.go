@@ -21,7 +21,7 @@ func hasPrefixedKey(m map[string]string, prefix string) bool {
 // Convert the opentelemetry keyvalue to a map[string]string
 // TODO: handle types other than string with a conversion.
 func kvToMap(kvs []*commonv1.KeyValue) map[string]string {
-	var mapping map[string]string = make(map[string]string)
+	var mapping = make(map[string]string)
 
 	for _, kv := range kvs {
 		if kv != nil {

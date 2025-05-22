@@ -38,10 +38,8 @@ func (bc *BatchingChannel[T]) Start() {
 		batch := newBatch[T]()
 		ticker := time.NewTicker(bc.timeout)
 		defer ticker.Stop()
-		for {
-			if bc.stopping {
-				break
-			}
+		for !bc.stopping {
+
 			select {
 			case item := <-bc.in:
 				batch.Items = append(batch.Items, item)

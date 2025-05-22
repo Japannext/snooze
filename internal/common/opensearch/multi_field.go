@@ -53,7 +53,7 @@ func (req *SearchReq) MultiFieldSearch(ctx context.Context, prefixes []string, s
 	log.Debugf("flats: %s", flats)
 	flats = filterMappings(flats, prefixes)
 
-	req.Doc.Query.Bool.MinimumShouldMatch = 1
+	req.Doc.Bool.MinimumShouldMatch = 1
 	for _, flat := range flats {
 		req.Doc.Or(dsl.QueryItem{Match: map[string]dsl.Match{
 			flat: {Query: search},

@@ -42,7 +42,7 @@ func getOutboundIP() string {
 }
 
 func initConfig() {
-	viper.BindEnv("SYSLOG_ADDRESS")
+	viper.MustBindEnv("SYSLOG_ADDRESS")
 	viper.SetDefault("SYSLOG_PORT", 1514)
 	viper.SetDefault("CALLBACK_ADDRESS", getOutboundIP())
 	viper.SetDefault("CALLBACK_PORT", 8080)
