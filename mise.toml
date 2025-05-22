@@ -1,3 +1,5 @@
 [tools]
+"aqua:golangci/golangci-lint" = "latest"
 bun = "1.2.8"
 go = "1.23"
+"ubi:nametake/golangci-lint-langserver" = "latest"

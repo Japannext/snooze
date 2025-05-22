@@ -1,3 +1,7 @@
+[tools."aqua:golangci/golangci-lint"]
+version = "2.1.5"
+backend = "aqua:golangci/golangci-lint"
+
 [tools.bun]
 version = "1.2.8"
 backend = "core:bun"
@@ -5,3 +9,7 @@ backend = "core:bun"
 [tools.go]
 version = "1.23.8"
 backend = "core:go"
+
+[tools."ubi:nametake/golangci-lint-langserver"]
+version = "0.0.11"
+backend = "ubi:nametake/golangci-lint-langserver"
