@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { LogoGithub, Book } from '@vicons/ionicons5'
+import { LogoGithub, Book } from "@vicons/ionicons5";
 // import { version, homepage, repository } from '../../../package.json'
 // import { version, homepage, repository } from '@/../package.json'
 // import { version, homepage, repository } from 'pkginfo'
 
-const version = "x.x.x"
-const homepage = "http://github.com/japannext/snooze"
-const repository = {url: "http://github.com/japannext/snooze"}
+const version = "x.x.x";
+const homepage = "http://github.com/japannext/snooze";
+const repository = { url: "http://github.com/japannext/snooze" };
 
 // Components
-import { NSpace, NP, NButton, NIcon, NButtonGroup, NPopover } from 'naive-ui'
-import { XPatlite } from '@/components'
+import { NSpace, NP, NButton, NIcon, NButtonGroup, NPopover } from "naive-ui";
+import { XPatlite } from "@/components";
 </script>
 
 <template>

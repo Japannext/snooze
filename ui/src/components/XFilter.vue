@@ -1,17 +1,22 @@
 <script setup lang="ts">
-import { defineProps, defineModel } from 'vue'
+import { defineProps, defineModel } from "vue";
 
 // Components
 // import { NTab, NTabs } from 'naive-ui'
-import { NInputGroup, NInputGroupLabel, NRadioGroup, NRadioButton, type RadioButtonProps } from 'naive-ui'
-import { Filter } from '@/api'
+import {
+  NInputGroup,
+  NInputGroupLabel,
+  NRadioGroup,
+  NRadioButton,
+  type RadioButtonProps,
+} from "naive-ui";
+import { Filter } from "@/api";
 
 defineProps<{
-  filters: Array<Filter>
-}>()
+  filters: Array<Filter>;
+}>();
 
-const model = defineModel<string>('value')
-
+const model = defineModel<string>("value");
 </script>
 
 <template>
