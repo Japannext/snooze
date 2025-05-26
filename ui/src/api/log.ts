@@ -1,38 +1,38 @@
-import axios from "axios"
-import type { ListOf, Pagination, TimeRangeParams, Identity } from "@/api"
+import axios from "axios";
+import type { ListOf, Pagination, TimeRangeParams, Identity } from "@/api";
 
 export type Log = {
-  id?: string
+  id?: string;
 
-  source: object
-  identity: Identity
-  labels?: object
+  source: object;
+  identity: Identity;
+  labels?: object;
 
-  actualTime: number
-  observedTime: number
-  displayTime: number
+  actualTime: number;
+  observedTime: number;
+  displayTime: number;
 
-  groupHash?: string
-  groupLabels?: any
+  groupHash?: string;
+  groupLabels?: any;
 
-  pattern?: string
-  profile?: string
+  pattern?: string;
+  profile?: string;
 
-  severityText: string
-  severityNumber: number
+  severityText: string;
+  severityNumber: number;
 
-  message: string
+  message: string;
 
-  status: LogStatus
-}
+  status: LogStatus;
+};
 
 export type LogStatus = {
-  kind: LogStatusKind
-  reason?: string
-  objectID?: string
-  skipNotification: boolean
-  skipStorage: boolean
-}
+  kind: LogStatusKind;
+  reason?: string;
+  objectID?: string;
+  skipNotification: boolean;
+  skipStorage: boolean;
+};
 
 export enum LogStatusKind {
   LogActive = 0,
@@ -45,11 +45,11 @@ export enum LogStatusKind {
 }
 
 export type GetLogsParams = {
-  timerange: TimeRangeParams,
-  pagination: Pagination
-  search?: string
-  filter?: string
-}
+  timerange: TimeRangeParams;
+  pagination: Pagination;
+  search?: string;
+  filter?: string;
+};
 
 export function getLogs(params: GetLogsParams): Promise<ListOf<Log>> {
   var q = {
@@ -59,9 +59,8 @@ export function getLogs(params: GetLogsParams): Promise<ListOf<Log>> {
     size: params.pagination.pageSize,
     search: params.search,
     filter: params.filter,
-  }
-  return axios.get<ListOf<Log>>("/api/logs", {params: q})
-    .then((resp) => {
-      return resp.data
-    })
+  };
+  return axios.get<ListOf<Log>>("/api/logs", { params: q }).then((resp) => {
+    return resp.data;
+  });
 }

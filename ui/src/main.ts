@@ -1,14 +1,13 @@
-import axios from 'axios'
-import { createApp } from 'vue'
-import { createI18n } from 'vue-i18n'
-import { useLocalStorage } from '@vueuse/core'
+import axios from "axios";
+import { createApp } from "vue";
+import { createI18n } from "vue-i18n";
+import { useLocalStorage } from "@vueuse/core";
 
-import '@/style.css'
-import { router } from '@/router'
+import "@/style.css";
+import { router } from "@/router";
 //import { messages } from '@/i18n'
 
-import App from '@/App.vue'
-
+import App from "@/App.vue";
 
 /*
 import { useLocale } from '@/stores'
@@ -22,12 +21,12 @@ const i18n = createI18n({
 */
 
 if (import.meta.env.BASE_URL) {
-  axios.defaults.baseURL = import.meta.env.BASE_URL
+  axios.defaults.baseURL = import.meta.env.BASE_URL;
 }
-axios.defaults.headers.post['Content-Type'] = 'application/json'
-axios.defaults.withCredentials = true
+axios.defaults.headers.post["Content-Type"] = "application/json";
+axios.defaults.withCredentials = true;
 
-const app = createApp(App)
-app.use(router)
+const app = createApp(App);
+app.use(router);
 // app.use(i18n)
-app.mount('#app')
+app.mount("#app");

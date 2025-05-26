@@ -31,6 +31,7 @@
     "@vue/language-server": "^2.2.10",
     "@vue/typescript-plugin": "^2.2.10",
     "espree": "^10.3.0",
+    "prettier": "^3.5.3",
     "typescript": "^5.7.2",
     "vite": "^6.3.5",
     "vls": "^0.8.5",

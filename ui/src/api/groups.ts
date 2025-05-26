@@ -1,24 +1,23 @@
-import axios from "axios"
-import type { ListOf, Pagination, TimeRangeParams, KeyValue } from "@/api"
+import axios from "axios";
+import type { ListOf, Pagination, TimeRangeParams, KeyValue } from "@/api";
 
 export type Group = {
-  id?: string
+  id?: string;
 
-  name: string
-  hash: string
-  labels: KeyValue
-}
+  name: string;
+  hash: string;
+  labels: KeyValue;
+};
 
 export type GetGroupsParams = {
-  search?: string
-}
+  search?: string;
+};
 
 export function getGroups(params: GetGroupsParams): Promise<ListOf<Group>> {
   var q = {
     search: params.search,
-  }
-  return axios.get<ListOf<Group>>("/api/groups", {params: q})
-    .then((resp) => {
-      return resp.data
-    })
+  };
+  return axios.get<ListOf<Group>>("/api/groups", { params: q }).then((resp) => {
+    return resp.data;
+  });
 }

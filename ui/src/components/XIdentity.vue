@@ -1,38 +1,36 @@
 <script setup lang="ts">
-import { defineProps } from 'vue'
-import { NList, NListItem, NTag, NIcon, NSpace, NPopover } from 'naive-ui'
-import type { Identity, HostIdentity } from '@/api'
+import { defineProps } from "vue";
+import { NList, NListItem, NTag, NIcon, NSpace, NPopover } from "naive-ui";
+import type { Identity, HostIdentity } from "@/api";
 
-import { Server, Hashtag } from '@vicons/fa'
-import { Kubernetes } from '@vicons/carbon'
+import { Server, Hashtag } from "@vicons/fa";
+import { Kubernetes } from "@vicons/carbon";
 
 defineProps<{
-  identity: Identity,
-}>()
+  identity: Identity;
+}>();
 
 function shortname(host: string): string {
   if (host.includes(".")) {
-    return host.split('.')[0]
+    return host.split(".")[0];
   }
-  return host
+  return host;
 }
 
 function k8sShortname(component: string): string {
-  switch(component) {
+  switch (component) {
     case "deployment":
-      return "deploy"
+      return "deploy";
     case "statefulset":
-      return "sts"
+      return "sts";
     case "daemonset":
-      return "ds"
+      return "ds";
     case "replicaset":
-      return "rs"
+      return "rs";
     default:
-      return component
+      return component;
   }
-
 }
-
 </script>
 
 <template>
@@ -45,7 +43,8 @@ function k8sShortname(component: string): string {
   <template v-else-if="identity.kind == 'kubernetes'">
     <n-tag size="small">
       <template #icon><n-icon :component="Kubernetes" /></template>
-      {{ k8sShortname(identity.component) }}/{{ identity.name }} <b>@{{ identity.namespace }}</b>
+      {{ k8sShortname(identity.component) }}/{{ identity.name }}
+      <b>@{{ identity.namespace }}</b>
     </n-tag>
   </template>
 </template>

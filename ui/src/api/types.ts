@@ -1,10 +1,10 @@
-import { DateTime } from 'luxon'
+import { DateTime } from "luxon";
 
 export type Log = {
   id?: string;
 
   source: Source;
-  identity?: object
+  identity?: object;
   labels?: object;
 
   actualTime: number;
@@ -20,7 +20,7 @@ export type Log = {
   message: string;
 
   mute?: Mute;
-}
+};
 
 export type Snooze = {
   id?: string;
@@ -29,26 +29,25 @@ export type Snooze = {
   reason: string;
   startsAt: DateTime;
   endsAt: DateTime;
-}
+};
 
 export type ListOf<Type> = {
   items: Array<Type>;
   total: number;
-}
+};
 
 export type LogResults = {
   items: Array<Log>;
   total: number;
-}
+};
 
-export type Alert = {
-}
+export type Alert = {};
 
 export type AlertResults = {
   items: Array<Alert>;
   total: number;
   more: boolean;
-}
+};
 
 export type Notification = {
   id?: string;
@@ -60,25 +59,25 @@ export type Notification = {
   alertUID?: string;
   logUID?: string;
   body: object;
-}
+};
 
 export type NotificationResults = {
   items: Array<Notification>;
   total: number;
-}
+};
 
 export type Source = {
-  kind: string
-  name?: string
-}
+  kind: string;
+  name?: string;
+};
 
 export type Destination = {
-  queue: string
-  profile: string
-}
+  queue: string;
+  profile: string;
+};
 
 export type Mute = {
   skipNotification: boolean;
   skipStorage: boolean;
   reason: string;
-}
+};

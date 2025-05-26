@@ -1,68 +1,74 @@
 <script setup lang="ts">
-import { ref, defineProps, defineModel } from 'vue'
-import { useMessage } from 'naive-ui'
-import { createTag, type Tag } from '@/api'
+import { ref, defineProps, defineModel } from "vue";
+import { useMessage } from "naive-ui";
+import { createTag, type Tag } from "@/api";
 
-import { NModal, NSpace, NColorPicker, NButton, NCard, NForm, NFormItemGi, NInput, NGrid } from 'naive-ui'
-import { XTag } from '@/components'
-
+import {
+  NModal,
+  NSpace,
+  NColorPicker,
+  NButton,
+  NCard,
+  NForm,
+  NFormItemGi,
+  NInput,
+  NGrid,
+} from "naive-ui";
+import { XTag } from "@/components";
 
 defineProps<{
   show: boolean;
-}>()
+}>();
 
-const show = defineModel('show', {type: Boolean, default: false})
-const loading = ref<boolean>(false)
-const message = useMessage()
-const item = ref<Tag>(defaultTag())
+const show = defineModel("show", { type: Boolean, default: false });
+const loading = ref<boolean>(false);
+const message = useMessage();
+const item = ref<Tag>(defaultTag());
 
 const swatches = [
-  '#a8071a', // red
-  '#fa541c', // ???
-  '#fa8c16', // orange
-  '#ad4e00', // cognac
-  '#faad14', // golden
-  '#613400', // brown
-  '#d4b106', // yellow
-  '#a0d911', // lime
-  '#237804', // green
-  '#13c2c2', // cyan
-  '#003eb3', // blue
-  '#722ed1', // purple
-  '#c41d7f', // magenta
-]
+  "#a8071a", // red
+  "#fa541c", // ???
+  "#fa8c16", // orange
+  "#ad4e00", // cognac
+  "#faad14", // golden
+  "#613400", // brown
+  "#d4b106", // yellow
+  "#a0d911", // lime
+  "#237804", // green
+  "#13c2c2", // cyan
+  "#003eb3", // blue
+  "#722ed1", // purple
+  "#c41d7f", // magenta
+];
 
 function defaultTag(): Tag {
   return {
     name: "",
     description: "",
     color: "#7BB5FDFF",
-  }
+  };
 }
 
 function create() {
-  loading.value = true
+  loading.value = true;
   createTag(item.value)
     .catch((err) => {
-      message.error(`failed to tag: ${err}`)
+      message.error(`failed to tag: ${err}`);
     })
     .finally(() => {
-      show.value = false
-      loading.value = false
-    })
+      show.value = false;
+      loading.value = false;
+    });
 }
 
 function cancel() {
-  show.value = false
-  item.value = defaultTag()
+  show.value = false;
+  item.value = defaultTag();
 }
 </script>
 
 <template>
-  <n-modal
-    v-model:show="show"
-    style="width: 800px"
-  >
+  <n-modal v-model:show="show" style="width: 800px">
     <n-card>
       <template #header>New tag</template>
       <n-form size="small">

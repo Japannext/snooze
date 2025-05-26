@@ -1,16 +1,15 @@
 <script setup lang="ts">
-import { defineProps } from 'vue'
-import { NSpace } from 'naive-ui'
+import { defineProps } from "vue";
+import { NSpace } from "naive-ui";
 
-import type { Alert } from '@/api'
+import type { Alert } from "@/api";
 
-import { XAlertName, XIdentity, XSeverity } from '@/components'
+import { XAlertName, XIdentity, XSeverity } from "@/components";
 
 // props
 defineProps<{
-  row: Alert,
-}>()
-
+  row: Alert;
+}>();
 </script>
 
 <template>
@@ -18,6 +17,10 @@ defineProps<{
     <!-- <s-alert-group v-if="row.alertGroup" :value="row.alertGroup" /> -->
     <x-identity v-if="row.identity" :identity="row.identity" />
     <x-alert-name v-if="row.alertName" :value="row.alertName" />
-    <x-severity v-if="row.severityNumber !== undefined" :text="row.severityText" :number="row.severityNumber" />
+    <x-severity
+      v-if="row.severityNumber !== undefined"
+      :text="row.severityText"
+      :number="row.severityNumber"
+    />
   </n-space>
 </template>

@@ -1,22 +1,13 @@
 <script setup lang="ts">
-import {
-  NSpace, NLayout, NLayoutContent,
-} from 'naive-ui'
-
+import { NSpace, NLayout, NLayoutContent } from "naive-ui";
 </script>
 
 <template>
   <n-layout>
     <n-layout-content id="container">
-      <n-space
-        id="element"
-        vertical
-      >
+      <n-space id="element" vertical>
         <router-view v-slot="{ Component }">
-          <component
-            :is="Component"
-            id="component"
-          />
+          <component :is="Component" id="component" />
         </router-view>
       </n-space>
     </n-layout-content>

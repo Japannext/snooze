@@ -1,2 +1,1 @@
-export const messages_ja = {
-}
+export const messages_ja = {};

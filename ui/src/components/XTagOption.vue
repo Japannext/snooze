@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { NSpace, NEllipsis } from 'naive-ui'
-import { XTag } from '@/components'
+import { NSpace, NEllipsis } from "naive-ui";
+import { XTag } from "@/components";
 
 defineProps<{
-  name: string,
-  color?: string,
-  description?: string,
-}>()
+  name: string;
+  color?: string;
+  description?: string;
+}>();
 </script>
 
 <template>

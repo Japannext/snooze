@@ -1,27 +1,27 @@
 <script setup lang="ts">
-import { ref, onMounted, defineEmits, defineModel, type Ref } from 'vue'
+import { ref, onMounted, defineEmits, defineModel, type Ref } from "vue";
 
-import { NInput, NInputGroup, NButton, NIcon } from 'naive-ui'
-import { Search } from '@vicons/ionicons5'
-import { useRouteQuery } from '@vueuse/router'
+import { NInput, NInputGroup, NButton, NIcon } from "naive-ui";
+import { Search } from "@vicons/ionicons5";
+import { useRouteQuery } from "@vueuse/router";
 
-const route = useRouteQuery<string>("search", "")
-const tmp = ref<string>("")
+const route = useRouteQuery<string>("search", "");
+const tmp = ref<string>("");
 
 onMounted(() => {
-  tmp.value = route.value
-})
+  tmp.value = route.value;
+});
 
 defineProps<{
-  value: string|undefined,
-}>()
+  value: string | undefined;
+}>();
 
-const emit = defineEmits(['update:value', 'change'])
+const emit = defineEmits(["update:value", "change"]);
 
 function run() {
-  route.value = tmp.value
-  emit('update:value', tmp.value)
-  emit('change')
+  route.value = tmp.value;
+  emit("update:value", tmp.value);
+  emit("change");
 }
 </script>
 

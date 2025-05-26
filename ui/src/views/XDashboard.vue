@@ -1,8 +1,5 @@
 <script setup lang="ts">
-
-function refresh() {
-}
-
+function refresh() {}
 </script>
 
 <template>

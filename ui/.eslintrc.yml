@@ -4,11 +4,11 @@ env:
   browser: true
   es2021: true
   vue/setup-compiler-macros: true
-parser: 'vue-eslint-parser'
+parser: "vue-eslint-parser"
 parserOptions:
   parser:
     js: "espree"
-    ts: '@typescript-eslint/parser'
+    ts: "@typescript-eslint/parser"
     <template>: "espree"
   sourceType: module
 plugins:
@@ -26,5 +26,5 @@ rules:
         max: 3
       multiline:
         max: 20
-  vue/singleline-html-element-content-newline: 'off'
-  vue/require-explicit-emits: 'off'
+  vue/singleline-html-element-content-newline: "off"
+  vue/require-explicit-emits: "off"

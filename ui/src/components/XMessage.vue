@@ -1,14 +1,13 @@
 <script setup lang="ts">
-import { type Log } from '@/api'
+import { type Log } from "@/api";
 
-import { NTag, NIcon, NSpace, NPerformantEllipsis } from 'naive-ui'
-import { XLogPattern } from '@/components'
-import { Hashtag } from '@/icons'
+import { NTag, NIcon, NSpace, NPerformantEllipsis } from "naive-ui";
+import { XLogPattern } from "@/components";
+import { Hashtag } from "@/icons";
 
 defineProps<{
-  log: Log,
-}>()
-
+  log: Log;
+}>();
 </script>
 
 <template>

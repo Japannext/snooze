@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { defineProps } from 'vue'
-import { NTag } from 'naive-ui'
+import { defineProps } from "vue";
+import { NTag } from "naive-ui";
 
 const props = defineProps<{
-  value: string,
-}>()
-
+  value: string;
+}>();
 </script>
 <template>
   <n-tag size="small">

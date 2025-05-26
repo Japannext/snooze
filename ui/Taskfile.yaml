@@ -1,5 +1,5 @@
 ---
-version: '3'
+version: "3"
 
 vars:
   NAME: snooze-ui
@@ -12,44 +12,44 @@ tasks:
   lint:
     desc: Lint the Dockerfile
     cmds:
-    - hadolint Dockerfile
+      - hadolint Dockerfile
 
   build:
     desc: Build and see if the typescript works
     cmds:
-    - bun install
-    - bun run build
+      - bun install
+      - bun run build
 
   develop:
     desc: Deploy a temporary dev Docker image
     cmds:
-    - docker build . -t {{ .LOCAL_REPO }}/{{ .NAME }}:develop
-    - docker push {{ .LOCAL_REPO }}/{{ .NAME }}:develop
+      - docker build . -t {{ .LOCAL_REPO }}/{{ .NAME }}:develop
+      - docker push {{ .LOCAL_REPO }}/{{ .NAME }}:develop
     preconditions:
-    - sh: docker login {{ .LOCAL_REPO }} --get-login
-      msg: "You need to login to docker with `docker login {{ .LOCAL_REPO }}`"
+      - sh: docker login {{ .LOCAL_REPO }} --get-login
+        msg: "You need to login to docker with `docker login {{ .LOCAL_REPO }}`"
 
   index:
     desc: Update component index
     cmds:
-    - find ./src/components/ -name \*.vue -printf '%f\n' | sort | sed "s#\(.*\).vue#export { default as \1 } from './\1.vue'#" > src/components/index.ts
+      - find ./src/components/ -name \*.vue -printf '%f\n' | sort | sed "s#\(.*\).vue#export { default as \1 } from './\1.vue'#" > src/components/index.ts
 
   release:
     desc: Release the Docker image
     cmds:
-    - docker build . -t {{ .LOCAL_REPO }}/{{ .NAME }}:{{ .VERSION }}
-    - docker push {{ .LOCAL_REPO }}/{{ .NAME }}:{{ .VERSION }}
+      - docker build . -t {{ .LOCAL_REPO }}/{{ .NAME }}:{{ .VERSION }}
+      - docker push {{ .LOCAL_REPO }}/{{ .NAME }}:{{ .VERSION }}
     preconditions:
-    - sh: docker login {{ .LOCAL_REPO }} --get-login
-      msg: "You need to login to docker with `docker login {{ .LOCAL_REPO }}`"
-    status:  # Protect against accidental re-release
-    - docker manifest inspect {{ .LOCAL_REPO }}/{{ .NAME }}:{{ .VERSION }}
+      - sh: docker login {{ .LOCAL_REPO }} --get-login
+        msg: "You need to login to docker with `docker login {{ .LOCAL_REPO }}`"
+    status: # Protect against accidental re-release
+      - docker manifest inspect {{ .LOCAL_REPO }}/{{ .NAME }}:{{ .VERSION }}
 
   dev-image:
     desc: Update the dev image used for devspace quick development
     cmds:
-    - docker build . -f Dockerfile.dev -t {{ .LOCAL_REPO }}/{{ .NAME }}-dev:develop
-    - docker push {{ .LOCAL_REPO }}/{{ .NAME }}-dev:develop
+      - docker build . -f Dockerfile.dev -t {{ .LOCAL_REPO }}/{{ .NAME }}-dev:develop
+      - docker push {{ .LOCAL_REPO }}/{{ .NAME }}-dev:develop
     preconditions:
-    - sh: docker login {{ .LOCAL_REPO }} --get-login
-      msg: "You need to login to docker with `docker login {{ .LOCAL_REPO }}`"
+      - sh: docker login {{ .LOCAL_REPO }} --get-login
+        msg: "You need to login to docker with `docker login {{ .LOCAL_REPO }}`"

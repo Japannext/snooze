@@ -1,14 +1,20 @@
 <script setup lang="ts">
-import { defineProps } from 'vue'
-import { NTag, NIcon } from 'naive-ui'
-import { Mail, LogoGoogle, BuildingLighthouse20Filled, Box24Regular, Browser, Slack } from '@/icons'
+import { defineProps } from "vue";
+import { NTag, NIcon } from "naive-ui";
+import {
+  Mail,
+  LogoGoogle,
+  BuildingLighthouse20Filled,
+  Box24Regular,
+  Browser,
+  Slack,
+} from "@/icons";
 
-import type { Destination } from '@/api'
+import type { Destination } from "@/api";
 
 defineProps<{
-  destination: Destination,
-}>()
-
+  destination: Destination;
+}>();
 </script>
 
 <template>
@@ -22,7 +28,9 @@ defineProps<{
       {{ destination.profile }}
     </n-tag>
     <n-tag v-else-if="destination.queue == 'patlite'">
-      <template #icon><n-icon :component="BuildingLighthouse20Filled" /></template>
+      <template #icon
+        ><n-icon :component="BuildingLighthouse20Filled"
+      /></template>
       {{ destination.profile }}
     </n-tag>
     <n-tag v-else-if="destination.queue == 'slack'">

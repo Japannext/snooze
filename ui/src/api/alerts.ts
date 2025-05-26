@@ -1,34 +1,34 @@
-import axios from "axios"
-import type { ListOf, Pagination, TimeRangeParams, Identity } from "@/api"
+import axios from "axios";
+import type { ListOf, Pagination, TimeRangeParams, Identity } from "@/api";
 
 export type Alert = {
-  id?: string
+  id?: string;
 
-  hash: string
-  source: object
-  identity: Identity
+  hash: string;
+  source: object;
+  identity: Identity;
 
-  startsAt: number
-  endsAt: number
+  startsAt: number;
+  endsAt: number;
 
-  alertName: string
-  alertGroup: string
+  alertName: string;
+  alertGroup: string;
 
-  severityText?: string
-  severityNumber?: number
+  severityText?: string;
+  severityNumber?: number;
 
-  description: string
-  summary: string
+  description: string;
+  summary: string;
 
-  labels: object
-}
+  labels: object;
+};
 
 export type GetAlertsParams = {
-  timerange: TimeRangeParams,
-  pagination: Pagination
-  search?: string
-  filter?: string
-}
+  timerange: TimeRangeParams;
+  pagination: Pagination;
+  search?: string;
+  filter?: string;
+};
 
 export function getAlerts(params: GetAlertsParams): Promise<ListOf<Alert>> {
   var q = {
@@ -38,9 +38,8 @@ export function getAlerts(params: GetAlertsParams): Promise<ListOf<Alert>> {
     size: params.pagination.pageSize,
     search: params.search,
     filter: params.filter,
-  }
-  return axios.get<ListOf<Alert>>("/api/alerts", {params: q})
-    .then((resp) => {
-      return resp.data
-    })
+  };
+  return axios.get<ListOf<Alert>>("/api/alerts", { params: q }).then((resp) => {
+    return resp.data;
+  });
 }

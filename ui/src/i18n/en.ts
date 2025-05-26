@@ -1,2 +1,1 @@
-export const messages_en = {
-}
+export const messages_en = {};

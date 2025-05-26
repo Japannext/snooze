@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { defineProps, computed } from 'vue'
+import { defineProps, computed } from "vue";
 
-import { NSpace, NTag, NIcon } from 'naive-ui'
-import { XTag } from '@/components'
-import { TagDismiss16Regular } from '@/icons'
-import type { Tag } from '@/api'
-import { tagMap } from '@/stores'
+import { NSpace, NTag, NIcon } from "naive-ui";
+import { XTag } from "@/components";
+import { TagDismiss16Regular } from "@/icons";
+import type { Tag } from "@/api";
+import { tagMap } from "@/stores";
 
 const props = defineProps<{
-  tags: Tag[],
-}>()
+  tags: Tag[];
+}>();
 </script>
 
 <template>

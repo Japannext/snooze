@@ -1,32 +1,30 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { NIcon, NCard, NSpace, NButton } from 'naive-ui'
-import { Github, Openid, SignInAlt } from '@/icons'
+import { ref, onMounted } from "vue";
+import { NIcon, NCard, NSpace, NButton } from "naive-ui";
+import { Github, Openid, SignInAlt } from "@/icons";
 
-import { getAuthConfig, type AuthConfig } from '@/api'
+import { getAuthConfig, type AuthConfig } from "@/api";
 
-const authConfig = ref<AuthConfig>()
+const authConfig = ref<AuthConfig>();
 
 onMounted(() => {
-  getAuthConfig()
-    .then((cfg) => {
-      authConfig.value = cfg
-    })
-})
+  getAuthConfig().then((cfg) => {
+    authConfig.value = cfg;
+  });
+});
 
 function getIcon(icon: string) {
   switch (icon.toLowerCase()) {
-  case "openid":
-    return Openid
-  default:
-    return SignInAlt
+    case "openid":
+      return Openid;
+    default:
+      return SignInAlt;
   }
 }
 
 function redirect(providerName: string) {
-  window.location.href = `/api/auth/${providerName}/login`
+  window.location.href = `/api/auth/${providerName}/login`;
 }
-
 </script>
 
 <template>
@@ -39,13 +37,13 @@ function redirect(providerName: string) {
           :color="authConfig.oidc.color"
           @click="redirect('oidc')"
         >
-          <template #icon><n-icon :component="getIcon(authConfig.oidc.icon)" /></template>
+          <template #icon
+            ><n-icon :component="getIcon(authConfig.oidc.icon)"
+          /></template>
           {{ authConfig.oidc.displayName }}
         </n-button>
       </n-space>
     </n-card>
-    <n-card v-else>
-      Could not get authConfig
-    </n-card>
+    <n-card v-else> Could not get authConfig </n-card>
   </n-space>
 </template>

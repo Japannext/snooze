@@ -1,30 +1,29 @@
 <script setup lang="ts">
-import { defineProps, computed } from 'vue'
-import { NPopover } from 'naive-ui'
-import { DateTime } from 'luxon'
-import { useTimeRelative } from '@/stores'
+import { defineProps, computed } from "vue";
+import { NPopover } from "naive-ui";
+import { DateTime } from "luxon";
+import { useTimeRelative } from "@/stores";
 
-const timeRelative = useTimeRelative()
+const timeRelative = useTimeRelative();
 
 const props = defineProps<{
-  ts: number,
-  format?: string,
-}>()
+  ts: number;
+  format?: string;
+}>();
 
 const date = computed(() => {
-    return DateTime.fromMillis(props.ts, {zone: "system"})
-})
+  return DateTime.fromMillis(props.ts, { zone: "system" });
+});
 
 const isRelative = computed<boolean>(() => {
   switch (props.format) {
     case "relative":
-      return true
+      return true;
     case "absolute":
-      return false
+      return false;
   }
-  return timeRelative.value
-})
-
+  return timeRelative.value;
+});
 </script>
 
 <template>
@@ -42,8 +41,6 @@ const isRelative = computed<boolean>(() => {
         <span>Timezone: {{ date.zoneName }}</span>
       </n-popover>
     </template>
-    <template v-else>
-      Undefined
-    </template>
+    <template v-else> Undefined </template>
   </div>
 </template>

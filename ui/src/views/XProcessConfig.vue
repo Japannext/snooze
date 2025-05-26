@@ -1,15 +1,26 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { useMessage, useLoadingBar } from 'naive-ui'
-import { useRouteQuery } from '@vueuse/router'
+import { ref, onMounted, computed } from "vue";
+import { useMessage, useLoadingBar } from "naive-ui";
+import { useRouteQuery } from "@vueuse/router";
 
-import { NAnchor, NAnchorLink, NCard, NTabs, NTabPane, NSpace, NThing, NList, NListItem, NScrollbar } from 'naive-ui'
+import {
+  NAnchor,
+  NAnchorLink,
+  NCard,
+  NTabs,
+  NTabPane,
+  NSpace,
+  NThing,
+  NList,
+  NListItem,
+  NScrollbar,
+} from "naive-ui";
 
-import { getProcessConfig, type ProcessConfig } from '@/api'
+import { getProcessConfig, type ProcessConfig } from "@/api";
 
-const loading = useLoadingBar()
-const message = useMessage()
-const section = useRouteQuery("section", "overall")
+const loading = useLoadingBar();
+const message = useMessage();
+const section = useRouteQuery("section", "overall");
 
 const processConfig = ref<ProcessConfig>({
   transforms: [],
@@ -19,35 +30,33 @@ const processConfig = ref<ProcessConfig>({
   ratelimits: [],
   notifications: [],
   defaultDestinations: [],
-})
+});
 
 function refresh() {
-  loading.start()
+  loading.start();
   getProcessConfig()
     .then((cfg) => {
-      processConfig.value = cfg
-      loading.finish()
+      processConfig.value = cfg;
+      loading.finish();
     })
     .catch((err) => {
-      message.error(`error loading process config: ${err}`)
-      loading.error()
-    })
+      message.error(`error loading process config: ${err}`);
+      loading.error();
+    });
 }
 
 const anchors = computed(() => {
-  return []
-})
+  return [];
+});
 
 onMounted(() => {
-  refresh()
-})
+  refresh();
+});
 </script>
 
 <template>
   <n-tabs v-model:value="section" type="card" placement="left">
-    <n-tab-pane name="overall" tab="Overall">
-      TODO
-    </n-tab-pane>
+    <n-tab-pane name="overall" tab="Overall"> TODO </n-tab-pane>
 
     <n-tab-pane name="transforms" tab="Transforms">
       <pre>{{ processConfig.transforms }}</pre>
@@ -65,7 +74,10 @@ onMounted(() => {
           :title="profile.name"
         >
           <n-list hoverable clickable>
-            <n-list-item v-for="pattern in profile.patterns" :key="pattern.regex">
+            <n-list-item
+              v-for="pattern in profile.patterns"
+              :key="pattern.regex"
+            >
               <n-thing :title="pattern.name">
                 <template v-if="pattern.description" #description>
                   {{ pattern.description }}

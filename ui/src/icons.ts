@@ -15,7 +15,7 @@ export {
   Trash,
   ArrowForwardSharp,
   InformationCircleOutline,
-} from '@vicons/ionicons5'
+} from "@vicons/ionicons5";
 
 export {
   AddressBook,
@@ -35,13 +35,9 @@ export {
   Terminal,
   Users,
   Wrench,
-} from '@vicons/fa'
+} from "@vicons/fa";
 
-export {
-  Box,
-  World,
-  Browser,
-} from '@vicons/tabler'
+export { Box, World, Browser } from "@vicons/tabler";
 
 export {
   ContainerSoftware,
@@ -49,7 +45,7 @@ export {
   TaskSettings,
   TrafficFlow,
   TypePattern,
-} from '@vicons/carbon'
+} from "@vicons/carbon";
 
 export {
   BuildingLighthouse20Filled,
@@ -57,8 +53,6 @@ export {
   AlertOff20Filled,
   AlertSnooze20Regular,
   TagDismiss16Regular,
-} from '@vicons/fluent'
+} from "@vicons/fluent";
 
-export {
-  ArrowForwardIosFilled,
-} from '@vicons/material'
+export { ArrowForwardIosFilled } from "@vicons/material";
