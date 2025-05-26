@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed } from "vue";
 // import { useLocale } from '@/stores'
-import { menuOptions } from '@/router'
-import { useRoute } from 'vue-router'
+import { menuOptions } from "@/router";
+import { useRoute } from "vue-router";
+import logo from "../../public/img/logo.png";
 
-import { NSpace, NMenu, NGrid, NGi} from 'naive-ui'
+import { NSpace, NMenu, NGrid, NGi } from "naive-ui";
 // import STray from '@/components'
 
 // const locale = useLocale()
@@ -15,17 +16,17 @@ const options = [
 ]
 */
 
-const route = useRoute()
+const route = useRoute();
 const selectedMenu = computed<string>(() => {
   switch (typeof route.name) {
-    case 'string':
-      return route.name
-    case 'symbol':
-      return route.name.toString()
-    case 'undefined':
-      return ""
+    case "string":
+      return route.name;
+    case "symbol":
+      return route.name.toString();
+    case "undefined":
+      return "";
   }
-})
+});
 
 /*
 const localeData = computed({
@@ -35,13 +36,12 @@ const localeData = computed({
   },
 })
 */
-
 </script>
 
 <template>
   <n-grid layout-shift-disabled>
     <n-gi :span="3">
-      <img src="public/img/logo.png" :height="36" style="margin: 2px">
+      <img :src="logo" :height="36" style="margin: 2px" />
     </n-gi>
     <n-gi :span="18">
       <n-space justify="center">

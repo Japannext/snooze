@@ -1,9 +1,12 @@
 <script setup lang="ts">
-
 // Components
-import { NLayout, NLayoutContent, NLayoutHeader, NLayoutFooter } from 'naive-ui'
-import { XHeader, XFooter } from '@/components'
-
+import {
+  NLayout,
+  NLayoutContent,
+  NLayoutHeader,
+  NLayoutFooter,
+} from "naive-ui";
+import { XHeader, XFooter } from "@/components";
 </script>
 
 <template>
@@ -15,10 +18,7 @@ import { XHeader, XFooter } from '@/components'
     >
       <x-header />
     </n-layout-header>
-    <n-layout
-      position="absolute"
-      style="top: 48px; bottom: 48px"
-    >
+    <n-layout position="absolute" style="top: 48px; bottom: 48px">
       <n-layout-content content-style="padding: 10px;">
         <router-view v-slot="{ Component }">
           <component :is="Component" />

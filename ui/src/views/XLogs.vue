@@ -1,125 +1,165 @@
 <script setup lang="ts">
-import { h, ref, onMounted } from 'vue'
-import { useLoadingBar, useMessage } from 'naive-ui'
-import { usePagination } from '@/api'
+import { h, ref, onMounted } from "vue";
+import { useLoadingBar, useMessage } from "naive-ui";
+import { usePagination } from "@/api";
 
 // Components
-import { NIcon, NButton, NSpace, NDataTable, NInputGroup, type DataTableColumn, type SelectOption, RadioButtonProps } from 'naive-ui'
-import { XSearch, XFilter, XTimeRange, XTimestampTitle, XStatus, XTime, XLogAttributes, XModalAck, XMessage } from '@/components'
-import { Refresh } from '@/icons'
+import {
+  NIcon,
+  NButton,
+  NSpace,
+  NDataTable,
+  NInputGroup,
+  type DataTableColumn,
+  type SelectOption,
+  RadioButtonProps,
+} from "naive-ui";
+import {
+  XSearch,
+  XFilter,
+  XTimeRange,
+  XTimestampTitle,
+  XStatus,
+  XTime,
+  XLogAttributes,
+  XModalAck,
+  XMessage,
+} from "@/components";
+import { Refresh } from "@/icons";
 
-import { getLogs, type Log, type GetLogsParams, type Filter } from '@/api'
+import { getLogs, type Log, type GetLogsParams, type Filter } from "@/api";
 
-const items = ref<Array<Log>>()
-const selectedItems = ref<Array<string>>([])
-const xTimerange = ref()
+const items = ref<Array<Log>>();
+const selectedItems = ref<Array<string>>([]);
+const xTimerange = ref();
 
-const loading = useLoadingBar()
-const message = useMessage()
-const showAckModal = ref<boolean>(false)
-const showEscalateModal = ref<boolean>(false)
+const loading = useLoadingBar();
+const message = useMessage();
+const showAckModal = ref<boolean>(false);
+const showEscalateModal = ref<boolean>(false);
 
-const pagination = usePagination(refresh)
+const pagination = usePagination(refresh);
 const params = ref<GetLogsParams>({
   search: "",
   filter: "active",
   pagination: {},
   timerange: {},
-})
+});
 
 const filters: Filter[] = [
-  {label: "Active", value: "active"},
-  {label: "Snoozed", value: "snoozed"},
-  {label: "Acked", value: "acked"},
-  {label: "All", value: "all"},
-]
+  { label: "Active", value: "active" },
+  { label: "Snoozed", value: "snoozed" },
+  { label: "Acked", value: "acked" },
+  { label: "All", value: "all" },
+];
 
 const columns: DataTableColumn<Log>[] = [
-  {type: 'selection'},
+  { type: "selection" },
   {
-    type: 'expand',
+    type: "expand",
     renderExpand: renderExpand,
   },
   {
-    title: 'Status',
-    render: (row) => h(XStatus, {status: row.status}),
-    key: 'status',
+    title: "Status",
+    render: (row) => h(XStatus, { status: row.status }),
+    key: "status",
     width: 90,
   },
   {
-    key: 'timestamp',
+    key: "timestamp",
     title: () => h(XTimestampTitle),
-    render: (row) => h(XTime, {ts: row.displayTime}),
+    render: (row) => h(XTime, { ts: row.displayTime }),
     width: 150,
   },
   {
-    title: 'Attributes',
-    render: (row) => h(XLogAttributes, {row: row}),
+    title: "Attributes",
+    render: (row) => h(XLogAttributes, { row: row }),
     width: 300,
-    key: 'attributes',
+    key: "attributes",
   },
   {
-    title: () => 'Message',
-    key: 'message',
-    render: (row) => h(XMessage, {log: row}),
+    title: () => "Message",
+    key: "message",
+    render: (row) => h(XMessage, { log: row }),
   },
-]
+];
 
 onMounted(() => {
-  refresh()
-})
+  refresh();
+});
 
 function refresh() {
-  loading.start()
-  params.value.timerange = xTimerange.value.getTime()
+  loading.start();
+  params.value.timerange = xTimerange.value.getTime();
   params.value.pagination = {
     page: pagination.page,
     pageSize: pagination.pageSize,
-  }
+  };
   getLogs(params.value)
     .then((list) => {
-      items.value = list.items
-      pagination.itemCount = list.total
-      pagination.setMore(list.more)
-      loading.finish()
+      items.value = list.items;
+      pagination.itemCount = list.total;
+      pagination.setMore(list.more);
+      loading.finish();
     })
     .catch((err) => {
-      items.value = []
-      message.error(`failed to load logs (status ${err.response.status}): ${err.response.data}`, {duration: 10000})
-      loading.error()
-    })
+      items.value = [];
+      message.error(
+        `failed to load logs (status ${err.response.status}): ${err.response.data}`,
+        { duration: 10000 },
+      );
+      loading.error();
+    });
 }
 
 function unselect() {
-  selectedItems.value = []
-  refresh()
+  selectedItems.value = [];
+  refresh();
 }
 
 function renderExpand(row: Log) {
-  return h("pre", null, JSON.stringify(row, null, 2))
+  return h("pre", null, JSON.stringify(row, null, 2));
 }
 
 function reset() {
-  params.value.pagination.page = 1
-  refresh()
+  params.value.pagination.page = 1;
+  refresh();
 }
-
 </script>
 
 <template>
   <div>
-    <n-space :size="100" justify="start" style="padding: 5px; margin-bottom: 10px;">
+    <n-space
+      :size="100"
+      justify="start"
+      style="padding: 5px; margin-bottom: 10px"
+    >
       <n-input-group>
         <x-time-range ref="xTimerange" @change="reset" />
         <x-search v-model:value="params.search" @change="reset" />
         <n-button @click="refresh"><n-icon :component="Refresh" /></n-button>
       </n-input-group>
-      <x-filter v-model:value="params.filter" :filters="filters" @change="reset" />
+      <x-filter
+        v-model:value="params.filter"
+        :filters="filters"
+        @change="reset"
+      />
       <n-input-group>
-        <n-button type="primary" :disabled="selectedItems.length == 0" @click="showAckModal = true">Ack ({{ selectedItems.length }})</n-button>
-        <x-modal-ack v-model:show="showAckModal" :ids="selectedItems" @success="unselect" />
+        <n-button
+          type="primary"
+          :disabled="selectedItems.length == 0"
+          @click="showAckModal = true"
+          >Ack ({{ selectedItems.length }})</n-button
+        >
+        <x-modal-ack
+          v-model:show="showAckModal"
+          :ids="selectedItems"
+          @success="unselect"
+        />
 
-        <n-button type="warning" :disabled="selectedItems.length == 0">Escalate ({{ selectedItems.length }})</n-button>
+        <n-button type="warning" :disabled="selectedItems.length == 0"
+          >Escalate ({{ selectedItems.length }})</n-button
+        >
       </n-input-group>
     </n-space>
     <n-data-table

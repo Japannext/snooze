@@ -1,12 +1,17 @@
 <script setup lang="ts">
-import { NConfigProvider, NDialogProvider, NNotificationProvider, NMessageProvider, NLoadingBarProvider, NThemeEditor } from 'naive-ui'
-import '@/utils/token'
+import {
+  NConfigProvider,
+  NDialogProvider,
+  NNotificationProvider,
+  NMessageProvider,
+  NLoadingBarProvider,
+  NThemeEditor,
+} from "naive-ui";
+import "@/utils/token";
 </script>
 
 <template>
-  <n-config-provider
-    class="config"
-  >
+  <n-config-provider class="config">
     <n-dialog-provider>
       <n-message-provider>
         <n-notification-provider>
@@ -21,5 +26,4 @@ import '@/utils/token'
   </n-config-provider>
 </template>
 
-<style scoped>
-</style>
+<style scoped></style>

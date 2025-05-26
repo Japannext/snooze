@@ -1,18 +1,18 @@
 <script setup lang="ts">
-import { defineProps, withDefaults, computed } from 'vue'
+import { defineProps, withDefaults, computed } from "vue";
 
-import { NTag } from 'naive-ui'
+import { NTag } from "naive-ui";
 
 interface Props {
-  name: string,
-  color?: string,
-  closable?: boolean,
+  name: string;
+  color?: string;
+  closable?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   color: undefined,
   closable: false,
-})
+});
 
 /*
 const realTag = computed(() => {
@@ -26,11 +26,11 @@ const realTag = computed(() => {
 
 const colorStyle = computed(() => {
   if (props.color) {
-    return {color: props.color, textColor: '#FFFFFF', borderColor: '#FFFFFF'}
+    return { color: props.color, textColor: "#FFFFFF", borderColor: "#FFFFFF" };
   } else {
-    return {color: '#B7B7B7FF', textColor: '#FFFFFF'}
+    return { color: "#B7B7B7FF", textColor: "#FFFFFF" };
   }
-})
+});
 </script>
 
 <template>
@@ -47,6 +47,6 @@ const colorStyle = computed(() => {
 
 <style scoped>
 .n-base-close {
-  color: '#FFFFFF';
+  color: "#FFFFFF";
 }
 </style>

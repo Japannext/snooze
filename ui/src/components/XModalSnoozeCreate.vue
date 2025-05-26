@@ -1,69 +1,113 @@
 <script setup lang="ts">
-import { ref, defineModel, defineEmits } from 'vue'
-import { useMessage } from 'naive-ui'
-import { createSnooze, type Snooze } from '@/api'
-import { DateTime } from 'luxon'
+import { ref, defineModel, defineEmits } from "vue";
+import { useMessage } from "naive-ui";
+import { createSnooze, type Snooze } from "@/api";
+import { DateTime } from "luxon";
 
-import { NModal, NSpace, NButton, NCard, NForm, NFormItemGi, NInput, NGrid } from 'naive-ui'
-import { XTimePeriod, XGroupSelect, XTagSelect } from '@/components'
+import {
+  NModal,
+  NSpace,
+  NButton,
+  NCard,
+  NForm,
+  NFormItemGi,
+  NIcon,
+  NInput,
+  NInputGroup,
+  NGrid,
+  NSwitch,
+} from "naive-ui";
 
-const emit = defineEmits(['success'])
+import {
+  XTimePeriod,
+  XGroupSelect,
+  XTagSelect,
+  XFormItemGiWithInfo,
+} from "@/components";
 
-const show = defineModel('show', {type: Boolean, default: false})
-const loading = ref(false)
-const message = useMessage()
-const item = ref<Snooze>(defaultValue())
+import { InformationCircleOutline } from "@/icons";
+
+const emit = defineEmits(["success"]);
+
+const showAdditionalCondition = ref(false);
+const show = defineModel("show", { type: Boolean, default: false });
+const loading = ref(false);
+const message = useMessage();
+const item = ref<Snooze>(defaultValue());
 
 function defaultValue(): Snooze {
-  var now = DateTime.now()
+  var now = DateTime.now();
   return {
     reason: "",
     startsAt: now.toMillis(),
-    endsAt: now.plus({hour: 1}).toMillis(),
+    endsAt: now.plus({ hour: 1 }).toMillis(),
     groups: [],
     tags: [],
-    username: ""
-  }
+    username: "",
+  };
 }
 
 function submit() {
-  loading.value = true
-  console.log('submit()')
+  loading.value = true;
+  console.log("submit()");
   createSnooze(item.value)
     .then((resp) => {
-      emit('success')
-      console.log('emit(`success`)')
+      emit("success");
+      console.log("emit(`success`)");
     })
     .catch((err) => {
-      console.log(`error: ${err}`)
-      message.error(`failed to snooze: ${err}`)
+      console.log(`error: ${err}`);
+      message.error(`failed to snooze: ${err}`);
     })
     .finally(() => {
-      console.log('finally')
-      loading.value = false
-      exit()
-    })
+      console.log("finally");
+      loading.value = false;
+      exit();
+    });
 }
 
 function exit() {
-  show.value = false
-  item.value = defaultValue()
+  show.value = false;
+  item.value = defaultValue();
 }
 </script>
 
 <template>
-  <n-modal
-    v-model:show="show"
-    style="width: 800px"
-  >
+  <n-modal v-model:show="show" style="width: 800px">
     <n-card title="Add snooze">
       <n-form size="small">
         <n-grid>
           <n-form-item-gi label="Select" size="small" :span="24" required>
-            <x-group-select v-model:groups="item.groups" />
+            <n-input-group>
+              <x-group-select v-model:groups="item.groups" />
+              <n-button>
+                <n-icon :component="InformationCircleOutline" />
+              </n-button>
+            </n-input-group>
+          </n-form-item-gi>
+          <n-form-item-gi label="Additional condition" size="small" :span="24">
+            <template #label>
+              <n-space>
+                Additional condition
+                <n-input-group>
+                  <n-switch v-model:value="showAdditionalCondition" />
+                  <n-button>
+                    <n-icon :component="InformationCircleOutline" />
+                  </n-button>
+                </n-input-group>
+              </n-space>
+            </template>
+            <n-input
+              v-if="showAdditionalCondition"
+              v-model:value="item.if"
+              type="textarea"
+            />
           </n-form-item-gi>
           <n-form-item-gi label="Period" size="small" :span="24" required>
-            <x-time-period v-model:start="item.startsAt" v-model:end="item.endsAt" />
+            <x-time-period
+              v-model:start="item.startsAt"
+              v-model:end="item.endsAt"
+            />
           </n-form-item-gi>
           <n-form-item-gi label="Reason" size="small" :span="24">
             <n-input v-model:value="item.reason" type="textarea" />
@@ -79,7 +123,9 @@ function exit() {
       <template #action>
         <n-space justify="end">
           <n-button @click="exit">Cancel</n-button>
-          <n-button type="warning" :loading="loading" @click="submit">Snooze</n-button>
+          <n-button type="warning" :loading="loading" @click="submit"
+            >Snooze</n-button
+          >
         </n-space>
       </template>
     </n-card>

@@ -14,6 +14,7 @@ export {
   Refresh,
   Trash,
   ArrowForwardSharp,
+  InformationCircleOutline,
 } from '@vicons/ionicons5'
 
 export {

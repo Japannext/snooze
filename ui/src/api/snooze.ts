@@ -10,6 +10,8 @@ export type Snooze = {
   reason: string
   tags: Tag[]
 
+  if?: string
+
   cancelled?: SnoozeCancel
 
   startsAt: number
