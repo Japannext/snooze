@@ -28,6 +28,7 @@
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.18.2",
+    "@typescript/native-preview": "^7.0.0-dev.20250525.1",
     "@vue/language-server": "^2.2.10",
     "@vue/typescript-plugin": "^2.2.10",
     "espree": "^10.3.0",

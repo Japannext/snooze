@@ -178,8 +178,11 @@ function reset() {
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 th.n-data-table-th {
   padding: 0px;
+}
+.n-data-table__pagination {
+  justify-content: "center";
 }
 </style>
