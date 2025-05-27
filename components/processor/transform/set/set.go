@@ -4,26 +4,22 @@ import (
 	"context"
 	"fmt"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/japannext/snooze/internal/lang"
 	"github.com/japannext/snooze/internal/models"
-	log "github.com/sirupsen/logrus"
+	"github.com/japannext/snooze/internal/pipeline"
 )
 
-type Config struct {
-	Identity map[string]string `json:"identity,omitempty" yaml:"identity"`
-	Labels   map[string]string `json:"labels,omitempty"   yaml:"labels"`
-	Message  string            `json:"message,omitempty"  yaml:"message"`
-}
-
 type Action struct {
-	cfg *Config
+	cfg *pipeline.Set
 
 	identity map[string]*lang.Template
 	labels   map[string]*lang.Template
 	message  *lang.Template
 }
 
-func New(cfg *Config) (*Action, error) {
+func New(cfg *pipeline.Set) (*Action, error) {
 	action := &Action{
 		cfg: cfg,
 	}

@@ -4,9 +4,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/japannext/snooze/components/apiserver/token"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
+
+	"github.com/japannext/snooze/components/apiserver/token"
 )
 
 func callback(c *gin.Context) {

@@ -6,10 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
+
+	"github.com/japannext/snooze/internal/models"
 	"github.com/japannext/snooze/internal/opensearch/dsl"
 	"github.com/japannext/snooze/internal/tracing"
-	"github.com/japannext/snooze/internal/models"
-	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
 )
 
 type SearchReq struct {

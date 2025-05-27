@@ -4,14 +4,16 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/japannext/snooze/components/processor/decision"
-	"github.com/japannext/snooze/internal/lang"
-	"github.com/japannext/snooze/internal/mq"
-	"github.com/japannext/snooze/internal/tracing"
-	"github.com/japannext/snooze/internal/utils"
-	"github.com/japannext/snooze/internal/models"
 	log "github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
+
+	"github.com/japannext/snooze/components/processor/decision"
+	"github.com/japannext/snooze/internal/lang"
+	"github.com/japannext/snooze/internal/models"
+	"github.com/japannext/snooze/internal/mq"
+	"github.com/japannext/snooze/internal/pipeline"
+	"github.com/japannext/snooze/internal/tracing"
+	"github.com/japannext/snooze/internal/utils"
 )
 
 type Processor struct {
@@ -20,66 +22,56 @@ type Processor struct {
 	defaultDestinations []models.Destination
 }
 
-type Config struct {
-	// The notifications to execute. All that match will be executed.
-	Notifications []Notification `json:"notifications"        yaml:"notifications"`
-	// The notifications to execute if nothing matches. All will be executed.
-	DefaultDestinations []models.Destination `json:"defaultDestinations" yaml:"default_destinations"`
-}
-
-func New(cfg Config) (*Processor, error) {
+func New(cfgs []pipeline.Notification, dests []models.Destination) (*Processor, error) {
 	p := &Processor{}
 
 	duplicate := utils.NewDuplicateChecker()
 	notifyMap := map[string]Notification{}
 
-	for index, notif := range cfg.Notifications {
-		if notif.Name == "" {
-			return p, fmt.Errorf("no name for notification at index #%d", index+1)
+	for index, cfg := range cfgs {
+		if cfg.Name == "" {
+			return &Processor{}, fmt.Errorf("no name for notification at index #%d", index+1)
 		}
 
-		if err := duplicate.Check(notif.Name); err != nil {
-			return p, fmt.Errorf("duplicate name '%s': %w", notif.Name, err)
+		if err := duplicate.Check(cfg.Name); err != nil {
+			return &Processor{}, fmt.Errorf("duplicate name '%s': %w", cfg.Name, err)
 		}
 
-		if err := notif.Load(); err != nil {
-			return p, fmt.Errorf("failed to load notification '%s': %w", notif.Name, err)
+		notif, err := NewNotification(cfg)
+		if err != nil {
+			return &Processor{}, fmt.Errorf("failed to load notification '%s': %w", cfg.Name, err)
 		}
-		notifyMap[notif.Name] = notif
+		notifyMap[cfg.Name] = notif
 	}
 
 	return p, nil
 }
 
 type Notification struct {
-	Name         string               `json:"name"         yaml:"name"`
-	If           string               `json:"if,omitempty" yaml:"if"`
-	Destinations []models.Destination `json:"destinations" yaml:"destinations"`
-
-	internal struct {
-		condition *lang.Condition
-	}
+	pipeline.Notification
+	condition *lang.Condition
 }
 
-func (notif *Notification) Load() error {
-	if notif.If != "" {
-		condition, err := lang.NewCondition(notif.If)
+func NewNotification(cfg pipeline.Notification) (Notification, error) {
+	notif := Notification{Notification: cfg}
+	if cfg.If != "" {
+		condition, err := lang.NewCondition(cfg.If)
 		if err != nil {
-			return fmt.Errorf("failed to load condition `%s`: %s", notif.If, err)
+			return Notification{}, fmt.Errorf("failed to load condition `%s`: %s", cfg.If, err)
 		}
 
-		notif.internal.condition = condition
+		notif.condition = condition
 	}
 
-	return nil
+	return notif, nil
 }
 
 func (p *Processor) getMatchingDestinations(ctx context.Context, item *models.Log) []models.Destination {
 	destinations := utils.NewOrderedSet[models.Destination]()
 
 	for _, notif := range p.notifications {
-		if notif.internal.condition != nil {
-			match, err := notif.internal.condition.MatchLog(ctx, item)
+		if notif.condition != nil {
+			match, err := notif.condition.MatchLog(ctx, item)
 			if err != nil {
 				continue
 			}

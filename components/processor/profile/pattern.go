@@ -5,42 +5,21 @@ import (
 	"fmt"
 	"regexp"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/japannext/snooze/components/processor/transform"
 	"github.com/japannext/snooze/internal/lang"
-	"github.com/japannext/snooze/internal/utils"
 	"github.com/japannext/snooze/internal/models"
-	log "github.com/sirupsen/logrus"
+	"github.com/japannext/snooze/internal/pipeline"
+	"github.com/japannext/snooze/internal/utils"
 )
 
 type Pattern struct {
-	// Name of the pattern
-	Name string `json:"name" yaml:"name"`
-	// Description of the pattern
-	Description string `json:"description" yaml:"description"`
-	// If present, the pattern will match a given regex
-	Regex string `json:"regex" yaml:"regex"`
+	pipeline.Pattern
 
-	Actions []*transform.ActionConfig `json:"actions,omitempty" yaml:"actions"`
-
-	// List of labels/fields used to group the logs
-	// for notification purposes
-	GroupBy map[string]string `json:"groupBy" yaml:"group_by"`
-
-	// Drop labels from the log when the pattern match
-	DroppedLabels []string `json:"droppedLabels" yaml:"dropped_labels"`
-
-	// Drop the log (dropped from database)
-	Drop bool `json:"drop" yaml:"drop"`
-
-	// Silence the log (won't notify)
-	Silence bool `json:"silence" yaml:"silence"`
-
-	// Internal values initialized after startup
-	internal struct {
-		regexp  *regexp.Regexp
-		actions []transform.ActionInterface
-		groupBy map[string]*lang.Template
-	}
+	regexp  *regexp.Regexp
+	actions []transform.Action
+	groupBy map[string]*lang.Template
 }
 
 func (p *Pattern) String() string {
@@ -51,29 +30,30 @@ func (p *Pattern) String() string {
 }
 
 // Initialize internal values at startup.
-func (p *Pattern) Load() error {
+func NewPattern(cfg pipeline.Pattern) (Pattern, error) {
 	var err error
 
-	p.internal.regexp, err = regexp.Compile(p.Regex)
+	pattern := Pattern{}
+
+	pattern.regexp, err = regexp.Compile(cfg.Regex)
 	if err != nil {
-		return fmt.Errorf("invalid regex `%s`: %w", p.Regex, err)
+		return Pattern{}, fmt.Errorf("invalid regex `%s`: %w", cfg.Regex, err)
 	}
 
-	for index, actionConfig := range p.Actions {
+	for index, actionConfig := range cfg.Actions {
 		action, err := transform.NewAction(actionConfig)
 		if err != nil {
-			return fmt.Errorf("in action #%d: %w", index+1, err)
+			return Pattern{}, fmt.Errorf("in action #%d: %w", index+1, err)
 		}
-
-		p.internal.actions = append(p.internal.actions, action)
+		pattern.actions = append(pattern.actions, action)
 	}
 
-	p.internal.groupBy, err = lang.NewTemplateMap(p.GroupBy)
+	pattern.groupBy, err = lang.NewTemplateMap(cfg.GroupBy)
 	if err != nil {
-		return fmt.Errorf("in groupBy: %w", err)
+		return Pattern{}, fmt.Errorf("in groupBy: %w", err)
 	}
 
-	return nil
+	return pattern, nil
 }
 
 func (p *Pattern) Process(ctx context.Context, item *models.Log) (match, reject bool) {
@@ -104,7 +84,7 @@ func (p *Pattern) Process(ctx context.Context, item *models.Log) (match, reject 
 		}
 	}
 
-	for _, action := range p.internal.actions {
+	for _, action := range p.actions {
 		var err error
 		ctx, err = action.Process(ctx, item)
 		if err != nil {
@@ -113,9 +93,9 @@ func (p *Pattern) Process(ctx context.Context, item *models.Log) (match, reject 
 	}
 
 	// Group By
-	if len(p.internal.groupBy) > 0 {
+	if len(p.groupBy) > 0 {
 		gr := &models.Group{Name: p.Name, Labels: make(map[string]string)}
-		for key, tpl := range p.internal.groupBy {
+		for key, tpl := range p.groupBy {
 			value, err := tpl.Execute(ctx, item)
 			if err != nil {
 				log.Warnf("failed to execute template `%s`", p.GroupBy[key])
@@ -142,22 +122,22 @@ func (p *Pattern) match(item *models.Log) (bool, map[string]string) {
 		capture = make(map[string]string)
 	)
 
-	if p.internal.regexp == nil {
+	if p.regexp == nil {
 		return true, capture
 	}
 
-	match = p.internal.regexp.MatchString(item.Message)
+	match = p.regexp.MatchString(item.Message)
 	if !match {
 		return false, capture
 	}
 
-	keys := p.internal.regexp.SubexpNames()
+	keys := p.regexp.SubexpNames()
 	if len(keys) > 1 {
 		keys = keys[1:]
-		values := p.internal.regexp.FindStringSubmatch(item.Message)
+		values := p.regexp.FindStringSubmatch(item.Message)
 
 		for _, key := range keys {
-			i := p.internal.regexp.SubexpIndex(key)
+			i := p.regexp.SubexpIndex(key)
 			if i < 0 {
 				continue
 			}

@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/japannext/snooze/components/processor/decision"
-	"github.com/japannext/snooze/internal/redis"
-	"github.com/japannext/snooze/internal/utils"
-	"github.com/japannext/snooze/internal/models"
 	log "github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
+
+	"github.com/japannext/snooze/components/processor/decision"
+	"github.com/japannext/snooze/internal/models"
+	"github.com/japannext/snooze/internal/redis"
+	"github.com/japannext/snooze/internal/utils"
 )
 
 // Number of retries for the redis CL.THROTTLE call
@@ -19,10 +20,10 @@ const maxRetries = 1
 func (p *Processor) filteredRatelimits(ctx context.Context, item *models.Log) []Ratelimit {
 	ratelimits := []Ratelimit{}
 	for _, rate := range p.ratelimits {
-		if rate.internal.condition != nil {
-			match, err := rate.internal.condition.MatchLog(ctx, item)
+		if rate.condition != nil {
+			match, err := rate.condition.MatchLog(ctx, item)
 			if err != nil {
-				log.Warnf("[rate=%s]failed to match condition `%s`: %s", rate.Name, rate.internal.condition, err)
+				log.Warnf("[rate=%s]failed to match condition `%s`: %s", rate.Name, rate.If, err)
 				continue
 			}
 			if !match {

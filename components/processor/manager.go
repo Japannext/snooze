@@ -5,6 +5,8 @@ import (
 	"sync"
 
 	log "github.com/sirupsen/logrus"
+
+	"github.com/japannext/snooze/internal/pipeline"
 )
 
 // A manager in order to reload the config
@@ -28,7 +30,7 @@ func (manager *Manager) Reload() error {
 	manager.mu.Lock()
 	defer manager.mu.Unlock()
 
-	cfg, err := LoadConfig()
+	cfg, err := pipeline.Reload()
 	if err != nil {
 		return fmt.Errorf("failed to load config: %s", err)
 	}

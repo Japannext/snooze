@@ -2,10 +2,10 @@ package ratelimit
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/japannext/snooze/internal/lang"
 	"github.com/japannext/snooze/internal/mq"
+	"github.com/japannext/snooze/internal/pipeline"
 	"github.com/japannext/snooze/internal/utils"
 )
 
@@ -14,67 +14,49 @@ type Processor struct {
 	storeQ     *mq.Pub
 }
 
-type Config struct {
-	Ratelimits []Ratelimit `json:"ratelimits" yaml:"ratelimits"`
-}
-
-func New(cfg Config) (*Processor, error) {
+func New(cfgs []pipeline.Ratelimit) (*Processor, error) {
 	p := &Processor{}
 	p.storeQ = mq.StorePub()
 	duplicates := utils.NewDuplicateChecker()
 
-	for index, rate := range cfg.Ratelimits {
-		if rate.Name == "" {
+	for index, cfg := range cfgs {
+		if cfg.Name == "" {
 			return p, fmt.Errorf("name missing for entry #%d", index+1)
 		}
 
-		if err := duplicates.Check(rate.Name); err != nil {
-			return p, fmt.Errorf("duplicate name '%s': %w", rate.Name, err)
+		if err := duplicates.Check(cfg.Name); err != nil {
+			return p, fmt.Errorf("duplicate name '%s': %w", cfg.Name, err)
 		}
 
-		if err := rate.Load(); err != nil {
-			return p, fmt.Errorf("failed to load '%s': %w", rate.Name, err)
+		rl, err := NewRatelimit(cfg)
+		if err != nil {
+			return p, fmt.Errorf("failed to load '%s': %w", cfg.Name, err)
 		}
+		p.ratelimits = append(p.ratelimits, rl)
 	}
 
 	return p, nil
 }
 
 type Ratelimit struct {
-	// Name of the rate limit. Must be unique (used for key)
-	Name string `json:"name" yaml:"name"`
-
-	// An optional condition to only apply the rate limit if the condition match
-	If string `json:"if,omitempty" yaml:"if"`
-
-	// The group to group by
-	Group string `json:"group" yaml:"group"`
-
-	// The amount of authorized logs during the period
-	CountPerPeriod int64 `json:"countPerPeriod" yaml:"countPerPeriod"`
-
-	// The period used to measure the rate
-	Period time.Duration `json:"period" yaml:"period"`
-
-	internal struct {
-		condition *lang.Condition
-		key       string
-	}
+	pipeline.Ratelimit
+	condition *lang.Condition
+	key       string
 }
 
-func (rate *Ratelimit) Load() error {
-	rate.internal.key = rate.Name
-	if rate.If != "" {
-		condition, err := lang.NewCondition(rate.If)
+func NewRatelimit(cfg pipeline.Ratelimit) (Ratelimit, error) {
+	rl := Ratelimit{}
+	if cfg.If != "" {
+		condition, err := lang.NewCondition(cfg.If)
 		if err != nil {
-			return fmt.Errorf("failed to load condition `%s`: %w", rate.If, err)
+			return Ratelimit{}, fmt.Errorf("failed to load condition `%s`: %w", cfg.If, err)
 		}
-		rate.internal.condition = condition
+		rl.condition = condition
 	}
 
-	if int64(rate.Period.Seconds()) == 0 {
-		return fmt.Errorf("period should be at least 1 second for rate `%s`", rate.Name)
+	if int64(cfg.Period.Seconds()) == 0 {
+		return Ratelimit{}, fmt.Errorf("period should be at least 1 second for rate `%s`", cfg.Name)
 	}
 
-	return nil
+	return rl, nil
 }

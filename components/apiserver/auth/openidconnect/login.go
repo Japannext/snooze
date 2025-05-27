@@ -5,8 +5,9 @@ import (
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gin-gonic/gin"
-	"github.com/japannext/snooze/internal/utils"
 	"golang.org/x/oauth2"
+
+	"github.com/japannext/snooze/internal/utils"
 )
 
 const (

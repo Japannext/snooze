@@ -21,6 +21,8 @@ func getGroups(c *gin.Context) {
 
 	req := &opensearch.SearchReq{Index: models.GroupIndex}
 	req.WithSize(1000)
+	req.Doc.WithSort("score", false)
+	req.Doc.WithSort("name", true)
 
 	// Search related to group
 	params := getGroupsParams{}

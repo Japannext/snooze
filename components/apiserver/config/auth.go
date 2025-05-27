@@ -3,9 +3,10 @@ package config
 import (
 	"os"
 
-	"github.com/japannext/snooze/internal/utils"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
+
+	"github.com/japannext/snooze/internal/utils"
 )
 
 type AuthConfig struct {

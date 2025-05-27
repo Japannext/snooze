@@ -47,6 +47,8 @@ spec:
             memory: 100Mi
         env:
         {{- include "snooze.nats.env" . | nindent 8 }}
+        - name: PIPELINE_FILE
+          value: /pipeline/pipeline.yaml
         envFrom:
         - configMapRef:
             name: "{{ .Release.Name }}-common"
@@ -78,7 +80,7 @@ spec:
             type: RuntimeDefault
         volumeMounts:
         - name: pipeline
-          mountPath: /etc/snooze/
+          mountPath: /pipeline
       volumes:
       - name: pipeline
         configMap:

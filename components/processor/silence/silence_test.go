@@ -4,30 +4,30 @@ import (
 	"context"
 	"testing"
 
-	"github.com/japannext/snooze/components/processor/silence"
-	"github.com/japannext/snooze/internal/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/japannext/snooze/components/processor/silence"
+	"github.com/japannext/snooze/internal/models"
+	"github.com/japannext/snooze/internal/pipeline"
 )
 
 func TestProcess(t *testing.T) {
 	t.Parallel()
 
-	cfg := silence.Config{
-		Silences: []silence.Silence{
-			{
-				Name: "myapp silence",
-				If:   `identity.host =~ ".*myapp.*"`,
-			},
-			{
-				Name: "rsyslogd dropper",
-				If:   `identity.process == "rsyslogd"`,
-				Drop: true,
-			},
+	cfgs := []pipeline.Silence{
+		{
+			Name: "myapp silence",
+			If:   `identity.host =~ ".*myapp.*"`,
+		},
+		{
+			Name: "rsyslogd dropper",
+			If:   `identity.process == "rsyslogd"`,
+			Drop: true,
 		},
 	}
 
-	p, err := silence.New(cfg)
+	p, err := silence.New(cfgs)
 	require.NoError(t, err)
 
 	tests := []struct {

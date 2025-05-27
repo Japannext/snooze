@@ -20,6 +20,26 @@ apiserver:
   secretKey:
     secretName: ""
     key: "secret_key"
+  auth:
+    oidc:
+      enabled: false
+      displayName: ""
+      url: ""
+      clientID: ""
+      clientSecretSecretName: ""
+      clientSecretSecretKey: "client_secret"
+      scopes: [openid, email, profile]
+      rolesField: ""
+      color: "#00a2cf"
+      icon: "Openid"
+
+keycloak:
+  enabled: false
+  clientName: ""
+  realm: ""
+  endpointKind: KeycloakClusterEndpoint
+  endpointName: keycloak
+  url: ""
 
 googlechat:
   replicaCount: 2

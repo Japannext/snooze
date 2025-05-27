@@ -8,19 +8,14 @@ import (
 	"github.com/japannext/snooze/components/processor/transform/set"
 	"github.com/japannext/snooze/components/processor/transform/unset"
 	"github.com/japannext/snooze/internal/models"
+	"github.com/japannext/snooze/internal/pipeline"
 )
 
-type ActionConfig struct {
-	Set   *set.Config   `json:"set,omitempty"   yaml:"set"`
-	Unset *unset.Config `json:"unset,omitempty" yaml:"unset"`
-	Regex *regex.Config `json:"regex,omitempty" yaml:"regex"`
-}
-
-type ActionInterface interface {
+type Action interface {
 	Process(ctx context.Context, item *models.Log) (context.Context, error)
 }
 
-func NewAction(cfg *ActionConfig) (ActionInterface, error) {
+func NewAction(cfg pipeline.Action) (Action, error) {
 	switch {
 	case cfg.Set != nil:
 		return set.New(cfg.Set)

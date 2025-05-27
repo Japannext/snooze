@@ -5,14 +5,16 @@ import (
 	"os"
 	"testing"
 
-	"github.com/japannext/snooze/components/processor/decision"
-	"github.com/japannext/snooze/components/processor/notification"
-	"github.com/japannext/snooze/internal/mq"
-	"github.com/japannext/snooze/internal/opensearch"
-	"github.com/japannext/snooze/internal/redis"
-	"github.com/japannext/snooze/internal/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/japannext/snooze/components/processor/decision"
+	"github.com/japannext/snooze/components/processor/notification"
+	"github.com/japannext/snooze/internal/models"
+	"github.com/japannext/snooze/internal/mq"
+	"github.com/japannext/snooze/internal/opensearch"
+	"github.com/japannext/snooze/internal/pipeline"
+	"github.com/japannext/snooze/internal/redis"
 )
 
 func TestMain(m *testing.M) {
@@ -25,19 +27,21 @@ func TestMain(m *testing.M) {
 func TestProcess(t *testing.T) {
 	t.Parallel()
 
-	cfg := notification.Config{
-		Notifications: []notification.Notification{
-			{
-				Name: "sre-team",
-				If:   `labels.owner == "sre"`,
-				Destinations: []models.Destination{
-					{Queue: "googlchat", Profile: "sre"},
-				},
+	cfgs := []pipeline.Notification{
+		{
+			Name: "sre-team",
+			If:   `labels.owner == "sre"`,
+			Destinations: []models.Destination{
+				{Queue: "googlechat", Profile: "sre"},
 			},
 		},
 	}
 
-	p, err := notification.New(cfg)
+	defaultDests := []models.Destination{
+		{Queue: "mail", Profile: "sysadmin"},
+	}
+
+	p, err := notification.New(cfgs, defaultDests)
 	require.NoError(t, err)
 
 	tests := []struct {

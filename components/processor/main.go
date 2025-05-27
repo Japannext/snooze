@@ -1,7 +1,9 @@
 package processor
 
 import (
-	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
+
 	"github.com/japannext/snooze/components/processor/metrics"
 	"github.com/japannext/snooze/internal/daemon"
 	"github.com/japannext/snooze/internal/logging"
@@ -9,8 +11,6 @@ import (
 	"github.com/japannext/snooze/internal/redis"
 	"github.com/japannext/snooze/internal/tracing"
 	"github.com/japannext/snooze/internal/utils"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/trace"
 )
 
 var (
@@ -18,8 +18,6 @@ var (
 	pool     *utils.Pool
 	tracer   trace.Tracer
 )
-
-var routes []func(*gin.Engine)
 
 // Logic done only at the application startup.
 // All errors are fatal.
@@ -36,7 +34,7 @@ func Startup() *daemon.DaemonManager {
 	tracer = otel.Tracer("snooze")
 
 	dm := daemon.NewDaemonManager()
-	srv := daemon.NewHttpDaemon(routes...)
+	srv := daemon.NewHttpDaemon()
 	dm.AddDaemon("http", srv)
 	dm.AddDaemon("consumer", NewConsumer())
 

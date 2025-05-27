@@ -4,10 +4,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/japannext/snooze/components/processor/transform/set"
-	"github.com/japannext/snooze/internal/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/japannext/snooze/components/processor/transform/set"
+	"github.com/japannext/snooze/internal/models"
+	"github.com/japannext/snooze/internal/pipeline"
 )
 
 func TestProcess(t *testing.T) {
@@ -15,7 +17,7 @@ func TestProcess(t *testing.T) {
 
 	tests := []struct {
 		Name             string
-		Config           *set.Config
+		Config           *pipeline.Set
 		Log              *models.Log
 		ExpectedContext  map[string]string
 		ExpectedLabels   map[string]string
@@ -23,19 +25,19 @@ func TestProcess(t *testing.T) {
 	}{
 		{
 			Name:           "set 1 label",
-			Config:         &set.Config{Labels: map[string]string{"a": "x"}},
+			Config:         &pipeline.Set{Labels: map[string]string{"a": "x"}},
 			Log:            &models.Log{Labels: map[string]string{"v": "1"}},
 			ExpectedLabels: map[string]string{"v": "1", "a": "x"},
 		},
 		{
 			Name:           "override 1 label",
-			Config:         &set.Config{Labels: map[string]string{"a": "x", "b": "y"}},
+			Config:         &pipeline.Set{Labels: map[string]string{"a": "x", "b": "y"}},
 			Log:            &models.Log{Labels: map[string]string{"a": "1"}},
 			ExpectedLabels: map[string]string{"a": "x", "b": "y"},
 		},
 		{
 			Name:             "append 1 identity",
-			Config:           &set.Config{Identity: map[string]string{"process": "myapp"}},
+			Config:           &pipeline.Set{Identity: map[string]string{"process": "myapp"}},
 			Log:              &models.Log{Identity: map[string]string{"host": "myapp01"}},
 			ExpectedIdentity: map[string]string{"host": "myapp01", "process": "myapp"},
 		},
@@ -51,6 +53,7 @@ func TestProcess(t *testing.T) {
 			ctx := context.TODO()
 
 			ctx, err = action.Process(ctx, tt.Log)
+			require.NoError(t, err)
 
 			if tt.ExpectedContext != nil {
 				for key, value := range tt.ExpectedContext {

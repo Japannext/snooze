@@ -3,6 +3,7 @@ package grouping
 import (
 	"context"
 	"fmt"
+
 	//"slices"
 	"time"
 
@@ -12,11 +13,12 @@ import (
 
 	"github.com/japannext/snooze/components/processor/decision"
 	"github.com/japannext/snooze/internal/lang"
+	"github.com/japannext/snooze/internal/models"
 	"github.com/japannext/snooze/internal/mq"
 	"github.com/japannext/snooze/internal/opensearch/format"
+	"github.com/japannext/snooze/internal/pipeline"
 	"github.com/japannext/snooze/internal/redis"
 	"github.com/japannext/snooze/internal/utils"
-	"github.com/japannext/snooze/internal/models"
 )
 
 type Processor struct {
@@ -24,21 +26,18 @@ type Processor struct {
 	storeQ    *mq.Pub
 }
 
-type Config struct {
-	Groupings []Grouping `json:"groupings" yaml:"groupings"`
-}
-
-func New(cfg Config) (*Processor, error) {
+func New(cfgs []pipeline.Grouping) (*Processor, error) {
 	p := &Processor{}
 
 	p.storeQ = mq.StorePub()
 
-	for _, group := range cfg.Groupings {
-		if err := group.Load(); err != nil {
-			return p, fmt.Errorf("error loading group '%s': %w", group.Name, err)
+	for _, cfg := range cfgs {
+		gr, err := NewGrouping(cfg)
+		if err != nil {
+			return &Processor{}, fmt.Errorf("error loading group '%s': %w", cfg.Name, err)
 		}
 
-		p.groupings = append(p.groupings, group)
+		p.groupings = append(p.groupings, gr)
 	}
 
 	return p, nil
@@ -47,52 +46,36 @@ func New(cfg Config) (*Processor, error) {
 // Group logs by fields. Groups can then be used
 // for rate-limiting, snooze, and UI search.
 type Grouping struct {
-	Name string `json:"name" yaml:"name"`
-	If   string `json:"if"   yaml:"if"`
-	// Mutually exclusive with `group_by_map`.
-	GroupBy []string `json:"groupBy" yaml:"group_by"`
-	// Mutually exclusive with `group_by`.
-	GroupByMap string `json:"groupByMap" yaml:"group_by_map"`
-
-	// A string to help formatting the group.
-	// FormatLabels string `yaml:"format_labels" json:"formatLabels"`
-
-	internal struct {
-		condition *lang.Condition
-		fields    []*lang.Field
-	}
+	pipeline.Grouping
+	condition *lang.Condition
+	fields    []*lang.Field
 }
 
-func (group *Grouping) Load() error {
+func NewGrouping(cfg pipeline.Grouping) (Grouping, error) {
+	group := Grouping{Grouping: cfg}
 	if group.If != "" {
 		condition, err := lang.NewCondition(group.If)
 		if err != nil {
-			return fmt.Errorf("error loading condition `%s`: %w", group.If, err)
+			return Grouping{}, fmt.Errorf("error loading condition `%s`: %w", group.If, err)
 		}
 
-		group.internal.condition = condition
+		group.condition = condition
 	}
 
 	if len(group.GroupBy) > 0 {
 		fields, err := lang.NewFields(group.GroupBy)
 		if err != nil {
-			return fmt.Errorf("error loading fields: %w", err)
+			return Grouping{}, fmt.Errorf("error loading fields: %w", err)
 		}
 
-		group.internal.fields = fields
+		group.fields = fields
 	}
 
 	if group.GroupByMap != "" && len(group.GroupBy) != 0 {
-		return fmt.Errorf("group_by and group_by_map are mutually exclusive")
+		return Grouping{}, fmt.Errorf("group_by and group_by_map are mutually exclusive")
 	}
 
-	/*
-		    if group.GroupByMap != "" && !slices.Contains(GROUP_BY_MAP, group.GroupByMap) {
-				return fmt.Errorf("group_by_map='%s' is invalid. Allowed values: source, identity, labels", group.GroupByMap)
-		    }
-	*/
-
-	return nil
+	return group, nil
 }
 
 const expiration = time.Duration(6) * time.Hour
@@ -106,8 +89,8 @@ func (p *Processor) Process(ctx context.Context, item *models.Log) *decision.Dec
 	defer span.End()
 
 	for _, group := range p.groupings {
-		if group.internal.condition != nil {
-			match, err := group.internal.condition.MatchLog(ctx, item)
+		if group.condition != nil {
+			match, err := group.condition.MatchLog(ctx, item)
 			if err != nil {
 				log.Warnf("error while matching `%s`: %s", group.If, err)
 
@@ -119,10 +102,10 @@ func (p *Processor) Process(ctx context.Context, item *models.Log) *decision.Dec
 			}
 		}
 
-		gr := &models.Group{Name: group.Name, Labels: make(map[string]string)}
+		gr := &models.Group{Name: group.Name, Labels: make(map[string]string), Score: group.Score}
 
 		if len(group.GroupBy) > 0 {
-			for _, field := range group.internal.fields {
+			for _, field := range group.fields {
 				value, err := lang.ExtractField(item, field)
 				if err != nil {
 					log.Warnf("Failed to match %s: %s", field, err)

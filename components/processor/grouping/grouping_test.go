@@ -6,15 +6,17 @@ import (
 	"os"
 	"testing"
 
-	"github.com/japannext/snooze/components/processor/decision"
-	"github.com/japannext/snooze/components/processor/grouping"
-	"github.com/japannext/snooze/internal/mq"
-	"github.com/japannext/snooze/internal/opensearch"
-	"github.com/japannext/snooze/internal/redis"
-	"github.com/japannext/snooze/internal/utils"
-	"github.com/japannext/snooze/internal/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/japannext/snooze/components/processor/decision"
+	"github.com/japannext/snooze/components/processor/grouping"
+	"github.com/japannext/snooze/internal/models"
+	"github.com/japannext/snooze/internal/mq"
+	"github.com/japannext/snooze/internal/opensearch"
+	"github.com/japannext/snooze/internal/pipeline"
+	"github.com/japannext/snooze/internal/redis"
+	"github.com/japannext/snooze/internal/utils"
 )
 
 func TestMain(m *testing.M) {
@@ -43,17 +45,15 @@ func groupKey(group *models.Group) string {
 func TestProcess(t *testing.T) {
 	t.Parallel()
 
-	cfg := grouping.Config{
-		Groupings: []grouping.Grouping{
-			{
-				Name:    "by-host-process",
-				If:      `source.kind == "syslog"`,
-				GroupBy: []string{`labels.host`, `labels.process`},
-			},
+	cfgs := []pipeline.Grouping{
+		{
+			Name:    "by-host-process",
+			If:      `source.kind == "syslog"`,
+			GroupBy: []string{`labels.host`, `labels.process`},
 		},
 	}
 
-	p, err := grouping.New(cfg)
+	p, err := grouping.New(cfgs)
 	require.NoError(t, err)
 
 	tests := []struct {

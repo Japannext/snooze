@@ -4,8 +4,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/japannext/snooze/components/apiserver/token"
 	"go.opentelemetry.io/otel"
+
+	"github.com/japannext/snooze/components/apiserver/token"
 )
 
 func Authenticate() func(*gin.Context) {

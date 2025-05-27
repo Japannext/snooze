@@ -52,6 +52,8 @@ spec:
           value: /config/auth.yaml
         - name: APISERVER_EXTERNAL_URL
           value: "https://{{ .Values.ingress.host }}"
+        - name: PIPELINE_FILE
+          value: /pipeline/pipeline.yaml
         {{- if .Values.apiserver.cors }}
         - name: APISERVER_CORS_CONFIG
           value: /config/cors.yaml
@@ -61,12 +63,12 @@ spec:
             secretKeyRef:
               name: "{{ .Values.apiserver.secretKey.secretName | default (printf "%s-apiserver-secret" .Release.Name) }}"
               key: "{{ .Values.apiserver.secretKey.key }}"
-        {{- if .Values.authentication.keycloak.enabled }}
+        {{- if .Values.keycloak.enabled }}
         - name: SNOOZE_OIDC_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
               name: "{{ .Release.Name }}-oidc-secret"
-              key: client_secret
+              key: "client_secret"
         {{- end }}
         envFrom:
         - configMapRef:
@@ -74,6 +76,8 @@ spec:
         volumeMounts:
         - name: config
           mountPath: /config
+        - name: pipeline
+          mountPath: /pipeline/
         {{- if .Values.cacertConfigMap }}
         - name: cacert
           mountPath: /cacert
@@ -111,6 +115,9 @@ spec:
       - name: config
         configMap:
           name: "{{ .Release.Name }}-apiserver-config"
+      - name: pipeline
+        configMap:
+          name: "{{ .Release.Name }}-pipeline"
       {{- with .Values.cacertConfigMap }}
       - name: cacert
         configMap:

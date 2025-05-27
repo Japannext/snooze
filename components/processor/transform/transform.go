@@ -4,29 +4,20 @@ import (
 	"fmt"
 
 	"github.com/japannext/snooze/internal/lang"
+	"github.com/japannext/snooze/internal/pipeline"
 )
 
 type Processor struct {
 	transforms []*transform
 }
 
-type Config struct {
-	Transforms []*TrConfig `json:"transforms" yaml:"transforms"`
-}
-
-type TrConfig struct {
-	Name    string          `json:"name"         yaml:"name"`
-	If      string          `json:"if,omitempty" yaml:"if"`
-	Actions []*ActionConfig `json:"actions"     yaml:"actions"`
-}
-
-func New(cfg Config) (*Processor, error) {
+func New(trs []pipeline.Transform) (*Processor, error) {
 	p := &Processor{}
 
-	for _, trConfig := range cfg.Transforms {
-		tr, err := newTransform(trConfig)
+	for _, trCfg := range trs {
+		tr, err := newTransform(trCfg)
 		if err != nil {
-			return p, fmt.Errorf("in transform '%s': %w", trConfig.Name, err)
+			return p, fmt.Errorf("in transform '%s': %w", trCfg.Name, err)
 		}
 
 		p.transforms = append(p.transforms, tr)
@@ -36,13 +27,13 @@ func New(cfg Config) (*Processor, error) {
 }
 
 type transform struct {
-	cfg *TrConfig
+	cfg pipeline.Transform
 
 	condition *lang.Condition
-	actions   []ActionInterface
+	actions   []Action
 }
 
-func newTransform(cfg *TrConfig) (*transform, error) {
+func newTransform(cfg pipeline.Transform) (*transform, error) {
 	tr := &transform{cfg: cfg}
 
 	if cfg.If != "" {

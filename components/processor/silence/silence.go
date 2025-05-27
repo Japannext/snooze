@@ -4,66 +4,60 @@ import (
 	"context"
 	"fmt"
 
+	log "github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel"
+
 	"github.com/japannext/snooze/components/processor/decision"
 	"github.com/japannext/snooze/components/processor/metrics"
 	"github.com/japannext/snooze/internal/lang"
+	"github.com/japannext/snooze/internal/models"
+	"github.com/japannext/snooze/internal/pipeline"
 	"github.com/japannext/snooze/internal/schedule"
 	"github.com/japannext/snooze/internal/tracing"
-	"github.com/japannext/snooze/internal/models"
-	log "github.com/sirupsen/logrus"
-	"go.opentelemetry.io/otel"
 )
 
 type Processor struct {
 	silences []Silence
 }
 
-type Config struct {
-	Silences []Silence `json:"silences" yaml:"silences"`
-}
-
-func New(cfg Config) (*Processor, error) {
+func New(cfgs []pipeline.Silence) (*Processor, error) {
 	p := &Processor{}
 
-	for _, sil := range cfg.Silences {
-		if err := sil.Load(); err != nil {
-			return p, fmt.Errorf("in silence '%s': %w", sil.Name, err)
+	for _, cfg := range cfgs {
+		s, err := NewSilence(cfg)
+		if err != nil {
+			return &Processor{}, fmt.Errorf("in silence '%s': %w", s.Name, err)
 		}
-		p.silences = append(p.silences, sil)
+		p.silences = append(p.silences, s)
 	}
 
 	return p, nil
 }
 
 type Silence struct {
-	Name        string             `json:"name"                  yaml:"name"`
-	Description string             `json:"description,omitempty" yaml:"description"`
-	If          string             `json:"if"                    yaml:"if"`
-	Schedule    *schedule.Schedule `yaml:",inline"`
-	Drop        bool               `json:"drop"                  yaml:"drop"`
-
-	internal struct {
-		condition *lang.Condition
-	}
+	pipeline.Silence
+	condition *lang.Condition
 }
 
-func (s *Silence) Load() error {
+func NewSilence(cfg pipeline.Silence) (Silence, error) {
 	var err error
 
-	s.internal.condition, err = lang.NewCondition(s.If)
+	s := Silence{Silence: cfg}
+
+	s.condition, err = lang.NewCondition(cfg.If)
 	if err != nil {
-		return fmt.Errorf("error in condition `%s`: %w", s.If, err)
+		return Silence{}, fmt.Errorf("error in condition `%s`: %w", cfg.If, err)
 	}
 
-	if s.Schedule == nil {
+	if cfg.Schedule == nil {
 		s.Schedule = schedule.Default()
 	}
 
 	if err := s.Schedule.Load(); err != nil {
-		return fmt.Errorf("error in schedule: %w", err)
+		return Silence{}, fmt.Errorf("error in schedule: %w", err)
 	}
 
-	return nil
+	return s, nil
 }
 
 func (p *Processor) Process(ctx context.Context, item *models.Log) *decision.Decision {
@@ -75,8 +69,8 @@ func (p *Processor) Process(ctx context.Context, item *models.Log) *decision.Dec
 		var err error
 
 		// Condition
-		if s.internal.condition != nil {
-			match, err = s.internal.condition.MatchLog(ctx, item)
+		if s.condition != nil {
+			match, err = s.condition.MatchLog(ctx, item)
 			if err != nil {
 				log.Warnf("error while matching `%s` : %s", s.If, err)
 

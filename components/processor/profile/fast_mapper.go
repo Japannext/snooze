@@ -3,39 +3,41 @@ package profile
 import (
 	"fmt"
 
-	"github.com/japannext/snooze/internal/lang"
-	"github.com/japannext/snooze/internal/utils"
-	"github.com/japannext/snooze/internal/models"
 	log "github.com/sirupsen/logrus"
-)
 
-type Kv struct {
-	Key   string `yaml:"key"`
-	Value string `yaml:"value"`
-}
+	"github.com/japannext/snooze/internal/lang"
+	"github.com/japannext/snooze/internal/models"
+	"github.com/japannext/snooze/internal/pipeline"
+	"github.com/japannext/snooze/internal/utils"
+)
 
 type FastMapper struct {
 	keys   []string
-	mapper map[Kv][]Profile
+	mapper map[pipeline.Kv][]Profile
 	fields map[string]*lang.Field
 }
 
-func NewFastMapper(profiles []Profile) (*FastMapper, error) {
-	m := map[Kv][]Profile{}
+func NewFastMapper(cfgs []pipeline.Profile) (*FastMapper, error) {
+	m := map[pipeline.Kv][]Profile{}
 	keys := utils.NewOrderedSet[string]()
 	fields := map[string]*lang.Field{}
 
-	for _, prf := range profiles {
-		m[prf.Switch] = append(m[prf.Switch], prf)
-
-		value, err := lang.NewField(prf.Switch.Key)
+	for _, cfg := range cfgs {
+		p, err := NewProfile(cfg)
 		if err != nil {
-			return &FastMapper{}, fmt.Errorf("invalid field `%s: %w", prf.Switch.Key, err)
+			return &FastMapper{}, fmt.Errorf("error in profile %s: %w", cfg.Name, err)
 		}
 
-		fields[prf.Switch.Key] = value
+		m[cfg.Switch] = append(m[cfg.Switch], p)
 
-		keys.Append(prf.Switch.Key)
+		value, err := lang.NewField(cfg.Switch.Key)
+		if err != nil {
+			return &FastMapper{}, fmt.Errorf("invalid field `%s: %w", cfg.Switch.Key, err)
+		}
+
+		fields[cfg.Switch.Key] = value
+
+		keys.Append(cfg.Switch.Key)
 	}
 
 	return &FastMapper{keys.Items(), m, fields}, nil
@@ -55,7 +57,7 @@ func (m *FastMapper) GetMatches(item *models.Log) []Profile {
 			continue
 		}
 
-		profiles, found := m.mapper[Kv{key, value}]
+		profiles, found := m.mapper[pipeline.Kv{Key: key, Value: value}]
 		if !found {
 			continue
 		}

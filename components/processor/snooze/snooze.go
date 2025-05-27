@@ -6,23 +6,22 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/japannext/snooze/components/processor/decision"
-	"github.com/japannext/snooze/components/processor/metrics"
-	"github.com/japannext/snooze/internal/lang"
-	"github.com/japannext/snooze/internal/redis"
-	"github.com/japannext/snooze/internal/models"
 	redisv9 "github.com/redis/go-redis/v9"
 	log "github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
+
+	"github.com/japannext/snooze/components/processor/decision"
+	"github.com/japannext/snooze/components/processor/metrics"
+	"github.com/japannext/snooze/internal/lang"
+	"github.com/japannext/snooze/internal/models"
+	"github.com/japannext/snooze/internal/redis"
 )
 
 type Processor struct {
 	// storeQ *mq.Pub
 }
 
-type Config struct{}
-
-func New(_ Config) (*Processor, error) {
+func New() (*Processor, error) {
 	p := &Processor{}
 
 	return p, nil

@@ -1,0 +1,17 @@
+{{- if .Values.keycloak.enabled }}
+---
+apiVersion: keycloak.japannext.co.jp/v1alpha2
+kind: KeycloakClientRole
+metadata:
+  name: "{{ .Values.keycloak.clientName }}-admin"
+  namespace: "{{ .Release.Namespace }}"
+spec:
+  endpoint:
+    kind: "{{ .Values.keycloak.endpointKind }}"
+    name: "{{ .Values.keycloak.endpointName }}"
+  realm: "{{ .Values.keycloak.realm  }}"
+  client: "{{ .Values.keycloak.clientName }}"
+  config:
+    name: "admin"
+    description: "Admin rights to snooze"
+{{- end }}

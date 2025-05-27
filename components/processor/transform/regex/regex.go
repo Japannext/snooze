@@ -7,6 +7,7 @@ import (
 
 	"github.com/japannext/snooze/internal/lang"
 	"github.com/japannext/snooze/internal/models"
+	"github.com/japannext/snooze/internal/pipeline"
 )
 
 type Config struct {
@@ -15,13 +16,13 @@ type Config struct {
 }
 
 type Action struct {
-	cfg *Config
+	cfg *pipeline.Regex
 
 	field  *lang.Field
 	regexp *regexp.Regexp
 }
 
-func New(cfg *Config) (*Action, error) {
+func New(cfg *pipeline.Regex) (*Action, error) {
 	var err error
 
 	action := &Action{cfg: cfg}

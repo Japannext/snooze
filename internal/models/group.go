@@ -9,6 +9,7 @@ var GroupIndice = Indice{
 			"name":   {Type: "keyword"},
 			"labels": {Type: "object"},
 			"hash":   {Type: "keyword"},
+			"score":  {Type: "integer"},
 		},
 	},
 }
@@ -21,4 +22,6 @@ type Group struct {
 	Hash string `json:"hash"`
 	// Human readable information about the group
 	Labels map[string]string `json:"labels,omitempty"`
+	// A score used to order groups in the UI
+	Score int64 `json:"score"`
 }

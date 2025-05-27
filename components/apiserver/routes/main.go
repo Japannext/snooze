@@ -2,10 +2,11 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/japannext/snooze/components/apiserver/auth"
-	"github.com/japannext/snooze/internal/mq"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/japannext/snooze/components/apiserver/auth"
+	"github.com/japannext/snooze/internal/mq"
 )
 
 var (
@@ -43,6 +44,18 @@ func Register(r *gin.Engine) {
 		// Tags
 		authn.GET("/tags", getTags)
 		authn.POST("/tag", postTag)
+
+		authn.GET("/condition-validation", getConditionValidation)
+
+		authn.GET("/pipeline/mappings", getPipelineMappings)
+		authn.GET("/pipeline/groupings", getPipelineGroupings)
+		authn.GET("/pipeline/transforms", getPipelineTransforms)
+		authn.GET("/pipeline/profiles", getPipelineProfiles)
+		authn.GET("/pipeline/silences", getPipelineSilences)
+		authn.GET("/pipeline/ratelimits", getPipelineRatelimits)
+		authn.GET("/pipeline/notifications", getPipelineNotifications)
+		authn.GET("/pipeline/default-destinations", getPipelineDefaultDestinations)
+
 	}
 
 	// Admin routes

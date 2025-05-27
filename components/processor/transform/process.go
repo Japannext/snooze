@@ -3,10 +3,11 @@ package transform
 import (
 	"context"
 
-	"github.com/japannext/snooze/components/processor/decision"
-	"github.com/japannext/snooze/internal/models"
 	log "github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
+
+	"github.com/japannext/snooze/components/processor/decision"
+	"github.com/japannext/snooze/internal/models"
 )
 
 func (p *Processor) Process(ctx context.Context, item *models.Log) *decision.Decision {

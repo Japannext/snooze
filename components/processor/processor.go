@@ -16,6 +16,7 @@ import (
 	"github.com/japannext/snooze/components/processor/timestamp"
 	"github.com/japannext/snooze/components/processor/transform"
 	"github.com/japannext/snooze/internal/models"
+	"github.com/japannext/snooze/internal/pipeline"
 )
 
 type SubProcessor interface {
@@ -29,45 +30,45 @@ type Processor struct {
 	processes []SubProcessor
 }
 
-func NewProcessor(cfg *Config) (*Processor, error) {
+func NewProcessor(pl *pipeline.Pipeline) (*Processor, error) {
 	p := &Processor{}
 
-	transformProcess, err := transform.New(cfg.Transform)
+	transformProcess, err := transform.New(pl.Transforms)
 	if err != nil {
 		return p, fmt.Errorf("error in `transform`: %w", err)
 	}
 
-	profileProcess, err := profile.New(cfg.Profile)
+	profileProcess, err := profile.New(pl.Profiles)
 	if err != nil {
 		return p, fmt.Errorf("error in `profile`: %w", err)
 	}
 
-	groupingProcess, err := grouping.New(cfg.Grouping)
+	groupingProcess, err := grouping.New(pl.Groupings)
 	if err != nil {
 		return p, fmt.Errorf("error in `grouping`: %w", err)
 	}
 
-	silenceProcess, err := silence.New(cfg.Silence)
+	silenceProcess, err := silence.New(pl.Silences)
 	if err != nil {
 		return p, fmt.Errorf("error in `silence`: %w", err)
 	}
 
-	ratelimitProcess, err := ratelimit.New(cfg.Ratelimit)
+	ratelimitProcess, err := ratelimit.New(pl.Ratelimits)
 	if err != nil {
 		return p, fmt.Errorf("error in `ratelimit`: %w", err)
 	}
 
-	snoozeProcess, err := snooze.New(cfg.Snooze)
+	snoozeProcess, err := snooze.New()
 	if err != nil {
 		return p, fmt.Errorf("error in `snooze`: %w", err)
 	}
 
-	notificationProcess, err := notification.New(cfg.Notification)
+	notificationProcess, err := notification.New(pl.Notifications, pl.DefaultDestinations)
 	if err != nil {
 		return p, fmt.Errorf("error in `notification`: %w", err)
 	}
 
-	storeProcess, err := store.New(cfg.Store)
+	storeProcess, err := store.New()
 	if err != nil {
 		return p, fmt.Errorf("error in `store`: %w", err)
 	}

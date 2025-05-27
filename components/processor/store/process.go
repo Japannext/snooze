@@ -3,23 +3,21 @@ package store
 import (
 	"context"
 
+	log "github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel"
+
 	"github.com/japannext/snooze/components/processor/decision"
+	"github.com/japannext/snooze/internal/models"
 	"github.com/japannext/snooze/internal/mq"
 	"github.com/japannext/snooze/internal/opensearch/format"
 	"github.com/japannext/snooze/internal/tracing"
-	"github.com/japannext/snooze/internal/models"
-	log "github.com/sirupsen/logrus"
-	"go.opentelemetry.io/otel"
 )
 
 type Processor struct {
 	storeQ *mq.Pub
 }
 
-type Config struct {
-}
-
-func New(cfg Config) (*Processor, error) {
+func New() (*Processor, error) {
 	p := &Processor{}
 	p.storeQ = mq.StorePub()
 

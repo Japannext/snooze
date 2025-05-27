@@ -4,20 +4,14 @@ import (
 	"context"
 
 	"github.com/japannext/snooze/internal/models"
+	"github.com/japannext/snooze/internal/pipeline"
 )
 
-type Config struct {
-	Identity    []string `yaml:""`
-	Labels      []string `json:"labels,omitempty"      yaml:"labels"`
-	AllIdentity bool     `json:"allIdentity,omitempty" yaml:"all_identity"`
-	AllLabels   bool     `json:"allLabels,omitempty"   yaml:"all_labels"`
-}
-
 type Action struct {
-	cfg *Config
+	cfg *pipeline.Unset
 }
 
-func New(cfg *Config) (*Action, error) {
+func New(cfg *pipeline.Unset) (*Action, error) {
 	return &Action{cfg: cfg}, nil
 }
 

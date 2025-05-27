@@ -1,6 +1,8 @@
 module github.com/japannext/snooze
 
-go 1.23
+go 1.23.0
+
+toolchain go1.23.8
 
 require (
 	cloud.google.com/go/pubsub v1.44.0
@@ -12,6 +14,8 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/sessions v1.2.2
+	github.com/jackc/pgx/v5 v5.7.5
+	github.com/lib/pq v1.10.9
 	github.com/nats-io/nats.go v1.36.0
 	github.com/opensearch-project/opensearch-go/v4 v4.1.0
 	github.com/prometheus/client_golang v1.20.2
@@ -30,7 +34,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.31.0
 	go.opentelemetry.io/proto/otlp v1.3.1
 	golang.org/x/oauth2 v0.23.0
-	golang.org/x/sync v0.8.0
+	golang.org/x/sync v0.13.0
 	google.golang.org/api v0.203.0
 	google.golang.org/grpc v1.67.1
 	gopkg.in/mail.v2 v2.3.1
@@ -71,6 +75,8 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.22.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
+	github.com/jackc/pgpassfile v1.0.0 // indirect
+	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.8 // indirect
@@ -106,11 +112,11 @@ require (
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
 	golang.org/x/arch v0.11.0 // indirect
-	golang.org/x/crypto v0.28.0 // indirect
+	golang.org/x/crypto v0.37.0 // indirect
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
 	golang.org/x/net v0.30.0 // indirect
-	golang.org/x/sys v0.26.0 // indirect
-	golang.org/x/text v0.19.0 // indirect
+	golang.org/x/sys v0.32.0 // indirect
+	golang.org/x/text v0.24.0 // indirect
 	golang.org/x/time v0.7.0 // indirect
 	google.golang.org/genproto v0.0.0-20241015192408-796eee8c2d53 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20241007155032-5fefd90f89a9 // indirect
