@@ -17,6 +17,7 @@ type Pipeline struct {
 	Mappings            []Mapping            `json:"mappings" yaml:"mappings"`
 	Groupings           []Grouping           `json:"groupings" yaml:"groupings"`
 	Transforms          []Transform          `json:"transforms" yaml:"transforms"`
+	Services            []Service            `json:"services" yaml:"services"`
 	Profiles            []Profile            `json:"profiles" yaml:"profiles"`
 	Silences            []Silence            `json:"silences" yaml:"silences"`
 	Ratelimits          []Ratelimit          `json:"ratelimits" yaml:"ratelimits"`
@@ -32,17 +33,21 @@ type Mapping struct {
 	Map map[string]string `json:"map" yaml:"map"`
 }
 
+type Field struct {
+	// Name of the field. Will appear in the web interface.
+	Name string `json:"name"`
+	// The list of nested fields to access the field. Used in opensearch
+	// queries to access the data.
+	NestedFields []string `json:"nestedFields" yaml:"nested_fields"`
+}
+
 type Grouping struct {
 	// Name of the grouping
 	Name string `json:"name" yaml:"name"`
 	// Condition for applying the grouping only to certain entries
 	If string `json:"if"   yaml:"if"`
 	// Mutually exclusive with `group_by_map`.
-	GroupBy []string `json:"groupBy" yaml:"group_by"`
-	// Mutually exclusive with `group_by`.
-	GroupByMap string `json:"groupByMap" yaml:"group_by_map"`
-	// A score used to sort groups in the web UI by importance.
-	Score int64 `json:"score" yaml:"score"`
+	GroupBy []Field `json:"groupBy" yaml:"group_by"`
 }
 
 type Transform struct {
@@ -84,12 +89,17 @@ type Profile struct {
 	// The main condition for a log to match this rule. Used to
 	// reduce the amount of processing by the use of maps.
 	// Examples: process=sshd, service.name=keycloak, k8s.statefulset.name=postgresql
-	Switch Kv `json:"switch" yaml:"switch"`
+	Selector Selector `json:"selector" yaml:"selector"`
 	// Patterns and actions to apply to logs matching this pattern
 	Patterns []Pattern `json:"patterns" yaml:"patterns"`
 }
 
-type Kv struct {
+func (p Profile) GetSelectors() []Selector {
+	return []Selector{p.Selector}
+}
+
+// A selector for a label.
+type Selector struct {
 	Key   string `json:"key" yaml:"key"`
 	Value string `json:"value" yaml:"value"`
 }
@@ -147,11 +157,45 @@ type Ratelimit struct {
 
 type Notification struct {
 	// Name of the notification rule
-	Name string `json:"name"         yaml:"name"`
+	Name string `json:"name" yaml:"name"`
 	// Condition to use for matching the notification
 	If string `json:"if,omitempty" yaml:"if"`
 	// Which queue the notification will send to
 	Destinations []models.Destination `json:"destinations" yaml:"destinations"`
+}
+
+// A Service represent a subsystem that is monitored and should group alerts.
+// It can group specialized alerts such as SLOs, and group logs from specific servers.
+type Service struct {
+	// Name of the service.
+	Name string `json:"name" yaml:"name"`
+	// Description of the service.
+	Description string `json:"description,omitempty" yaml:"description"`
+	// The owner of the service. Must be a team.
+	Owner string `json:"owner,omitempty" yaml:"owner"`
+	// List of impacts.
+	Impacts []string `json:"impacts" yaml:"impacts"`
+	// A list of selectors used to know what log/alert match the service.
+	Selectors []Selector `json:"selectors" yaml:"selectors"`
+}
+
+func (s Service) GetSelectors() []Selector {
+	return s.Selectors
+}
+
+// An impact is a way to categorize alerts and services in groups to make
+// it easier to understand.
+// Example of categories: "production", "office", "devoffice", "monitoring".
+type Impact struct {
+	// Name of the impact
+	Name        string `json:"name" yaml:"name"`
+	Description string `json:"description,omitempty" yaml:"description"`
+}
+
+// An object representing a group of people.
+type Team struct {
+	Name        string `json:"name" yaml:"name"`
+	Description string `json:"description,omitempty" yaml:"description"`
 }
 
 var (

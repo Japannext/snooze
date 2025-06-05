@@ -9,7 +9,7 @@ COPY .ca-bundle /usr/local/share/ca-certificates/
 RUN find /usr/local/share/ca-certificates/ -type f -exec cat {} \; >> /etc/ssl/certs/ca-certificates.crt
 ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
 
-COPY --chown=1000:1000 package.json bun.lockb ./
+COPY --chown=1000:1000 package.json bun.lock ./
 RUN bun install --frozen-lockfile
 
 COPY --chown=1000:1000 . .

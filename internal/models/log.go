@@ -49,7 +49,11 @@ type Log struct {
 	// What server/container/pod emitted the log.
 	Identity map[string]string `json:"identity,omitempty"`
 
+	// Name of the service it's been matching.
+	Service string `json:"service,omitempty"`
+	// Name of the log profile it's been matching.
 	Profile string `json:"profile,omitempty"`
+	// Name of the log pattern it's been matching.
 	Pattern string `json:"pattern,omitempty"`
 
 	// ID for opentelemetry traces
@@ -79,6 +83,10 @@ type Log struct {
 	Error string `json:"error,omitempty"`
 
 	Status LogStatus `json:"status"`
+}
+
+func (item *Log) GetLabels() map[string]string {
+	return item.Labels
 }
 
 // Used by template systems in transforms/profiles/etc.

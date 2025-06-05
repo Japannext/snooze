@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { defineProps } from "vue";
-import { NList, NListItem, NTag, NIcon, NSpace, NPopover } from "naive-ui";
 import type { Identity, HostIdentity } from "@/api";
 
 import { Server, Hashtag } from "@vicons/fa";
@@ -34,17 +33,14 @@ function k8sShortname(component: string): string {
 </script>
 
 <template>
-  <template v-if="identity.kind == 'host'">
-    <n-tag v-if="identity.host" size="small">
-      <template #icon><n-icon :component="Server" /></template>
+  <span>
+    <Tag v-if="identity.host" icon="pi pi-server" severity="secondary">
       {{ shortname(identity.host) }}
-    </n-tag>
-  </template>
-  <template v-else-if="identity.kind == 'kubernetes'">
-    <n-tag size="small">
-      <template #icon><n-icon :component="Kubernetes" /></template>
+    </Tag>
+
+    <Tag v-else-if="identity.kind == 'kubernetes'" icon="pi pi-android">
       {{ k8sShortname(identity.component) }}/{{ identity.name }}
       <b>@{{ identity.namespace }}</b>
-    </n-tag>
-  </template>
+    </Tag>
+  </span>
 </template>

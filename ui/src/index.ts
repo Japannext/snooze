@@ -2,10 +2,15 @@ import axios from "axios";
 import { createApp } from "vue";
 import { createI18n } from "vue-i18n";
 import { useLocalStorage } from "@vueuse/core";
+import PrimeVue from "primevue/config";
+import ToastService from "primevue/toastservice"
+import DialogService from "primevue/dialogservice"
+import Aura from "@primeuix/themes/aura"
 
-import "@/style.css";
 import { router } from "@/router";
 //import { messages } from '@/i18n'
+import "@/style.scss";
+import 'primeicons/primeicons.css'
 
 import App from "@/App.vue";
 
@@ -28,5 +33,12 @@ axios.defaults.withCredentials = true;
 
 const app = createApp(App);
 app.use(router);
+app.use(PrimeVue, {
+  theme: {
+    preset: Aura,
+  },
+})
+app.use(ToastService)
+app.use(DialogService)
 // app.use(i18n)
 app.mount("#app");

@@ -2,6 +2,7 @@
 import { ref, onMounted } from "vue";
 import { NIcon, NCard, NSpace, NButton } from "naive-ui";
 import { Github, Openid, SignInAlt } from "@/icons";
+import logo from "@/assets/logo.png";
 
 import { getAuthConfig, type AuthConfig } from "@/api";
 
@@ -29,7 +30,7 @@ function redirect(providerName: string) {
 
 <template>
   <n-space vertical style="width: 100">
-    <img src="img/logo.png" :width="500" />
+    <img :src="logo" :width="500" />
     <n-card v-if="authConfig" size="huge" title="Login">
       <n-space vertical>
         <n-button

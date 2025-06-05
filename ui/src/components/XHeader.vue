@@ -3,7 +3,7 @@ import { computed } from "vue";
 // import { useLocale } from '@/stores'
 import { menuOptions } from "@/router";
 import { useRoute } from "vue-router";
-import logo from "../../public/img/logo.png";
+import logo from "@/assets/logo.png";
 
 import { NSpace, NMenu, NGrid, NGi } from "naive-ui";
 // import STray from '@/components'

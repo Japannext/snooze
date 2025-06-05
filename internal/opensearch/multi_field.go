@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/japannext/snooze/internal/opensearch/dsl"
 	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
+
+	"github.com/japannext/snooze/internal/opensearch/dsl"
 )
 
 type Mappings struct {

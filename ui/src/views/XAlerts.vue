@@ -1,30 +1,7 @@
 <script setup lang="ts">
 import { h, ref, onMounted, Component } from "vue";
-import { useLoadingBar, useMessage } from "naive-ui";
+import { useRouteQuery } from "@vueuse/router";
 import { usePagination } from "@/api";
-
-// Components
-import {
-  NModal,
-  NButton,
-  NSpace,
-  NIcon,
-  NDataTable,
-  NInputGroup,
-  type DataTableColumn,
-  type SelectOption,
-  type RadioButtonProps,
-} from "naive-ui";
-import {
-  XSearch,
-  XFilter,
-  XTimeRange,
-  XTimestampTitle,
-  XAlertAttributes,
-  XTime,
-  XModalAck,
-} from "@/components";
-import { Refresh } from "@/icons";
 
 import {
   getAlerts,
@@ -36,16 +13,21 @@ import {
 const selected = ref<Alert | null>(null);
 const showDetails = ref<boolean>(false);
 
+// Pagination variables
+const page = useRouteQuery<number>("page", 1, { transform: Number });
+const size = useRouteQuery<number>("size", 20, { transform: Number });
+const total = ref<number>(0);
+const more = ref<boolean>(false);
+
 // Utils
-const loading = useLoadingBar();
-const message = useMessage();
+const loading = ref<boolean>(false);
 
 const items = ref<Array<Alert>>([]);
 const selectedItems = ref<Array<string>>([]);
 const xTimerange = ref();
 
-const showAckModal = ref<boolean>(false);
-const showEscalateModal = ref<boolean>(false);
+const showAckDialog = ref<boolean>(false);
+const showEscalateDialog = ref<boolean>(false);
 
 const pagination = usePagination(refresh);
 const params = ref<GetAlertsParams>({
@@ -60,44 +42,25 @@ const filters: Filter[] = [
   { label: "History", value: "history" },
 ];
 
-const columns: DataTableColumn<Alert>[] = [
-  { type: "expand", renderExpand: renderExpand },
-  {
-    title: () => h(XTimestampTitle),
-    render: (row) => h(XTime, { ts: row.startsAt }),
-    key: "timestamp",
-    width: 150,
-  },
-  {
-    title: "Attributes",
-    render: (row) => h(XAlertAttributes, { row: row }),
-    key: "attributes",
-  },
-  {
-    title: "Summary",
-    key: "summary",
-    ellipsis: { tooltip: { placement: "bottom-end", width: 500 } },
-  },
-];
-
 function refresh() {
-  loading.start();
+  loading.value = true;
   params.value.timerange = xTimerange.value.getTime();
   params.value.pagination = {
-    page: pagination.page,
-    pageSize: pagination.pageSize,
+    page: page.value,
+    pageSize: size.value,
   };
   getAlerts(params.value)
     .then((list) => {
       items.value = list.items;
-      pagination.itemCount = list.total;
-      pagination.setMore(list.more);
-      loading.finish();
+      total.value = list.total;
+      more.value = list.more;
     })
     .catch((err) => {
       items.value = [];
       message.error(`failed to load alerts: ${err}`);
-      loading.error();
+    })
+    .finally(() => {
+      loading.value = false;
     });
 }
 
@@ -125,50 +88,68 @@ function renderExpand(row: Alert) {
 </script>
 
 <template>
-  <n-space
-    :size="100"
-    justify="start"
-    style="padding: 5px; margin-bottom: 10px"
-  >
-    <n-input-group>
-      <x-time-range ref="xTimerange" @change="reset" />
-      <x-search v-model:value="params.search" @change="reset" />
-      <n-button @click="refresh"><n-icon :component="Refresh" /></n-button>
-    </n-input-group>
-    <x-filter
-      v-model:value="params.filter"
-      :filters="filters"
-      @change="reset"
-    />
-    <n-input-group>
-      <n-button
-        type="primary"
-        :disabled="selectedItems.length == 0"
-        @click="showAckModal = true"
-        >Ack ({{ selectedItems.length }})</n-button
-      >
-      <x-modal-ack
-        v-model:show="showAckModal"
-        :ids="selectedItems"
-        @success="unselect"
+  <Toast />
+  <Toolbar>
+    <template #start>
+      <XFilter
+        v-model:value="params.filter"
+        :filters="filters"
+        @change="reset"
       />
+    </template>
+    <template #center>
+      <InputGroup>
+        <XTimeRange ref="xTimerange" @change="reset" />
+        <XSearch v-model:value="params.search" @change="reset" />
+        <Button @click="refresh" icon="pi pi-refresh" severity="secondary" />
+      </InputGroup>
+    </template>
+    <template #end>
+      <InputGroup>
+        <Button
+          label="Ack"
+          icon="pi pi-check"
+          @click="showAckDialog = true"
+          :disabled="selectedItems.length == 0"
+          :badge="selectedItems.length.toString()"
+        />
+        <XAckDialog
+          v-model:show="showAckDialog"
+          :ids="selectedItems"
+          @success="unselect"
+        />
+        <Button
+          label="Escalate"
+          severity="warn"
+          icon="pi pi-arrow-circle-up"
+          :disabled="selectedItems.length == 0"
+          :badge="selectedItems.length.toString()"
+        />
+      </InputGroup>
+    </template>
+  </Toolbar>
+  <div style="height: 2px">
+    <ProgressBar v-if="loading" mode="indeterminate" style="height: 2px" />
+  </div>
 
-      <n-button type="warning" :disabled="selectedItems.length == 0"
-        >Escalate ({{ selectedItems.length }})</n-button
-      >
-    </n-input-group>
-  </n-space>
-  <n-data-table
-    ref="table"
-    remote
-    striped
-    bordered
-    :resizable="true"
+  <DataTable
+    v-model:selection="selectedItems"
+    :value="items"
     size="small"
-    :single-line="false"
-    :columns="columns"
-    :data="items"
-    :row-key="(row) => row._id"
-    :pagination="pagination"
+    stripedRows
+    showGridlines
+  >
+    <Column selectionMode="multiple" />
+    <XTimestampColumn key="timestamp" fieldName="startsAt" />
+    <XAlertAttributeColumn key="attributes" />
+    <Column field="summary" header="Summary" />
+  </DataTable>
+
+  <XPagination
+    v-model:page="page"
+    v-model:size="size"
+    :total="total"
+    :more="more"
+    @update="refresh"
   />
 </template>

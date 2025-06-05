@@ -56,6 +56,7 @@ func Register(r *gin.Engine) {
 		authn.GET("/pipeline/notifications", getPipelineNotifications)
 		authn.GET("/pipeline/default-destinations", getPipelineDefaultDestinations)
 
+		authn.GET("/autocomplete/log", getAutocompleteLog)
 	}
 
 	// Admin routes

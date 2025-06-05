@@ -26,13 +26,15 @@ function run() {
 </script>
 
 <template>
-  <n-input-group>
-    <n-input
-      v-model:value="tmp"
-      placeholder="Search"
-      clearable
-      @keyup.enter="run"
-    />
-    <n-button type="info" @click="run"><n-icon :component="Search" /></n-button>
-  </n-input-group>
+  <InputText size="small" v-model="tmp" placeholder="Search" clearable />
+  <Button size="small" @click="run" icon="pi pi-search" severity="info" />
+  <!-- <n-input-group> -->
+  <!-- <n-input -->
+  <!-- v-model:value="tmp" -->
+  <!-- placeholder="Search" -->
+  <!-- clearable -->
+  <!-- @keyup.enter="run" -->
+  <!-- /> -->
+  <!-- <n-button type="info" @click="run"><n-icon :component="Search" /></n-button> -->
+  <!-- </n-input-group> -->
 </template>

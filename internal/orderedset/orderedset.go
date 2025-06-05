@@ -1,11 +1,11 @@
-package utils
+package orderedset
 
 type OrderedSet[T comparable] struct {
 	a []T
 	m map[T]bool
 }
 
-func NewOrderedSet[T comparable]() *OrderedSet[T] {
+func New[T comparable]() *OrderedSet[T] {
 	return &OrderedSet[T]{
 		a: []T{},
 		m: map[T]bool{},

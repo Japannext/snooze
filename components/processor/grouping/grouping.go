@@ -62,17 +62,13 @@ func NewGrouping(cfg pipeline.Grouping) (Grouping, error) {
 		group.condition = condition
 	}
 
-	if len(group.GroupBy) > 0 {
-		fields, err := lang.NewFields(group.GroupBy)
+	group.fields = []*lang.Field{}
+	for _, f := range group.GroupBy {
+		field, err := lang.FieldFromNestedFields(f.NestedFields)
 		if err != nil {
-			return Grouping{}, fmt.Errorf("error loading fields: %w", err)
+			return Grouping{}, fmt.Errorf("error loading field %s: %w", f.Name, err)
 		}
-
-		group.fields = fields
-	}
-
-	if group.GroupByMap != "" && len(group.GroupBy) != 0 {
-		return Grouping{}, fmt.Errorf("group_by and group_by_map are mutually exclusive")
+		group.fields = append(group.fields, field)
 	}
 
 	return group, nil
@@ -102,7 +98,7 @@ func (p *Processor) Process(ctx context.Context, item *models.Log) *decision.Dec
 			}
 		}
 
-		gr := &models.Group{Name: group.Name, Labels: make(map[string]string), Score: group.Score}
+		gr := &models.Group{Name: group.Name, Labels: make(map[string]string)}
 
 		if len(group.GroupBy) > 0 {
 			for _, field := range group.fields {
@@ -114,20 +110,6 @@ func (p *Processor) Process(ctx context.Context, item *models.Log) *decision.Dec
 				}
 
 				gr.Labels[field.String()] = value
-			}
-		} else if group.GroupByMap != "" {
-			switch group.GroupByMap {
-			case "source":
-				gr.Labels["source.kind"] = item.Source.Kind
-				gr.Labels["source.name"] = item.Source.Name
-			case "identity":
-				for k, v := range item.Identity {
-					gr.Labels["identity."+k] = v
-				}
-			case "labels":
-				for k, v := range item.Labels {
-					gr.Labels["labels."+k] = v
-				}
 			}
 		}
 

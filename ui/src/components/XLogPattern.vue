@@ -1,34 +1,28 @@
 <script setup lang="ts">
-import { defineProps, h, Component } from "vue";
-import { NDropdown, NButton, NTag, NIcon, NPopover } from "naive-ui";
+import { ref } from "vue";
 import { TypePattern, BookOpen } from "@/icons";
 
 const props = defineProps<{
   name: string;
 }>();
 
-const options = [
-  { label: "Documentation", key: "documentation", icon: renderIcon(BookOpen) },
-];
+const popover = ref();
 
-function renderIcon(icon: Component) {
-  return () => {
-    return h(NIcon, null, {
-      default: () => h(icon),
-    });
-  };
+function toggle(event) {
+  if (popover.value) {
+    popover.value.toggle(event);
+  }
 }
-
-function select(key: string) {}
 </script>
 
 <template>
-  <n-dropdown trigger="click" :options="options" @select="select">
-    <n-button size="tiny">
-      <template #icon>
-        <n-icon :component="TypePattern" />
-      </template>
-      {{ props.name }}
-    </n-button>
-  </n-dropdown>
+  <Button
+    size="small"
+    severity="secondary"
+    icon="pi pi-objects-column"
+    :label="props.name"
+    @click="toggle"
+    rounded
+  />
+  <Popover ref="popover"> test </Popover>
 </template>

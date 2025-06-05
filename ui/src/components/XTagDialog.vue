@@ -1,28 +1,15 @@
 <script setup lang="ts">
 import { ref, defineProps, defineModel } from "vue";
-import { useMessage } from "naive-ui";
 import { createTag, type Tag } from "@/api";
-
-import {
-  NModal,
-  NSpace,
-  NColorPicker,
-  NButton,
-  NCard,
-  NForm,
-  NFormItemGi,
-  NInput,
-  NGrid,
-} from "naive-ui";
-import { XTag } from "@/components";
+import { useToast } from "primevue/usetoast";
 
 defineProps<{
   show: boolean;
 }>();
 
 const show = defineModel("show", { type: Boolean, default: false });
+const toast = useToast();
 const loading = ref<boolean>(false);
-const message = useMessage();
 const item = ref<Tag>(defaultTag());
 
 const swatches = [
@@ -54,6 +41,12 @@ function create() {
   createTag(item.value)
     .catch((err) => {
       message.error(`failed to tag: ${err}`);
+      toast.add({
+        severity: "danger",
+        summary: "Error",
+        detail: `failed to create tag (status ${err.response.status}): ${err.response.data}`,
+        life: 10000,
+      });
     })
     .finally(() => {
       show.value = false;

@@ -1,42 +1,30 @@
 <script setup lang="ts">
 import { h, ref, onMounted } from "vue";
-import { useLoadingBar, useMessage } from "naive-ui";
+import { useRouteQuery } from "@vueuse/router";
+import { useToast } from "primevue/usetoast";
 import { usePagination } from "@/api";
-
-// Components
 import {
-  NIcon,
-  NButton,
-  NSpace,
-  NDataTable,
-  NInputGroup,
-  type DataTableColumn,
-  type SelectOption,
-  RadioButtonProps,
-} from "naive-ui";
-import {
-  XSearch,
-  XFilter,
-  XTimeRange,
-  XTimestampTitle,
-  XStatus,
-  XTime,
-  XLogAttributes,
-  XModalAck,
-  XMessage,
-} from "@/components";
-import { Refresh } from "@/icons";
+  getLogs,
+  pageSizes,
+  type Log,
+  type GetLogsParams,
+  type Filter,
+} from "@/api";
 
-import { getLogs, type Log, type GetLogsParams, type Filter } from "@/api";
-
+const loading = ref<boolean>(false);
 const items = ref<Array<Log>>();
 const selectedItems = ref<Array<string>>([]);
 const xTimerange = ref();
 
-const loading = useLoadingBar();
-const message = useMessage();
-const showAckModal = ref<boolean>(false);
-const showEscalateModal = ref<boolean>(false);
+// const message = useMessage();
+const toast = useToast();
+const showAckDialog = ref<boolean>(false);
+const showEscalateDialog = ref<boolean>(false);
+
+const page = useRouteQuery<number>("page", 1, { transform: Number });
+const size = useRouteQuery<number>("size", 20, { transform: Number });
+const total = ref<number>(0);
+const more = ref<boolean>(false);
 
 const pagination = usePagination(refresh);
 const params = ref<GetLogsParams>({
@@ -53,62 +41,34 @@ const filters: Filter[] = [
   { label: "All", value: "all" },
 ];
 
-const columns: DataTableColumn<Log>[] = [
-  { type: "selection" },
-  {
-    type: "expand",
-    renderExpand: renderExpand,
-  },
-  {
-    title: "Status",
-    render: (row) => h(XStatus, { status: row.status }),
-    key: "status",
-    width: 90,
-  },
-  {
-    key: "timestamp",
-    title: () => h(XTimestampTitle),
-    render: (row) => h(XTime, { ts: row.displayTime }),
-    width: 150,
-  },
-  {
-    title: "Attributes",
-    render: (row) => h(XLogAttributes, { row: row }),
-    width: 300,
-    key: "attributes",
-  },
-  {
-    title: () => "Message",
-    key: "message",
-    render: (row) => h(XMessage, { log: row }),
-  },
-];
-
 onMounted(() => {
   refresh();
 });
 
 function refresh() {
-  loading.start();
+  loading.value = true;
   params.value.timerange = xTimerange.value.getTime();
   params.value.pagination = {
-    page: pagination.page,
-    pageSize: pagination.pageSize,
+    page: page.value,
+    pageSize: size.value,
   };
   getLogs(params.value)
     .then((list) => {
       items.value = list.items;
-      pagination.itemCount = list.total;
-      pagination.setMore(list.more);
-      loading.finish();
+      total.value = list.total;
+      more.value = list.more;
     })
     .catch((err) => {
       items.value = [];
-      message.error(
-        `failed to load logs (status ${err.response.status}): ${err.response.data}`,
-        { duration: 10000 },
-      );
-      loading.error();
+      toast.add({
+        severity: "danger",
+        summary: "Error",
+        detail: `failed to load logs (status ${err.response.status}): ${err.response.data}`,
+        life: 10000,
+      });
+    })
+    .finally(() => {
+      loading.value = false;
     });
 }
 
@@ -121,68 +81,87 @@ function renderExpand(row: Log) {
   return h("pre", null, JSON.stringify(row, null, 2));
 }
 
+// Reset the pagination and refresh.
 function reset() {
   params.value.pagination.page = 1;
+  refresh();
+}
+
+// Event received when pagination is changed.
+function updatePage(event: PageState) {
+  console.info(`updatePage(${JSON.stringify(event)})`);
+  page.value = event.page + 1;
+  size.value = event.rows;
   refresh();
 }
 </script>
 
 <template>
   <div>
-    <n-space
-      :size="100"
-      justify="start"
-      style="padding: 5px; margin-bottom: 10px"
-    >
-      <n-input-group>
-        <x-time-range ref="xTimerange" @change="reset" />
-        <x-search v-model:value="params.search" @change="reset" />
-        <n-button @click="refresh"><n-icon :component="Refresh" /></n-button>
-      </n-input-group>
-      <x-filter
-        v-model:value="params.filter"
-        :filters="filters"
-        @change="reset"
-      />
-      <n-input-group>
-        <n-button
-          type="primary"
-          :disabled="selectedItems.length == 0"
-          @click="showAckModal = true"
-          >Ack ({{ selectedItems.length }})</n-button
-        >
-        <x-modal-ack
-          v-model:show="showAckModal"
-          :ids="selectedItems"
-          @success="unselect"
+    <Toast />
+    <Toolbar>
+      <template #start>
+        <XFilter
+          v-model:value="params.filter"
+          :filters="filters"
+          @change="reset"
         />
+      </template>
+      <template #center>
+        <InputGroup>
+          <XTimeRange ref="xTimerange" @change="reset" />
+          <XSearch v-model:value="params.search" @change="reset" />
+          <Button @click="refresh" icon="pi pi-refresh" severity="secondary" />
+        </InputGroup>
+      </template>
+      <template #end>
+        <InputGroup>
+          <Button
+            label="Ack"
+            icon="pi pi-check"
+            @click="showAckDialog = true"
+            :disabled="selectedItems.length == 0"
+            :badge="selectedItems.length.toString()"
+          />
+          <XAckDialog
+            v-model:show="showAckDialog"
+            :ids="selectedItems"
+            @success="unselect"
+          />
+          <Button
+            label="Escalate"
+            severity="warn"
+            icon="pi pi-arrow-circle-up"
+            :disabled="selectedItems.length == 0"
+            :badge="selectedItems.length.toString()"
+          />
+        </InputGroup>
+      </template>
+    </Toolbar>
+    <div style="height: 2px">
+      <ProgressBar v-if="loading" mode="indeterminate" style="height: 2px" />
+    </div>
 
-        <n-button type="warning" :disabled="selectedItems.length == 0"
-          >Escalate ({{ selectedItems.length }})</n-button
-        >
-      </n-input-group>
-    </n-space>
-    <n-data-table
-      v-model:checked-row-keys="selectedItems"
-      remote
-      striped
-      bordered
-      :resizable="true"
+    <DataTable
+      v-model:selection="selectedItems"
+      :value="items"
       size="small"
-      :single-line="false"
-      :columns="columns"
-      :data="items"
-      :row-key="(row) => row._id"
-      :pagination="pagination"
+      stripedRows
+      showGridlines
+    >
+      <Column selectionMode="multiple" />
+      <XLogStatusColumn key="status" fieldName="status" />
+      <XTimestampColumn key="timestamp" fieldName="displayTime" />
+      <XLogAttributeColumn key="attributes" />
+      <XMessageColumn key="message" />
+    </DataTable>
+
+    <XPagination
+      v-model:page="page"
+      v-model:size="size"
+      :total="total"
+      :more="more"
+      @update="refresh"
     />
   </div>
 </template>
-
-<style scoped lang="scss">
-th.n-data-table-th {
-  padding: 0px;
-}
-.n-data-table__pagination {
-  justify-content: "center";
-}
-</style>

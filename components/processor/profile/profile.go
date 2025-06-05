@@ -7,24 +7,34 @@ import (
 	"go.opentelemetry.io/otel"
 
 	"github.com/japannext/snooze/components/processor/decision"
+	"github.com/japannext/snooze/internal/kv"
 	"github.com/japannext/snooze/internal/models"
 	"github.com/japannext/snooze/internal/pipeline"
 )
 
 type Processor struct {
-	mapper *FastMapper
+	kv *kv.Kv[*models.Log, Profile]
 }
 
 func New(cfgs []pipeline.Profile) (*Processor, error) {
-	p := &Processor{}
 
-	m, err := NewFastMapper(cfgs)
-	if err != nil {
-		return p, fmt.Errorf("failed to initialize fast mapper: %w", err)
+	profiles := []Profile{}
+	for _, cfg := range cfgs {
+		p, err := NewProfile(cfg)
+		if err != nil {
+			return &Processor{}, fmt.Errorf("failed to initialize profile %s: %w", cfg.Name, err)
+		}
+		profiles = append(profiles, p)
 	}
-	p.mapper = m
 
-	return p, nil
+	kv, err := kv.New[*models.Log](profiles)
+	if err != nil {
+		return &Processor{}, fmt.Errorf("failed to initialize fast mapper: %w", err)
+	}
+
+	return &Processor{
+		kv: kv,
+	}, nil
 }
 
 type Profile struct {
@@ -53,7 +63,7 @@ func (p *Processor) Process(ctx context.Context, item *models.Log) *decision.Dec
 	ctx, span := otel.Tracer("snooze").Start(ctx, "profile")
 	defer span.End()
 
-	for _, prf := range p.mapper.GetMatches(item) {
+	for _, prf := range p.kv.AllMatches(item) {
 		for _, pattern := range prf.patterns {
 			match, reject := pattern.Process(ctx, item)
 			if reject {

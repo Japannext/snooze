@@ -23,8 +23,8 @@ tasks:
   develop:
     desc: Deploy a temporary dev Docker image
     cmds:
-      - docker build . -t {{ .LOCAL_REPO }}/{{ .NAME }}:develop
-      - docker push {{ .LOCAL_REPO }}/{{ .NAME }}:develop
+      - docker build . -t {{ .LOCAL_REPO }}/{{ .NAME }}:latest
+      - docker push {{ .LOCAL_REPO }}/{{ .NAME }}:latest
     preconditions:
       - sh: docker login {{ .LOCAL_REPO }} --get-login
         msg: "You need to login to docker with `docker login {{ .LOCAL_REPO }}`"
@@ -48,8 +48,8 @@ tasks:
   dev-image:
     desc: Update the dev image used for devspace quick development
     cmds:
-      - docker build . -f Dockerfile.dev -t {{ .LOCAL_REPO }}/{{ .NAME }}-dev:develop
-      - docker push {{ .LOCAL_REPO }}/{{ .NAME }}-dev:develop
+      - docker build . -f Dockerfile.dev -t {{ .LOCAL_REPO }}/{{ .NAME }}-dev:latest
+      - docker push {{ .LOCAL_REPO }}/{{ .NAME }}-dev:latest
     preconditions:
       - sh: docker login {{ .LOCAL_REPO }} --get-login
         msg: "You need to login to docker with `docker login {{ .LOCAL_REPO }}`"

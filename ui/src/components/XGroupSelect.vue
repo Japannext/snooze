@@ -1,85 +1,75 @@
 <script setup lang="ts">
-import { ref, defineModel, computed } from "vue";
-import { getGroups, type Group, type GetGroupsParams } from "@/api";
-import { NSelect, type SelectOption } from "naive-ui";
+import { ref, defineModel, computed, onMounted } from "vue";
+import { getPipelineGroupings, type Grouping, type Group } from "@/api";
 
-const groupOptions = ref<SelectOption[]>([]);
 const loading = ref(false);
 
-const groupMap = ref<Map<string, Group>>(new Map<string, Group>());
+const props = defineProps<{}>();
 
-const props = defineProps<{
-  groups: Group[];
-}>();
-
-const emit = defineEmits<{
-  (e: "update:groups", value: Group[]): void;
-}>();
-
-const params = ref<GetGroupsParams>({
-  search: undefined,
+const group = defineModel("group", {
+  type: Object,
+  default: { name: "", hash: "", labels: {} },
 });
+const grouping = ref<Grouping | undefined>(undefined);
+const groupingOptions = ref<Grouping[]>();
 
-async function onFocus() {
-  await getGroupOptions(undefined);
+/*
+const emit = defineEmits<{
+  (e: "update:group", value: Group): void;
+}>();
+*/
+
+function updateGrouping(newValue: Grouping) {
+  grouping.value = newValue;
+  group.value = newValue.name;
 }
 
-async function onSearch(query: string) {
-  await getGroupOptions(query);
-}
-
-function getGroupOptions(query?: string) {
+function refresh() {
+  console.log(`XGroupSelect.refresh()`);
   loading.value = true;
-  if (query) {
-    params.value.search = `*${query}*`;
-  }
-  getGroups(params.value)
+  getPipelineGroupings()
     .then((list) => {
-      groupOptions.value = list.items.map((group) => {
-        groupMap.value.set(group.hash, group);
-        var labels = Object.keys(group.labels).map((key) => {
-          return `${group.labels[key]}`;
-        });
-        return {
-          label: `[${group.name}] ${labels}`,
-          value: group.hash,
-        };
-      });
+      groupingOptions.value = list;
+      console.log(`Groupings: ${JSON.stringify(groupingOptions.value)}`);
     })
     .finally(() => {
       loading.value = false;
     });
 }
 
-const groupHashes = computed(() => {
-  return props.groups.map((group) => {
-    return group.hash;
-  });
+onMounted(() => {
+  refresh();
 });
-
-function updateSelection(hashes: string[]) {
-  const selectedGroups = hashes.map((hash) => {
-    var gr = groupMap.value.get(hash);
-    if (gr) {
-      return gr;
-    }
-    return { name: "", hash: hash, id: undefined, labels: {} };
-  });
-  emit("update:groups", selectedGroups);
-}
 </script>
 
 <template>
-  <n-select
-    multiple
-    remote
-    clearable
-    filterable
-    :value="groupHashes"
-    :loading="loading"
-    :options="groupOptions"
-    @focus="onFocus"
-    @search="onSearch"
-    @update:value="updateSelection"
-  />
+  <InputGroup>
+    <IftaLabel>
+      <Select
+        v-if="!loading"
+        inputId="grouping"
+        v-model="grouping"
+        :options="groupingOptions"
+        :loading="loading"
+        optionLabel="name"
+        size="small"
+        style="width: 100"
+        @update:modelValue="updateGrouping"
+      />
+      <label for="grouping">Grouping</label>
+    </IftaLabel>
+    <template v-if="grouping">
+      <InputGroupAddon size="small">#</InputGroupAddon>
+      <template v-for="field in grouping.groupBy">
+        <IftaLabel>
+          <InputText
+            :inputId="field.name"
+            v-model="group.labels[field.name]"
+            size="small"
+          />
+          <label :for="field.name">{{ field.name }}</label>
+        </IftaLabel>
+      </template>
+    </template>
+  </InputGroup>
 </template>

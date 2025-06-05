@@ -1,14 +1,12 @@
 <script setup lang="ts">
 import { defineProps, ref, onMounted } from "vue";
-import { NTag } from "naive-ui";
-import { type NaiveColor } from "@/api";
 
 const props = defineProps<{
   text: string | undefined;
   number: number;
 }>();
 
-const color = ref<NaiveColor>("default");
+const color = ref<string>("default");
 
 onMounted(() => {
   if (props.number == 0) {
@@ -28,10 +26,10 @@ onMounted(() => {
     color.value = "warning";
   } else if (props.number < 21) {
     // ERROR
-    color.value = "error";
+    color.value = "danger";
   } else if (props.number < 25) {
     // FATAL
-    color.value = "error";
+    color.value = "danger";
   } else {
     // UNKNOWN
     color.value = "default";
@@ -39,7 +37,5 @@ onMounted(() => {
 });
 </script>
 <template>
-  <n-tag v-if="text" size="small" :type="color">
-    {{ text }}
-  </n-tag>
+  <Tag v-if="text" :severity="color" :value="text" />
 </template>

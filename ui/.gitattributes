@@ -1,3 +1,5 @@
 public/img/logo-symbol.png filter=lfs diff=lfs merge=lfs -text
 public/img/logo.png filter=lfs diff=lfs merge=lfs -text
 public/img/logo_white.png filter=lfs diff=lfs merge=lfs -text
+bun.lock filter=lfs diff=lfs merge=lfs -text
+src/assets/logo.png filter=lfs diff=lfs merge=lfs -text

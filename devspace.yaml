@@ -39,7 +39,7 @@ dev:
     labelSelector:
       app.kubernetes.io/name: snooze
       app.kubernetes.io/component: ui
-    devImage: ${LOCAL_REPO}/snooze-ui-dev:develop
+    devImage: ${LOCAL_REPO}/snooze-ui-dev:latest
     env:
     - name: HTTP_PROXY
       value: ${HTTP_PROXY}

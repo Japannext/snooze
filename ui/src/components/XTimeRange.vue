@@ -24,13 +24,29 @@ enum Preset {
   Last7Days = "Last 7 days",
 }
 
+const dateTransform = {
+  get(value: string): Date {
+    return Date(Number(value));
+  },
+  set(value: Date): string {
+    return value.getTime().ToString();
+  },
+};
+
 const preset = useRouteQuery<string>("preset", "");
+const newDateRange = ref<[Date, Date]>([0, 0]);
 const dateRange = ref<[number, number]>([0, 0]);
-const start = useRouteQuery<number>("start", 0, { transform: Number });
-const end = useRouteQuery<number>("end", 0, { transform: Number });
+const start = useRouteQuery<number>("start", 0, { transform: dateTransform });
+const end = useRouteQuery<number>("end", 0, { transform: dateTransform });
 
 const showPopover = ref(false);
 const displayText = ref<string>(Preset.Last24Hours);
+
+const presetOptions = ref([
+  { name: "Last 1 hour", value: "Last 1 hour" },
+  { name: "Last 24 hours", value: "Last 24 hours" },
+  { name: "Last 7 days", value: "Last 7 days" },
+]);
 
 const emit = defineEmits(["change"]);
 defineExpose({ getTime });
@@ -50,13 +66,13 @@ function setPreset(newPreset: Preset) {
 }
 
 function setDateRange() {
-  if (dateRange.value[0] > 0) {
+  if (newDateRange.value[0] > 0) {
     start.value = dateRange.value[0];
   } else {
     start.value = 0;
   }
-  if (dateRange.value[1] > 0) {
-    end.value = dateRange.value[1];
+  if (newDateRange.value[1] > 0) {
+    end.value = newDateRange.value[1];
   } else {
     end.value = 0;
   }
@@ -99,45 +115,88 @@ function ok() {
 function exit() {
   showPopover.value = false;
 }
+
+const popover = ref();
+function toggle(event) {
+  popover.value.toggle(event);
+}
 </script>
 
 <template>
-  <n-popover trigger="manual" :show="showPopover" @on-clickoutside="exit">
-    <template #trigger>
-      <n-button @click="showPopover = !showPopover">
-        <template #icon><n-icon :component="ClockRegular" /></template>
-        {{ displayText }}
-      </n-button>
-    </template>
-    <n-tabs>
-      <n-tab-pane name="presets" tab="Presets">
-        <n-radio-group v-model:value="preset">
-          <n-radio-button
-            :value="Preset.Last1Hour"
-            label="Last 1 hour"
-            @click="setPreset(Preset.Last1Hour)"
+  <Button
+    :label="displayText"
+    size="small"
+    severity="secondary"
+    variant="outlined"
+    @click="toggle"
+    icon="pi pi-clock"
+    iconPos="left"
+  />
+  <Popover ref="popover">
+    <Tabs value="presets">
+      <TabList>
+        <Tab value="presets">Presets</Tab>
+        <Tab value="timerange">Time range</Tab>
+      </TabList>
+      <TabPanels>
+        <TabPanel value="presets">
+          <SelectButton
+            size="small"
+            v-model="preset"
+            :options="presetOptions"
+            optionLabel="name"
+            optionValue="value"
           />
-          <n-radio-button
-            :value="Preset.Last24Hours"
-            label="Last 24 hours"
-            @click="setPreset(Preset.Last24Hours)"
+        </TabPanel>
+        <TabPanel value="timerange">
+          <DatePicker
+            v-model="newDateRange"
+            :numberOfMonths="2"
+            selectionMode="range"
+            showButtonBar
+            inline
           />
-          <n-radio-button
-            :value="Preset.Last7Days"
-            label="Last 7 days"
-            @click="setPreset(Preset.Last7Days)"
-          />
-        </n-radio-group>
-      </n-tab-pane>
-      <n-tab-pane name="timerange" tab="Time range">
-        <n-date-picker
-          v-model:value="dateRange"
-          type="daterange"
-          clearable
-          panel
-          :on-confirm="setDateRange"
-        />
-      </n-tab-pane>
-    </n-tabs>
-  </n-popover>
+        </TabPanel>
+      </TabPanels>
+    </Tabs>
+  </Popover>
+
+  <!-- <n-popover trigger="manual" :show="showPopover" @on-clickoutside="exit"> -->
+  <!-- <template #trigger> -->
+  <!-- <n-button @click="showPopover = !showPopover"> -->
+  <!-- <template #icon><n-icon :component="ClockRegular" /></template> -->
+  <!-- {{ displayText }} -->
+  <!-- </n-button> -->
+  <!-- </template> -->
+  <!-- <n-tabs> -->
+  <!-- <n-tab-pane name="presets" tab="Presets"> -->
+  <!-- <n-radio-group v-model:value="preset"> -->
+  <!-- <n-radio-button -->
+  <!-- :value="Preset.Last1Hour" -->
+  <!-- label="Last 1 hour" -->
+  <!-- @click="setPreset(Preset.Last1Hour)" -->
+  <!-- /> -->
+  <!-- <n-radio-button -->
+  <!-- :value="Preset.Last24Hours" -->
+  <!-- label="Last 24 hours" -->
+  <!-- @click="setPreset(Preset.Last24Hours)" -->
+  <!-- /> -->
+  <!-- <n-radio-button -->
+  <!-- :value="Preset.Last7Days" -->
+  <!-- label="Last 7 days" -->
+  <!-- @click="setPreset(Preset.Last7Days)" -->
+  <!-- /> -->
+  <!-- </n-radio-group> -->
+  <!-- </n-tab-pane> -->
+  <!-- <n-tab-pane name="timerange" tab="Time range"> -->
+  <!-- <n-date-picker -->
+  <!-- v-model:value="dateRange" -->
+  <!-- type="daterange" -->
+  <!-- clearable -->
+  <!-- panel -->
+  <!-- :on-confirm="setDateRange" -->
+  <!-- /> -->
+  <!-- </n-tab-pane> -->
+  <!-- </n-tabs> -->
+  <!-- </n-popover> -->
 </template>

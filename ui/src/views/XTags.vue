@@ -1,84 +1,55 @@
 <script setup lang="ts">
-import { h, ref, onMounted } from "vue";
-import { useLoadingBar, useMessage } from "naive-ui";
-import { usePagination } from "@/api";
-
-// Components
-import {
-  NIcon,
-  NButton,
-  NButtonGroup,
-  NSpace,
-  NDataTable,
-  NInputGroup,
-  type DataTableColumn,
-} from "naive-ui";
-import {
-  XSearch,
-  XFilter,
-  XTimeRange,
-  XTag,
-  XModalTagCreate,
-} from "@/components";
-import { Refresh, Add, Trash } from "@/icons";
+import { ref, onMounted } from "vue";
+import { useRouteQuery } from "@vueuse/router";
+import { useToast } from "primevue/usetoast";
 
 import { getTags, type Tag, type GetTagsParams } from "@/api";
 
 const items = ref<Tag[]>();
 const selectedItems = ref<string[]>([]);
 
-const loading = useLoadingBar();
-const message = useMessage();
+const loading = ref<boolean>(false);
+const toast = useToast();
 const showNewTagModal = ref<boolean>(false);
 const showDeleteTagModal = ref<boolean>(false);
 
-const pagination = usePagination(refresh);
+const page = useRouteQuery<number>("page", 1, { transform: Number });
+const size = useRouteQuery<number>("size", 20, { transform: Number });
+const total = ref<number>(0);
+const more = ref<boolean>(false);
 
 const params = ref<GetTagsParams>({
   search: "",
   pagination: {},
 });
 
-const columns: DataTableColumn<Tag>[] = [
-  { type: "selection" },
-  { type: "expand", renderExpand: renderExpand },
-  {
-    key: "name",
-    title: "Name",
-    render: (row) => h(XTag, { name: row.name, color: row.color }),
-    width: 150,
-  },
-  {
-    title: "Description",
-    key: "description",
-  },
-  {
-    title: "Actions",
-    key: "actions",
-  },
-];
-
 onMounted(() => {
   refresh();
 });
 
 function refresh() {
-  loading.start();
+  loading.value = true;
   params.value.pagination = {
-    page: pagination.page,
-    pageSize: pagination.pageSize,
+    page: page.value,
+    pageSize: size.value,
   };
   getTags(params.value)
     .then((list) => {
       items.value = list.items;
-      pagination.itemCount = list.total;
-      pagination.setMore(list.more);
-      loading.finish();
+      total.value = list.total;
+      more.value = list.more;
     })
     .catch((err) => {
       items.value = [];
-      message.error(`failed to load tags: ${err}`);
-      loading.error();
+      toast.add({
+        severity: "danger",
+        summary: "Error",
+        detail: `failed to load tags (status ${err.response.status}): ${err.response.data}`,
+        life: 10000,
+      });
+    })
+    .finally(() => {
+      loading.value = false;
     });
 }
 
@@ -93,48 +64,49 @@ function renderExpand(row: Tag) {
 </script>
 
 <template>
-  <div>
-    <n-space
-      :size="100"
-      justify="center"
-      style="padding: 5px; margin-bottom: 10px"
-    >
-      <n-input-group>
-        <x-search v-model:value="params.search" @change="reset" />
-        <n-button @click="refresh"><n-icon :component="Refresh" /></n-button>
-      </n-input-group>
-      <n-button-group>
-        <n-button
-          type="success"
-          icon-placement="right"
+  <Toast />
+  <Toolbar>
+    <template #center>
+      <InputGroup>
+        <XSearch v-model:value="params.search" @change="reset" />
+        <Button @click="refresh" icon="pi pi-refresh" severity="secondary" />
+      </InputGroup>
+    </template>
+    <template #end>
+      <InputGroup>
+        <Button
+          label="Create"
+          icon="pi pi-plus"
           @click="showNewTagModal = true"
-        >
-          <template #icon><n-icon :component="Add" /></template>
-          New Tag
-        </n-button>
-        <n-button
-          type="error"
-          :disabled="selectedItems.length == 0"
-          @click="showDeleteTagModal = true"
-        >
-          <template #icon><n-icon :component="Trash" /></template>
-          Delete ({{ selectedItems.length }})
-        </n-button>
-      </n-button-group>
-    </n-space>
-    <x-modal-tag-create v-model:show="showNewTagModal" />
-    <n-data-table
-      v-model:checked-row-keys="selectedItems"
-      remote
-      striped
-      bordered
-      :resizable="true"
-      size="small"
-      :single-line="false"
-      :columns="columns"
-      :data="items"
-      :row-key="(row) => row._id"
-      :pagination="pagination"
-    />
-  </div>
+        />
+        <XTagDialog v-model:show="showNewTagModal" />
+        <Button
+          label="Delete"
+          severity="danger"
+          icon="pi pi-trash"
+          :badge="selectedItems.length.toString()"
+        />
+      </InputGroup>
+    </template>
+  </Toolbar>
+  <DataTable
+    v-model:selection="selectedItems"
+    :value="items"
+    size="small"
+    stripedRows
+    showGridlines
+  >
+    <Column selectionMode="multiple" />
+    <XColorColumn key="color" fieldName="color" title="Color" />
+    <Column field="name" header="Name" />
+    <Column field="description" header="description" />
+  </DataTable>
+
+  <XPagination
+    v-model:page="page"
+    v-model:size="size"
+    :total="total"
+    :more="more"
+    @update="refresh"
+  />
 </template>

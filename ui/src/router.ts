@@ -17,44 +17,44 @@ import {
 
 import { renderIcon } from "./utils/render";
 
-export const menuOptions: MenuOption[] = [
-  {
-    key: "dashboard",
-    label: renderLink("dashboard", "Dashboard"),
-    icon: renderIcon(Dashboard),
-  },
-  {
-    key: "alerts",
-    label: renderLink("alerts", "Alerts"),
-    icon: renderIcon(Megaphone),
-  },
-  { key: "logs", label: renderLink("logs", "Logs"), icon: renderIcon(List) },
-  {
-    key: "snooze",
-    label: renderLink("snooze", "Snooze"),
-    icon: renderIcon(AlertSnooze20Regular),
-  },
-  {
-    key: "notifications",
-    label: renderLink("notifications", "Notifications"),
-    icon: renderIcon(Notifications),
-  },
-  {
-    key: "escalations",
-    label: renderLink("escalations", "Escalations"),
-    icon: renderIcon(PhoneAlt),
-  },
-  {
-    key: "tags",
-    label: renderLink("tags", "Tags"),
-    icon: renderIcon(Pricetag),
-  },
-  {
-    key: "process-config",
-    label: renderLink("process-config", "Process Config"),
-    icon: renderIcon(TaskSettings),
-  },
-];
+// export const menuOptions: MenuOption[] = [
+//   {
+//     key: "dashboard",
+//     label: renderLink("dashboard", "Dashboard"),
+//     icon: renderIcon(Dashboard),
+//   },
+//   {
+//     key: "alerts",
+//     label: renderLink("alerts", "Alerts"),
+//     icon: renderIcon(Megaphone),
+//   },
+//   { key: "logs", label: renderLink("logs", "Logs"), icon: renderIcon(List) },
+//   {
+//     key: "snoozes",
+//     label: renderLink("snoozes", "Snoozes"),
+//     icon: renderIcon(AlertSnooze20Regular),
+//   },
+//   {
+//     key: "notifications",
+//     label: renderLink("notifications", "Notifications"),
+//     icon: renderIcon(Notifications),
+//   },
+//   {
+//     key: "escalations",
+//     label: renderLink("escalations", "Escalations"),
+//     icon: renderIcon(PhoneAlt),
+//   },
+//   {
+//     key: "tags",
+//     label: renderLink("tags", "Tags"),
+//     icon: renderIcon(Pricetag),
+//   },
+//   {
+//     key: "pipeline",
+//     label: renderLink("pipeline", "Pipeline"),
+//     icon: renderIcon(TaskSettings),
+//   },
+// ];
 
 function renderLink(name: string, label: string): () => VNodeChild {
   return () => h(RouterLink, { to: { name: name } }, { default: () => label });
@@ -84,8 +84,8 @@ const routes: RouteRecordRaw[] = [
         component: () => import("./views/XLogs.vue"),
       },
       {
-        name: "snooze",
-        path: "/snooze",
+        name: "snoozes",
+        path: "/snoozes",
         component: () => import("./views/XSnoozes.vue"),
       },
       {
@@ -104,9 +104,9 @@ const routes: RouteRecordRaw[] = [
         component: () => import("./views/XTags.vue"),
       },
       {
-        name: "process-config",
-        path: "/process-config",
-        component: () => import("./views/XProcessConfig.vue"),
+        name: "pipeline",
+        path: "/pipeline",
+        component: () => import("./views/XPipeline.vue"),
       },
     ],
   },

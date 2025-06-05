@@ -35,6 +35,8 @@ type PrefixOption = {
   itemCount: number | undefined;
 };
 
+export const pageSizes = [5, 10, 20, 30, 50, 100]
+
 // Return a pagination reactive object compatible with
 // naive-ui `n-data-table`
 export function usePagination(refresh: Function): NaivePagination {

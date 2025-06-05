@@ -11,6 +11,7 @@ import (
 	"github.com/japannext/snooze/internal/lang"
 	"github.com/japannext/snooze/internal/models"
 	"github.com/japannext/snooze/internal/mq"
+	"github.com/japannext/snooze/internal/orderedset"
 	"github.com/japannext/snooze/internal/pipeline"
 	"github.com/japannext/snooze/internal/tracing"
 	"github.com/japannext/snooze/internal/utils"
@@ -67,7 +68,7 @@ func NewNotification(cfg pipeline.Notification) (Notification, error) {
 }
 
 func (p *Processor) getMatchingDestinations(ctx context.Context, item *models.Log) []models.Destination {
-	destinations := utils.NewOrderedSet[models.Destination]()
+	destinations := orderedset.New[models.Destination]()
 
 	for _, notif := range p.notifications {
 		if notif.condition != nil {

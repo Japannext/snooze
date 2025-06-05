@@ -6,6 +6,7 @@ import (
 
 	"github.com/PaesslerAG/gval"
 	"github.com/PaesslerAG/jsonpath"
+
 	"github.com/japannext/snooze/internal/models"
 )
 
@@ -19,7 +20,20 @@ func NewField(raw string) (*Field, error) {
 	if err != nil {
 		return &Field{}, err
 	}
+
 	return &Field{raw, computed}, nil
+}
+
+func FieldFromNestedFields(ff []string) (*Field, error) {
+	if len(ff) == 0 {
+		return &Field{}, fmt.Errorf("no field provided")
+	}
+	txt := ff[0]
+	for _, f := range ff[1:] {
+		txt = fmt.Sprintf(`%s["%s"]`, txt, f)
+	}
+
+	return NewField(txt)
 }
 
 func NewFields(raws []string) ([]*Field, error) {

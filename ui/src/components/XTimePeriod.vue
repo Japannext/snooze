@@ -1,65 +1,110 @@
 <script setup lang="ts">
-import { defineModel } from "vue";
+import { ref, computed } from "vue";
 import { DateTime, Duration } from "luxon";
 
-import {
-  NSpace,
-  NInputGroup,
-  NDatePicker,
-  NButtonGroup,
-  NButton,
-} from "naive-ui";
+const start = defineModel<number>("start", { type: Number, default: 0 });
+const end = defineModel<number>("end", { type: Number, default: 0 });
 
-const start = defineModel<number>("start");
-const end = defineModel<number>("end");
+const startValue = computed({
+  get(): Date {
+    return DateTime.fromMillis(start.value).toJSDate();
+  },
+  set(newValue: Date) {
+    start.value = DateTime.fromJSDate(newValue).toMillis();
+  },
+});
+
+const endValue = computed({
+  get(): Date {
+    return DateTime.fromMillis(end.value).toJSDate();
+  },
+  set(newValue: Date) {
+    end.value = DateTime.fromJSDate(newValue).toMillis();
+  },
+});
 
 const day = Duration.fromObject({ days: 1 }).toMillis();
 const hour = Duration.fromObject({ hours: 1 }).toMillis();
 const minute = Duration.fromObject({ minutes: 1 }).toMillis();
 
-function preset15min() {
-  var now = DateTime.now().toMillis();
-  start.value = now;
-  end.value = now + 15 * minute;
+const preset = ref<string>("");
+const presets = [
+  { label: "15 min", value: "15min" },
+  { label: "1 hour", value: "1hour" },
+  { label: "6 hours", value: "6hours" },
+  { label: "1 day", value: "1day" },
+  { label: "7 days", value: "7days" },
+];
+
+function setDates(duration: Duration) {
+  console.info(`setDates(${JSON.stringify(duration)})`);
+  const now = DateTime.now();
+  startValue.value = now.toJSDate();
+  endValue.value = now.plus(duration).toJSDate();
 }
 
-function preset1hour() {
-  var now = DateTime.now().toMillis();
-  start.value = now;
-  end.value = now + 1 * hour;
+function updatePreset(preset: string) {
+  console.info(`updatePreset(${JSON.stringify(preset)})`);
+  const now = DateTime.now();
+  switch (preset) {
+    case "15min":
+      setDates(15 * minute);
+      break;
+    case "1hour":
+      setDates(1 * hour);
+      break;
+    case "6hours":
+      setDates(6 * hour);
+      break;
+    case "1day":
+      setDates(1 * day);
+      break;
+    case "7days":
+      setDates(7 * day);
+      break;
+  }
 }
 
-function preset6hours() {
-  var now = DateTime.now().toMillis();
-  start.value = now;
-  end.value = now + 6 * hour;
-}
-
-function preset1day() {
-  var now = DateTime.now().toMillis();
-  start.value = now;
-  end.value = now + 1 * day;
-}
-
-function preset7days() {
-  var now = DateTime.now().toMillis();
-  start.value = now;
-  end.value = now + 7 * day;
-}
+const datepickerPtOptions = {
+  pcInputText: {
+    props: {
+      style: "width: 50px;",
+    },
+  },
+};
 </script>
 
 <template>
-  <n-space justify="start" size="small" :wrap="false">
-    <n-input-group>
-      <n-date-picker v-model:value="start" type="datetime" placeholder="From" />
-      <n-date-picker v-model:value="end" type="datetime" placeholder="To" />
-    </n-input-group>
-    <n-button-group>
-      <n-button @click="preset15min">15 min</n-button>
-      <n-button @click="preset1hour">1 hour</n-button>
-      <n-button @click="preset6hours">6 hours</n-button>
-      <n-button @click="preset1day">1 day</n-button>
-      <n-button @click="preset7days">7 days</n-button>
-    </n-button-group>
-  </n-space>
+  <div>
+    <InputGroup>
+      <IftaLabel>
+        <DatePicker
+          inputId="startDate"
+          v-model="startValue"
+          dateFormat="yy-mm-dd"
+          hourFormat="24"
+          :pt="datepickerPtOptions"
+          showTime
+        />
+        <label for="startDate">Start</label>
+      </IftaLabel>
+      <IftaLabel>
+        <DatePicker
+          inputId="endDate"
+          v-model="endValue"
+          dateFormat="yy-mm-dd"
+          hourFormat="24"
+          showTime
+        />
+        <label for="endDate">End</label>
+      </IftaLabel>
+      <SelectButton
+        :modelValue="preset"
+        :options="presets"
+        optionLabel="label"
+        optionValue="value"
+        @update:modelValue="updatePreset"
+      />
+    </InputGroup>
+  </div>
 </template>

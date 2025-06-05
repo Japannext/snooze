@@ -7,7 +7,5 @@ const props = defineProps<{
 }>();
 </script>
 <template>
-  <n-tag size="small">
-    {{ props.value }}
-  </n-tag>
+  <Button :label="props.value" size="small" severity="secondary" />
 </template>
