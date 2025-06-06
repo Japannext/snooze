@@ -1,64 +1,6 @@
-import { h, VNodeChild } from "vue";
-import { createRouter, createWebHashHistory, RouterLink } from "vue-router";
+import { createRouter, createWebHashHistory } from "vue-router";
 import type { RouteRecordRaw } from "vue-router";
-import type { MenuOption } from "naive-ui";
-
 import { XDefaultLayout, XCenteredLayout } from "./layouts";
-import {
-  Dashboard,
-  Megaphone,
-  List,
-  AlertSnooze20Regular,
-  Notifications,
-  TaskSettings,
-  PhoneAlt,
-  Pricetag,
-} from "./icons";
-
-import { renderIcon } from "./utils/render";
-
-// export const menuOptions: MenuOption[] = [
-//   {
-//     key: "dashboard",
-//     label: renderLink("dashboard", "Dashboard"),
-//     icon: renderIcon(Dashboard),
-//   },
-//   {
-//     key: "alerts",
-//     label: renderLink("alerts", "Alerts"),
-//     icon: renderIcon(Megaphone),
-//   },
-//   { key: "logs", label: renderLink("logs", "Logs"), icon: renderIcon(List) },
-//   {
-//     key: "snoozes",
-//     label: renderLink("snoozes", "Snoozes"),
-//     icon: renderIcon(AlertSnooze20Regular),
-//   },
-//   {
-//     key: "notifications",
-//     label: renderLink("notifications", "Notifications"),
-//     icon: renderIcon(Notifications),
-//   },
-//   {
-//     key: "escalations",
-//     label: renderLink("escalations", "Escalations"),
-//     icon: renderIcon(PhoneAlt),
-//   },
-//   {
-//     key: "tags",
-//     label: renderLink("tags", "Tags"),
-//     icon: renderIcon(Pricetag),
-//   },
-//   {
-//     key: "pipeline",
-//     label: renderLink("pipeline", "Pipeline"),
-//     icon: renderIcon(TaskSettings),
-//   },
-// ];
-
-function renderLink(name: string, label: string): () => VNodeChild {
-  return () => h(RouterLink, { to: { name: name } }, { default: () => label });
-}
 
 const XCallback = () => import("./views/auth/XCallback.vue");
 
@@ -106,7 +48,48 @@ const routes: RouteRecordRaw[] = [
       {
         name: "pipeline",
         path: "/pipeline",
-        component: () => import("./views/XPipeline.vue"),
+        children: [
+          {
+            name: "mappings",
+            path: "mappings",
+            component: () => import("./views/XPipelineMappings.vue"),
+          },
+          {
+            name: "transforms",
+            path: "transforms",
+            component: () => import("./views/XPipelineTransforms.vue"),
+          },
+          {
+            name: "silences",
+            path: "silences",
+            component: () => import("./views/XPipelineSilences.vue")
+          },
+          {
+            name: "groupings",
+            path: "groupings",
+            component: () => import("./views/XPipelineGroupings.vue"),
+          },
+          {
+            name: "notifications",
+            path: "notifications",
+            component: () => import("./views/XPipelineNotifications.vue"),
+          },
+          {
+            name: "ratelimits",
+            path: "ratelimits",
+            component: () => import("./views/XPipelineRatelimits.vue"),
+          },
+          {
+            name: "profiles",
+            path: "profiles",
+            component: () => import("./views/XPipelineProfiles.vue"),
+          },
+          {
+            name: "Services",
+            path: "services",
+            component: () => import("./views/XPipelineServices.vue"),
+          },
+        ],
       },
     ],
   },

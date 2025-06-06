@@ -33,23 +33,6 @@ type Mapping struct {
 	Map map[string]string `json:"map" yaml:"map"`
 }
 
-type Field struct {
-	// Name of the field. Will appear in the web interface.
-	Name string `json:"name"`
-	// The list of nested fields to access the field. Used in opensearch
-	// queries to access the data.
-	NestedFields []string `json:"nestedFields" yaml:"nested_fields"`
-}
-
-type Grouping struct {
-	// Name of the grouping
-	Name string `json:"name" yaml:"name"`
-	// Condition for applying the grouping only to certain entries
-	If string `json:"if"   yaml:"if"`
-	// Mutually exclusive with `group_by_map`.
-	GroupBy []Field `json:"groupBy" yaml:"group_by"`
-}
-
 type Transform struct {
 	Name    string   `json:"name" yaml:"name"`
 	If      string   `json:"if,omitempty" yaml:"if"`
@@ -81,6 +64,23 @@ type Unset struct {
 type Regex struct {
 	Field string `json:"field" yaml:"field"`
 	Match string `json:"match" yaml:"match"`
+}
+
+type Grouping struct {
+	// Name of the grouping
+	Name string `json:"name" yaml:"name"`
+	// Condition for applying the grouping only to certain entries
+	If string `json:"if"   yaml:"if"`
+	// Mutually exclusive with `group_by_map`.
+	GroupBy []Field `json:"groupBy" yaml:"group_by"`
+}
+
+type Field struct {
+	// Name of the field. Will appear in the web interface.
+	Name string `json:"name"`
+	// The list of nested fields to access the field. Used in opensearch
+	// queries to access the data.
+	NestedFields []string `json:"nestedFields" yaml:"nested_fields"`
 }
 
 type Profile struct {

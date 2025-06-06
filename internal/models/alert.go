@@ -53,6 +53,10 @@ type AlertBase struct {
 	AlertName string `json:"alertName"`
 	// Group of the alert
 	AlertGroup string `json:"alertGroup"`
+	// Name of the service that match the alert.
+	Service string `json:"service"`
+
+	ProblemID string `json:"problemID"`
 
 	// Text representing the severity
 	SeverityText string `json:"severityText,omitempty"`
@@ -72,6 +76,10 @@ type AlertBase struct {
 	// Key-value representing the main resource identifiers.
 	// Examples: host, pod, disk name, IP address
 	Labels map[string]string `json:"labels,omitempty"`
+}
+
+func (a *AlertBase) GetLabels() map[string]string {
+	return a.Labels
 }
 
 type ActiveAlert struct {

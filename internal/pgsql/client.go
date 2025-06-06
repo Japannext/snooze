@@ -2,17 +2,24 @@ package pgsql
 
 import (
 	"context"
+	"embed"
 	"fmt"
 	"log"
 	"sync"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/tern/v2/migrate"
 	_ "github.com/lib/pq"
+	"github.com/wcamarao/pmx"
 )
 
 type Client struct {
 	*pgx.Conn
 }
+
+//go:embed migrations/*.sql
+var migrationFS embed.FS
 
 func newClient() *Client {
 
@@ -22,6 +29,19 @@ func newClient() *Client {
 	conn, err := pgx.Connect(ctx, connString)
 	if err != nil {
 		log.Fatalf("failed to connect to pgsql: %s", err)
+	}
+
+	migrator, err := migrate.NewMigrator(context.Background(), conn, "my_schema_version")
+	if err != nil {
+		log.Fatalf("failed to initialize migrator: %s", err)
+	}
+
+	if err := migrator.LoadMigrations(migrationFS); err != nil {
+		log.Fatalf("failed to load migrations: %s", err)
+	}
+
+	if err := migrator.Migrate(ctx); err != nil {
+		log.Fatalf("failed to execute migration: %s", err)
 	}
 
 	return &Client{
@@ -43,4 +63,13 @@ func GetClient() *Client {
 	})
 
 	return client
+}
+
+// Insert an object into postgreSQL
+func Insert(ctx context.Context, item any) (pgconn.CommandTag, error) {
+	return pmx.Insert(ctx, GetClient().Conn, item)
+}
+
+func Select(ctx context.Context, dest any, sql string) error {
+	return pmx.Select(ctx, GetClient().Conn, dest, sql)
 }

@@ -20,3 +20,7 @@ func SnoozeKey(gr *models.Group) string {
 func AlertManagerKey(alertGroup, alertName, hash string) string {
 	return fmt.Sprintf("alertmanager:%s:%s:%s", alertGroup, alertName, hash)
 }
+
+func ServiceProblemKey(serviceName string) string {
+	return fmt.Sprintf("serviceproblem:%s", serviceName)
+}

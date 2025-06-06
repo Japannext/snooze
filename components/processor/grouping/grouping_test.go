@@ -47,9 +47,12 @@ func TestProcess(t *testing.T) {
 
 	cfgs := []pipeline.Grouping{
 		{
-			Name:    "by-host-process",
-			If:      `source.kind == "syslog"`,
-			GroupBy: []string{`labels.host`, `labels.process`},
+			Name: "by-host-process",
+			If:   `source.kind == "syslog"`,
+			GroupBy: []pipeline.Field{
+				{Name: "host", NestedFields: []string{"labels", "host"}},
+				{Name: "process", NestedFields: []string{"labels", "process"}},
+			},
 		},
 	}
 

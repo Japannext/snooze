@@ -57,7 +57,8 @@ type Log struct {
 	Pattern string `json:"pattern,omitempty"`
 
 	// ID for opentelemetry traces
-	TraceID string `json:"traceID"`
+	TraceID   string `json:"traceID"`
+	ProblemID string `json:"problemID"`
 
 	// Groups used for search and process
 	Groups []*Group `json:"groups"`

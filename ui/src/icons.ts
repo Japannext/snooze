@@ -13,6 +13,7 @@ export {
   Pricetag,
   Refresh,
   Trash,
+  VolumeMute,
   ArrowForwardSharp,
   InformationCircleOutline,
 } from "@vicons/ionicons5";
@@ -21,9 +22,11 @@ export {
   AddressBook,
   BalanceScale,
   BookOpen,
+  ClipboardList,
   Docker,
   Github,
   Hashtag,
+  LayerGroup,
   Lightbulb,
   LuggageCart,
   Openid,
@@ -32,6 +35,7 @@ export {
   SignInAlt,
   Sink,
   Slack,
+  Table,
   Terminal,
   Users,
   Wrench,
@@ -45,6 +49,7 @@ export {
   TaskSettings,
   TrafficFlow,
   TypePattern,
+  RouterVoice,
 } from "@vicons/carbon";
 
 export {
@@ -55,4 +60,10 @@ export {
   TagDismiss16Regular,
 } from "@vicons/fluent";
 
-export { ArrowForwardIosFilled } from "@vicons/material";
+export {
+  ArrowForwardIosFilled,
+  TransformFilled,
+  DoNotDisturbOnTotalSilenceFilled,
+  DataThresholdingFilled,
+  SailingRound,
+} from "@vicons/material";

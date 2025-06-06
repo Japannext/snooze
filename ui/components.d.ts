@@ -80,6 +80,7 @@ declare module 'vue' {
     XProcess: typeof import('./src/components/XProcess.vue')['default']
     XSearch: typeof import('./src/components/XSearch.vue')['default']
     XSelect: typeof import('./src/components/XSelect.vue')['default']
+    XSelector: typeof import('./src/components/XSelector.vue')['default']
     XSeverity: typeof import('./src/components/XSeverity.vue')['default']
     XSnoozeDialog: typeof import('./src/components/XSnoozeDialog.vue')['default']
     XSnoozeTime: typeof import('./src/components/XSnoozeTime.vue')['default']

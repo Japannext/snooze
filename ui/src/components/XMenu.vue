@@ -1,17 +1,29 @@
 <script setup lang="ts">
+import { ref } from "vue";
 import type { MenuItem } from "primevue/menuitem";
 import { Icon } from "@vicons/utils";
 import logo from "@/assets/logo.png";
 import {
-  Dashboard,
-  Megaphone,
-  List,
   AlertSnooze20Regular,
+  ClipboardList,
+  DoNotDisturbOnTotalSilenceFilled,
+  Dashboard,
+  DataThresholdingFilled,
+  LayerGroup,
+  List,
+  Megaphone,
   Notifications,
   PhoneAlt,
   Pricetag,
+  RouterVoice,
+  SailingRound,
   TaskSettings,
+  Table,
+  VolumeMute,
+  TransformFilled,
 } from "@/icons";
+
+const state = ref({});
 
 const items: MenuItem[] = [
   {
@@ -52,14 +64,55 @@ const items: MenuItem[] = [
   {
     label: "Pipeline",
     icon: TaskSettings,
-    route: "pipeline",
+    items: [
+      {
+        label: "Transforms",
+        icon: TransformFilled,
+        route: "/pipeline/transforms",
+      },
+      {
+        label: "Mappings",
+        icon: Table,
+        route: "/pipeline/mappings",
+      },
+      {
+        label: "Groupings",
+        icon: LayerGroup,
+        route: "/pipeline/groupings",
+      },
+      {
+        label: "Profiles",
+        icon: ClipboardList,
+        route: "/pipeline/profiles",
+      },
+      {
+        label: "Services",
+        icon: SailingRound,
+        route: "/pipeline/services",
+      },
+      {
+        label: "Silences",
+        icon: VolumeMute,
+        route: "/pipeline/silences",
+      },
+      {
+        label: "Ratelimits",
+        icon: DataThresholdingFilled,
+        route: "/pipeline/ratelimits",
+      },
+      {
+        label: "Notifications",
+        icon: RouterVoice,
+        route: "/pipeline/notifications",
+      },
+    ],
   },
 ];
 </script>
 
 <template>
   <div>
-    <Menubar :model="items">
+    <Menubar :model="items" :state="state">
       <template #start>
         <img :src="logo" :height="40" />
       </template>
@@ -84,12 +137,14 @@ const items: MenuItem[] = [
           :target="item.target"
           v-bind="props.action"
         >
-          <span :class="item.icon" />
+          <Icon>
+            <component :is="item.icon" />
+          </Icon>
           <span>{{ item.label }}</span>
           <span v-if="hasSubmenu" class="pi pi-fw pi-angle-down" />
         </a>
       </template>
-      <template #end> test... </template>
+      <template #end> {{ state }}</template>
     </Menubar>
   </div>
 </template>
