@@ -6,6 +6,7 @@ export type Snooze = {
   id?: string;
 
   groups: Group[];
+  namedSelectors: NamedSelector[];
 
   reason: string;
   tags: Tag[];
@@ -19,6 +20,12 @@ export type Snooze = {
 
   username?: string;
 };
+
+export type NamedSelector = {
+  hash: string;
+  matchLabels?: {[key: string]: string};
+  matchIdentity?: {[key: string]: string};
+}
 
 export type SnoozeCancel = {
   by: string;

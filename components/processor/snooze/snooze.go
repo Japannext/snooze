@@ -106,10 +106,13 @@ func (p *Processor) Process(ctx context.Context, item *models.Log) *decision.Dec
 	// 1. Get list of possible snooze entries
 	keys := []string{}
 
-	for _, group := range item.Groups {
-		key := redis.SnoozeKey(group)
-		keys = append(keys, key)
+	for _, h := range item.SelectorHashes {
+		keys = append(keys, fmt.Sprintf("snooze:%s", h))
 	}
+	// for _, group := range item.Groups {
+	// 	key := redis.SnoozeKey(group)
+	// 	keys = append(keys, key)
+	// }
 
 	// 2. Check them all in redis
 	lookups, err := getSnoozeLookups(ctx, keys)

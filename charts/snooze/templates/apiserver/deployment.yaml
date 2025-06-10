@@ -48,6 +48,7 @@ spec:
         {{- include "snooze.opensearch.env" . | nindent 8 }}
         {{- include "snooze.proxy.env" . | nindent 8 }}
         {{- include "snooze.nats.env" . | nindent 8 }}
+        {{- include "snooze.pgsql.env" . | nindent 8 }}
         - name: APISERVER_AUTH_CONFIG
           value: /config/auth.yaml
         - name: APISERVER_EXTERNAL_URL

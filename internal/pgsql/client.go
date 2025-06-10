@@ -2,27 +2,25 @@ package pgsql
 
 import (
 	"context"
-	"embed"
 	"fmt"
 	"log"
-	"sync"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/tern/v2/migrate"
 	_ "github.com/lib/pq"
 	"github.com/wcamarao/pmx"
+
+	"github.com/japannext/snooze/internal/pgsql/migrations"
 )
 
-type Client struct {
+type PgsqlClient struct {
 	*pgx.Conn
 }
 
-//go:embed migrations/*.sql
-var migrationFS embed.FS
+var Client *PgsqlClient
 
-func newClient() *Client {
-
+func Init() {
 	ctx := context.Background()
 
 	connString := makeConnString()
@@ -36,7 +34,7 @@ func newClient() *Client {
 		log.Fatalf("failed to initialize migrator: %s", err)
 	}
 
-	if err := migrator.LoadMigrations(migrationFS); err != nil {
+	if err := migrator.LoadMigrations(migrations.FS); err != nil {
 		log.Fatalf("failed to load migrations: %s", err)
 	}
 
@@ -44,7 +42,7 @@ func newClient() *Client {
 		log.Fatalf("failed to execute migration: %s", err)
 	}
 
-	return &Client{
+	Client = &PgsqlClient{
 		Conn: conn,
 	}
 }
@@ -54,22 +52,11 @@ func makeConnString() string {
 	return fmt.Sprintf("host='%s' user='%s' port=%d database='%s'", config.Host, config.Username, config.Port, config.Database)
 }
 
-var client *Client
-var clientOnce sync.Once
-
-func GetClient() *Client {
-	clientOnce.Do(func() {
-		client = newClient()
-	})
-
-	return client
-}
-
 // Insert an object into postgreSQL
 func Insert(ctx context.Context, item any) (pgconn.CommandTag, error) {
-	return pmx.Insert(ctx, GetClient().Conn, item)
+	return pmx.Insert(ctx, Client.Conn, item)
 }
 
 func Select(ctx context.Context, dest any, sql string) error {
-	return pmx.Select(ctx, GetClient().Conn, dest, sql)
+	return pmx.Select(ctx, Client.Conn, dest, sql)
 }

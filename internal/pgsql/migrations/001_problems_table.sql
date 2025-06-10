@@ -1,12 +1,12 @@
 CREATE TABLE problems (
-    uuid string primary key,
-    name string,
-    kind string,
-    status string,
-    startTime timestamp,
-    solvedTime timestamp,
+    uuid varchar(255) primary key,
+    name varchar(255),
+    kind varchar(255),
+    status varchar(255),
+    startTime timestamptz,
+    solvedTime timestamptz
 );
 
 ---- create above / drop below ----
 
-drop table problems;
+DROP TABLE problems;

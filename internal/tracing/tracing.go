@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/japannext/snooze/internal/models"
 	log "github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -16,6 +15,8 @@ import (
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/japannext/snooze/internal/models"
 )
 
 func NewTracerProvider(serviceName string) *tracesdk.TracerProvider {
@@ -33,6 +34,7 @@ func NewTracerProvider(serviceName string) *tracesdk.TracerProvider {
 	provider := tracesdk.NewTracerProvider(
 		tracesdk.WithBatcher(exporter, tracesdk.WithBatchTimeout(time.Second)),
 		tracesdk.WithResource(res),
+		tracesdk.WithIDGenerator(&IDGenerator{}),
 	)
 
 	return provider

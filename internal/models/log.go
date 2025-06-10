@@ -60,8 +60,11 @@ type Log struct {
 	TraceID   string `json:"traceID"`
 	ProblemID string `json:"problemID"`
 
-	// Groups used for search and process
+	// Groups used for search and process.
 	Groups []*Group `json:"groups"`
+
+	// The list of selector hashes it matches. Used for grouping and the KV.
+	SelectorHashes []string `json:"selectorHashes"`
 
 	// Text representing the severity
 	SeverityText string `json:"severityText,omitempty"`

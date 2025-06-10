@@ -32,6 +32,7 @@ type SnoozeEntry struct {
 	Base
 	// Groups that will be snoozed
 	Groups    []Group       `json:"groups"`
+	Selectors []Selector    `json:"selectors"`
 	Reason    string        `json:"reason"`
 	Tags      []Tag         `json:"tags"`
 	StartsAt  Time          `json:"startAt"`

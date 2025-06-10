@@ -1,6 +1,8 @@
 package apiserver
 
 import (
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+
 	"github.com/japannext/snooze/components/apiserver/auth"
 	"github.com/japannext/snooze/components/apiserver/config"
 	"github.com/japannext/snooze/components/apiserver/routes"
@@ -8,9 +10,9 @@ import (
 	"github.com/japannext/snooze/internal/logging"
 	"github.com/japannext/snooze/internal/mq"
 	"github.com/japannext/snooze/internal/opensearch"
+	"github.com/japannext/snooze/internal/pgsql"
 	"github.com/japannext/snooze/internal/redis"
 	"github.com/japannext/snooze/internal/tracing"
-	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
 
 // We use a route registration array so that we can
@@ -27,6 +29,7 @@ func Startup() *daemon.DaemonManager {
 	routes.InitMetrics()
 	opensearch.Init()
 	redis.Init()
+	pgsql.Init()
 	mq.Init()
 
 	dm := daemon.NewDaemonManager()

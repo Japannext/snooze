@@ -1,80 +1,101 @@
 package kv
 
 import (
-	"github.com/japannext/snooze/internal/orderedset"
-	"github.com/japannext/snooze/internal/pipeline"
+	"fmt"
+
+	"github.com/japannext/snooze/internal/hash"
+	"github.com/japannext/snooze/internal/models"
 )
 
-type HasLabels interface {
-	GetLabels() map[string]string
-}
-
-type HasSelectors interface {
-	GetSelectors() []pipeline.Selector
-}
-
-type Kv[K HasLabels, V HasSelectors] struct {
+type Kv[T any] struct {
 	keys   []string
-	mapper map[pipeline.Selector][]*V
+	mapper map[string][]*T
 }
 
-func New[K HasLabels, V HasSelectors](results []V) (*Kv[K, V], error) {
-	m := map[pipeline.Selector][]*V{}
-	keys := orderedset.New[string]()
+func New[T any]() *Kv[T] {
+	return &Kv[T]{
+		keys:   []string{},
+		mapper: map[string][]*T{},
+	}
+}
 
-	for _, result := range results {
-		selectors := result.GetSelectors()
-		for _, selector := range selectors {
-			if _, exist := m[selector]; !exist {
-				m[selector] = []*V{}
-			}
-			m[selector] = append(m[selector], &result)
-			keys.Append(selector.Key)
-		}
+func (kv *Kv[T]) Add(selector models.Selector, value *T) error {
+	h := hash.HashSelector(selector)
+	if h == "" {
+		return fmt.Errorf("empty selector")
 	}
 
-	return &Kv[K, V]{
-		keys:   keys.Items(),
-		mapper: m,
-	}, nil
-}
-
-func (kv *Kv[K, V]) FirstMatch(item K) (*V, bool) {
-	labels := item.GetLabels()
-	for _, key := range kv.keys {
-		value, exist := labels[key]
-		if !exist {
-			continue
-		}
-
-		selector := pipeline.Selector{Key: key, Value: value}
-		results, found := kv.mapper[selector]
-		if !found || len(results) == 0 {
-			continue
-		}
-
-		return results[0], true
+	// Initialize the array if no exist
+	if _, exist := kv.mapper[h]; !exist {
+		kv.mapper[h] = []*T{}
 	}
 
-	return nil, false
+	kv.mapper[h] = append(kv.mapper[h], value)
+
+	return nil
 }
 
-func (kv *Kv[K, V]) AllMatches(item K) []*V {
-	results := []*V{}
-	labels := item.GetLabels()
-	for _, key := range kv.keys {
-		value, exist := labels[key]
-		if !exist {
-			continue
-		}
-
-		selector := pipeline.Selector{Key: key, Value: value}
-		rr, found := kv.mapper[selector]
-		if !found {
-			continue
-		}
-		results = append(results, rr...)
+func (kv *Kv[T]) FirstMatch(key string) (*T, bool) {
+	matches := kv.mapper[key]
+	if len(matches) == 0 {
+		return new(T), false
 	}
-
-	return results
+	return matches[0], true
 }
+
+func (kv *Kv[T]) AllMatches(key string) []*T {
+	matches, ok := kv.mapper[key]
+	if !ok {
+		return []*T{}
+	}
+	return matches
+}
+
+// func (kv *Kv[K, V]) FirstMatch(item K) (*V, bool) {
+// 	labels := item.GetLabels()
+// 	log.Debugf("labels: %+v", labels)
+// 	log.Debugf("kv.keys: %+v", kv.keys)
+// 	for _, key := range kv.keys {
+// 		value, exist := labels[key]
+// 		if !exist {
+// 			continue
+// 		}
+
+// 		log.Debugf("found key %s", key)
+// 		selector := pipeline.Selector{Key: key, Value: value}
+// 		results, found := kv.mapper[selector]
+// 		if !found || len(results) == 0 {
+// 			continue
+// 		}
+
+// 		log.Debugf("found selector for key %s: %+v", key, selector)
+// 		return results[0], true
+// 	}
+
+// 	return nil, false
+// }
+
+// func (kv *Kv[K, V]) AllMatches(item K) []*V {
+// 	results := []*V{}
+// 	labels := item.GetLabels()
+// 	log.Debugf("labels: %+v", labels)
+// 	log.Debugf("kv.keys: %+v", kv.keys)
+// 	for _, key := range kv.keys {
+// 		value, exist := labels[key]
+// 		if !exist {
+// 			continue
+// 		}
+
+// 		log.Debugf("found key %s", key)
+// 		selector := pipeline.Selector{Key: key, Value: value}
+// 		rr, found := kv.mapper[selector]
+// 		if !found {
+// 			continue
+// 		}
+
+// 		log.Debugf("found selector for key %s: %+v", key, selector)
+// 		results = append(results, rr...)
+// 	}
+
+// 	return results
+// }

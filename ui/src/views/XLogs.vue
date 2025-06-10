@@ -14,6 +14,7 @@ import {
 const loading = ref<boolean>(false);
 const items = ref<Array<Log>>();
 const selectedItems = ref<Array<string>>([]);
+const expandedRows = ref({});
 const xTimerange = ref();
 
 // const message = useMessage();
@@ -144,16 +145,23 @@ function updatePage(event: PageState) {
 
     <DataTable
       v-model:selection="selectedItems"
+      v-model:expandedRows="expandedRows"
+      dataKey="_id"
       :value="items"
       size="small"
       stripedRows
       showGridlines
     >
       <Column selectionMode="multiple" />
+      <Column expander />
       <XLogStatusColumn key="status" fieldName="status" />
       <XTimestampColumn key="timestamp" fieldName="displayTime" />
       <XLogAttributeColumn key="attributes" />
       <XMessageColumn key="message" />
+
+      <template #expansion="slotProps">
+        <pre>{{ slotProps.data }}</pre>
+      </template>
     </DataTable>
 
     <XPagination

@@ -47,6 +47,7 @@ spec:
             memory: 100Mi
         env:
         {{- include "snooze.nats.env" . | nindent 8 }}
+        {{- include "snooze.pgsql.env" . | nindent 8 }}
         - name: PIPELINE_FILE
           value: /pipeline/pipeline.yaml
         envFrom:

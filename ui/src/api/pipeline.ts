@@ -4,12 +4,17 @@ import type { Schedule } from "@/api"
 export type Grouping = {
   name: string
   if?: string
-  groupBy: Field[]
+  groupBy: GroupBy[]
+}
+
+export type GroupBy = {
+  kind: string
+  key: string
 }
 
 export type Mapping = {
-  name: string
-  map: Map<string, string>
+  name: string;
+  map: {[key: string]: string};
 }
 
 export type Field = {
@@ -30,14 +35,14 @@ export type Action = {
 }
 
 export type Set = {
-  identity?: Map<string, string>
-  labels?: Map<string, string>
-  message?: string
+  identity?: {[key: string]: string};
+  labels?: {[key: string]: string};
+  message?: string;
 }
 
 export type Unset = {
-  identity?: Map<string, string>
-  labels?: Map<string, string>
+  identity?: {[key: string]: string};
+  labels?: {[key: string]: string};
   allIdentity?: boolean
   allLabels?: boolean
 }
@@ -63,7 +68,7 @@ export type Pattern = {
   description: string
   regex: string
   actions: Action[]
-  groupBy: Map<string, string>
+  groupBy: {[key: string]: string};
   droppedLabels: string[]
   drop: boolean
   silence: boolean

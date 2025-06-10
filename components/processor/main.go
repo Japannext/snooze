@@ -8,6 +8,7 @@ import (
 	"github.com/japannext/snooze/internal/daemon"
 	"github.com/japannext/snooze/internal/logging"
 	"github.com/japannext/snooze/internal/mq"
+	"github.com/japannext/snooze/internal/pgsql"
 	"github.com/japannext/snooze/internal/redis"
 	"github.com/japannext/snooze/internal/tracing"
 	"github.com/japannext/snooze/internal/utils"
@@ -26,6 +27,7 @@ func Startup() *daemon.DaemonManager {
 	initConfig()
 	metrics.Init()
 	redis.Init()
+	pgsql.Init()
 	tracing.Init("snooze-process")
 	mq.Init()
 

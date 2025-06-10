@@ -72,16 +72,25 @@ type Grouping struct {
 	// Condition for applying the grouping only to certain entries
 	If string `json:"if"   yaml:"if"`
 	// Mutually exclusive with `group_by_map`.
-	GroupBy []Field `json:"groupBy" yaml:"group_by"`
+	//GroupBy []Field `json:"groupBy" yaml:"group_by"`
+
+	GroupBy []GroupBy `json:"groupBy" yaml:"groupBy"`
 }
 
-type Field struct {
-	// Name of the field. Will appear in the web interface.
-	Name string `json:"name"`
-	// The list of nested fields to access the field. Used in opensearch
-	// queries to access the data.
-	NestedFields []string `json:"nestedFields" yaml:"nested_fields"`
+type GroupBy struct {
+	// The kind of resource to use. Valid values: "identity", "labels", "source".
+	Kind string `json:"kind" yaml:"kind"`
+	// The name of the key to use.
+	Key string `json:"key" yaml:"key"`
 }
+
+// type Field struct {
+// 	// Name of the field. Will appear in the web interface.
+// 	Name string `json:"name"`
+// 	// The list of nested fields to access the field. Used in opensearch
+// 	// queries to access the data.
+// 	NestedFields []string `json:"nestedFields" yaml:"nested_fields"`
+// }
 
 type Profile struct {
 	// Name of the profile group
@@ -89,19 +98,9 @@ type Profile struct {
 	// The main condition for a log to match this rule. Used to
 	// reduce the amount of processing by the use of maps.
 	// Examples: process=sshd, service.name=keycloak, k8s.statefulset.name=postgresql
-	Selector Selector `json:"selector" yaml:"selector"`
+	Selector models.Selector `json:"selector" yaml:"selector"`
 	// Patterns and actions to apply to logs matching this pattern
 	Patterns []Pattern `json:"patterns" yaml:"patterns"`
-}
-
-func (p Profile) GetSelectors() []Selector {
-	return []Selector{p.Selector}
-}
-
-// A selector for a label.
-type Selector struct {
-	Key   string `json:"key" yaml:"key"`
-	Value string `json:"value" yaml:"value"`
 }
 
 type Pattern struct {
@@ -176,11 +175,7 @@ type Service struct {
 	// List of impacts.
 	Impacts []string `json:"impacts" yaml:"impacts"`
 	// A list of selectors used to know what log/alert match the service.
-	Selectors []Selector `json:"selectors" yaml:"selectors"`
-}
-
-func (s Service) GetSelectors() []Selector {
-	return s.Selectors
+	Selectors []models.Selector `json:"selectors" yaml:"selectors"`
 }
 
 // An impact is a way to categorize alerts and services in groups to make

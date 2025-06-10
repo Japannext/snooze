@@ -156,3 +156,11 @@ authentication:
     realm: ""
     endpointKind: "KeycloakClusterEndpoint"
     endpointName: keycloak
+
+pgsql:
+  enabled: true
+  version: 16
+  replicaCount: 3
+  maxConnections: 100
+  volumeSize: 5Gi
+  storageClass: ""

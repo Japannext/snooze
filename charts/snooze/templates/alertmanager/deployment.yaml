@@ -47,6 +47,7 @@ spec:
         env:
         {{- include "snooze.opensearch.env" . | nindent 8 }}
         {{- include "snooze.nats.env" . | nindent 8 }}
+        {{- include "snooze.pgsql.env" . | nindent 8 }}
         - name: INSTANCE_NAME
           value: "{{ .Values.alertmanager.instanceName }}"
         envFrom:

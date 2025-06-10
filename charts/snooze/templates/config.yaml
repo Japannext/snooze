@@ -22,3 +22,7 @@ data:
   # Timezone
   TZ: "{{ .Values.timezone }}"
   {{- end }}
+  PGHOST: "{{ .Release.Name }}-pgsql"
+  PGPORT: "5432"
+  PGDATABASE: snooze
+  PGUSER: snooze

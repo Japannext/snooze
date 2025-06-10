@@ -13,23 +13,20 @@ import (
 )
 
 type Processor struct {
-	kv *kv.Kv[*models.Log, Profile]
+	kv *kv.Kv[Profile]
 }
 
 func New(cfgs []pipeline.Profile) (*Processor, error) {
 
-	profiles := []Profile{}
+	kv := kv.New[Profile]()
 	for _, cfg := range cfgs {
 		p, err := NewProfile(cfg)
 		if err != nil {
 			return &Processor{}, fmt.Errorf("failed to initialize profile %s: %w", cfg.Name, err)
 		}
-		profiles = append(profiles, p)
-	}
-
-	kv, err := kv.New[*models.Log](profiles)
-	if err != nil {
-		return &Processor{}, fmt.Errorf("failed to initialize fast mapper: %w", err)
+		if err := kv.Add(p.Selector, &p); err != nil {
+			return &Processor{}, fmt.Errorf("error in profile %s: %w", cfg.Name, err)
+		}
 	}
 
 	return &Processor{
@@ -63,7 +60,14 @@ func (p *Processor) Process(ctx context.Context, item *models.Log) *decision.Dec
 	ctx, span := otel.Tracer("snooze").Start(ctx, "profile")
 	defer span.End()
 
-	for _, prf := range p.kv.AllMatches(item) {
+	profiles := []*Profile{}
+
+	// Find all profiles from the selectors.
+	for _, h := range item.SelectorHashes {
+		profiles = append(profiles, p.kv.AllMatches(h)...)
+	}
+
+	for _, prf := range profiles {
 		for _, pattern := range prf.patterns {
 			match, reject := pattern.Process(ctx, item)
 			if reject {

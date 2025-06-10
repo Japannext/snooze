@@ -7,8 +7,8 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"gopkg.in/mcuadros/go-syslog.v2/format"
 
-	"github.com/japannext/snooze/internal/tracing"
 	"github.com/japannext/snooze/internal/models"
+	"github.com/japannext/snooze/internal/tracing"
 )
 
 var (
@@ -64,21 +64,21 @@ func parseLog(ctx context.Context, record format.LogParts) *models.Log {
 	}
 
 	// Labels
-	item.Labels["syslog.client_ip"] = clientIP
+	item.Labels["syslog__client_ip"] = clientIP
 	if value, ok := extract(record, "tls_peer"); ok {
-		item.Labels["syslog.tls_peer"] = value
+		item.Labels["syslog__tls_peer"] = value
 	}
 
 	facilityNumber := record["facility"].(int)
 	if 0 <= facilityNumber && facilityNumber < len(FACILITY_TEXTS) {
-		item.Labels["syslog.facility"] = FACILITY_TEXTS[facilityNumber]
+		item.Labels["syslog__facility"] = FACILITY_TEXTS[facilityNumber]
 	}
 
 	if value, ok := extract(record, "proc_id"); ok {
-		item.Labels["syslog.proc_id"] = value
+		item.Labels["syslog__proc_id"] = value
 	}
 	if value, ok := extract(record, "msg_id"); ok {
-		item.Labels["syslog.msg_id"] = value
+		item.Labels["syslog__msg_id"] = value
 	}
 
 	item.Message = record["message"].(string)

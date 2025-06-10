@@ -7,18 +7,15 @@ import (
 	//"slices"
 	"time"
 
-	redisv9 "github.com/redis/go-redis/v9"
 	log "github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
 
 	"github.com/japannext/snooze/components/processor/decision"
+	"github.com/japannext/snooze/internal/hash"
 	"github.com/japannext/snooze/internal/lang"
 	"github.com/japannext/snooze/internal/models"
 	"github.com/japannext/snooze/internal/mq"
-	"github.com/japannext/snooze/internal/opensearch/format"
 	"github.com/japannext/snooze/internal/pipeline"
-	"github.com/japannext/snooze/internal/redis"
-	"github.com/japannext/snooze/internal/utils"
 )
 
 type Processor struct {
@@ -48,7 +45,6 @@ func New(cfgs []pipeline.Grouping) (*Processor, error) {
 type Grouping struct {
 	pipeline.Grouping
 	condition *lang.Condition
-	fields    []*lang.Field
 }
 
 func NewGrouping(cfg pipeline.Grouping) (Grouping, error) {
@@ -62,15 +58,6 @@ func NewGrouping(cfg pipeline.Grouping) (Grouping, error) {
 		group.condition = condition
 	}
 
-	group.fields = []*lang.Field{}
-	for _, f := range group.GroupBy {
-		field, err := lang.FieldFromNestedFields(f.NestedFields)
-		if err != nil {
-			return Grouping{}, fmt.Errorf("error loading field %s: %w", f.Name, err)
-		}
-		group.fields = append(group.fields, field)
-	}
-
 	return group, nil
 }
 
@@ -78,6 +65,34 @@ const expiration = time.Duration(6) * time.Hour
 
 func gkey(gr *models.Group) string {
 	return fmt.Sprintf("grouping:%s:%s", gr.Name, gr.Hash)
+}
+
+func getSelector(groupBys []pipeline.GroupBy, item *models.Log) (models.Selector, bool) {
+	selector := models.Selector{}
+	for _, groupBy := range groupBys {
+		switch groupBy.Kind {
+		case "label":
+			value, ok := item.Labels[groupBy.Key]
+			if !ok {
+				// Not matching
+				return models.Selector{}, false
+			}
+			selector.MatchLabels[groupBy.Key] = value
+			continue
+		case "identity":
+			value, ok := item.Identity[groupBy.Key]
+			if !ok {
+				// Not matching
+				return models.Selector{}, false
+			}
+			selector.MatchIdentity[groupBy.Key] = value
+			continue
+		default:
+			continue
+		}
+	}
+
+	return selector, true
 }
 
 func (p *Processor) Process(ctx context.Context, item *models.Log) *decision.Decision {
@@ -98,60 +113,67 @@ func (p *Processor) Process(ctx context.Context, item *models.Log) *decision.Dec
 			}
 		}
 
-		gr := &models.Group{Name: group.Name, Labels: make(map[string]string)}
-
-		if len(group.GroupBy) > 0 {
-			for _, field := range group.fields {
-				value, err := lang.ExtractField(item, field)
-				if err != nil {
-					log.Warnf("Failed to match %s: %s", field, err)
-
-					continue
-				}
-
-				gr.Labels[field.String()] = value
-			}
+		selector, found := getSelector(group.GroupBy, item)
+		if found {
+			item.SelectorHashes = append(item.SelectorHashes, hash.HashSelector(selector))
 		}
 
-		gr.Hash = utils.ComputeHash(gr.Labels)
-		item.Groups = append(item.Groups, gr)
 	}
 
-	pipe := redis.Client.Pipeline()
-	exists := make(map[string]*redisv9.IntCmd)
+	// 	gr := &models.Group{Name: group.Name, Labels: make(map[string]string)}
 
-	for _, gr := range item.Groups {
-		key := gkey(gr)
-		exists[key] = pipe.Exists(ctx, key)
-		// Set afterward anyway
-		pipe.Set(ctx, key, "1", expiration)
-	}
-	_, err := pipe.Exec(ctx)
-	if err != nil {
-		log.Errorf("failed to get/set groups from redis: %s", err)
+	// 	if len(group.GroupBy) > 0 {
+	// 		for _, field := range group.fields {
+	// 			value, err := lang.ExtractField(item, field)
+	// 			if err != nil {
+	// 				log.Warnf("Failed to match %s: %s", field, err)
 
-		return decision.Retry(err)
-	}
+	// 				continue
+	// 			}
 
-	// Insert the groups in Opensearch only if it doesn't exists
-	for _, gr := range item.Groups {
-		if cmd, ok := exists[gkey(gr)]; ok && cmd.Val() > 0 {
-			// Skip insert due to LRU cache
-			continue
-		}
+	// 			gr.Labels[field.String()] = value
+	// 		}
+	// 	}
 
-		err := p.storeQ.PublishData(ctx, &format.Update{
-			Index:       models.GroupIndex,
-			ID:          fmt.Sprintf("%s.%s", gr.Name, gr.Hash),
-			Doc:         gr,
-			DocAsUpsert: true,
-		})
-		if err != nil {
-			log.Errorf("failed to publish group: %+v", gr)
+	// 	gr.Hash = utils.ComputeHash(gr.Labels)
+	// 	item.Groups = append(item.Groups, gr)
+	// }
 
-			return decision.Retry(err)
-		}
-	}
+	// pipe := redis.Client.Pipeline()
+	// exists := make(map[string]*redisv9.IntCmd)
+
+	// for _, gr := range item.Groups {
+	// 	key := gkey(gr)
+	// 	exists[key] = pipe.Exists(ctx, key)
+	// 	// Set afterward anyway
+	// 	pipe.Set(ctx, key, "1", expiration)
+	// }
+	// _, err := pipe.Exec(ctx)
+	// if err != nil {
+	// 	log.Errorf("failed to get/set groups from redis: %s", err)
+
+	// 	return decision.Retry(err)
+	// }
+
+	// // Insert the groups in Opensearch only if it doesn't exists
+	// for _, gr := range item.Groups {
+	// 	if cmd, ok := exists[gkey(gr)]; ok && cmd.Val() > 0 {
+	// 		// Skip insert due to LRU cache
+	// 		continue
+	// 	}
+
+	// 	err := p.storeQ.PublishData(ctx, &format.Update{
+	// 		Index:       models.GroupIndex,
+	// 		ID:          fmt.Sprintf("%s.%s", gr.Name, gr.Hash),
+	// 		Doc:         gr,
+	// 		DocAsUpsert: true,
+	// 	})
+	// 	if err != nil {
+	// 		log.Errorf("failed to publish group: %+v", gr)
+
+	// 		return decision.Retry(err)
+	// 	}
+	// }
 
 	return decision.OK()
 }

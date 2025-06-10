@@ -16,6 +16,14 @@
   value: "http://nats:4222"
 {{- end }}
 
+{{- define "snooze.pgsql.env" }}
+- name: PGPASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: "snooze.{{ .Release.Name }}-pgsql.credentials.postgresql.acid.zalan.do"
+      key: password
+{{- end }}
+
 {{- define "snooze.proxy.env" }}
 {{- if .Values.proxy }}
 - name: HTTP_PROXY

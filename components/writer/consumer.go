@@ -3,17 +3,19 @@ package writer
 import (
 	"bytes"
 	"context"
+
 	// "encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
-	"github.com/japannext/snooze/internal/mq"
-	"github.com/japannext/snooze/internal/opensearch"
 	"github.com/nats-io/nats.go/jetstream"
 	"github.com/opensearch-project/opensearch-go/v4/opensearchapi"
 	log "github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/japannext/snooze/internal/mq"
+	"github.com/japannext/snooze/internal/opensearch"
 )
 
 type Consumer struct{}
@@ -24,16 +26,15 @@ func NewConsumer() *Consumer {
 
 func (c *Consumer) Run() error {
 	for {
-		log.Debugf("Ready to fetch items...")
 		msgs, err := storeQ.Fetch(config.BatchSize)
 		if err != nil {
 			log.Warnf("failed to fetch items: %s", err)
 			continue
 		}
-		log.Debugf("Fetched %d items", len(msgs))
 		if len(msgs) == 0 {
 			continue
 		}
+		log.Debugf("Fetched %d items", len(msgs))
 		ctx := context.TODO()
 		bulkWrite(ctx, msgs)
 	}

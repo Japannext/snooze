@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { ref, defineModel, computed, onMounted } from "vue";
-import { getPipelineGroupings, type Grouping, type Group } from "@/api";
+import {
+  getPipelineGroupings,
+  getAutocompleteLog,
+  type Grouping,
+  type Group,
+  type GetAutocompleteLogParams,
+} from "@/api";
 
 const loading = ref(false);
 
@@ -40,6 +46,12 @@ function refresh() {
 onMounted(() => {
   refresh();
 });
+
+function autocomplete(fieldName: string) {
+  var value = group.value.labels[fieldName];
+  if (groupBy) var params = {};
+  getAutocompleteLog(params).then((suggestions) => {});
+}
 </script>
 
 <template>
@@ -60,12 +72,21 @@ onMounted(() => {
     </IftaLabel>
     <template v-if="grouping">
       <InputGroupAddon size="small">#</InputGroupAddon>
-      <template v-for="field in grouping.groupBy">
+      <template v-for="groupBy in grouping.groupBy">
         <IftaLabel>
-          <InputText
-            :inputId="field.name"
-            v-model="group.labels[field.name]"
+          <AutoComplete
+            v-if="groupBy.kind == 'label'"
+            :inputId="`${groupBy.kind}-${groupBy.key}`"
+            v-model="selector.matchLabels[groupBy.key]"
             size="small"
+            @complete="autocomplete(groupBy)"
+          />
+          <AutoComplete
+            v-if="groupBy.kind == 'identity'"
+            :inputId="`${groupBy.kind}-${groupBy.key}`"
+            v-model="selector.matchIdentity[groupBy.key]"
+            size="small"
+            @complete="autocomplete(groupBy)"
           />
           <label :for="field.name">{{ field.name }}</label>
         </IftaLabel>

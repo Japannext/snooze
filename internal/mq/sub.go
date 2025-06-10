@@ -2,11 +2,15 @@ package mq
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/nats-io/nats.go/jetstream"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/japannext/snooze/internal/tracing"
 )
 
 func (client *Client) Consumer(stream jetstream.Stream, cfg jetstream.ConsumerConfig, opts ...jetstream.FetchOpt) *Sub {
@@ -50,8 +54,8 @@ func (msg MsgWithContext) Extract() (jetstream.Msg, context.Context) {
 }
 
 func (sub *Sub) Fetch(size int) ([]MsgWithContext, error) {
-	ctx, fetchSpan := tracer.Start(context.Background(), "Fetch")
-	defer fetchSpan.End()
+	//ctx, fetchSpan := tracer.Start(context.Background(), "Fetch")
+	// defer fetchSpan.End()
 
 	batch, err := sub.consumer.Fetch(size, sub.fetchOpts...)
 	if err != nil {
@@ -62,12 +66,20 @@ func (sub *Sub) Fetch(size int) ([]MsgWithContext, error) {
 
 	for msg := range batch.Messages() {
 		// Opentelemetry trace context
-		propagator := propagation.TraceContext{}
-		msgCtx := propagator.Extract(context.Background(), propagation.HeaderCarrier(msg.Headers()))
+		// headers := msg.Headers()
+		// propagator := propagation.TraceContext{}
+		prop := otel.GetTextMapPropagator()
+		headers := propagation.HeaderCarrier(msg.Headers())
+		//msgCtx := propagator.Extract(context.Background(), propagation.HeaderCarrier(headers))
+		msgCtx := prop.Extract(context.Background(), headers)
+		log.Debugf("traceID (propagated): %s", getTraceID(msgCtx))
 
 		// Opentelemetry msg-level span
-		msgCtx, span := tracer.Start(msgCtx, "Fetch", trace.WithLinks(trace.LinkFromContext(ctx)))
-		defer span.End()
+		msgCtx, span := tracer.Start(msgCtx, "Fetch")
+		for key := range headers {
+			tracing.SetString(span, fmt.Sprintf("nats.header.%s", key), headers.Get(key))
+		}
+		tracing.SetString(span, "nats.data", string(msg.Data()))
 
 		// In-queue custom metric
 		start, ok := getPublishedTime(msg)
@@ -76,6 +88,16 @@ func (sub *Sub) Fetch(size int) ([]MsgWithContext, error) {
 		}
 
 		msgs = append(msgs, MsgWithContext{Msg: msg, Context: msgCtx})
+		span.End()
 	}
 	return msgs, nil
+}
+
+func getTraceID(ctx context.Context) string {
+	spanCtx := trace.SpanContextFromContext(ctx)
+	if spanCtx.HasTraceID() {
+		traceID := spanCtx.TraceID()
+		return traceID.String()
+	}
+	return ""
 }

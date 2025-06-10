@@ -3,10 +3,11 @@ package processor
 import (
 	"encoding/json"
 
-	"github.com/japannext/snooze/internal/mq"
-	"github.com/japannext/snooze/internal/models"
 	"github.com/nats-io/nats.go/jetstream"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/japannext/snooze/internal/models"
+	"github.com/japannext/snooze/internal/mq"
 )
 
 type Consumer struct {
@@ -23,18 +24,16 @@ func NewConsumer() *Consumer {
 
 func (c *Consumer) Run() error {
 	for {
-		log.Debugf("Waiting for a worker to be ready...")
 		size := pool.Ready()
-		log.Debugf("%d workers are ready", size)
 		msgs, err := processQ.Fetch(size)
 		if err != nil {
 			log.Warnf("failed to fetch items: %s", err)
 			continue
 		}
-		log.Debugf("Fetched %d logs", len(msgs))
 		if len(msgs) == 0 {
 			continue
 		}
+		log.Debugf("Fetched %d logs", len(msgs))
 
 		for _, msgWithCtx := range msgs {
 			msg := msgWithCtx.Msg
